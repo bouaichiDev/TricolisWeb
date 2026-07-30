@@ -1,0 +1,307 @@
+@startuml
+!theme plain
+hide methods
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+skinparam packageStyle rectangle
+title Tricolis V2 — Diagramme de classes partagées
+
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum ContactRole {
+  LOAD
+  DELIVERY
+  BILLING
+  OPERATIONS
+  EMERGENCY
+  OTHER
+}
+
+package "Identité et organisation" {
+
+  class User {
+    +id: ULID 
+    +firstName: string
+    +lastName: string
+    +email: string
+    +phone: string
+    +passwordHash: string
+    +preferredLanguage: string
+    +status: UserStatus
+    +emailVerifiedAt: datetime
+    +lastLoginAt: datetime
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class Organization {
+    +id: ULID 
+    +code: string
+    +name: string
+    +legalName: string
+    +registrationNumber: string
+    +taxNumber: string
+    +email: string
+    +phone: string
+    +preferredLanguage: string
+    +timezone: string
+    +currencyCode: string
+    +status: OrganizationStatus
+    +settings: JSON
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class OrganizationUser {
+    +id: ULID
+    +organizationId: ULID
+    +userId: ULID
+    +isOwner: boolean
+    +isPrimary: boolean
+    +status: UserStatus
+    +joinedAt: datetime
+  }
+
+  class Subscription {
+    +id: ULID
+    +organizationId: ULID
+    +planCode: string
+    +status: string
+    +startsAt: datetime
+    +endsAt: datetime
+    +trialEndsAt: datetime
+  }
+}
+
+package "Sécurité et autorisations" {
+
+  class Role {
+    +id: ULID 
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +scope: string
+    +isSystem: boolean
+    +status: string
+  }
+
+  class Permission {
+    +id: ULID
+    +code: string
+    +name: string
+    +module: string
+    +action: string
+  }
+
+  class UserRole {
+    +id: ULID
+    +organizationUserId: ULID
+    +roleId: ULID
+  }
+
+  class RolePermission {
+    +id: ULID
+    +roleId: ULID
+    +permissionId: ULID
+  }
+}
+
+package "Structure du transporteur" {
+
+  class Agency {
+    +id: ULID 
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +shortName: string
+    +email: string
+    +phone: string
+    +color: string
+    +loadingPoint: string
+    +status: string
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class Depot {
+    +id: ULID 
+    +agencyId: ULID
+    +code: string
+    +name: string
+    +status: string
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+}
+
+package "Adresses et contacts" {
+
+  class Address {
+    +id: ULID 
+    +code: string
+    +name: string
+    +addressLine1: string
+    +addressLine2: string
+    +addressLine3: string
+    +floor: string
+    +addressNumber: string
+    +route: string
+    +sublocality: string
+    +postalCode: string
+    +city: string
+    +town: string
+    +country: string
+    +latitude: decimal
+    +longitude: decimal
+    +instructions: text
+    +timeWindowFrom: time
+    +timeWindowTo: time
+    +isDefault: boolean
+    +status: string
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class Contact {
+    +id: ULID 
+    +firstName: string
+    +lastName: string
+    +phone: string
+    +mobile: string
+    +email: string
+    +preferredLanguage: string
+    +isActive: boolean
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class EntityAddress {
+    +id: ULID
+    +organizationId: ULID
+    +addressId: ULID
+    +entityType: string
+    +entityId: ULID
+    +addressType: string
+    +isDefault: boolean
+  }
+
+  class EntityContact {
+    +id: ULID
+    +organizationId: ULID
+    +contactId: ULID
+    +entityType: string
+    +entityId: ULID
+    +contactRole: ContactRole
+    +isPrimary: boolean
+    +notifyByEmail: boolean
+    +notifyBySms: boolean
+  }
+
+  class AddressContact {
+    +id: ULID
+    +addressId: ULID
+    +contactId: ULID
+    +contactRole: ContactRole
+    +isPrimary: boolean
+  }
+}
+
+package "Documents et audit" {
+
+  class Document {
+    +id: ULID
+    +organizationId: ULID 
+    +referenceNumber: string
+    +documentType: string
+    +status: string
+    +fileName: string
+    +storagePath: string
+    +mimeType: string
+    +size: bigint
+    +createdAt: datetime
+    +receivedAt: datetime
+    +createdBy: ULID
+  }
+
+  class DocumentLink {
+    +id: ULID
+    +documentId: ULID
+    +entityType: string
+    +entityId: ULID
+    +createdAt: datetime
+  }
+
+  class AuditLog {
+    +id: ULID
+    +organizationId: ULID
+    +userId: ULID
+    +action: string
+    +entityType: string
+    +entityId: ULID
+    +oldValues: JSON
+    +newValues: JSON
+    +ipAddress: string
+    +createdAt: datetime
+  }
+}
+
+User "1" -- "0..*" OrganizationUser
+Organization "1" -- "1..*" OrganizationUser
+Organization "1" -- "0..1" Subscription
+
+OrganizationUser "1" -- "0..*" UserRole
+Role "1" -- "0..*" UserRole
+Organization "1" -- "0..*" Role
+Role "1" -- "0..*" RolePermission
+Permission "1" -- "0..*" RolePermission
+
+Organization "1" -- "0..*" Agency
+Agency "1" -- "0..*" Depot
+
+Address "1" -- "0..*" EntityAddress
+Contact "1" -- "0..*" EntityContact
+Address "1" -- "0..*" AddressContact
+Contact "1" -- "0..*" AddressContact
+
+Document "1" -- "0..*" DocumentLink
+Organization "1" -- "0..*" AuditLog
+User "0..1" -- "0..*" AuditLog
+
+note right of Organization
+Tout transporteur peut créer son compte.
+
+À l'inscription :
+1. création de User ;
+2. création de Organization ;
+3. création de OrganizationUser ;
+4. attribution du rôle propriétaire.
+end note
+
+note right of Depot
+Le dépôt appartient toujours
+au transporteur via Agency.
+
+Un client métier ne possède pas de dépôt.
+end note
+
+note right of Contact
+Contact contient uniquement
+les informations de communication.
+
+Les adresses sont séparées.
+end note
+
+@enduml

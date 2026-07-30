@@ -1,0 +1,982 @@
+@startuml
+!theme plain
+hide methods
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
+skinparam packageStyle rectangle
+title Tricolis V2 — Diagramme de classes plateforme interne
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum OrderSource {
+  INTERNAL
+  CUSTOMER_PORTAL
+  REST_API
+  CSV_IMPORT
+  EXCEL_IMPORT
+  XML_IMPORT
+  STOCK
+  CATALOG
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  READY
+  PARTIALLY_PLANNED
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  PARTIALLY_INVOICED
+  INVOICED
+}
+
+enum OrderServiceStatus {
+  DRAFT
+  PENDING
+  READY_TO_PLAN
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+  INVOICED
+}
+
+enum TourStatus {
+  DRAFT
+  PLANNED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TourStopStatus {
+  PENDING
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  CANCELLED
+}
+
+enum ExportFormat {
+  XML
+  CSV
+  JSON
+  PDF
+}
+
+enum ExportTransport {
+  FTP
+  SFTP
+  REST_API
+  EMAIL
+  MANUAL
+}
+
+package "Références partagées utilisées" {
+  class Organization <<shared>>
+  class User <<shared>>
+  class Agency <<shared>>
+  class Depot <<shared>>
+  class Address <<shared>>
+  class Contact <<shared>>
+  class Document <<shared>>
+}
+
+package "Clients du transporteur" {
+
+  class Customer {
+    +id: ULID 
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +legalName: string
+    +email: string
+    +phone: string
+    +paymentMode: string
+    +communicationMode: string
+    +catalogEnabled: boolean
+    +stockEnabled: boolean
+    +packageEnabled: boolean
+    +appointmentEnabled: boolean
+    +trackingEnabled: boolean
+    +status: CustomerStatus
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class CustomerSite {
+    +id: ULID
+    +customerId: ULID
+    +addressId: ULID
+    +code: string
+    +name: string
+    +siteType: string
+    +isDefault: boolean
+    +status: string
+  }
+
+  class CustomerUser {
+    +id: ULID
+    +customerId: ULID
+    +userId: ULID
+    +status: string
+    +isAdmin: boolean
+  }
+
+  class CustomerCatalog {
+    +id: ULID
+    +customerId: ULID
+    +code: string
+    +name: string
+    +description: text
+    +status: string
+  }
+
+  class CustomerCatalogItem {
+    +id: ULID
+    +catalogId: ULID
+    +articleCode: string
+    +barcode: string
+    +name: string
+    +description: text
+    +weight: decimal
+    +volume: decimal
+    +length: decimal
+    +width: decimal
+    +height: decimal
+    +status: string
+  }
+
+  class CustomerImportConfiguration {
+    +id: ULID
+    +customerId: ULID
+    +name: string
+    +sourceType: string
+    +fileFormat: string
+    +mapping: JSON
+    +validationRules: JSON
+    +isActive: boolean
+  }
+
+  class CustomerApiConfiguration {
+    +id: ULID
+    +customerId: ULID
+    +name: string
+    +apiKeyHash: string
+    +allowedIps: JSON
+    +permissions: JSON
+    +isActive: boolean
+    +lastUsedAt: datetime
+  }
+
+  class CustomerExportConfiguration {
+    +id: ULID
+    +customerId: ULID
+    +name: string
+    +exportType: string
+    +format: ExportFormat
+    +transport: ExportTransport
+    +host: string
+    +port: int
+    +username: string
+    +encryptedPassword: text
+    +remoteDirectory: string
+    +fileNamePattern: string
+    +encoding: string
+    +frequency: string
+    +settings: JSON
+    +isActive: boolean
+  }
+
+  class ExportJob {
+    +id: ULID
+    +customerId: ULID
+    +configurationId: ULID
+    +entityType: string
+    +entityId: ULID
+    +fileName: string
+    +storagePath: string
+    +status: string
+    +attemptCount: int
+    +generatedAt: datetime
+    +sentAt: datetime
+    +errorMessage: text
+  }
+}
+
+package "Commandes, articles et colis" {
+
+  class Order {
+    +id: ULID 
+    +organizationId: ULID
+    +customerId: ULID
+    +agencyId: ULID
+    +depotId: ULID
+    +orderNumber: string
+    +externalReference: string
+    +customerReference: string
+    +orderType: string
+    +parentOrderId: ULID
+    +groupCode: string
+    +orderDate: datetime
+    +source: OrderSource
+    +internalRemark: text
+    +workerRemark: text
+    +weight: decimal
+    +volume: decimal
+    +packageCount: int
+    +currencyCode: string
+    +status: OrderStatus
+    +createdBy: ULID
+    +createdAt: datetime
+    +updatedBy: ULID
+    +updatedAt: datetime
+  }
+
+  class OrderLine {
+    +id: ULID 
+    +orderId: ULID
+    +catalogItemId: ULID
+    +parentLineId: ULID
+    +externalReference: string
+    +articleCode: string
+    +barcode: string
+    +name: string
+    +description: text
+    +quantity: decimal
+    +reservedQuantity: decimal
+    +preparedQuantity: decimal
+    +deliveredQuantity: decimal
+    +weight: decimal
+    +volume: decimal
+    +length: decimal
+    +width: decimal
+    +height: decimal
+    +purchasePrice: decimal
+    +sellingPrice: decimal
+    +status: string
+  }
+
+  class PackageType {
+    +id: ULID
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +status: string
+  }
+
+  class GroupingType {
+    +id: ULID
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +status: string
+  }
+
+  class Package {
+    +id: ULID 
+    +orderId: ULID
+    +parentPackageId: ULID
+    +packageTypeId: ULID
+    +groupingTypeId: ULID
+    +currentStockLocationId: ULID
+    +barcode: string
+    +reference: string
+    +description: string
+    +quantity: decimal
+    +weight: decimal
+    +volume: decimal
+    +length: decimal
+    +width: decimal
+    +height: decimal
+    +status: string
+  }
+
+  class PackageOrderLine {
+    +id: ULID
+    +packageId: ULID
+    +orderLineId: ULID
+    +quantity: decimal
+  }
+}
+
+package "Services de commande" {
+
+  class Service {
+    +id: ULID 
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +unit: string
+    +defaultDurationMinutes: int
+    +billableToCustomer: boolean
+    +payableToProvider: boolean
+    +requiresAddress: boolean
+    +requiresContact: boolean
+    +status: string
+  }
+
+  class OrderService {
+    +id: ULID 
+    +orderId: ULID
+    +serviceId: ULID
+    +addressId: ULID
+    +serviceNumber: string
+    +sequence: int
+    +requestedDate: date
+    +requestedFrom: datetime
+    +requestedTo: datetime
+    +quantity: decimal
+    +unit: string
+    +requiredTimeMinutes: int
+    +remainingTimeMinutes: int
+    +weight: decimal
+    +volume: decimal
+    +packageCount: int
+    +customerUnitPrice: decimal
+    +customerTotalPrice: decimal
+    +providerUnitCost: decimal
+    +providerTotalCost: decimal
+    +instructions: text
+    +status: OrderServiceStatus
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class OrderServiceContact {
+    +id: ULID
+    +orderServiceId: ULID
+    +contactId: ULID
+    +contactRole: string
+    +firstNameSnapshot: string
+    +lastNameSnapshot: string
+    +phoneSnapshot: string
+    +mobileSnapshot: string
+    +emailSnapshot: string
+    +isPrimary: boolean
+  }
+
+  class OrderServicePackage {
+    +id: ULID
+    +orderServiceId: ULID
+    +packageId: ULID
+    +quantity: decimal
+    +handlingInstructions: text
+    +status: string
+  }
+}
+
+package "Stock client chez le transporteur" {
+
+  class StockItem {
+    +id: ULID
+    +customerId: ULID
+    +catalogItemId: ULID
+    +articleCode: string
+    +barcode: string
+    +description: string
+    +status: string
+  }
+
+  class StockLocation {
+    +id: ULID
+    
+    +depotId: ULID
+    +parentLocationId: ULID
+    +zoneCode: string
+    +aisle: string
+    +rack: string
+    +level: string
+    +locationCode: string
+    +barcode: string
+    +status: string
+  }
+
+  class StockBalance {
+    +id: ULID
+    +stockItemId: ULID
+    +stockLocationId: ULID
+    +quantity: decimal
+    +reservedQuantity: decimal
+    +availableQuantity: decimal
+    +updatedAt: datetime
+  }
+
+  class StockMovement {
+    +id: ULID 
+    +stockItemId: ULID
+    +sourceLocationId: ULID
+    +destinationLocationId: ULID
+    +movementType: string
+    +quantity: decimal
+    +sourceEntityType: string
+    +sourceEntityId: ULID
+    +createdBy: ULID
+    +createdAt: datetime
+  }
+
+  class StockReservation {
+    +id: ULID
+    +stockItemId: ULID
+    +stockLocationId: ULID
+    +orderLineId: ULID
+    +quantity: decimal
+    +status: string
+    +reservedAt: datetime
+    +releasedAt: datetime
+  }
+}
+
+package "Fournisseurs et ressources" {
+
+  class Provider {
+  +id: ULID
+  +organizationId: ULID
+  +addressId: ULID
+  +contactId: ULID
+  +code: string
+  +name: string
+  +status: string
+}
+
+  class Driver {
+  +id: ULID
+  +organizationId: ULID
+  +providerId: ULID
+  +addressId: ULID
+  +contactId: ULID
+  +code: string
+  +name: string
+  +status: string
+}
+
+  class VehicleType {
+    +id: ULID
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +status: string
+  }
+
+  class Vehicle {
+    +id: ULID
+    +providerId: ULID
+    +vehicleTypeId: ULID
+    +code: string
+    +registrationNumber: string
+    +payloadCapacity: decimal
+    +volumeCapacity: decimal
+    +palletCapacity: int
+    +status: string
+  }
+}
+
+package "Planification des services" {
+
+  class Tour {
+    +id: ULID
+    +organizationId: ULID
+    +tourNumber: string
+    +tourDate: date
+    +agencyId: ULID
+    +depotId: ULID
+    +providerId: ULID
+    +vehicleId: ULID
+    +driverId: ULID
+    +tourType: string
+    +instructions: text
+    +plannedStartAt: datetime
+    +plannedEndAt: datetime
+    +actualStartAt: datetime
+    +actualEndAt: datetime
+    +totalWeight: decimal
+    +totalVolume: decimal
+    +totalPackages: int
+    +totalCustomers: int
+    +drivingTimeMinutes: int
+    +workingTimeMinutes: int
+    +distanceMeters: bigint
+    +status: TourStatus
+  }
+
+  class TourStop {
+    +id: ULID
+    +tourId: ULID
+    +addressId: ULID
+    +sequence: int
+    +groupingKey: string
+    +generationMode: string
+    +plannedArrivalAt: datetime
+    +plannedDepartureAt: datetime
+    +actualArrivalAt: datetime
+    +actualDepartureAt: datetime
+    +waitingMinutes: int
+    +serviceMinutes: int
+    +status: TourStopStatus
+  }
+
+  class TourStopService {
+    +id: ULID
+    +tourStopId: ULID
+    +orderServiceId: ULID
+    +sequenceWithinStop: int 
+    +isActiveAssignment: boolean
+    +status: string
+  }
+
+  class TourPeriod {
+    +id: ULID
+    +tourId: ULID
+    +tourStopId: ULID
+    +periodType: string
+    +sequence: int
+    +plannedStartAt: datetime
+    +plannedEndAt: datetime
+    +actualStartAt: datetime
+    +actualEndAt: datetime
+    +breakMinutes: int
+    +serviceMinutes: int
+    +waitingMinutes: int
+    +distanceMeters: bigint
+    +internalRemark: text
+    +status: string
+  }
+
+  class TourPeriodAssignment {
+    +id: ULID
+    +tourPeriodId: ULID
+    +tourStopServiceId: ULID
+    +packageId: ULID
+  }
+}
+
+package "Suivi, POD et réclamations" {
+
+  class TrackingEvent {
+    +id: ULID
+    +organizationId: ULID
+    +orderId: ULID
+    +orderServiceId: ULID
+    +tourId: ULID
+    +tourStopId: ULID
+    +eventType: string
+    +status: string
+    +description: text
+    +latitude: decimal
+    +longitude: decimal
+    +occurredAt: datetime
+    +createdBy: ULID
+  }
+
+  class ProofOfDelivery {
+    +id: ULID
+    +orderId: ULID
+    +orderServiceId: ULID
+    +tourStopId: ULID
+    +recipientName: string
+    +signatureDocumentId: ULID
+    +photoDocumentId: ULID
+    +remark: text
+    +deliveredAt: datetime
+    +createdBy: ULID
+  }
+
+  class Claim {
+    +id: ULID
+    +organizationId: ULID
+    +customerId: ULID
+    +orderId: ULID
+    +orderServiceId: ULID
+    +tourId: ULID
+    +title: string
+    +description: text
+    +claimType: string
+    +cause: string
+    +decision: text
+    +followUp: text
+    +result: string
+    +cost: decimal
+    +status: string
+    +createdBy: ULID
+    +responsibleUserId: ULID
+    +createdAt: datetime
+    +closedAt: datetime
+  }
+  
+}
+package "Communication et templates" {
+
+  enum CommunicationChannel {
+    EMAIL
+    SMS
+    WHATSAPP
+    PUSH_NOTIFICATION
+    INTERNAL_NOTIFICATION
+  }
+
+  enum CommunicationTemplateType {
+    APPOINTMENT_REQUEST
+    APPOINTMENT_CONFIRMATION
+    APPOINTMENT_REMINDER
+    DRIVER_ASSIGNED
+    DRIVER_DEPARTED
+    ARRIVAL_ESTIMATE
+    ARRIVAL_SOON
+    DELIVERY_CONFIRMATION
+    DELIVERY_FAILED
+    POD_AVAILABLE
+    ORDER_CANCELLED
+    CUSTOM
+  }
+
+  enum CommunicationEventType {
+    ORDER_CREATED
+    ORDER_CONFIRMED
+    ORDER_CANCELLED
+    SERVICE_PLANNED
+    APPOINTMENT_REQUESTED
+    APPOINTMENT_CONFIRMED
+    DRIVER_ASSIGNED
+    TOUR_STOP_APPROACHING
+    SERVICE_COMPLETED
+    POD_CREATED
+    CLAIM_CREATED
+  }
+
+  enum CommunicationStatus {
+    DRAFT
+    SCHEDULED
+    QUEUED
+    SENDING
+    SENT
+    DELIVERED
+    READ
+    FAILED
+    CANCELLED
+  }
+
+  enum RecipientRole {
+    CUSTOMER
+    LOAD_CONTACT
+    DELIVERY_CONTACT
+    BILLING_CONTACT
+    INTERNAL_USER
+    CUSTOM
+  }
+
+  class CommunicationTemplate {
+    +id: ULID
+    +organizationId: ULID
+    +serviceId: ULID
+    +code: string
+    +name: string
+    +channel: CommunicationChannel
+    +templateType: CommunicationTemplateType
+    +subjectTemplate: text
+    +bodyTemplate: longtext
+    +language: string
+    +availableVariables: JSON
+    +isDefault: boolean
+    +isActive: boolean
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class CommunicationRule {
+    +id: ULID
+    +organizationId: ULID
+    +serviceId: ULID
+    +templateId: ULID
+    +eventType: CommunicationEventType
+    +recipientRole: RecipientRole
+    +delayValue: int
+    +delayUnit: string
+    +conditions: JSON
+    +isAutomatic: boolean
+    +isActive: boolean
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class OrderCommunication {
+    +id: ULID
+    +organizationId: ULID
+    +orderId: ULID
+    +templateId: ULID
+    +communicationRuleId: ULID
+    +channel: CommunicationChannel
+    +communicationType: CommunicationTemplateType
+    +recipientRole: RecipientRole
+    +recipientName: string
+    +recipientEmail: string
+    +recipientPhone: string
+    +subject: text
+    +body: longtext
+    +templateVariables: JSON
+    +status: CommunicationStatus
+    +scheduledAt: datetime
+    +queuedAt: datetime
+    +sentAt: datetime
+    +deliveredAt: datetime
+    +readAt: datetime
+    +failedAt: datetime
+    +providerMessageId: string
+    +providerResponse: JSON
+    +errorMessage: text
+    +createdBy: ULID
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  class CommunicationAttachment {
+    +id: ULID
+    +communicationId: ULID
+    +documentId: ULID
+    +fileNameSnapshot: string
+    +mimeTypeSnapshot: string
+    +createdAt: datetime
+  }
+
+}
+package "Facturation client et fournisseur" {
+
+  class Invoice {
+    +id: ULID
+    +organizationId: ULID
+    +customerId: ULID
+    +invoiceNumber: string
+    +invoiceDate: date
+    +periodFrom: date
+    +periodTo: date
+    +currencyCode: string
+    +subtotal: decimal
+    +taxTotal: decimal
+    +total: decimal
+    +externalReference: string
+    +remark: text
+    +status: string
+    +createdAt: datetime
+  }
+
+  class InvoiceLine {
+    +id: ULID
+    +invoiceId: ULID
+    +orderServiceId: ULID
+    +orderId: ULID
+    +lineNumber: int
+    +serviceCode: string
+    +description: string
+    +customerOrderReference: string
+    +quantity: decimal
+    +unitPrice: decimal
+    +discountRate: decimal
+    +taxRate: decimal
+    +totalExcludingTax: decimal
+    +totalIncludingTax: decimal
+    +serviceCompletedAt: datetime
+    +status: string
+  }
+
+  class InvoiceLineAddressSnapshot {
+    +id: ULID
+    +invoiceLineId: ULID
+    +addressCode: string
+    +name: string
+    +addressLine1: string
+    +addressLine2: string
+    +postalCode: string
+    +city: string
+    +country: string
+  }
+
+  class ProviderSettlement {
+    +id: ULID
+    +organizationId: ULID
+    +providerId: ULID
+    +settlementNumber: string
+    +periodFrom: date
+    +periodTo: date
+    +subtotal: decimal
+    +taxTotal: decimal
+    +total: decimal
+    +status: string
+  }
+
+  class ProviderSettlementLine {
+    +id: ULID
+    +settlementId: ULID
+    +orderServiceId: ULID
+    +description: string
+    +quantity: decimal
+    +unitCost: decimal
+    +totalCost: decimal
+  }
+}
+Organization "1" -- "0..*" CommunicationTemplate
+Organization "1" -- "0..*" CommunicationRule
+Organization "1" -- "0..*" OrderCommunication
+
+Service "0..1" -- "0..*" CommunicationTemplate
+Service "0..1" -- "0..*" CommunicationRule
+
+CommunicationTemplate "1" -- "0..*" CommunicationRule
+CommunicationTemplate "0..1" -- "0..*" OrderCommunication
+CommunicationRule "0..1" -- "0..*" OrderCommunication
+
+Order "1" -- "0..*" OrderCommunication
+
+User "0..1" -- "0..*" OrderCommunication : createdBy
+
+OrderCommunication "1" *-- "0..*" CommunicationAttachment
+Document "1" -- "0..*" CommunicationAttachment
+
+Organization "1" -- "0..*" Customer
+Customer "1" -- "0..*" CustomerSite
+Address "1" -- "0..*" CustomerSite
+Customer "1" -- "0..*" CustomerUser
+User "1" -- "0..*" CustomerUser
+
+Customer "1" -- "0..*" CustomerCatalog
+CustomerCatalog "1" -- "0..*" CustomerCatalogItem
+Customer "1" -- "0..*" CustomerImportConfiguration
+Customer "1" -- "0..*" CustomerApiConfiguration
+Customer "1" -- "0..*" CustomerExportConfiguration
+CustomerExportConfiguration "1" -- "0..*" ExportJob
+
+Customer "1" -- "0..*" Order
+Agency "1" -- "0..*" Order
+Depot "0..1" -- "0..*" Order
+Order "0..1" --> "0..*" Order : parent
+Order "1" *-- "1..*" OrderLine
+CustomerCatalogItem "0..1" -- "0..*" OrderLine
+
+Order "1" *-- "0..*" Package
+Package "0..1" --> "0..*" Package : parent
+PackageType "1" -- "0..*" Package
+GroupingType "1" -- "0..*" Package
+Package "1" -- "0..*" PackageOrderLine
+OrderLine "1" -- "0..*" PackageOrderLine
+StockLocation "0..1" -- "0..*" Package : currentLocation
+Order "1" *-- "1..*" OrderService
+Service "1" -- "0..*" OrderService
+Address "1" -- "0..*" OrderService
+OrderService "1" *-- "0..*" OrderServiceContact
+Contact "0..1" -- "0..*" OrderServiceContact
+OrderService "1" -- "0..*" OrderServicePackage
+Package "1" -- "0..*" OrderServicePackage
+
+Customer "1" -- "0..*" StockItem
+CustomerCatalogItem "0..1" -- "0..*" StockItem
+Depot "1" -- "0..*" StockLocation
+StockLocation "0..1" --> "0..*" StockLocation : parent
+StockItem "1" -- "0..*" StockBalance
+StockLocation "1" -- "0..*" StockBalance
+StockItem "1" -- "0..*" StockMovement
+StockItem "1" -- "0..*" StockReservation
+StockLocation "1" -- "0..*" StockReservation
+OrderLine "1" -- "0..*" StockReservation
+
+Organization "1" -- "0..*" Provider
+Provider "0..*" --> "0..1" Address
+Provider "0..*" --> "0..1" Contact
+Provider "1" -- "0..*" Driver
+Provider "1" -- "0..*" Vehicle
+
+VehicleType "1" -- "0..*" Vehicle
+
+Organization "1" -- "0..*" Tour
+Agency "1" -- "0..*" Tour
+Depot "0..1" -- "0..*" Tour
+Provider "0..1" -- "0..*" Tour
+Driver "0..1" -- "0..*" Tour
+Vehicle "0..1" -- "0..*" Tour
+Driver "0..*" --> "0..1" Address
+Driver "0..*" --> "0..1" Contact
+
+Tour "1" *-- "0..*" TourStop
+Address "1" -- "0..*" TourStop
+TourStop "1" *-- "1..*" TourStopService
+OrderService "1" -- "0..*" TourStopService
+Tour "1" *-- "0..*" TourPeriod
+TourStop "0..1" -- "0..*" TourPeriod
+TourPeriod "1" *-- "0..*" TourPeriodAssignment
+TourStopService "1" -- "0..*" TourPeriodAssignment
+Package "0..1" -- "0..*" TourPeriodAssignment
+
+Order "1" -- "0..*" TrackingEvent
+OrderService "0..1" -- "0..*" TrackingEvent
+Tour "0..1" -- "0..*" TrackingEvent
+TourStop "0..1" -- "0..*" TrackingEvent
+
+Order "1" -- "0..*" ProofOfDelivery
+OrderService "0..1" -- "0..*" ProofOfDelivery
+TourStop "0..1" -- "0..*" ProofOfDelivery
+Document "0..1" -- "0..*" ProofOfDelivery
+
+Customer "1" -- "0..*" Claim
+Order "0..1" -- "0..*" Claim
+OrderService "0..1" -- "0..*" Claim
+Tour "0..1" -- "0..*" Claim
+
+Customer "1" -- "0..*" Invoice
+Invoice "1" *-- "1..*" InvoiceLine
+OrderService "1" -- "0..1" InvoiceLine
+InvoiceLine "1" *-- "0..1" InvoiceLineAddressSnapshot
+
+Provider "1" -- "0..*" ProviderSettlement
+ProviderSettlement "1" *-- "1..*" ProviderSettlementLine
+OrderService "1" -- "0..1" ProviderSettlementLine
+
+note right of Customer
+Customer représente un client du transporteur
+(IKEA, QOQA, Schmidt, etc.).
+
+Le client peut :
+
+• créer des commandes de transport direct ;
+• utiliser le stockage du transporteur (optionnel).
+
+Le module Stock est indépendant et
+n'est utilisé que si le client
+dispose d'un contrat d'entreposage.
+end note
+
+note right of OrderService
+Le service est l'unité principale
+de planification.
+
+Chaque service possède :
+- sa propre adresse ;
+- ses contacts ;
+- ses packages ;
+- son créneau demandé ;
+- son prix et son coût.
+end note
+
+note right of TourStop
+Les stops sont générés automatiquement
+après planification des services.
+
+Le regroupement considère :
+- la tournée ;
+- l'adresse ;
+- la date ;
+- les créneaux compatibles.
+end note
+
+note right of InvoiceLine
+Chaque ligne de facture correspond
+à un service de commande terminé.
+end note
+
+@enduml

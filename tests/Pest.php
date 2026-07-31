@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Identity\Models\User;
+use App\Modules\Organizations\Models\Organization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +17,7 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)
- // ->use(RefreshDatabase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
 
 /*
@@ -44,7 +46,24 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function authUser(): User
 {
-    // ..
+    $user = User::where('email', 'admin@tricolis.dev')->first();
+
+    if ($user === null) {
+        throw new RuntimeException('Utilisateur de test introuvable.');
+    }
+
+    return $user;
+}
+
+function authOrganization(): Organization
+{
+    $organization = Organization::where('code', 'tricolis-dev')->first();
+
+    if ($organization === null) {
+        throw new RuntimeException('Organisation de test introuvable.');
+    }
+
+    return $organization;
 }

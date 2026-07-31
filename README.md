@@ -1,58 +1,210 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Tricolis Web
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend API multi-organisation pour la gestion d'une activité de transport et de logistique.
 
-## About Laravel
+Le projet permet actuellement de gérer l'authentification, les organisations de transporteurs,
+les agences, les dépôts, les clients, leurs sites, les adresses et les contacts. La conception
+prévoit ensuite les commandes, colis, services, stocks, ressources, tournées, suivis et factures.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack technique
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.3 ou supérieur ;
+- Laravel 13 ;
+- MySQL 8 ;
+- Laravel Sanctum pour les tokens API ;
+- Pest pour les tests ;
+- Scramble pour la documentation OpenAPI ;
+- Opcodes Log Viewer pour la consultation sécurisée des logs ;
+- Vite et Tailwind CSS pour les ressources frontend.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation locale
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+copy .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Créer les bases MySQL :
 
-## Contributing
+```sql
+CREATE DATABASE tricolisweb
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+CREATE DATABASE tricolisweb_test
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+```
 
-## Code of Conduct
+Configurer `.env` :
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=tricolisweb
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## Security Vulnerabilities
+Installer la base et les données de développement :
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan migrate --seed
+npm install
+npm run build
+```
 
-## License
+Lancer l'application :
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer run dev
+```
+
+L'API est alors disponible sous `http://localhost:8000/api/v1`.
+
+## Inscription d'un transporteur
+
+L'inscription crée dans une transaction unique :
+
+1. le compte utilisateur ;
+2. l'organisation du transporteur ;
+3. l'appartenance propriétaire principale ;
+4. le rôle administrateur et ses permissions ;
+5. le token Sanctum.
+
+```http
+POST /api/v1/auth/register
+Accept: application/json
+Content-Type: application/json
+```
+
+```json
+{
+  "firstName": "Sara",
+  "lastName": "Amrani",
+  "email": "sara@example.com",
+  "phone": "+212600000000",
+  "password": "Password123!",
+  "password_confirmation": "Password123!",
+  "organization": {
+    "name": "Atlas Transport",
+    "legalName": "Atlas Transport SARL",
+    "registrationNumber": "RC-12345",
+    "taxNumber": "ICE-98765",
+    "timezone": "Africa/Casablanca",
+    "currencyCode": "MAD"
+  }
+}
+```
+
+## Authentification et organisation active
+
+Les routes suivantes sont publiques :
+
+- `POST /auth/register` ;
+- `POST /auth/login` ;
+- `POST /auth/forgot-password` ;
+- `POST /auth/reset-password`.
+
+Toutes les autres routes utilisent un token :
+
+```http
+Authorization: Bearer VOTRE_TOKEN
+```
+
+Les routes métier exigent également l'organisation active :
+
+```http
+X-Organization-Id: 01JABCDEFGHJKMNPQRSTVWXYZ
+```
+
+La liste `GET /organizations` ne demande pas cet en-tête afin que le frontend puisse d'abord
+présenter les organisations accessibles à l'utilisateur.
+
+## Documentation API
+
+La documentation interactive est disponible ici :
+
+```text
+http://localhost:8000/docs/api
+```
+
+Elle permet de configurer le Bearer token et documente automatiquement l'en-tête
+`X-Organization-Id` sur les routes concernées.
+
+## Compte de développement
+
+Après `php artisan migrate:fresh --seed` :
+
+```text
+E-mail : admin@tricolis.dev
+Mot de passe : password
+```
+
+Ces identifiants ne doivent jamais être utilisés en production.
+
+## Consultation des logs
+
+Activer le visualiseur uniquement pour les administrateurs techniques :
+
+```dotenv
+LOG_VIEWER_ENABLED=true
+LOG_VIEWER_ALLOWED_EMAILS=admin@tricolis.dev
+```
+
+Puis ouvrir :
+
+```text
+http://localhost:8000/log-viewer
+```
+
+L'accès utilise HTTP Basic avec le compte Laravel. Les utilisateurs absents de la liste blanche
+sont refusés et la suppression des fichiers de logs est désactivée. HTTPS est obligatoire en
+production.
+
+Pour suivre les logs depuis le terminal :
+
+```bash
+php artisan pail
+```
+
+## Tests et qualité
+
+La base de test est définie dans `.env.testing` et doit rester distincte de la base locale.
+
+```bash
+php artisan test
+vendor/bin/pint --test
+```
+
+Sous Windows :
+
+```powershell
+php artisan test
+vendor\bin\pint --test
+```
+
+## Structure métier
+
+```text
+app/
+├── Modules/       Modèles et actions par domaine
+├── Policies/      Autorisations multi-organisation
+├── Shared/        Composants transverses
+├── Http/          Contrôleurs, middleware, requests et resources
+└── OpenApi/       Extensions de la documentation API
+```
+
+Les diagrammes de référence se trouvent dans `Conception/diagramme` et les décisions backend
+dans `docs/backend`.
+
+## Règles de sécurité
+
+- ne jamais commiter `.env` ;
+- utiliser une base distincte pour les tests ;
+- ne jamais exposer Log Viewer sans authentification ;
+- ne jamais envoyer un token dans l'URL ;
+- vérifier le Bearer token et `X-Organization-Id` sur toute route métier ;
+- conserver les logs techniques séparés du journal d'audit métier.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Customers\Models;
 
+use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Customers\Enums\CustomerStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Organizations\Models\Organization;
@@ -78,6 +79,14 @@ class Customer extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * @return HasMany<CustomerCatalog, $this>
+     */
+    public function catalogs(): HasMany
+    {
+        return $this->hasMany(CustomerCatalog::class, 'customer_id');
     }
 
     protected static function newFactory(): CustomerFactory

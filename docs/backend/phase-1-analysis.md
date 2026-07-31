@@ -12,22 +12,35 @@ schéma sont dans [`phase-1-database-decisions.md`](phase-1-database-decisions.m
 
 ## 0. État des sources de vérité
 
-Le répertoire `Conception/Diagramme/` ne contient aujourd'hui que des images :
+> **Correction.** Une version antérieure de ce document affirmait que les
+> fichiers PlantUML avaient disparu du dépôt. C'était faux : ils n'avaient pas
+> été cherchés au bon endroit. Ils se trouvent dans le projet Laravel, et non à
+> la racine `PFE/Conception/`.
+
+Les deux diagrammes sources sont :
 
 ```text
-Conception/Diagramme/Classe/GlobalDiagramme.png
-Conception/Diagramme/USE-CASE/*.png
+Project/TricolisWeb/Conception/diagramme/Tricolis V2 — Diagramme de classes partagées.txt
+Project/TricolisWeb/Conception/diagramme/Tricolis V2 — Diagramme de classes plateforme interne.txt
 ```
 
-Les deux fichiers PlantUML texte (`Tricolis V2 — Diagramme de classes partagées`
-et `— plateforme interne`) ne sont plus présents dans le dépôt. Le modèle de
-référence utilisé est donc celui figé dans `conception-analysis.md`, produit
-lorsque les fichiers PlantUML étaient disponibles, et vérifié contre les
-migrations existantes.
+Leurs titres PlantUML correspondent exactement à ceux attendus par le cahier des
+charges. Ce sont eux qui font foi.
 
-**Conséquence à connaître** : toute divergence entre le PNG et le modèle
-implémenté ne peut plus être détectée automatiquement. Remettre les `.txt`
-PlantUML dans le dépôt permettrait de rejouer la vérification.
+Il existe par ailleurs `PFE/Conception/Diagramme/Classe/GlobalDiagramme.png`,
+intitulé « Classes partagées **vérifiées** ». Ce n'est pas le même artefact : il
+ajoute des colonnes de reprise de l'ancienne plateforme (`legacyId`, `legacyUid`,
+`srcObject`, `srcId`, `isDeleted`…), un enum `OrganizationType`, et des champs
+`Agency.phone1/phone2/agencyTypeId/defaultDepotId` absents du `.txt`. Son titre
+ne correspond pas à celui attendu par le cahier des charges.
+
+**À trancher** : ces champs de reprise legacy font-ils partie du périmètre ?
+Ils ne sont pas implémentés aujourd'hui, la Phase 1 s'étant alignée sur le
+`.txt`. S'ils sont nécessaires à la migration depuis l'ASP.NET, ils devront
+faire l'objet d'une itération dédiée.
+
+Vérification faite : le schéma livré en Phase 1 correspond au `.txt` partagé,
+attribut par attribut.
 
 ## 1. Classes concernées par la Phase 1
 

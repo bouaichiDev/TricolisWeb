@@ -33,4 +33,37 @@ class OrderPolicy extends BaseOrganizationPolicy
     {
         return $this->hasPermission($user, $order->organization_id, 'orders.delete');
     }
+
+    public function duplicate(User $user, Order $order): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, 'orders.duplicate');
+    }
+
+    public function changeStatus(User $user, Order $order): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, 'orders.change_status');
+    }
+
+    public function cancel(User $user, Order $order): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, 'orders.cancel');
+    }
+
+    /**
+     * Les lignes, colis et services héritent du périmètre de leur commande.
+     */
+    public function manageLines(User $user, Order $order, string $action): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, "order_lines.$action");
+    }
+
+    public function managePackages(User $user, Order $order, string $action): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, "packages.$action");
+    }
+
+    public function manageServices(User $user, Order $order, string $action): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, "order_services.$action");
+    }
 }

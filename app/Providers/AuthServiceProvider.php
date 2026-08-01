@@ -10,6 +10,7 @@ use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
 use App\Modules\Audit\Models\AuditLog;
 use App\Modules\Catalogs\Models\CustomerCatalog;
+use App\Modules\Claims\Models\Claim;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
 use App\Modules\Customers\Models\Customer;
@@ -27,15 +28,18 @@ use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
 use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\PackageType;
+use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
+use App\Modules\Tracking\Models\TrackingEvent;
 use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
+use App\Policies\ClaimPolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\CustomerCatalogPolicy;
 use App\Policies\CustomerPolicy;
@@ -49,6 +53,7 @@ use App\Policies\OrderPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
 use App\Policies\PackageReferentialPolicy;
+use App\Policies\ProofOfDeliveryPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
@@ -58,6 +63,7 @@ use App\Policies\TourPeriodPolicy;
 use App\Policies\TourPolicy;
 use App\Policies\TourStopPolicy;
 use App\Policies\TourStopServicePolicy;
+use App\Policies\TrackingEventPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehiclePolicy;
 use App\Policies\VehicleTypePolicy;
@@ -97,6 +103,9 @@ class AuthServiceProvider extends ServiceProvider
         TourStopService::class => TourStopServicePolicy::class,
         TourPeriod::class => TourPeriodPolicy::class,
         TourPeriodAssignment::class => TourPeriodAssignmentPolicy::class,
+        TrackingEvent::class => TrackingEventPolicy::class,
+        ProofOfDelivery::class => ProofOfDeliveryPolicy::class,
+        Claim::class => ClaimPolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

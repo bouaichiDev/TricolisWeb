@@ -158,6 +158,17 @@ class PermissionSeeder extends Seeder
         ['code' => 'tour_period_assignments.create', 'name' => 'Créer une affectation', 'module' => 'tour_period_assignments', 'action' => 'create'],
         ['code' => 'tour_period_assignments.update', 'name' => 'Modifier une affectation', 'module' => 'tour_period_assignments', 'action' => 'update'],
         ['code' => 'tour_period_assignments.delete', 'name' => 'Supprimer une affectation', 'module' => 'tour_period_assignments', 'action' => 'delete'],
+
+        ['code' => 'tracking_events.view', 'name' => 'Voir les événements de suivi', 'module' => 'tracking_events', 'action' => 'view'],
+        ['code' => 'tracking_events.create', 'name' => 'Créer un événement de suivi', 'module' => 'tracking_events', 'action' => 'create'],
+
+        ['code' => 'proofs_of_delivery.view', 'name' => 'Voir les preuves de livraison', 'module' => 'proofs_of_delivery', 'action' => 'view'],
+        ['code' => 'proofs_of_delivery.create', 'name' => 'Créer une preuve de livraison', 'module' => 'proofs_of_delivery', 'action' => 'create'],
+
+        ['code' => 'claims.view', 'name' => 'Voir les réclamations', 'module' => 'claims', 'action' => 'view'],
+        ['code' => 'claims.create', 'name' => 'Créer une réclamation', 'module' => 'claims', 'action' => 'create'],
+        ['code' => 'claims.update', 'name' => 'Modifier une réclamation', 'module' => 'claims', 'action' => 'update'],
+        ['code' => 'claims.delete', 'name' => 'Supprimer une réclamation', 'module' => 'claims', 'action' => 'delete'],
     ];
 
     public function run(): void

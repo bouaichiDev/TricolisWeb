@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogItemController;
+use App\Http\Controllers\Api\V1\Claims\ClaimController;
 use App\Http\Controllers\Api\V1\Contacts\ContactController;
 use App\Http\Controllers\Api\V1\Contacts\ContactLinkController;
 use App\Http\Controllers\Api\V1\Customers\CustomerController;
@@ -38,12 +39,14 @@ use App\Http\Controllers\Api\V1\Packages\GroupingTypeController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Packages\PackageTypeController;
+use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\Tours\TourController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
 use App\Http\Controllers\Api\V1\Tours\TourStopController;
 use App\Http\Controllers\Api\V1\Tours\TourStopServiceController;
+use App\Http\Controllers\Api\V1\Tracking\TrackingEventController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(static function (): void {
@@ -161,5 +164,28 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->parameters(['periods' => 'tourPeriod'])
             ->except(['create', 'edit']);
         Route::apiResource('tours', TourController::class)->except(['create', 'edit']);
+
+        // Suivi — pas de PATCH ni de DELETE : un evenement est historique.
+        Route::get('orders/{order}/tracking-events', [TrackingEventController::class, 'byOrder'])->name('orders.tracking-events');
+        Route::get('orders/{order}/services/{orderService}/tracking-events', [TrackingEventController::class, 'byOrderService'])->name('orders.services.tracking-events');
+        Route::get('tours/{tour}/tracking-events', [TrackingEventController::class, 'byTour'])->name('tours.tracking-events');
+        Route::get('tours/{tour}/stops/{tourStop}/tracking-events', [TrackingEventController::class, 'byTourStop'])->name('tours.stops.tracking-events');
+        Route::get('tracking-events', [TrackingEventController::class, 'index'])->name('tracking-events.index');
+        Route::post('tracking-events', [TrackingEventController::class, 'store'])->name('tracking-events.store');
+        Route::get('tracking-events/{trackingEvent}', [TrackingEventController::class, 'show'])->name('tracking-events.show');
+
+        // Preuves de livraison — historiques elles aussi.
+        Route::get('orders/{order}/proofs-of-delivery', [ProofOfDeliveryController::class, 'byOrder'])->name('orders.proofs-of-delivery.index');
+        Route::post('orders/{order}/proofs-of-delivery', [ProofOfDeliveryController::class, 'storeForOrder'])->name('orders.proofs-of-delivery.store');
+        Route::get('proofs-of-delivery', [ProofOfDeliveryController::class, 'index'])->name('proofs-of-delivery.index');
+        Route::post('proofs-of-delivery', [ProofOfDeliveryController::class, 'store'])->name('proofs-of-delivery.store');
+        Route::get('proofs-of-delivery/{proofOfDelivery}', [ProofOfDeliveryController::class, 'show'])->name('proofs-of-delivery.show');
+
+        // Reclamations
+        Route::get('customers/{customer}/claims', [ClaimController::class, 'byCustomer'])->name('customers.claims.index');
+        Route::post('customers/{customer}/claims', [ClaimController::class, 'storeForCustomer'])->name('customers.claims.store');
+        Route::get('orders/{order}/claims', [ClaimController::class, 'byOrder'])->name('orders.claims');
+        Route::get('tours/{tour}/claims', [ClaimController::class, 'byTour'])->name('tours.claims');
+        Route::apiResource('claims', ClaimController::class)->except(['create', 'edit']);
     });
 });

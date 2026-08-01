@@ -17,6 +17,9 @@ use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Models\CustomerSite;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Models\DocumentLink;
+use App\Modules\Drivers\Models\Driver;
+use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Models\Order;
@@ -32,6 +35,7 @@ use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
 use App\Modules\Packages\Models\PackageType;
+use App\Modules\Providers\Models\Provider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -91,6 +95,14 @@ final class MorphMap
 
     public const string PACKAGE_ORDER_LINE = 'package_order_line';
 
+    public const string PROVIDER = 'provider';
+
+    public const string DRIVER = 'driver';
+
+    public const string VEHICLE_TYPE = 'vehicle_type';
+
+    public const string VEHICLE = 'vehicle';
+
     public const string ENTITY_ADDRESS = 'entity_address';
 
     public const string ENTITY_CONTACT = 'entity_contact';
@@ -133,6 +145,10 @@ final class MorphMap
             self::PACKAGE_TYPE => PackageType::class,
             self::GROUPING_TYPE => GroupingType::class,
             self::PACKAGE_ORDER_LINE => PackageOrderLine::class,
+            self::PROVIDER => Provider::class,
+            self::DRIVER => Driver::class,
+            self::VEHICLE_TYPE => VehicleType::class,
+            self::VEHICLE => Vehicle::class,
             self::ENTITY_ADDRESS => EntityAddress::class,
             self::ENTITY_CONTACT => EntityContact::class,
             self::ADDRESS_CONTACT => AddressContact::class,

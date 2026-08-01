@@ -110,6 +110,26 @@ class PermissionSeeder extends Seeder
         ['code' => 'order_services.update', 'name' => 'Modifier un service de commande', 'module' => 'order_services', 'action' => 'update'],
         ['code' => 'order_services.delete', 'name' => 'Supprimer un service de commande', 'module' => 'order_services', 'action' => 'delete'],
         ['code' => 'order_services.change_status', 'name' => 'Changer le statut d’un service', 'module' => 'order_services', 'action' => 'change_status'],
+
+        ['code' => 'providers.view', 'name' => 'Voir les fournisseurs', 'module' => 'providers', 'action' => 'view'],
+        ['code' => 'providers.create', 'name' => 'Créer un fournisseur', 'module' => 'providers', 'action' => 'create'],
+        ['code' => 'providers.update', 'name' => 'Modifier un fournisseur', 'module' => 'providers', 'action' => 'update'],
+        ['code' => 'providers.delete', 'name' => 'Supprimer un fournisseur', 'module' => 'providers', 'action' => 'delete'],
+
+        ['code' => 'drivers.view', 'name' => 'Voir les chauffeurs', 'module' => 'drivers', 'action' => 'view'],
+        ['code' => 'drivers.create', 'name' => 'Créer un chauffeur', 'module' => 'drivers', 'action' => 'create'],
+        ['code' => 'drivers.update', 'name' => 'Modifier un chauffeur', 'module' => 'drivers', 'action' => 'update'],
+        ['code' => 'drivers.delete', 'name' => 'Supprimer un chauffeur', 'module' => 'drivers', 'action' => 'delete'],
+
+        ['code' => 'vehicle_types.view', 'name' => 'Voir les types de véhicule', 'module' => 'vehicle_types', 'action' => 'view'],
+        ['code' => 'vehicle_types.create', 'name' => 'Créer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'create'],
+        ['code' => 'vehicle_types.update', 'name' => 'Modifier un type de véhicule', 'module' => 'vehicle_types', 'action' => 'update'],
+        ['code' => 'vehicle_types.delete', 'name' => 'Supprimer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'delete'],
+
+        ['code' => 'vehicles.view', 'name' => 'Voir les véhicules', 'module' => 'vehicles', 'action' => 'view'],
+        ['code' => 'vehicles.create', 'name' => 'Créer un véhicule', 'module' => 'vehicles', 'action' => 'create'],
+        ['code' => 'vehicles.update', 'name' => 'Modifier un véhicule', 'module' => 'vehicles', 'action' => 'update'],
+        ['code' => 'vehicles.delete', 'name' => 'Supprimer un véhicule', 'module' => 'vehicles', 'action' => 'delete'],
     ];
 
     public function run(): void

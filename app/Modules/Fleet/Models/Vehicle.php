@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Fleet\Models;
+
+use App\Modules\Providers\Models\Provider;
+use App\Shared\Database\Concerns\HasUlid;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * Véhicule d'un fournisseur
+ * (`Provider 1 — 0..* Vehicle`, `VehicleType 1 — 0..* Vehicle`).
+ *
+ * Pas d'`organization_id` au diagramme : le périmètre passe par le fournisseur,
+ * appliqué par le scope `inOrganization`.
+ */
+#[Fillable([
+    'legacy_id',
+    'provider_id',
+    'vehicle_type_id',
+    'code',
+    'registration_number',
+    'payload_capacity',
+    'volume_capacity',
+    'pallet_capacity',
+    'status',
+])]
+#[Hidden(['legacy_id'])]
+class Vehicle extends Model
+{
+    use HasFactory;
+    use HasUlid;
+
+    public $timestamps = false;
+
+    protected $table = 'vehicles';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'legacy_id' => 'integer',
+            'payload_capacity' => 'decimal:3',
+            'volume_capacity' => 'decimal:4',
+            'pallet_capacity' => 'integer',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Provider, $this>
+     */
+    public function provider(): BelongsTo
+    {
+        return $this->belongsTo(Provider::class, 'provider_id');
+    }
+
+    /**
+     * @return BelongsTo<VehicleType, $this>
+     */
+    public function vehicleType(): BelongsTo
+    {
+        return $this->belongsTo(VehicleType::class, 'vehicle_type_id');
+    }
+
+    /**
+     * Restreint aux véhicules dont le fournisseur appartient à l'organisation.
+     *
+     * @param  Builder<$this>  $query
+     */
+    public function scopeInOrganization(Builder $query, string $organizationId): void
+    {
+        $query->whereHas('provider', fn (Builder $provider) => $provider->where('organization_id', $organizationId));
+    }
+}

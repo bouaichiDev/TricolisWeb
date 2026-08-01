@@ -13,7 +13,11 @@ final class WriteAuditLog
 {
     private const array SENSITIVE_KEYS = ['password', 'password_hash', 'password_confirmation', 'token', 'api_key', 'secret'];
 
-    public function execute(string $organizationId, ?User $user, string $action, Model $entity, ?array $oldValues = null, ?array $newValues = null, ?Request $request = null): AuditLog
+    /**
+     * `$ipAddress` permet aux Actions métier de journaliser sans dépendre de
+     * la couche HTTP : elles reçoivent une adresse, pas une Request.
+     */
+    public function execute(string $organizationId, ?User $user, string $action, Model $entity, ?array $oldValues = null, ?array $newValues = null, ?Request $request = null, ?string $ipAddress = null): AuditLog
     {
         return AuditLog::create([
             'organization_id' => $organizationId,
@@ -23,7 +27,7 @@ final class WriteAuditLog
             'entity_id' => (string) $entity->getKey(),
             'old_values' => $this->sanitize($oldValues),
             'new_values' => $this->sanitize($newValues),
-            'ip_address' => $request?->ip(),
+            'ip_address' => $ipAddress ?? $request?->ip(),
             'created_at' => now(),
         ]);
     }

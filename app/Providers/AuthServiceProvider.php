@@ -15,6 +15,9 @@ use App\Modules\Contacts\Models\EntityContact;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Models\CustomerSite;
 use App\Modules\Documents\Models\Document;
+use App\Modules\Drivers\Models\Driver;
+use App\Modules\Fleet\Models\Vehicle;
+use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Models\Order;
@@ -24,6 +27,7 @@ use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
 use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\PackageType;
+use App\Modules\Providers\Models\Provider;
 use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
@@ -33,16 +37,20 @@ use App\Policies\CustomerPolicy;
 use App\Policies\CustomerSitePolicy;
 use App\Policies\DepotPolicy;
 use App\Policies\DocumentPolicy;
+use App\Policies\DriverPolicy;
 use App\Policies\EntityAddressPolicy;
 use App\Policies\EntityContactPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
 use App\Policies\PackageReferentialPolicy;
+use App\Policies\ProviderPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
 use App\Policies\SubscriptionPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\VehiclePolicy;
+use App\Policies\VehicleTypePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Opcodes\LogViewer\LogFile;
@@ -70,6 +78,10 @@ class AuthServiceProvider extends ServiceProvider
         CustomerCatalog::class => CustomerCatalogPolicy::class,
         PackageType::class => PackageReferentialPolicy::class,
         GroupingType::class => PackageReferentialPolicy::class,
+        Provider::class => ProviderPolicy::class,
+        Driver::class => DriverPolicy::class,
+        VehicleType::class => VehicleTypePolicy::class,
+        Vehicle::class => VehiclePolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

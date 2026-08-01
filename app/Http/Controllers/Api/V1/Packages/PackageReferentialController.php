@@ -37,6 +37,12 @@ abstract class PackageReferentialController extends Controller
 
     abstract protected function entityLabel(): string;
 
+    /**
+     * Lister les entrées du référentiel.
+     *
+     * Permission requise : `packages.view`. Recherche sur le code et le nom,
+     * filtre `status`, tri autorisé sur `code`, `name`, `created_at`.
+     */
     public function index(ListRequest $request): JsonResponse
     {
         $organizationId = $this->requireOrganizationId();
@@ -59,6 +65,12 @@ abstract class PackageReferentialController extends Controller
         return ApiResponse::paginated($paginator->through(fn (Model $type) => new ReferentialResource($type)));
     }
 
+    /**
+     * Créer une entrée du référentiel.
+     *
+     * Permission requise : `packages.create`. Le code est unique dans
+     * l'organisation active.
+     */
     public function store(StoreReferentialRequest $request): JsonResponse
     {
         $organizationId = $this->requireOrganizationId();
@@ -73,6 +85,12 @@ abstract class PackageReferentialController extends Controller
         return ApiResponse::created(new ReferentialResource($type));
     }
 
+    /**
+     * Modifier une entrée du référentiel.
+     *
+     * Permission requise : `packages.update`. Les colis déjà créés conservent
+     * leur type : seule l'étiquette change.
+     */
     public function update(UpdateReferentialRequest $request, string $id): JsonResponse
     {
         $organizationId = $this->requireOrganizationId();
@@ -93,6 +111,11 @@ abstract class PackageReferentialController extends Controller
     }
 
     /**
+     * Supprimer une entrée du référentiel.
+     *
+     * Permission requise : `packages.delete`. Une entrée utilisée par des colis
+     * est refusée en 409.
+     *
      * @response 204
      */
     public function destroy(Request $request, string $id): JsonResponse

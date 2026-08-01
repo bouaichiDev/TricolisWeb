@@ -27,6 +27,7 @@ final readonly class DuplicateOrder
     public function __construct(
         private GenerateOrderNumber $numbers,
         private RecalculateOrderTotals $totals,
+        private DuplicateOrderServices $services,
         private WriteAuditLog $audit,
     ) {}
 
@@ -48,7 +49,7 @@ final readonly class DuplicateOrder
             $packageMap = $withPackages ? $this->copyPackages($source, $copy, $lineMap) : [];
 
             if ($withServices) {
-                $this->copyServices($source, $copy, $packageMap, $withContacts);
+                $this->services->execute($source, $copy, $packageMap, $withContacts);
             }
 
             if ($withDocuments) {
@@ -145,46 +146,6 @@ final readonly class DuplicateOrder
                 'order_line_id' => $lineMap[$allocation->order_line_id],
                 'quantity' => $allocation->quantity,
             ]);
-        }
-    }
-
-    /**
-     * @param  array<string, string>  $packageMap
-     */
-    private function copyServices(Order $source, Order $copy, array $packageMap, bool $withContacts): void
-    {
-        foreach ($source->orderServices()->with(['contacts', 'servicePackages'])->get() as $service) {
-            $attributes = $service->only([
-                'service_id', 'address_id', 'sequence', 'requested_date', 'requested_from', 'requested_to',
-                'quantity', 'unit', 'required_time_minutes', 'weight', 'volume', 'package_count',
-                'customer_unit_price', 'customer_total_price', 'provider_unit_cost', 'provider_total_cost', 'instructions',
-            ]);
-
-            $new = $copy->orderServices()->create($attributes + [
-                'service_number' => $service->service_number,
-                'remaining_time_minutes' => $service->required_time_minutes,
-                'status' => 'draft',
-            ]);
-
-            if ($withContacts) {
-                foreach ($service->contacts as $contact) {
-                    $new->contacts()->create($contact->only([
-                        'contact_id', 'contact_role', 'first_name_snapshot', 'last_name_snapshot',
-                        'phone_snapshot', 'mobile_snapshot', 'email_snapshot', 'is_primary',
-                    ]));
-                }
-            }
-
-            foreach ($service->servicePackages as $link) {
-                if (isset($packageMap[$link->package_id])) {
-                    $new->servicePackages()->create([
-                        'package_id' => $packageMap[$link->package_id],
-                        'quantity' => $link->quantity,
-                        'handling_instructions' => $link->handling_instructions,
-                        'status' => 'pending',
-                    ]);
-                }
-            }
         }
     }
 

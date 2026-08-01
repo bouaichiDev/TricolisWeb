@@ -130,6 +130,34 @@ class PermissionSeeder extends Seeder
         ['code' => 'vehicles.create', 'name' => 'Créer un véhicule', 'module' => 'vehicles', 'action' => 'create'],
         ['code' => 'vehicles.update', 'name' => 'Modifier un véhicule', 'module' => 'vehicles', 'action' => 'update'],
         ['code' => 'vehicles.delete', 'name' => 'Supprimer un véhicule', 'module' => 'vehicles', 'action' => 'delete'],
+
+        ['code' => 'tours.view', 'name' => 'Voir les tournées', 'module' => 'tours', 'action' => 'view'],
+        ['code' => 'tours.create', 'name' => 'Créer une tournée', 'module' => 'tours', 'action' => 'create'],
+        ['code' => 'tours.update', 'name' => 'Modifier une tournée', 'module' => 'tours', 'action' => 'update'],
+        ['code' => 'tours.delete', 'name' => 'Supprimer une tournée', 'module' => 'tours', 'action' => 'delete'],
+
+        ['code' => 'tour_stops.view', 'name' => 'Voir les arrêts', 'module' => 'tour_stops', 'action' => 'view'],
+        ['code' => 'tour_stops.create', 'name' => 'Créer un arrêt', 'module' => 'tour_stops', 'action' => 'create'],
+        ['code' => 'tour_stops.update', 'name' => 'Modifier un arrêt', 'module' => 'tour_stops', 'action' => 'update'],
+        ['code' => 'tour_stops.delete', 'name' => 'Supprimer un arrêt', 'module' => 'tour_stops', 'action' => 'delete'],
+        ['code' => 'tour_stops.reorder', 'name' => 'Réordonner les arrêts', 'module' => 'tour_stops', 'action' => 'reorder'],
+
+        ['code' => 'tour_stop_services.view', 'name' => 'Voir les services planifiés', 'module' => 'tour_stop_services', 'action' => 'view'],
+        ['code' => 'tour_stop_services.create', 'name' => 'Planifier un service', 'module' => 'tour_stop_services', 'action' => 'create'],
+        ['code' => 'tour_stop_services.update', 'name' => 'Modifier un service planifié', 'module' => 'tour_stop_services', 'action' => 'update'],
+        ['code' => 'tour_stop_services.delete', 'name' => 'Retirer un service planifié', 'module' => 'tour_stop_services', 'action' => 'delete'],
+        ['code' => 'tour_stop_services.reorder', 'name' => 'Réordonner les services d\'un arrêt', 'module' => 'tour_stop_services', 'action' => 'reorder'],
+
+        ['code' => 'tour_periods.view', 'name' => 'Voir les périodes', 'module' => 'tour_periods', 'action' => 'view'],
+        ['code' => 'tour_periods.create', 'name' => 'Créer une période', 'module' => 'tour_periods', 'action' => 'create'],
+        ['code' => 'tour_periods.update', 'name' => 'Modifier une période', 'module' => 'tour_periods', 'action' => 'update'],
+        ['code' => 'tour_periods.delete', 'name' => 'Supprimer une période', 'module' => 'tour_periods', 'action' => 'delete'],
+        ['code' => 'tour_periods.reorder', 'name' => 'Réordonner les périodes', 'module' => 'tour_periods', 'action' => 'reorder'],
+
+        ['code' => 'tour_period_assignments.view', 'name' => 'Voir les affectations', 'module' => 'tour_period_assignments', 'action' => 'view'],
+        ['code' => 'tour_period_assignments.create', 'name' => 'Créer une affectation', 'module' => 'tour_period_assignments', 'action' => 'create'],
+        ['code' => 'tour_period_assignments.update', 'name' => 'Modifier une affectation', 'module' => 'tour_period_assignments', 'action' => 'update'],
+        ['code' => 'tour_period_assignments.delete', 'name' => 'Supprimer une affectation', 'module' => 'tour_period_assignments', 'action' => 'delete'],
     ];
 
     public function run(): void

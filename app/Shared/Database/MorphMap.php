@@ -36,6 +36,11 @@ use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
 use App\Modules\Packages\Models\PackageType;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Tours\Models\Tour;
+use App\Modules\Tours\Models\TourPeriod;
+use App\Modules\Tours\Models\TourPeriodAssignment;
+use App\Modules\Tours\Models\TourStop;
+use App\Modules\Tours\Models\TourStopService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -111,6 +116,16 @@ final class MorphMap
 
     public const string DOCUMENT_LINK = 'document_link';
 
+    public const string TOUR = 'tour';
+
+    public const string TOUR_STOP = 'tour_stop';
+
+    public const string TOUR_STOP_SERVICE = 'tour_stop_service';
+
+    public const string TOUR_PERIOD = 'tour_period';
+
+    public const string TOUR_PERIOD_ASSIGNMENT = 'tour_period_assignment';
+
     /**
      * Enregistre la morph map auprès d'Eloquent.
      *
@@ -153,6 +168,11 @@ final class MorphMap
             self::ENTITY_CONTACT => EntityContact::class,
             self::ADDRESS_CONTACT => AddressContact::class,
             self::DOCUMENT_LINK => DocumentLink::class,
+            self::TOUR => Tour::class,
+            self::TOUR_STOP => TourStop::class,
+            self::TOUR_STOP_SERVICE => TourStopService::class,
+            self::TOUR_PERIOD => TourPeriod::class,
+            self::TOUR_PERIOD_ASSIGNMENT => TourPeriodAssignment::class,
         ]);
     }
 

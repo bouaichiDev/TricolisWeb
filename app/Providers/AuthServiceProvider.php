@@ -28,6 +28,11 @@ use App\Modules\Organizations\Models\Subscription;
 use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\PackageType;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Tours\Models\Tour;
+use App\Modules\Tours\Models\TourPeriod;
+use App\Modules\Tours\Models\TourPeriodAssignment;
+use App\Modules\Tours\Models\TourStop;
+use App\Modules\Tours\Models\TourStopService;
 use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
@@ -48,6 +53,11 @@ use App\Policies\ProviderPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
 use App\Policies\SubscriptionPolicy;
+use App\Policies\TourPeriodAssignmentPolicy;
+use App\Policies\TourPeriodPolicy;
+use App\Policies\TourPolicy;
+use App\Policies\TourStopPolicy;
+use App\Policies\TourStopServicePolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehiclePolicy;
 use App\Policies\VehicleTypePolicy;
@@ -82,6 +92,11 @@ class AuthServiceProvider extends ServiceProvider
         Driver::class => DriverPolicy::class,
         VehicleType::class => VehicleTypePolicy::class,
         Vehicle::class => VehiclePolicy::class,
+        Tour::class => TourPolicy::class,
+        TourStop::class => TourStopPolicy::class,
+        TourStopService::class => TourStopServicePolicy::class,
+        TourPeriod::class => TourPeriodPolicy::class,
+        TourPeriodAssignment::class => TourPeriodAssignmentPolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

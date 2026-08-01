@@ -8,6 +8,9 @@ use App\Modules\Addresses\Models\Address;
 use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
+use App\Modules\Billing\Models\Invoice;
+use App\Modules\Billing\Models\InvoiceLine;
+use App\Modules\Billing\Models\InvoiceLineAddressSnapshot;
 use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Catalogs\Models\CustomerCatalogItem;
 use App\Modules\Claims\Models\Claim;
@@ -38,6 +41,8 @@ use App\Modules\Packages\Models\PackageOrderLine;
 use App\Modules\Packages\Models\PackageType;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\ProviderSettlements\Models\ProviderSettlement;
+use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -135,6 +140,16 @@ final class MorphMap
 
     public const string CLAIM = 'claim';
 
+    public const string INVOICE = 'invoice';
+
+    public const string INVOICE_LINE = 'invoice_line';
+
+    public const string INVOICE_LINE_ADDRESS_SNAPSHOT = 'invoice_line_address_snapshot';
+
+    public const string PROVIDER_SETTLEMENT = 'provider_settlement';
+
+    public const string PROVIDER_SETTLEMENT_LINE = 'provider_settlement_line';
+
     /**
      * Enregistre la morph map auprès d'Eloquent.
      *
@@ -185,6 +200,11 @@ final class MorphMap
             self::TRACKING_EVENT => TrackingEvent::class,
             self::PROOF_OF_DELIVERY => ProofOfDelivery::class,
             self::CLAIM => Claim::class,
+            self::INVOICE => Invoice::class,
+            self::INVOICE_LINE => InvoiceLine::class,
+            self::INVOICE_LINE_ADDRESS_SNAPSHOT => InvoiceLineAddressSnapshot::class,
+            self::PROVIDER_SETTLEMENT => ProviderSettlement::class,
+            self::PROVIDER_SETTLEMENT_LINE => ProviderSettlementLine::class,
         ]);
     }
 

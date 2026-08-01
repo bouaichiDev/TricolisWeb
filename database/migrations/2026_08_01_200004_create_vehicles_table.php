@@ -16,7 +16,6 @@ return new class extends Migration
     {
         Schema::create('vehicles', function (Blueprint $table): void {
             $table->char('id', 26)->primary();
-            $table->unsignedBigInteger('legacy_id')->nullable();
             $table->char('provider_id', 26);
             $table->char('vehicle_type_id', 26);
             $table->string('code', 64);
@@ -33,7 +32,6 @@ return new class extends Migration
             $table->index('provider_id');
             $table->index('vehicle_type_id');
             $table->index('status');
-            $table->index('legacy_id');
 
             $table->foreign('provider_id')->references('id')->on('providers')->restrictOnDelete();
             // Supprimer un type ne doit pas supprimer les vehicules qui l'utilisent.

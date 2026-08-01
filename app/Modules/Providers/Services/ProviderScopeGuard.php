@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Providers\Services;
 
 use App\Modules\Fleet\Models\VehicleType;
-use App\Modules\Identity\Models\User;
 use App\Modules\Providers\Models\Provider;
 use Illuminate\Validation\ValidationException;
 
@@ -39,22 +38,6 @@ final readonly class ProviderScopeGuard
         }
 
         return $type;
-    }
-
-    /**
-     * Le compte lié à un chauffeur doit être membre de l'organisation active.
-     */
-    public function user(string $userId, string $organizationId, string $field = 'userId'): User
-    {
-        $user = User::whereKey($userId)
-            ->whereHas('organizationUsers', fn ($query) => $query->where('organization_id', $organizationId))
-            ->first();
-
-        if ($user === null) {
-            $this->fail($field, 'Cet utilisateur n’est pas accessible dans l’organisation active.');
-        }
-
-        return $user;
     }
 
     /**

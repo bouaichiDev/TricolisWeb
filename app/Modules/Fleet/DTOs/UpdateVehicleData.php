@@ -13,7 +13,6 @@ final readonly class UpdateVehicleData
 {
     /** @var array<string, string> */
     private const array MAPPING = [
-        'legacy_id' => 'legacyId',
         'provider_id' => 'providerId',
         'vehicle_type_id' => 'vehicleTypeId',
         'code' => 'code',

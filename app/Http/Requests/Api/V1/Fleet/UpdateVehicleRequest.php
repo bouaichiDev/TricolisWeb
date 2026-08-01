@@ -26,7 +26,6 @@ class UpdateVehicleRequest extends FormRequest
         $providerId = $this->input('providerId', $vehicle?->provider_id);
 
         return [
-            'legacyId' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'providerId' => [
                 'sometimes', 'ulid',
                 new BelongsToActiveOrganization(Provider::class, null, 'Ce fournisseur n’appartient pas à l’organisation active.'),

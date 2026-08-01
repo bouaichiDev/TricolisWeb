@@ -6,7 +6,7 @@ modèle avant toute migration, comme l'exige la règle : aucune migration ne doi
 
 ---
 
-## 1. Sources de vérité — écart constaté
+## 1. Sources de vérité — arbitrage
 
 Le prompt désigne comme sources officielles :
 
@@ -15,18 +15,19 @@ Conception/diagramme/00-diagramme-classes-partagees.puml
 Conception/diagramme/01-diagramme-plateforme-interne.puml
 ```
 
-**Ces deux fichiers n'existent pas dans le dépôt.** Le répertoire ne contient que :
+**Ces deux fichiers n'existent pas**, et n'ont jamais été produits. Le
+répertoire contient :
 
 ```text
 Conception/diagramme/Tricolis V2 — Diagramme de classes partagées.txt
 Conception/diagramme/Tricolis V2 — Diagramme de classes plateforme interne.txt
 ```
 
-Et le modèle décrit par le prompt **contredit** ces `.txt` sur trois des quatre
+Le modèle décrit par le prompt **contredit** ces `.txt` sur trois des quatre
 classes :
 
-| Classe | Prompt Phase 3 (§7, §9, §13) | `.txt` présent (juillet) |
-|--------|------------------------------|--------------------------|
+| Classe | Prompt Phase 3 (§7, §9, §13) | `.txt` — **retenu** |
+|--------|------------------------------|---------------------|
 | `Provider` | `legacyId`, `providerType` ; « ne définit **pas** de `addressId`, `contactId` » | `addressId`, `contactId` ; ni `legacyId`, ni `providerType` |
 | `Driver` | `userId`, `firstName`, `lastName`, `phone`, `email`, `legacyId` ; pas d'`organizationId` | `organizationId`, `addressId`, `contactId`, `name` ; ni `userId`, ni `phone`, ni `email` |
 | `Vehicle` | + `legacyId` | pas de `legacyId` |
@@ -34,14 +35,25 @@ classes :
 
 `Driver` n'a quasiment aucun attribut commun entre les deux versions.
 
-**Arbitrage retenu, validé par le porteur du projet** : le prompt Phase 3 fait
-foi. Il énumère les attributs, les colonnes MySQL, les relations, les index et
-les exclusions de façon exhaustive — il constitue la transcription du diagramme
-à jour.
+**Arbitrage retenu, tranché par le porteur du projet le 1er août 2026** : les
+deux `.txt` constituent la dernière version des diagrammes et font foi. Le
+prompt Phase 3 reste la référence pour tout ce qu'il décrit **hors modèle de
+données** : périmètre des endpoints, permissions, règles de suppression,
+exclusions, exigences de test.
 
-**Action requise côté conception** : remplacer les deux `.txt` par les `.puml`
-officiels. Tant qu'ils sont absents, aucune vérification automatique n'est
-possible entre le modèle livré et le diagramme.
+Une première livraison suivait le prompt ; elle a été réalignée sur les `.txt`.
+Les écarts corrigés :
+
+- `providers` : `legacy_id` et `provider_type` retirés, `address_id` et
+  `contact_id` ajoutés ;
+- `drivers` : `legacy_id`, `user_id`, `first_name`, `last_name`, `phone` et
+  `email` retirés ; `organization_id`, `address_id`, `contact_id` et `name`
+  ajoutés ;
+- `vehicles` : `legacy_id` retiré.
+
+**Conséquence pour la reprise de données** : aucune colonne `legacy_id` ne
+subsiste sur ces trois tables. Un rapprochement avec l'ancienne plateforme devra
+passer par une table de correspondance dédiée, hors périmètre du diagramme.
 
 ## 2. État du code avant modification
 
@@ -93,53 +105,71 @@ Quatre, et seulement quatre : `Provider`, `Driver`, `VehicleType`, `Vehicle`.
 
 ## 4. Relations et cardinalités
 
+Relevées telles quelles dans le `.txt` (lignes 889 à 904) :
+
 ```text
-Organization "1" -- "0..*" Provider
-Organization "1" -- "0..*" VehicleType
-Provider     "1" -- "0..*" Driver
-Provider     "1" -- "0..*" Vehicle
-VehicleType  "1" -- "0..*" Vehicle
-Driver       "0..*" --> "0..1" User
+Organization "1"    --  "0..*" Provider
+Provider     "0..*" --> "0..1" Address
+Provider     "0..*" --> "0..1" Contact
+Provider     "1"    --  "0..*" Driver
+Provider     "1"    --  "0..*" Vehicle
+VehicleType  "1"    --  "0..*" Vehicle
+Driver       "0..*" --> "0..1" Address
+Driver       "0..*" --> "0..1" Contact
 ```
+
+Le `0..1` du côté `Address` et `Contact` tranche la nullabilité : les deux liens
+sont **facultatifs**, sur `Provider` comme sur `Driver`.
 
 Relations Eloquent :
 
 ```text
-Provider    belongsTo Organization ; hasMany Driver ; hasMany Vehicle
-Driver      belongsTo Provider     ; belongsTo User
+Provider    belongsTo Organization ; belongsTo Address ; belongsTo Contact
+            hasMany Driver ; hasMany Vehicle
+Driver      belongsTo Organization ; belongsTo Provider
+            belongsTo Address ; belongsTo Contact
 VehicleType belongsTo Organization ; hasMany Vehicle
 Vehicle     belongsTo Provider     ; belongsTo VehicleType
 ```
 
-**Aucune relation vers `Address`, `Contact` ou `Document`** — le §7 l'interdit
-explicitement pour `Provider`, et aucune n'est définie pour les trois autres.
-Si une liaison devient nécessaire, elle passera par les mécanismes partagés
-`EntityAddress` / `EntityContact` / `DocumentLink` de la Phase 1, sans colonne
-dédiée.
+`Provider` et `Driver` portent donc `address_id` et `contact_id` en **clé
+étrangère directe**, et non via `EntityAddress` / `EntityContact` : c'est ce que
+pose le diagramme, et c'est déjà la convention de `customer_sites.address_id` et
+d'`order_services.address_id` livrés en Phases 1 et 2.
+
+`addresses` et `contacts` n'ont pas d'`organization_id` — ce sont des tables
+partagées. La validation se limite donc à l'existence, comme pour les deux
+précédents cités.
+
+**Aucune relation vers `Document`** : le diagramme n'en définit pas. Une liaison
+passerait par `DocumentLink`, sans colonne dédiée.
 
 ### Isolation organisationnelle
 
-`Driver` et `Vehicle` **ne portent pas** d'`organizationId`. Leur appartenance
-passe par le fournisseur :
+| Classe | Porte `organizationId` | Isolation |
+|--------|------------------------|-----------|
+| `Provider` | oui | condition directe |
+| `Driver` | **oui** | condition directe |
+| `VehicleType` | oui | condition directe |
+| `Vehicle` | non | via `provider.organization_id` |
 
-```text
-Driver  -> provider.organization_id
-Vehicle -> provider.organization_id
-```
+`Driver` porte son `organizationId` au diagramme, en plus de son rattachement au
+fournisseur. Les deux ne doivent pas diverger : les Actions posent toujours
+l'organisation **du fournisseur retenu**, jamais une valeur fournie par
+l'appelant. Un `PATCH` qui déplace un chauffeur ne peut viser qu'un fournisseur
+de la même organisation.
 
-Toute requête sur ces deux tables joint donc `providers`. Le filtre est
-centralisé dans les Query Objects et dans un service de garde unique, pour
-qu'aucun contrôleur ne puisse l'omettre — c'est ce qui empêche une fuite entre
-organisations.
+`Vehicle` n'a pas d'`organizationId` : son périmètre passe par le fournisseur,
+appliqué par le scope `inOrganization`.
 
 Invariant supplémentaire (§15) : le `Provider` et le `VehicleType` d'un
 `Vehicle` doivent appartenir à la **même** organisation. Vérifié à l'écriture.
 
 ## 5. Enums
 
-**Aucun.** `status` et `providerType` sont des `string` au diagramme. Le §2
-interdit explicitement de créer `ProviderStatus`, `DriverStatus`,
-`VehicleStatus`, `VehicleTypeStatus` ou un enum pour `providerType`.
+**Aucun.** `status` est un `string` au diagramme. Le §2 interdit explicitement
+de créer `ProviderStatus`, `DriverStatus`, `VehicleStatus` ou `VehicleTypeStatus`.
+`providerType` n'existe pas dans le modèle retenu.
 
 Les colonnes restent `VARCHAR`, validées comme chaînes. Aucune valeur n'est
 inventée ; aucune valeur par défaut n'est imposée côté base : le statut est
@@ -149,30 +179,31 @@ obligatoire et fourni par l'appelant.
 
 ### Provider → `providers`
 
-| Attribut PlantUML | Type | Colonne MySQL | Nullable | Index | Relation |
+| Attribut diagramme | Type | Colonne MySQL | Nullable | Index | Relation |
 |---|---|---|---|---|---|
 | `id` | ULID | `id` CHAR(26) | non | PK | — |
-| `legacyId` | bigint | `legacy_id` BIGINT UNSIGNED | **oui** | index | — |
 | `organizationId` | ULID | `organization_id` CHAR(26) | non | index + unique composite | FK `organizations.id` RESTRICT |
+| `addressId` | ULID | `address_id` CHAR(26) | **oui** | index | FK `addresses.id` RESTRICT |
+| `contactId` | ULID | `contact_id` CHAR(26) | **oui** | index | FK `contacts.id` RESTRICT |
 | `code` | string | `code` VARCHAR(64) | non | unique `(organization_id, code)` | — |
 | `name` | string | `name` VARCHAR(255) | non | — | — |
-| `providerType` | string | `provider_type` VARCHAR(64) | non | index | — |
 | `status` | string | `status` VARCHAR(32) | non | index | — |
 
 ### Driver → `drivers`
 
-| Attribut PlantUML | Type | Colonne MySQL | Nullable | Index | Relation |
+| Attribut diagramme | Type | Colonne MySQL | Nullable | Index | Relation |
 |---|---|---|---|---|---|
 | `id` | ULID | `id` CHAR(26) | non | PK | — |
-| `legacyId` | bigint | `legacy_id` BIGINT UNSIGNED | **oui** | index | — |
+| `organizationId` | ULID | `organization_id` CHAR(26) | non | index | FK `organizations.id` RESTRICT |
 | `providerId` | ULID | `provider_id` CHAR(26) | non | index + unique composite | FK `providers.id` RESTRICT |
-| `userId` | ULID | `user_id` CHAR(26) | **oui** | index | FK `users.id` SET NULL |
+| `addressId` | ULID | `address_id` CHAR(26) | **oui** | index | FK `addresses.id` RESTRICT |
+| `contactId` | ULID | `contact_id` CHAR(26) | **oui** | index | FK `contacts.id` RESTRICT |
 | `code` | string | `code` VARCHAR(64) | non | unique `(provider_id, code)` | — |
-| `firstName` | string | `first_name` VARCHAR(255) | non | — | — |
-| `lastName` | string | `last_name` VARCHAR(255) | non | — | — |
-| `phone` | string | `phone` VARCHAR(32) | **oui** | — | — |
-| `email` | string | `email` VARCHAR(255) | **oui** | index | — |
+| `name` | string | `name` VARCHAR(255) | non | — | — |
 | `status` | string | `status` VARCHAR(32) | non | index | — |
+
+Le diagramme pose une **seule** identité, `name` : ni prénom/nom séparés, ni
+téléphone, ni courriel. Les coordonnées d'un chauffeur relèvent de son `Contact`.
 
 ### VehicleType → `vehicle_types`
 
@@ -189,7 +220,6 @@ obligatoire et fourni par l'appelant.
 | Attribut PlantUML | Type | Colonne MySQL | Nullable | Index | Relation |
 |---|---|---|---|---|---|
 | `id` | ULID | `id` CHAR(26) | non | PK | — |
-| `legacyId` | bigint | `legacy_id` BIGINT UNSIGNED | **oui** | index | — |
 | `providerId` | ULID | `provider_id` CHAR(26) | non | index + unique composite | FK `providers.id` RESTRICT |
 | `vehicleTypeId` | ULID | `vehicle_type_id` CHAR(26) | non | index | FK `vehicle_types.id` RESTRICT |
 | `code` | string | `code` VARCHAR(64) | non | unique `(provider_id, code)` | — |
@@ -203,18 +233,19 @@ obligatoire et fourni par l'appelant.
 
 | Colonne | Choix | Raison |
 |---------|-------|--------|
-| `drivers.user_id` | **nullable** | Un chauffeur est une personne du sous-traitant ; il n'a pas nécessairement de compte sur la plateforme. L'application chauffeur est hors périmètre. Rendre la colonne obligatoire exigerait de créer un compte pour chaque chauffeur saisi. |
-| `drivers.phone`, `drivers.email` | **nullable** | Le diagramme ne les marque pas obligatoires et le §9 dit « `email` validé comme email **si renseigné** ». |
-| `legacy_id` (3 tables) | **nullable** | Réservé à la reprise depuis l'ancienne plateforme ASP.NET. Les données créées par l'API n'en ont pas. Indexé, jamais clé primaire, **non exposé** dans les Resources publiques. |
-| Tout le reste | **non nullable** | Les §7, §9, §11 et §13 les déclarent obligatoires. |
+| `providers.address_id`, `providers.contact_id` | **nullable** | `Provider "0..*" --> "0..1" Address` : le `0..1` est explicite au diagramme. Un fournisseur peut être créé avant que son adresse ne soit connue. |
+| `drivers.address_id`, `drivers.contact_id` | **nullable** | Même relation `0..1`. Un chauffeur n'a pas nécessairement de coordonnées propres. |
+| Tout le reste | **non nullable** | Le diagramme ne marque aucune autre optionnalité. |
 
 ## 8. Décisions de suppression
 
 | Clé étrangère | Stratégie | Raison |
 |---------------|-----------|--------|
 | `providers.organization_id` | `RESTRICT` | Conforme au §16. Supprimer une organisation ne doit pas emporter ses fournisseurs. |
+| `providers.address_id`, `providers.contact_id` | `RESTRICT` | Une adresse encore référencée ne disparaît pas en silence. `SET NULL` aurait délié le fournisseur sans trace. Aligné sur `entity_addresses` et `customer_sites`. |
+| `drivers.organization_id` | `RESTRICT` | |
 | `drivers.provider_id` | `RESTRICT` | Un fournisseur avec chauffeurs ne disparaît pas silencieusement. |
-| `drivers.user_id` | `SET NULL` | Cohérent avec la nullabilité : supprimer un compte ne doit pas supprimer le chauffeur. |
+| `drivers.address_id`, `drivers.contact_id` | `RESTRICT` | Même raison que pour le fournisseur. |
 | `vehicle_types.organization_id` | `RESTRICT` | |
 | `vehicles.provider_id` | `RESTRICT` | |
 | `vehicles.vehicle_type_id` | `RESTRICT` | Le §16 l'exige : supprimer un type ne supprime pas les véhicules. |
@@ -362,12 +393,14 @@ VehicleCapacity
 
 Ainsi que, au niveau des attributs :
 
-- `ProviderStatus`, `DriverStatus`, `VehicleStatus`, `VehicleTypeStatus` et tout
-  enum pour `providerType` — ces propriétés sont des `string` ;
+- `ProviderStatus`, `DriverStatus`, `VehicleStatus`, `VehicleTypeStatus` — ces
+  propriétés sont des `string` ;
+- `providerType` et `legacyId` — absents du diagramme retenu ;
 - `settings`, `metadata`, `taxNumber` ;
-- `registrationNumber`, `phone`, `email`, `addressId`, `contactId` sur `Provider` ;
+- `registrationNumber`, `phone`, `email` sur `Provider` ;
 - permis de conduire, `employee_number`, `license_number`, `license_expiration`,
-  `active`, `availability` sur `Driver` ;
+  `active`, `availability`, prénom/nom séparés, `phone`, `email`, `userId`
+  sur `Driver` ;
 - `name`, `emission_type`, `gps_provider`, `gps_external_id`, `availability`,
   capacité séparée, documents spécifiques, dates d'entretien sur `Vehicle` ;
 - capacité par défaut, description, `emission_type` sur `VehicleType` ;

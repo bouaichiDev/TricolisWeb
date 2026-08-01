@@ -31,13 +31,13 @@ class UpdateProviderRequest extends FormRequest
         $providerId = $this->route('provider')?->id;
 
         return [
-            'legacyId' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'addressId' => ['sometimes', 'nullable', 'string', Rule::exists('addresses', 'id')],
+            'contactId' => ['sometimes', 'nullable', 'string', Rule::exists('contacts', 'id')],
             'code' => [
                 'sometimes', 'string', 'max:64',
                 Rule::unique('providers', 'code')->where('organization_id', $organizationId)->ignore($providerId),
             ],
             'name' => ['sometimes', 'string', 'max:255'],
-            'providerType' => ['sometimes', 'string', 'max:64'],
             'status' => ['sometimes', 'string', 'max:32'],
         ];
     }

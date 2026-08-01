@@ -20,26 +20,34 @@ privé la Phase 3 des organisations, adresses, contacts, audit et policies dont
 Aucune fusion, aucun rebase, aucune suppression de branche, aucun push
 automatique.
 
-## 2. Fichiers PlantUML utilisés
+## 2. Diagrammes utilisés
 
-Le §1 désigne comme sources officielles :
+Le §1 désigne comme sources officielles deux `.puml` qui **n'existent pas** et
+n'ont jamais été produits. Les diagrammes réellement disponibles sont :
 
 ```text
-Conception/diagramme/00-diagramme-classes-partagees.puml
-Conception/diagramme/01-diagramme-plateforme-interne.puml
+Conception/diagramme/Tricolis V2 — Diagramme de classes partagées.txt
+Conception/diagramme/Tricolis V2 — Diagramme de classes plateforme interne.txt
 ```
 
-**Ces deux fichiers n'existent pas dans le dépôt.** Le répertoire ne contient
-que deux `.txt` de juillet, dont le modèle **contredit** celui décrit par le
-prompt sur trois des quatre classes — `Driver` n'a quasiment aucun attribut
-commun entre les deux versions.
+Leur modèle **contredit** celui décrit par le prompt sur trois des quatre
+classes — `Driver` n'a quasiment aucun attribut commun entre les deux versions.
 
-Arbitrage validé : **le prompt Phase 3 fait foi**, ses §7, §9, §11 et §13
-énumérant exhaustivement attributs, colonnes, relations et index.
+**Arbitrage tranché par le porteur du projet le 1er août 2026 : les deux `.txt`
+sont la dernière version et font foi.** Le prompt Phase 3 reste la référence
+pour tout ce qu'il décrit hors modèle de données — endpoints, permissions,
+règles de suppression, exclusions, exigences de test.
 
-**Action requise côté conception** : déposer les deux `.puml` officiels. Tant
-qu'ils manquent, aucune vérification automatique n'est possible entre le modèle
-livré et le diagramme. Détail dans [`phase-3-analysis.md`](phase-3-analysis.md) §1.
+Une première livraison suivait le prompt ; elle a été réalignée sur les `.txt` :
+
+| Table | Retiré | Ajouté |
+|-------|--------|--------|
+| `providers` | `legacy_id`, `provider_type` | `address_id`, `contact_id` |
+| `drivers` | `legacy_id`, `user_id`, `first_name`, `last_name`, `phone`, `email` | `organization_id`, `address_id`, `contact_id`, `name` |
+| `vehicles` | `legacy_id` | — |
+| `vehicle_types` | — | — |
+
+Détail dans [`phase-3-analysis.md`](phase-3-analysis.md) §1.
 
 ## 3. Classes implémentées
 
@@ -54,24 +62,33 @@ Vehicle
 
 | Classe | Attributs |
 |--------|-----------|
-| `Provider` | `id`, `legacyId`, `organizationId`, `code`, `name`, `providerType`, `status` |
-| `Driver` | `id`, `legacyId`, `providerId`, `userId`, `code`, `firstName`, `lastName`, `phone`, `email`, `status` |
+| `Provider` | `id`, `organizationId`, `addressId`, `contactId`, `code`, `name`, `status` |
+| `Driver` | `id`, `organizationId`, `providerId`, `addressId`, `contactId`, `code`, `name`, `status` |
 | `VehicleType` | `id`, `organizationId`, `code`, `name`, `status` |
-| `Vehicle` | `id`, `legacyId`, `providerId`, `vehicleTypeId`, `code`, `registrationNumber`, `payloadCapacity`, `volumeCapacity`, `palletCapacity`, `status` |
+| `Vehicle` | `id`, `providerId`, `vehicleTypeId`, `code`, `registrationNumber`, `payloadCapacity`, `volumeCapacity`, `palletCapacity`, `status` |
 
-Tableau de correspondance complet — type PlantUML, colonne MySQL, nullabilité,
-index, relation — au §6 de `phase-3-analysis.md`.
+Strictement les attributs des diagrammes, ni plus ni moins. Tableau de
+correspondance complet — type, colonne MySQL, nullabilité, index, relation — au
+§6 de `phase-3-analysis.md`.
 
 ## 5. Relations implémentées
 
 ```text
-Provider    belongsTo Organization ; hasMany Driver ; hasMany Vehicle
-Driver      belongsTo Provider     ; belongsTo User
+Provider    belongsTo Organization ; belongsTo Address ; belongsTo Contact
+            hasMany Driver ; hasMany Vehicle
+Driver      belongsTo Organization ; belongsTo Provider
+            belongsTo Address ; belongsTo Contact
 VehicleType belongsTo Organization ; hasMany Vehicle
 Vehicle     belongsTo Provider     ; belongsTo VehicleType
 ```
 
-Aucune relation vers `Address`, `Contact` ou `Document` : le §7 l'interdit.
+`Provider` et `Driver` portent `address_id` et `contact_id` en clé étrangère
+directe — c'est ce que pose le diagramme (`Provider "0..*" --> "0..1" Address`),
+et c'est déjà la convention de `customer_sites` et `order_services`. Les deux
+liens sont facultatifs.
+
+Aucune relation vers `Document` : le diagramme n'en définit pas. Aucun lien
+`Driver → User` non plus.
 
 ## 6. Migrations créées
 
@@ -174,12 +191,12 @@ le besoin sans dupliquer la logique.
 
 | Fichier | Tests | Couverture |
 |---------|-------|-----------|
-| `Providers/ProviderTest` | 15 | CRUD, `legacyId` non exposé, suppression refusée avec chauffeurs puis avec véhicules, code dupliqué, même code dans une autre organisation, IDOR sur `GET`/`PATCH`/`DELETE`, isolation de liste, recherche code et nom, filtres `status` et `providerType`, pagination, tri interdit, compteurs sans chargement, audit création/modification/suppression, audit limité aux champs modifiés |
-| `Drivers/DriverTest` | 15 | CRUD, liaison d'un compte, exposition limitée du `User`, fournisseur hors périmètre, utilisateur hors périmètre, déplacement hors périmètre refusé, email invalide, code dupliqué par fournisseur, même code chez un autre fournisseur, IDOR, filtre et recherche, tri interdit, audit |
+| `Providers/ProviderTest` | 17 | CRUD, adresse et contact facultatifs, création sans adresse ni contact, adresse ou contact inconnus refusés, suppression refusée avec chauffeurs puis avec véhicules, code dupliqué, même code dans une autre organisation, IDOR sur `GET`/`PATCH`/`DELETE`, isolation de liste, recherche code et nom, filtres `status` et `addressId`, pagination, tri interdit, compteurs sans chargement, audit création/modification/suppression, audit limité aux champs modifiés |
+| `Drivers/DriverTest` | 15 | CRUD, héritage de l'organisation du fournisseur, adresse et contact facultatifs, fournisseur hors périmètre, déplacement hors périmètre refusé, adresse ou contact inconnus refusés, code dupliqué par fournisseur, même code chez un autre fournisseur, IDOR, filtre et recherche, tri interdit, audit |
 | `Fleet/FleetTest` | 15 | CRUD des deux entités, suppression de type refusée si utilisé, code dupliqué, IDOR, recherche et filtres, fournisseur hors périmètre, type hors périmètre, organisations différentes, code dupliqué par fournisseur, immatriculation dupliquée globalement, capacités négatives, filtres de capacité minimale, tri interdit, audit |
 | `Providers/FleetPermissionTest` | 6 | Lecture, création, modification et suppression refusées sans permission ; accès accordé après attribution du rôle ; en-tête d'organisation requis ; accès non authentifié refusé |
 
-**51 tests ajoutés.**
+**53 tests ajoutés.**
 
 ## 15. Résultats des tests
 
@@ -187,11 +204,11 @@ le besoin sans dupliquer la logique.
 composer validate                                ./composer.json is valid
 php artisan optimize:clear                       OK
 php artisan migrate:fresh --seed --env=testing   OK (6 seeders)
-php artisan test                                 240 passed (691 assertions)
+php artisan test                                 242 passed (705 assertions)
 ```
 
-189 tests des Phases 1 et 2, 51 de la Phase 3. **Aucune régression** : aucun
-test existant n'a été modifié, désactivé ni marqué `skip`.
+189 tests des Phases 1 et 2, 53 de la Phase 3. **Aucune régression** : aucun
+test des Phases 1 et 2 n'a été modifié, désactivé ni marqué `skip`.
 
 ## 16. Résultat de Pint
 
@@ -203,28 +220,31 @@ test existant n'a été modifié, désactivé ni marqué `skip`.
 
 | # | Incohérence | Traitement |
 |---|-------------|------------|
-| A | Les deux `.puml` officiels sont absents du dépôt | Signalée ; le prompt fait foi sur décision du porteur |
-| B | Les `.txt` présents contredisent le prompt sur `Provider`, `Driver` et `Vehicle` | Documentée en tableau comparatif dans `phase-3-analysis.md` §1 |
+| A | Les deux `.puml` désignés au §1 n'existent pas et n'ont jamais été produits | Signalée ; les `.txt` disponibles font foi sur décision du porteur |
+| B | Les `.txt` contredisent le prompt sur `Provider`, `Driver` et `Vehicle` | Tranchée en faveur des `.txt` ; code réaligné, écarts documentés dans `phase-3-analysis.md` §1 |
 | C | Le §5 place `Http/` dans chaque module ; le projet le place dans `app/Http` depuis la Phase 1 | Convention existante conservée, comme le demandent le §5 (« respecter l'architecture déjà utilisée ») et le §26 |
 | D | Le §24 exige de refuser la suppression d'un chauffeur ou d'un véhicule référencé par une tournée | Le module Tours n'existe pas : contrôle reporté et signalé au §23 |
 | E | `apiResource('vehicle-types')` génère le paramètre `vehicle_type`, incompatible avec la liaison implicite vers `$vehicleType` | Corrigé par `->parameters(['vehicle-types' => 'vehicleType'])` |
+| F | Le §7 interdit `addressId` et `contactId` sur `Provider` ; le diagramme retenu les impose | Le diagramme l'emporte sur ce point, le prompt restant la référence hors modèle de données |
+| G | Deux mécanismes d'adresse coexistent : FK directe et `entity_addresses` polymorphe | Ce sont deux besoins distincts (« a une » vs « a des »), documenté dans `phase-3-database-decisions.md` §8 bis |
 
 ## 18. Décisions de nullabilité
 
 | Colonne | Choix | Raison |
 |---------|-------|--------|
-| `drivers.user_id` | nullable | Un chauffeur de sous-traitant n'a pas nécessairement de compte ; l'application chauffeur est hors périmètre |
-| `drivers.phone`, `drivers.email` | nullable | Le §9 précise « `email` validé comme email **si renseigné** » |
-| `legacy_id` (providers, drivers, vehicles) | nullable | Réservé à la reprise ; les données créées par l'API n'en ont pas |
-| Tout le reste | non nullable | Déclaré obligatoire par les §7, §9, §11, §13 |
+| `providers.address_id`, `providers.contact_id` | nullable | `Provider "0..*" --> "0..1" Address` : le `0..1` est explicite au diagramme |
+| `drivers.address_id`, `drivers.contact_id` | nullable | Même relation `0..1` |
+| Tout le reste | non nullable | Le diagramme ne marque aucune autre optionnalité |
 
 ## 19. Décisions de suppression
 
 | Clé étrangère | Stratégie |
 |---------------|-----------|
 | `providers.organization_id` | `RESTRICT` |
+| `providers.address_id`, `providers.contact_id` | `RESTRICT` |
+| `drivers.organization_id` | `RESTRICT` |
 | `drivers.provider_id` | `RESTRICT` |
-| `drivers.user_id` | `SET NULL` |
+| `drivers.address_id`, `drivers.contact_id` | `RESTRICT` |
 | `vehicle_types.organization_id` | `RESTRICT` |
 | `vehicles.provider_id` | `RESTRICT` |
 | `vehicles.vehicle_type_id` | `RESTRICT` |
@@ -275,10 +295,11 @@ VehicleCapacity
 
 Au niveau des attributs et conventions :
 
-- `ProviderStatus`, `DriverStatus`, `VehicleStatus`, `VehicleTypeStatus`, enum
-  pour `providerType` — ces propriétés sont des `string` ;
+- `ProviderStatus`, `DriverStatus`, `VehicleStatus`, `VehicleTypeStatus` — ces
+  propriétés sont des `string` ;
+- `providerType`, `legacyId` — absents du diagramme retenu ;
 - `settings`, `metadata`, `taxNumber` ;
-- `registrationNumber`, `phone`, `email`, `addressId`, `contactId` sur `Provider` ;
+- `registrationNumber`, `phone`, `email` sur `Provider` ;
 - permis de conduire, `employee_number`, `license_number`,
   `license_expiration`, `active`, `availability` sur `Driver` ;
 - `name`, `emission_type`, `gps_provider`, `gps_external_id`, `availability`,
@@ -303,9 +324,15 @@ Vérifié : aucune table `contract` ni `availability` dans les migrations.
 4. **Immatriculation unique globalement.** Deux organisations ne peuvent pas
    référencer le même véhicule physique. Sans objet aujourd'hui ; à revoir si un
    sous-traitant travaille un jour pour deux transporteurs de la plateforme.
-5. **`provider_type` et `status` sans valeurs normatives.** Rien n'empêche deux
-   agences de saisir `carrier` et `CARRIER`. Une liste officielle, une fois
-   définie, permettra de créer les enums.
+5. **`status` sans valeurs normatives.** Rien n'empêche deux agences de saisir
+   `active` et `ACTIVE`. Une liste officielle, une fois définie, permettra de
+   créer les enums.
+6. **Aucun `legacy_id`.** Une reprise depuis l'ancienne plateforme devra passer
+   par une table de correspondance dédiée, à décider le moment venu.
+7. **Deux mécanismes d'adresse coexistent** — FK directe sur `providers`,
+   `drivers`, `customer_sites`, `order_services` ; `entity_addresses` polymorphe
+   ailleurs. C'est ce que posent les diagrammes ; à documenter côté conception
+   pour éviter qu'un développeur ne choisisse au hasard.
 
 ## 24. Prochaine phase recommandée
 

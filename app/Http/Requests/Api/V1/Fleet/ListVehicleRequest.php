@@ -16,7 +16,6 @@ class ListVehicleRequest extends ListRequest
         return array_merge(parent::rules(), [
             'providerId' => ['sometimes', 'ulid'],
             'vehicleTypeId' => ['sometimes', 'ulid'],
-            'legacyId' => ['sometimes', 'integer', 'min:0'],
             'payloadCapacityMin' => ['sometimes', 'numeric', 'min:0'],
             'volumeCapacityMin' => ['sometimes', 'numeric', 'min:0'],
             'palletCapacityMin' => ['sometimes', 'integer', 'min:0'],

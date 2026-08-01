@@ -1,17 +1,20 @@
 <?php
 
+use App\Modules\Addresses\Models\Address;
 use App\Modules\Audit\Models\AuditLog;
+use App\Modules\Contacts\Models\Contact;
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Providers\Models\Provider;
+use Illuminate\Support\Str;
 
 beforeEach(function (): void {
     $this->seed();
     $this->user = authUser();
     $this->organization = authOrganization();
     $this->headers = ['X-Organization-Id' => $this->organization->id];
-    $this->payload = ['code' => 'PRV-NEW', 'name' => 'Nouveau transporteur', 'providerType' => 'carrier', 'status' => 'active'];
+    $this->payload = ['code' => 'PRV-NEW', 'name' => 'Nouveau transporteur', 'status' => 'active'];
 });
 
 describe('providers CRUD', function (): void {
@@ -19,8 +22,7 @@ describe('providers CRUD', function (): void {
         $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/providers', $this->payload)
             ->assertCreated()
-            ->assertJsonPath('data.code', 'PRV-NEW')
-            ->assertJsonPath('data.providerType', 'carrier');
+            ->assertJsonPath('data.code', 'PRV-NEW');
 
         $this->assertDatabaseHas('providers', [
             'id' => $response->json('data.id'),
@@ -45,13 +47,33 @@ describe('providers CRUD', function (): void {
         $this->assertDatabaseMissing('providers', ['id' => $provider->id]);
     });
 
-    it('never exposes legacyId', function (): void {
-        $provider = Provider::factory()->forOrganization($this->organization)->withLegacyId(4242)->create();
+    it('accepts an optional address and contact', function (): void {
+        $address = Address::factory()->create();
+        $contact = Contact::factory()->create();
 
-        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson("/api/v1/providers/{$provider->id}")->assertOk();
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', ['addressId' => $address->id, 'contactId' => $contact->id] + $this->payload)
+            ->assertCreated()
+            ->assertJsonPath('data.addressId', $address->id)
+            ->assertJsonPath('data.contactId', $contact->id);
+    });
 
-        expect(array_keys($response->json('data')))->not->toContain('legacyId');
+    it('creates a provider without address nor contact', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', $this->payload)
+            ->assertCreated()
+            ->assertJsonPath('data.addressId', null)
+            ->assertJsonPath('data.contactId', null);
+    });
+
+    it('refuses an unknown address or contact', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', ['addressId' => (string) Str::ulid()] + $this->payload)
+            ->assertStatus(422)->assertJsonValidationErrors('addressId');
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', ['contactId' => (string) Str::ulid()] + $this->payload)
+            ->assertStatus(422)->assertJsonValidationErrors('contactId');
     });
 });
 
@@ -129,14 +151,16 @@ describe('providers list', function (): void {
             ->getJson('/api/v1/providers?search=Alpha')->assertOk()->assertJsonCount(1, 'data');
     });
 
-    it('filters by status and by providerType', function (): void {
-        Provider::factory()->forOrganization($this->organization)->create(['status' => 'blocked', 'provider_type' => 'partner']);
+    it('filters by status and by address', function (): void {
+        $address = Address::factory()->create();
+        Provider::factory()->forOrganization($this->organization)
+            ->create(['status' => 'blocked', 'address_id' => $address->id]);
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->getJson('/api/v1/providers?status=blocked')->assertOk()->assertJsonCount(1, 'data');
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson('/api/v1/providers?providerType=partner')->assertOk()->assertJsonCount(1, 'data');
+            ->getJson("/api/v1/providers?addressId={$address->id}")->assertOk()->assertJsonCount(1, 'data');
     });
 
     it('paginates and rejects a forbidden sort column', function (): void {

@@ -7,7 +7,6 @@ namespace App\Modules\Fleet\Models;
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +20,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * appliqué par le scope `inOrganization`.
  */
 #[Fillable([
-    'legacy_id',
     'provider_id',
     'vehicle_type_id',
     'code',
@@ -31,7 +29,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'pallet_capacity',
     'status',
 ])]
-#[Hidden(['legacy_id'])]
 class Vehicle extends Model
 {
     use HasFactory;
@@ -51,7 +48,6 @@ class Vehicle extends Model
     protected function casts(): array
     {
         return [
-            'legacy_id' => 'integer',
             'payload_capacity' => 'decimal:3',
             'volume_capacity' => 'decimal:4',
             'pallet_capacity' => 'integer',

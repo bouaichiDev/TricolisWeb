@@ -13,8 +13,11 @@ use Illuminate\Validation\Rule;
  *
  * `organizationId` n'est pas accepté en entrée : le fournisseur est créé dans
  * l'organisation active, pour qu'aucun appelant ne puisse en viser une autre.
- * `providerType` et `status` restent des chaînes libres — le diagramme n'en
- * énumère pas les valeurs.
+ * `status` reste une chaîne libre — le diagramme n'en énumère pas les valeurs.
+ *
+ * `addressId` et `contactId` sont facultatifs et validés par simple existence :
+ * `addresses` et `contacts` sont des tables partagées, sans `organization_id`,
+ * comme pour `customer_sites` et `order_services`.
  */
 class StoreProviderRequest extends FormRequest
 {
@@ -31,13 +34,13 @@ class StoreProviderRequest extends FormRequest
         $organizationId = app(CurrentOrganizationContext::class)->getOrganizationId();
 
         return [
-            'legacyId' => ['nullable', 'integer', 'min:0'],
+            'addressId' => ['nullable', 'string', Rule::exists('addresses', 'id')],
+            'contactId' => ['nullable', 'string', Rule::exists('contacts', 'id')],
             'code' => [
                 'required', 'string', 'max:64',
                 Rule::unique('providers', 'code')->where('organization_id', $organizationId),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'providerType' => ['required', 'string', 'max:64'],
             'status' => ['required', 'string', 'max:32'],
         ];
     }

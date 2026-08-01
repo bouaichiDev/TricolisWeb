@@ -8,8 +8,8 @@ use App\Modules\Drivers\Models\Driver;
 use App\Modules\Identity\Models\User;
 
 /**
- * Le chauffeur n'a pas d'organisation propre : sa permission est évaluée dans
- * l'organisation de son fournisseur.
+ * Le chauffeur porte son organisation : la permission s'évalue dessus, sans
+ * charger le fournisseur.
  */
 class DriverPolicy extends BaseOrganizationPolicy
 {
@@ -40,6 +40,6 @@ class DriverPolicy extends BaseOrganizationPolicy
 
     private function organizationOf(Driver $driver): ?string
     {
-        return $driver->provider?->organization_id;
+        return $driver->organization_id;
     }
 }

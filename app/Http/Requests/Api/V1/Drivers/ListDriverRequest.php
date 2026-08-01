@@ -15,8 +15,8 @@ class ListDriverRequest extends ListRequest
     {
         return array_merge(parent::rules(), [
             'providerId' => ['sometimes', 'ulid'],
-            'userId' => ['sometimes', 'ulid'],
-            'legacyId' => ['sometimes', 'integer', 'min:0'],
+            'addressId' => ['sometimes', 'ulid'],
+            'contactId' => ['sometimes', 'ulid'],
         ]);
     }
 }

@@ -22,8 +22,8 @@ class ListProviderRequest extends ListRequest
     public function rules(): array
     {
         return array_merge(parent::rules(), [
-            'providerType' => ['sometimes', 'string', 'max:64'],
-            'legacyId' => ['sometimes', 'integer', 'min:0'],
+            'addressId' => ['sometimes', 'ulid'],
+            'contactId' => ['sometimes', 'ulid'],
         ]);
     }
 }

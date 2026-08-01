@@ -9,30 +9,33 @@ return new class extends Migration
     /**
      * Fournisseur de transport.
      *
-     * Le diagramme ne definit ni timestamps, ni soft delete, ni adresse, ni
-     * contact sur cette classe : l'historique des ecritures est porte par
-     * `audit_logs`, et une liaison d'adresse passerait par `EntityAddress`.
+     * Le diagramme porte l'adresse et le contact en cle etrangere directe, et
+     * non via `EntityAddress` : `Provider "0..*" --> "0..1" Address`. Les deux
+     * liens sont donc facultatifs. Ni timestamps ni soft delete : l'historique
+     * des ecritures est porte par `audit_logs`.
      */
     public function up(): void
     {
         Schema::create('providers', function (Blueprint $table): void {
             $table->char('id', 26)->primary();
-            // Reprise depuis l'ancienne plateforme : nul pour toute donnee creee par l'API.
-            $table->unsignedBigInteger('legacy_id')->nullable();
             $table->char('organization_id', 26);
+            $table->char('address_id', 26)->nullable();
+            $table->char('contact_id', 26)->nullable();
             $table->string('code', 64);
             $table->string('name');
-            $table->string('provider_type', 64);
             $table->string('status', 32);
 
             $table->unique(['organization_id', 'code']);
             $table->index('organization_id');
+            $table->index('address_id');
+            $table->index('contact_id');
             $table->index('status');
-            $table->index('provider_type');
-            $table->index('legacy_id');
 
             // Supprimer une organisation ne doit pas emporter ses fournisseurs.
             $table->foreign('organization_id')->references('id')->on('organizations')->restrictOnDelete();
+            // Une adresse encore referencee ne peut pas disparaitre en silence.
+            $table->foreign('address_id')->references('id')->on('addresses')->restrictOnDelete();
+            $table->foreign('contact_id')->references('id')->on('contacts')->restrictOnDelete();
         });
     }
 

@@ -35,7 +35,7 @@ final readonly class DeleteProviderAction
                 $context->user,
                 'provider.deleted',
                 $provider,
-                $provider->only(['code', 'name', 'provider_type', 'status']),
+                $provider->only(['code', 'name', 'status', 'address_id', 'contact_id']),
                 null,
                 null,
                 $context->ipAddress,

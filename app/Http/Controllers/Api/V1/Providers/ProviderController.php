@@ -34,8 +34,8 @@ class ProviderController extends Controller
      * Lister les fournisseurs.
      *
      * Permission requise : `providers.view`. Recherche sur `code` et `name` ;
-     * filtres `status`, `providerType`, `legacyId` ; tri autorisé sur `code`,
-     * `name`, `provider_type`, `status`, `legacy_id`.
+     * filtres `status`, `addressId`, `contactId` ; tri autorisé sur `code`,
+     * `name`, `status`.
      */
     public function index(ListProviderRequest $request, ProviderListQuery $query): JsonResponse
     {
@@ -78,7 +78,7 @@ class ProviderController extends Controller
         $this->authorize('view', $provider);
 
         return ApiResponse::ok(new ProviderDetailResource(
-            $provider->load('organization')->loadCount(['drivers', 'vehicles']),
+            $provider->load(['organization', 'address', 'contact'])->loadCount(['drivers', 'vehicles']),
         ));
     }
 

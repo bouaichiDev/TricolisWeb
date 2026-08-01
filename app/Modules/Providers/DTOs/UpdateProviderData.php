@@ -13,10 +13,10 @@ final readonly class UpdateProviderData
 {
     /** @var array<string, string> */
     private const array MAPPING = [
-        'legacy_id' => 'legacyId',
+        'address_id' => 'addressId',
+        'contact_id' => 'contactId',
         'code' => 'code',
         'name' => 'name',
-        'provider_type' => 'providerType',
         'status' => 'status',
     ];
 

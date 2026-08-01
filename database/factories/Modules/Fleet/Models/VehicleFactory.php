@@ -23,7 +23,6 @@ class VehicleFactory extends Factory
         return [
             'provider_id' => Provider::factory(),
             'vehicle_type_id' => VehicleType::factory(),
-            'legacy_id' => null,
             'code' => fake()->unique()->bothify('VEH-####'),
             'registration_number' => fake()->unique()->bothify('##-?????-##'),
             'payload_capacity' => fake()->randomFloat(3, 500, 25000),

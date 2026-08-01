@@ -17,7 +17,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 final readonly class ProviderListQuery
 {
     /** @var list<string> */
-    private const array SORTABLE = ['code', 'name', 'provider_type', 'status', 'legacy_id'];
+    private const array SORTABLE = ['code', 'name', 'status'];
 
     public function paginate(ListProviderRequest $request, string $organizationId): LengthAwarePaginator
     {
@@ -31,7 +31,7 @@ final readonly class ProviderListQuery
                 ->orWhere('name', 'like', "%{$search}%"));
         }
 
-        foreach (['status' => 'status', 'providerType' => 'provider_type', 'legacyId' => 'legacy_id'] as $input => $column) {
+        foreach (['status' => 'status', 'addressId' => 'address_id', 'contactId' => 'contact_id'] as $input => $column) {
             if ($request->filled($input)) {
                 $query->where($column, $request->validated($input));
             }

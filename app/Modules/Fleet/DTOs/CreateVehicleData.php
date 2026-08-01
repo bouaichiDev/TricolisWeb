@@ -18,7 +18,6 @@ final readonly class CreateVehicleData
         public string $volumeCapacity,
         public int $palletCapacity,
         public string $status,
-        public ?int $legacyId = null,
     ) {}
 
     /**
@@ -35,7 +34,6 @@ final readonly class CreateVehicleData
             volumeCapacity: (string) $validated['volumeCapacity'],
             palletCapacity: (int) $validated['palletCapacity'],
             status: $validated['status'],
-            legacyId: $validated['legacyId'] ?? null,
         );
     }
 
@@ -45,7 +43,6 @@ final readonly class CreateVehicleData
     public function toAttributes(): array
     {
         return [
-            'legacy_id' => $this->legacyId,
             'provider_id' => $this->providerId,
             'vehicle_type_id' => $this->vehicleTypeId,
             'code' => $this->code,

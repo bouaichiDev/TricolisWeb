@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Drivers;
 
+use App\Http\Resources\Api\V1\Addresses\AddressResource;
+use App\Http\Resources\Api\V1\Contacts\ContactResource;
 use App\Http\Resources\Api\V1\Providers\ProviderCompactResource;
 use App\Modules\Drivers\Models\Driver;
 use Illuminate\Http\Request;
@@ -12,8 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * Détail d'un chauffeur.
  *
- * Le compte lié n'est exposé que par ses champs d'identification : ni statut,
- * ni rôles, ni aucune donnée sensible du `User`.
+ * Les coordonnées du chauffeur relèvent de son `Contact` : le diagramme ne pose
+ * ni téléphone ni courriel sur la classe.
  *
  * @mixin Driver
  */
@@ -26,21 +28,16 @@ class DriverDetailResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'organizationId' => $this->organization_id,
             'providerId' => $this->provider_id,
-            'userId' => $this->user_id,
+            'addressId' => $this->address_id,
+            'contactId' => $this->contact_id,
             'code' => $this->code,
-            'firstName' => $this->first_name,
-            'lastName' => $this->last_name,
-            'fullName' => $this->fullName(),
-            'phone' => $this->phone,
-            'email' => $this->email,
+            'name' => $this->name,
             'status' => $this->status,
             'provider' => new ProviderCompactResource($this->whenLoaded('provider')),
-            'user' => $this->whenLoaded('user', fn (): ?array => $this->user === null ? null : [
-                'id' => $this->user->id,
-                'fullName' => $this->user->fullName(),
-                'email' => $this->user->email,
-            ]),
+            'address' => new AddressResource($this->whenLoaded('address')),
+            'contact' => new ContactResource($this->whenLoaded('contact')),
         ];
     }
 }

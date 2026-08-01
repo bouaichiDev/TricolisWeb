@@ -34,9 +34,8 @@ class VehicleController extends Controller
      *
      * Permission requise : `vehicles.view`. Recherche sur `code` et
      * `registration_number` ; filtres `providerId`, `vehicleTypeId`, `status`,
-     * `legacyId`, `payloadCapacityMin`, `volumeCapacityMin`,
-     * `palletCapacityMin` ; tri sur les capacités, le code, l'immatriculation,
-     * le statut et `legacy_id`.
+     * `payloadCapacityMin`, `volumeCapacityMin`, `palletCapacityMin` ; tri sur
+     * les capacités, le code, l'immatriculation et le statut.
      */
     public function index(ListVehicleRequest $request, VehicleListQuery $query): JsonResponse
     {

@@ -13,14 +13,11 @@ final readonly class UpdateDriverData
 {
     /** @var array<string, string> */
     private const array MAPPING = [
-        'legacy_id' => 'legacyId',
         'provider_id' => 'providerId',
-        'user_id' => 'userId',
+        'address_id' => 'addressId',
+        'contact_id' => 'contactId',
         'code' => 'code',
-        'first_name' => 'firstName',
-        'last_name' => 'lastName',
-        'phone' => 'phone',
-        'email' => 'email',
+        'name' => 'name',
         'status' => 'status',
     ];
 

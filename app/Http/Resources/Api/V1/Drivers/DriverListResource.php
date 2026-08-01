@@ -22,14 +22,12 @@ class DriverListResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'organizationId' => $this->organization_id,
             'providerId' => $this->provider_id,
-            'userId' => $this->user_id,
+            'addressId' => $this->address_id,
+            'contactId' => $this->contact_id,
             'code' => $this->code,
-            'firstName' => $this->first_name,
-            'lastName' => $this->last_name,
-            'fullName' => $this->fullName(),
-            'phone' => $this->phone,
-            'email' => $this->email,
+            'name' => $this->name,
             'status' => $this->status,
             'providerName' => $this->whenLoaded('provider', fn () => $this->provider->name),
         ];

@@ -1,9 +1,10 @@
 <?php
 
+use App\Modules\Addresses\Models\Address;
+use App\Modules\Contacts\Models\Contact;
 use App\Modules\Drivers\Models\Driver;
-use App\Modules\Identity\Models\User;
-use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Providers\Models\Provider;
+use Illuminate\Support\Str;
 
 beforeEach(function (): void {
     $this->seed();
@@ -14,10 +15,7 @@ beforeEach(function (): void {
     $this->payload = fn (array $o = []): array => array_merge([
         'providerId' => $this->provider->id,
         'code' => 'DRV-NEW',
-        'firstName' => 'Yassine',
-        'lastName' => 'Bennani',
-        'phone' => '+212661223344',
-        'email' => 'yassine@transport.dev',
+        'name' => 'Yassine Bennani',
         'status' => 'active',
     ], $o);
 });
@@ -28,8 +26,19 @@ describe('drivers CRUD', function (): void {
             ->postJson('/api/v1/drivers', ($this->payload)())
             ->assertCreated()
             ->assertJsonPath('data.code', 'DRV-NEW')
-            ->assertJsonPath('data.fullName', 'Yassine Bennani')
+            ->assertJsonPath('data.name', 'Yassine Bennani')
             ->assertJsonPath('data.providerId', $this->provider->id);
+    });
+
+    it('inherits the organization of its provider', function (): void {
+        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/drivers', ($this->payload)())->assertCreated()
+            ->assertJsonPath('data.organizationId', $this->organization->id);
+
+        $this->assertDatabaseHas('drivers', [
+            'id' => $response->json('data.id'),
+            'organization_id' => $this->organization->id,
+        ]);
     });
 
     it('reads, updates and deletes a driver', function (): void {
@@ -39,30 +48,33 @@ describe('drivers CRUD', function (): void {
             ->getJson("/api/v1/drivers/{$driver->id}")->assertOk();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->patchJson("/api/v1/drivers/{$driver->id}", ['firstName' => 'Modifié'])
-            ->assertOk()->assertJsonPath('data.firstName', 'Modifié');
+            ->patchJson("/api/v1/drivers/{$driver->id}", ['name' => 'Modifié'])
+            ->assertOk()->assertJsonPath('data.name', 'Modifié');
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->deleteJson("/api/v1/drivers/{$driver->id}")->assertNoContent();
     });
 
-    it('links a user of the active organization', function (): void {
-        $membership = OrganizationUser::factory()->forOrganization($this->organization)->create();
+    it('accepts an optional address and contact', function (): void {
+        $address = Address::factory()->create();
+        $contact = Contact::factory()->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/drivers', ($this->payload)(['userId' => $membership->user_id]))
+            ->postJson('/api/v1/drivers', ($this->payload)([
+                'addressId' => $address->id,
+                'contactId' => $contact->id,
+            ]))
             ->assertCreated()
-            ->assertJsonPath('data.userId', $membership->user_id);
+            ->assertJsonPath('data.addressId', $address->id)
+            ->assertJsonPath('data.contactId', $contact->id);
     });
 
-    it('exposes only identity fields of the linked user', function (): void {
-        $membership = OrganizationUser::factory()->forOrganization($this->organization)->create();
-        $driver = Driver::factory()->forProvider($this->provider)->create(['user_id' => $membership->user_id]);
-
-        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson("/api/v1/drivers/{$driver->id}")->assertOk();
-
-        expect(array_keys($response->json('data.user')))->toBe(['id', 'fullName', 'email']);
+    it('creates a driver without address nor contact', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/drivers', ($this->payload)())
+            ->assertCreated()
+            ->assertJsonPath('data.addressId', null)
+            ->assertJsonPath('data.contactId', null);
     });
 });
 
@@ -75,14 +87,6 @@ describe('drivers foreign keys', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('providerId');
     });
 
-    it('refuses a user outside the active organization', function (): void {
-        $foreignUser = User::factory()->create();
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/drivers', ($this->payload)(['userId' => $foreignUser->id]))
-            ->assertStatus(422)->assertJsonValidationErrors('userId');
-    });
-
     it('refuses moving a driver to a provider outside the organization', function (): void {
         $driver = Driver::factory()->forProvider($this->provider)->create();
         $foreignProvider = Provider::factory()->create();
@@ -92,10 +96,14 @@ describe('drivers foreign keys', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('providerId');
     });
 
-    it('rejects an invalid email', function (): void {
+    it('refuses an unknown address or contact', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/drivers', ($this->payload)(['email' => 'pas-un-email']))
-            ->assertStatus(422)->assertJsonValidationErrors('email');
+            ->postJson('/api/v1/drivers', ($this->payload)(['addressId' => (string) Str::ulid()]))
+            ->assertStatus(422)->assertJsonValidationErrors('addressId');
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/drivers', ($this->payload)(['contactId' => (string) Str::ulid()]))
+            ->assertStatus(422)->assertJsonValidationErrors('contactId');
     });
 });
 
@@ -117,7 +125,7 @@ describe('drivers uniqueness and isolation', function (): void {
             ->assertCreated();
     });
 
-    it('hides a driver whose provider belongs to another organization', function (): void {
+    it('hides a driver of another organization', function (): void {
         $foreignDriver = Driver::factory()->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
@@ -136,14 +144,14 @@ describe('drivers uniqueness and isolation', function (): void {
             ->assertOk()->assertJsonCount(2, 'data');
     });
 
-    it('searches by name and by email', function (): void {
-        Driver::factory()->forProvider($this->provider)->create(['last_name' => 'Zerktouni', 'email' => 'zerk@transport.dev']);
+    it('searches by code and by name', function (): void {
+        Driver::factory()->forProvider($this->provider)->create(['code' => 'ZZZ-9', 'name' => 'Nadia Zerktouni']);
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->getJson('/api/v1/drivers?search=Zerktouni')->assertOk()->assertJsonCount(1, 'data');
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson('/api/v1/drivers?search=zerk@')->assertOk()->assertJsonCount(1, 'data');
+            ->getJson('/api/v1/drivers?search=ZZZ-9')->assertOk()->assertJsonCount(1, 'data');
     });
 
     it('rejects a forbidden sort column', function (): void {

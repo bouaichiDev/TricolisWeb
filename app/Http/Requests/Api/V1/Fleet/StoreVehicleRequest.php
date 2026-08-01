@@ -29,7 +29,6 @@ class StoreVehicleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'legacyId' => ['nullable', 'integer', 'min:0'],
             'providerId' => [
                 'required', 'ulid',
                 new BelongsToActiveOrganization(Provider::class, null, 'Ce fournisseur n’appartient pas à l’organisation active.'),

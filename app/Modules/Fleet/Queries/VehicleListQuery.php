@@ -19,7 +19,7 @@ final readonly class VehicleListQuery
 {
     /** @var list<string> */
     private const array SORTABLE = [
-        'code', 'registration_number', 'payload_capacity', 'volume_capacity', 'pallet_capacity', 'status', 'legacy_id',
+        'code', 'registration_number', 'payload_capacity', 'volume_capacity', 'pallet_capacity', 'status',
     ];
 
     public function paginate(ListVehicleRequest $request, string $organizationId): LengthAwarePaginator
@@ -38,7 +38,6 @@ final readonly class VehicleListQuery
             'providerId' => 'provider_id',
             'vehicleTypeId' => 'vehicle_type_id',
             'status' => 'status',
-            'legacyId' => 'legacy_id',
         ] as $input => $column) {
             if ($request->filled($input)) {
                 $query->where($column, $request->validated($input));

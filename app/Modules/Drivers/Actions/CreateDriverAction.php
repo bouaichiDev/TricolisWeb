@@ -14,9 +14,12 @@ use Illuminate\Support\Facades\DB;
 /**
  * Crée un chauffeur chez un fournisseur de l'organisation active.
  *
- * Le fournisseur et le compte utilisateur éventuel sont revérifiés ici, et pas
- * seulement dans le Form Request : l'Action doit rester sûre appelée
- * directement, depuis un import par exemple.
+ * Le fournisseur est revérifié ici, et pas seulement dans le Form Request :
+ * l'Action doit rester sûre appelée directement, depuis un import par exemple.
+ *
+ * L'`organization_id` du chauffeur est celui du fournisseur retenu, jamais une
+ * valeur fournie par l'appelant : le diagramme porte les deux, ils ne doivent
+ * pas pouvoir diverger.
  */
 final readonly class CreateDriverAction
 {
@@ -29,12 +32,8 @@ final readonly class CreateDriverAction
     {
         $provider = $this->guard->provider($data->providerId, $context->organizationId);
 
-        if ($data->userId !== null) {
-            $this->guard->user($data->userId, $context->organizationId);
-        }
-
         return DB::transaction(function () use ($data, $provider, $context): Driver {
-            $driver = $provider->drivers()->create($data->toAttributes());
+            $driver = Driver::create($data->toAttributes($provider->organization_id));
 
             $this->audit->execute(
                 $context->organizationId,
@@ -42,7 +41,7 @@ final readonly class CreateDriverAction
                 'driver.created',
                 $driver,
                 null,
-                $driver->only(['provider_id', 'code', 'first_name', 'last_name', 'status']),
+                $driver->only(['provider_id', 'code', 'name', 'status', 'address_id', 'contact_id']),
                 null,
                 $context->ipAddress,
             );

@@ -6,19 +6,19 @@ namespace App\Modules\Drivers\DTOs;
 
 /**
  * Données de création d'un chauffeur.
+ *
+ * `organizationId` n'est pas dans le payload : il vient du contexte actif, et
+ * l'Action vérifie qu'il coïncide avec celui du fournisseur.
  */
 final readonly class CreateDriverData
 {
     public function __construct(
         public string $providerId,
         public string $code,
-        public string $firstName,
-        public string $lastName,
+        public string $name,
         public string $status,
-        public ?string $userId = null,
-        public ?string $phone = null,
-        public ?string $email = null,
-        public ?int $legacyId = null,
+        public ?string $addressId = null,
+        public ?string $contactId = null,
     ) {}
 
     /**
@@ -29,30 +29,25 @@ final readonly class CreateDriverData
         return new self(
             providerId: $validated['providerId'],
             code: $validated['code'],
-            firstName: $validated['firstName'],
-            lastName: $validated['lastName'],
+            name: $validated['name'],
             status: $validated['status'],
-            userId: $validated['userId'] ?? null,
-            phone: $validated['phone'] ?? null,
-            email: $validated['email'] ?? null,
-            legacyId: $validated['legacyId'] ?? null,
+            addressId: $validated['addressId'] ?? null,
+            contactId: $validated['contactId'] ?? null,
         );
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function toAttributes(): array
+    public function toAttributes(string $organizationId): array
     {
         return [
-            'legacy_id' => $this->legacyId,
+            'organization_id' => $organizationId,
             'provider_id' => $this->providerId,
-            'user_id' => $this->userId,
+            'address_id' => $this->addressId,
+            'contact_id' => $this->contactId,
             'code' => $this->code,
-            'first_name' => $this->firstName,
-            'last_name' => $this->lastName,
-            'phone' => $this->phone,
-            'email' => $this->email,
+            'name' => $this->name,
             'status' => $this->status,
         ];
     }

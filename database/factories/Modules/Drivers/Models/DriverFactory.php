@@ -2,8 +2,10 @@
 
 namespace Database\Factories\Modules\Drivers\Models;
 
+use App\Modules\Addresses\Models\Address;
+use App\Modules\Contacts\Models\Contact;
 use App\Modules\Drivers\Models\Driver;
-use App\Modules\Identity\Models\User;
+use App\Modules\Organizations\Models\Organization;
 use App\Modules\Providers\Models\Provider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,26 +23,40 @@ class DriverFactory extends Factory
     {
         return [
             'provider_id' => Provider::factory(),
-            'legacy_id' => null,
-            // Un chauffeur n'a pas de compte par defaut : l'application
-            // chauffeur est hors perimetre.
-            'user_id' => null,
+            // L'organisation du chauffeur est toujours celle de son fournisseur :
+            // la deduire evite de produire un jeu de donnees que l'API refuserait.
+            'organization_id' => fn (array $attributes): string => Provider::findOrFail($attributes['provider_id'])->organization_id,
+            'address_id' => null,
+            'contact_id' => null,
             'code' => fake()->unique()->bothify('DRV-####'),
-            'first_name' => fake()->firstName(),
-            'last_name' => fake()->lastName(),
-            'phone' => fake()->numerify('+2126########'),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => fake()->name(),
             'status' => 'active',
         ];
     }
 
     public function forProvider(Provider $provider): static
     {
-        return $this->state(fn (): array => ['provider_id' => $provider->id]);
+        return $this->state(fn (): array => [
+            'provider_id' => $provider->id,
+            'organization_id' => $provider->organization_id,
+        ]);
     }
 
-    public function withUser(User $user): static
+    public function forOrganization(Organization $organization): static
     {
-        return $this->state(fn (): array => ['user_id' => $user->id]);
+        return $this->state(fn (): array => [
+            'provider_id' => Provider::factory()->forOrganization($organization),
+            'organization_id' => $organization->id,
+        ]);
+    }
+
+    public function withAddress(?Address $address = null): static
+    {
+        return $this->state(fn (): array => ['address_id' => $address?->id ?? Address::factory()]);
+    }
+
+    public function withContact(?Contact $contact = null): static
+    {
+        return $this->state(fn (): array => ['contact_id' => $contact?->id ?? Contact::factory()]);
     }
 }

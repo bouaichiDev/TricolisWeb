@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Providers\Models;
 
+use App\Modules\Addresses\Models\Address;
+use App\Modules\Contacts\Models\Contact;
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Organizations\Models\Organization;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,21 +19,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Fournisseur de transport (`Organization 1 — 0..* Provider`).
  *
- * Ni adresse ni contact : le diagramme n'en définit pas. Une liaison passerait
- * par les mécanismes partagés `EntityAddress` / `EntityContact`.
- *
- * `legacy_id` sert la reprise depuis l'ancienne plateforme ; il est masqué par
- * défaut pour ne pas fuiter dans les réponses.
+ * L'adresse et le contact sont portés en clé étrangère directe, comme le pose
+ * le diagramme : `Provider "0..*" --> "0..1" Address`. Les deux sont donc
+ * facultatifs, et ne passent pas par `EntityAddress` / `EntityContact`.
  */
 #[Fillable([
-    'legacy_id',
     'organization_id',
+    'address_id',
+    'contact_id',
     'code',
     'name',
-    'provider_type',
     'status',
 ])]
-#[Hidden(['legacy_id'])]
 class Provider extends Model
 {
     use HasFactory;
@@ -47,21 +45,27 @@ class Provider extends Model
     public $incrementing = false;
 
     /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'legacy_id' => 'integer',
-        ];
-    }
-
-    /**
      * @return BelongsTo<Organization, $this>
      */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'organization_id');
+    }
+
+    /**
+     * @return BelongsTo<Address, $this>
+     */
+    public function address(): BelongsTo
+    {
+        return $this->belongsTo(Address::class, 'address_id');
+    }
+
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'contact_id');
     }
 
     /**

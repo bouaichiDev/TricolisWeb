@@ -15,8 +15,8 @@ employée : ni `JSONB`, ni `ILIKE`, ni index partiel, ni enum SQL.
 
 | # | Migration | Dépend de |
 |---|-----------|-----------|
-| 1 | `2026_08_01_200001_create_providers_table` | `organizations` |
-| 2 | `2026_08_01_200002_create_drivers_table` | `providers`, `users` |
+| 1 | `2026_08_01_200001_create_providers_table` | `organizations`, `addresses`, `contacts` |
+| 2 | `2026_08_01_200002_create_drivers_table` | `organizations`, `providers`, `addresses`, `contacts` |
 | 3 | `2026_08_01_200003_create_vehicle_types_table` | `organizations` |
 | 4 | `2026_08_01_200004_create_vehicles_table` | `providers`, `vehicle_types` |
 
@@ -28,23 +28,37 @@ référençant pas `vehicle_types`.
 | Colonne | Nullable | Raison |
 |---------|----------|--------|
 | `providers.organization_id` | non | Un fournisseur appartient toujours à une organisation. |
+| `providers.address_id` | **oui** | `Provider "0..*" --> "0..1" Address` : le `0..1` est explicite au diagramme. |
+| `providers.contact_id` | **oui** | `Provider "0..*" --> "0..1" Contact`. |
+| `drivers.organization_id` | non | Le diagramme porte l'attribut sur la classe, sans optionnalité. |
 | `drivers.provider_id` | non | `Provider 1 — 0..* Driver` : le côté `1` impose la présence. |
-| `drivers.user_id` | **oui** | Un chauffeur est une personne du sous-traitant ; il n'a pas nécessairement de compte sur la plateforme, et l'application chauffeur est hors périmètre. L'imposer obligerait à créer un compte pour chaque chauffeur saisi. |
+| `drivers.address_id` | **oui** | `Driver "0..*" --> "0..1" Address`. |
+| `drivers.contact_id` | **oui** | `Driver "0..*" --> "0..1" Contact`. |
 | `vehicle_types.organization_id` | non | Référentiel propre à une organisation. |
 | `vehicles.provider_id` | non | `Provider 1 — 0..* Vehicle`. |
 | `vehicles.vehicle_type_id` | non | `VehicleType 1 — 0..* Vehicle`. |
 
-Colonnes non-FK nullables : `legacy_id` sur les trois tables concernées,
-`drivers.phone` et `drivers.email` — le §9 précise « `email` validé comme email
-**si renseigné** ».
+**Aucune colonne non-FK n'est nullable.** Le diagramme ne marque aucun attribut
+scalaire comme optionnel.
+
+### Cohérence entre `drivers.organization_id` et le fournisseur
+
+Le chauffeur porte son organisation **et** son fournisseur. Deux sources pour la
+même vérité divergent dès que personne ne les tient : `CreateDriverAction` pose
+toujours l'organisation du fournisseur retenu, jamais une valeur d'entrée, et
+`organizationId` n'est pas accepté dans le payload. Un `PATCH` qui change de
+fournisseur ne peut viser qu'un fournisseur de la même organisation, vérifié par
+`ProviderScopeGuard`. Un test couvre les deux cas.
 
 ## 3. Stratégies de suppression
 
 | Clé étrangère | Stratégie | Raison |
 |---------------|-----------|--------|
 | `providers.organization_id` | `RESTRICT` | Supprimer une organisation ne doit pas emporter ses fournisseurs. |
+| `providers.address_id`, `providers.contact_id` | `RESTRICT` | `SET NULL` aurait délié le fournisseur sans laisser de trace de l'adresse perdue. `RESTRICT` force à traiter le lien avant de supprimer. Même stratégie que `entity_addresses` et `customer_sites`. |
+| `drivers.organization_id` | `RESTRICT` | |
 | `drivers.provider_id` | `RESTRICT` | Un fournisseur avec chauffeurs ne disparaît pas silencieusement. |
-| `drivers.user_id` | `SET NULL` | Cohérent avec la nullabilité : supprimer un compte ne supprime pas le chauffeur, qui reste une personne réelle. |
+| `drivers.address_id`, `drivers.contact_id` | `RESTRICT` | Même raison. |
 | `vehicle_types.organization_id` | `RESTRICT` | |
 | `vehicles.provider_id` | `RESTRICT` | |
 | `vehicles.vehicle_type_id` | `RESTRICT` | Le §16 l'exige explicitement : supprimer un type ne supprime pas les véhicules. |
@@ -78,11 +92,6 @@ les risques du rapport final.
 | `vehicles` | `(provider_id, code)` | |
 | `vehicles` | `registration_number` — **unique global** | Voir §5. |
 
-`legacy_id` n'est **pas** unique. Aucune stratégie de reprise ne l'impose
-aujourd'hui, et une donnée de reprise incohérente bloquerait l'import entier au
-lieu de se signaler ligne par ligne. La colonne est indexée pour permettre les
-rapprochements.
-
 ## 5. Périmètre de l'immatriculation
 
 `registration_number` est unique sur **toute la table**, conformément au §13.
@@ -101,16 +110,16 @@ contrainte devrait être revue en `(provider_id, registration_number)`.
 
 | Table | Index |
 |-------|-------|
-| `providers` | `organization_id`, `(organization_id, code)` unique, `status`, `provider_type`, `legacy_id` |
-| `drivers` | `provider_id`, `(provider_id, code)` unique, `user_id`, `status`, `legacy_id`, `email` |
+| `providers` | `organization_id`, `(organization_id, code)` unique, `address_id`, `contact_id`, `status` |
+| `drivers` | `organization_id`, `provider_id`, `(provider_id, code)` unique, `address_id`, `contact_id`, `status` |
 | `vehicle_types` | `organization_id`, `(organization_id, code)` unique, `status` |
-| `vehicles` | `provider_id`, `vehicle_type_id`, `(provider_id, code)` unique, `registration_number` unique, `status`, `legacy_id` |
+| `vehicles` | `provider_id`, `vehicle_type_id`, `(provider_id, code)` unique, `registration_number` unique, `status` |
 
-Exactement les index recommandés par les §7, §9, §11 et §13.
+Chaque clé étrangère est indexée, et chaque colonne filtrable l'est aussi.
 
-Les listes de chauffeurs et de véhicules filtrent par jointure sur
-`providers.organization_id` : l'index `providers.organization_id` sert cette
-jointure, et `drivers.provider_id` / `vehicles.provider_id` la résolvent.
+Les chauffeurs se filtrent désormais sur `drivers.organization_id`, sans
+jointure : c'est l'intérêt d'avoir l'attribut sur la classe. Seuls les véhicules
+joignent encore `providers`, faute d'`organizationId` propre.
 
 ## 7. Précision des colonnes décimales
 
@@ -137,19 +146,35 @@ concurrentes dans la même base.
 `pallet_capacity` est `UNSIGNED` : la négativité est impossible au niveau du
 stockage, pas seulement de la validation.
 
-## 8. Stratégie `legacy_id`
+## 8. Absence de `legacy_id`
 
-- Type `BIGINT UNSIGNED`, conforme au `bigint` du diagramme.
-- **Nullable** : les données créées par l'API n'en ont pas.
-- **Jamais clé primaire** : l'identité reste l'ULID.
-- **Indexé** sur les trois tables qui le portent, pour permettre les
-  rapprochements pendant la reprise.
-- **Non exposé** dans les Resources : l'attribut est déclaré dans `#[Hidden]` au
-  niveau des modèles `Provider`, `Driver` et `Vehicle`, et aucune Resource ne le
-  restitue. Un test le vérifie.
-- Acceptable en entrée d'API pour permettre aux scripts de reprise de le poser.
+**Aucune des quatre tables ne porte `legacy_id`.** Les diagrammes ne le
+définissent sur aucune des quatre classes ; le §6 impose de respecter
+strictement leurs attributs.
 
-`VehicleType` n'a pas de `legacy_id` : le §11 ne le définit pas.
+Conséquence pour une reprise depuis l'ancienne plateforme : le rapprochement ne
+peut pas se faire sur la ligne elle-même. Il faudra une table de correspondance
+dédiée (`legacy_id` ↔ ULID), à décider au moment de la reprise. Cette table ne
+relève pas du modèle métier et n'a pas à figurer au diagramme de classes.
+
+## 8 bis. Adresse et contact en clé étrangère directe
+
+Le diagramme pose `Provider "0..*" --> "0..1" Address`, et non un passage par
+`EntityAddress`. Deux mécanismes coexistent donc dans le projet :
+
+| Mécanisme | Employé par | Pourquoi |
+|-----------|-------------|----------|
+| FK directe `address_id` | `providers`, `drivers`, `customer_sites`, `order_services` | Une seule adresse, désignée sans ambiguïté |
+| `entity_addresses` polymorphe | `customers`, autres entités | Plusieurs adresses typées par entité |
+
+Ce n'est pas une incohérence : le premier exprime « cette entité **a une**
+adresse », le second « cette entité **a des** adresses, avec un rôle ».
+
+`addresses` et `contacts` n'ont pas d'`organization_id` — le diagramme partagé
+ne leur en donne pas. La validation se limite donc à `exists:addresses,id`,
+exactement comme pour `customer_sites` et `order_services` livrés en Phases 1
+et 2. Ajouter un filtre de périmètre ici exigerait de passer par
+`entity_addresses`, ce qui inventerait une règle absente du modèle.
 
 ## 9. Timestamps et soft deletes
 
@@ -174,15 +199,17 @@ d'information rattachée.
 
 ## 10. Statuts laissés en chaîne
 
-`providers.status`, `providers.provider_type`, `drivers.status`,
-`vehicle_types.status` et `vehicles.status` sont des `VARCHAR`.
+`providers.status`, `drivers.status`, `vehicle_types.status` et
+`vehicles.status` sont des `VARCHAR`.
 
 Le §2 interdit explicitement de créer `ProviderStatus`, `DriverStatus`,
-`VehicleStatus`, `VehicleTypeStatus` ou un enum pour `providerType` : le
-diagramme les déclare comme `string`, sans énumérer de valeurs.
+`VehicleStatus` ou `VehicleTypeStatus` : le diagramme les déclare comme
+`string`, sans énumérer de valeurs.
 
 Aucune valeur par défaut n'est posée en base : le statut est obligatoire et
 fourni par l'appelant. Poser `active` par défaut aurait été inventer une valeur.
 
-Les seeders et factories emploient `active`, `carrier`, `subcontractor`,
-`partner` à titre d'exemples de démonstration, sans valeur normative.
+Les seeders et factories emploient `active` à titre d'exemple de démonstration,
+sans valeur normative.
+
+`provider_type` n'existe pas : le diagramme retenu ne le définit pas.

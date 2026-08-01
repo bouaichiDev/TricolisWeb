@@ -29,7 +29,7 @@ final readonly class DeleteDriverAction
                 $context->user,
                 'driver.deleted',
                 $driver,
-                $driver->only(['provider_id', 'code', 'first_name', 'last_name', 'status']),
+                $driver->only(['provider_id', 'code', 'name', 'status']),
                 null,
                 null,
                 $context->ipAddress,

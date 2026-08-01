@@ -36,10 +36,6 @@ final readonly class UpdateDriverAction
             $this->guard->provider($data->attributes->get('provider_id'), $context->organizationId);
         }
 
-        if ($data->attributes->has('user_id') && $data->attributes->get('user_id') !== null) {
-            $this->guard->user($data->attributes->get('user_id'), $context->organizationId);
-        }
-
         return DB::transaction(function () use ($driver, $attributes, $context): Driver {
             $before = $driver->only(array_keys($attributes));
             $driver->update($attributes);

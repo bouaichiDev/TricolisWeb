@@ -15,8 +15,7 @@ use Illuminate\Database\Seeder;
  * Fournisseur, chauffeur, types de véhicule et véhicule de démonstration.
  *
  * Réservé aux environnements local et de test. Aucune donnée de production :
- * les valeurs de `provider_type` et de `status` sont des exemples, le diagramme
- * n'en énumère aucune.
+ * les valeurs de `status` sont des exemples, le diagramme n'en énumère aucune.
  */
 class DemoFleetSeeder extends Seeder
 {
@@ -36,7 +35,6 @@ class DemoFleetSeeder extends Seeder
             ['organization_id' => $organization->id, 'code' => 'demo-provider'],
             [
                 'name' => 'Transporteur partenaire démo',
-                'provider_type' => 'subcontractor',
                 'status' => 'active',
             ]
         );
@@ -44,10 +42,8 @@ class DemoFleetSeeder extends Seeder
         Driver::firstOrCreate(
             ['provider_id' => $provider->id, 'code' => 'demo-driver'],
             [
-                'first_name' => 'Karim',
-                'last_name' => 'Bensaïd',
-                'phone' => '+212661000000',
-                'email' => 'karim.demo@tricolis.dev',
+                'organization_id' => $organization->id,
+                'name' => 'Karim Bensaïd',
                 'status' => 'active',
             ]
         );

@@ -40,7 +40,7 @@ describe('missing permissions', function (): void {
 
     it('forbids creating each resource without the create permission', function (): void {
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/providers', ['code' => 'X', 'name' => 'X', 'providerType' => 'carrier', 'status' => 'active'])
+            ->postJson('/api/v1/providers', ['code' => 'X', 'name' => 'X', 'status' => 'active'])
             ->assertForbidden();
 
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)

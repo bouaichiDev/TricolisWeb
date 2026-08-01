@@ -19,7 +19,7 @@ class DriverCompactResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
-            'fullName' => $this->fullName(),
+            'name' => $this->name,
             'status' => $this->status,
         ];
     }

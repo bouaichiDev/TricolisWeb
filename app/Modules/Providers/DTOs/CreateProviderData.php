@@ -9,15 +9,17 @@ namespace App\Modules\Providers\DTOs;
  *
  * L'organisation n'est pas dans le payload : elle vient du contexte actif, pour
  * qu'un appelant ne puisse pas créer un fournisseur ailleurs.
+ *
+ * Adresse et contact sont facultatifs (`0..1` au diagramme).
  */
 final readonly class CreateProviderData
 {
     public function __construct(
         public string $code,
         public string $name,
-        public string $providerType,
         public string $status,
-        public ?int $legacyId = null,
+        public ?string $addressId = null,
+        public ?string $contactId = null,
     ) {}
 
     /**
@@ -28,9 +30,9 @@ final readonly class CreateProviderData
         return new self(
             code: $validated['code'],
             name: $validated['name'],
-            providerType: $validated['providerType'],
             status: $validated['status'],
-            legacyId: $validated['legacyId'] ?? null,
+            addressId: $validated['addressId'] ?? null,
+            contactId: $validated['contactId'] ?? null,
         );
     }
 
@@ -41,10 +43,10 @@ final readonly class CreateProviderData
     {
         return [
             'organization_id' => $organizationId,
-            'legacy_id' => $this->legacyId,
+            'address_id' => $this->addressId,
+            'contact_id' => $this->contactId,
             'code' => $this->code,
             'name' => $this->name,
-            'provider_type' => $this->providerType,
             'status' => $this->status,
         ];
     }

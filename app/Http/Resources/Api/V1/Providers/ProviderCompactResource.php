@@ -24,7 +24,6 @@ class ProviderCompactResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
-            'providerType' => $this->provider_type,
             'status' => $this->status,
         ];
     }

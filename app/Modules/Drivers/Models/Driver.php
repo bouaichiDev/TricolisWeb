@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Drivers\Models;
 
-use App\Modules\Identity\Models\User;
+use App\Modules\Addresses\Models\Address;
+use App\Modules\Contacts\Models\Contact;
+use App\Modules\Organizations\Models\Organization;
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,22 +18,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Chauffeur d'un fournisseur (`Provider 1 — 0..* Driver`).
  *
- * Le modèle ne porte pas d'`organization_id` : son périmètre est celui de son
- * fournisseur. Le scope `inOrganization` est le seul point qui applique cette
- * règle, pour qu'aucune lecture ne puisse l'oublier.
+ * Le diagramme porte `organizationId` sur la classe : l'isolation se lit sur la
+ * ligne, sans jointure. Les Actions garantissent que cette organisation reste
+ * celle du fournisseur — deux sources pour une même vérité ne divergent que si
+ * personne ne les tient.
+ *
+ * Une seule identité, `name` : le diagramme ne sépare ni prénom ni nom, et ne
+ * porte ni téléphone ni courriel — ces informations relèvent de `Contact`.
  */
 #[Fillable([
-    'legacy_id',
+    'organization_id',
     'provider_id',
-    'user_id',
+    'address_id',
+    'contact_id',
     'code',
-    'first_name',
-    'last_name',
-    'phone',
-    'email',
+    'name',
     'status',
 ])]
-#[Hidden(['legacy_id'])]
 class Driver extends Model
 {
     use HasFactory;
@@ -47,13 +49,11 @@ class Driver extends Model
     public $incrementing = false;
 
     /**
-     * @return array<string, string>
+     * @return BelongsTo<Organization, $this>
      */
-    protected function casts(): array
+    public function organization(): BelongsTo
     {
-        return [
-            'legacy_id' => 'integer',
-        ];
+        return $this->belongsTo(Organization::class, 'organization_id');
     }
 
     /**
@@ -65,25 +65,28 @@ class Driver extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
+     * @return BelongsTo<Address, $this>
      */
-    public function user(): BelongsTo
+    public function address(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function fullName(): string
-    {
-        return trim("{$this->first_name} {$this->last_name}");
+        return $this->belongsTo(Address::class, 'address_id');
     }
 
     /**
-     * Restreint aux chauffeurs dont le fournisseur appartient à l'organisation.
+     * @return BelongsTo<Contact, $this>
+     */
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'contact_id');
+    }
+
+    /**
+     * Restreint aux chauffeurs de l'organisation.
      *
      * @param  Builder<$this>  $query
      */
     public function scopeInOrganization(Builder $query, string $organizationId): void
     {
-        $query->whereHas('provider', fn (Builder $provider) => $provider->where('organization_id', $organizationId));
+        $query->where('organization_id', $organizationId);
     }
 }

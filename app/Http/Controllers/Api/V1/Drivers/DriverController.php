@@ -25,8 +25,8 @@ use Illuminate\Http\Request;
 /**
  * Chauffeurs des fournisseurs de l'organisation active.
  *
- * Le chauffeur n'ayant pas d'organisation propre, son périmètre est celui de
- * son fournisseur : c'est ce que vérifie `guardScope`.
+ * Le chauffeur porte son `organization_id` : `guardScope` le compare
+ * directement à l'organisation active, sans passer par le fournisseur.
  */
 class DriverController extends Controller
 {
@@ -35,10 +35,9 @@ class DriverController extends Controller
     /**
      * Lister les chauffeurs.
      *
-     * Permission requise : `drivers.view`. Recherche sur `code`, `first_name`,
-     * `last_name`, `phone`, `email` ; filtres `providerId`, `userId`, `status`,
-     * `legacyId` ; tri sur `code`, `first_name`, `last_name`, `status`,
-     * `legacy_id`.
+     * Permission requise : `drivers.view`. Recherche sur `code` et `name` ;
+     * filtres `providerId`, `addressId`, `contactId`, `status` ; tri sur
+     * `code`, `name`, `status`.
      */
     public function index(ListDriverRequest $request, DriverListQuery $query): JsonResponse
     {
@@ -54,8 +53,8 @@ class DriverController extends Controller
      * Créer un chauffeur.
      *
      * Permission requise : `drivers.create`. Le fournisseur doit appartenir à
-     * l'organisation active, et le compte lié en être membre. Le code est
-     * unique chez le fournisseur.
+     * l'organisation active, qui devient celle du chauffeur. Le code est unique
+     * chez le fournisseur.
      */
     public function store(StoreDriverRequest $request, CreateDriverAction $action): JsonResponse
     {
@@ -74,14 +73,14 @@ class DriverController extends Controller
      * Consulter un chauffeur.
      *
      * Permission requise : `drivers.view`. Un chauffeur hors périmètre renvoie
-     * 404. Le compte lié n'est exposé que par son nom et son email.
+     * 404.
      */
     public function show(Request $request, Driver $driver): JsonResponse
     {
         $this->guardScope($driver);
         $this->authorize('view', $driver);
 
-        return ApiResponse::ok(new DriverDetailResource($driver->load(['provider', 'user'])));
+        return ApiResponse::ok(new DriverDetailResource($driver->load(['provider', 'address', 'contact'])));
     }
 
     /**
@@ -124,7 +123,7 @@ class DriverController extends Controller
     private function guardScope(Driver $driver): string
     {
         $organizationId = $this->requireOrganizationId();
-        abort_unless($driver->provider?->organization_id === $organizationId, 404, 'Chauffeur introuvable.');
+        abort_unless($driver->organization_id === $organizationId, 404, 'Chauffeur introuvable.');
 
         return $organizationId;
     }

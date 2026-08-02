@@ -80,7 +80,7 @@ describe('agencies', function (): void {
         $this->actingAs($this->user, 'sanctum')
             ->withHeaders($this->headers)
             ->patchJson("/api/v1/agencies/{$foreign->id}", ['name' => 'Piratée'])
-            ->assertForbidden();
+            ->assertNotFound();
     });
 
     it('rejects creating an agency in another organization', function (): void {

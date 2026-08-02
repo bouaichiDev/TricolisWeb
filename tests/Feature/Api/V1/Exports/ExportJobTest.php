@@ -93,10 +93,17 @@ describe('export job creation', function (): void {
             ]))
             ->assertCreated();
 
+        // `storagePath` n'est plus restitue depuis la Phase 10 : la garantie se
+        // verifie donc en base, ou le chemin fourni ne doit pas avoir ete ecrit.
         expect($response->json('data.fileName'))->toBeNull()
-            ->and($response->json('data.storagePath'))->toBeNull()
+            ->and($response->json('data.hasFile'))->toBeFalse()
+            ->and(array_keys($response->json('data')))->not->toContain('storagePath')
             ->and($response->json('data.attemptCount'))->toBe(0)
             ->and($response->json('data.sentAt'))->toBeNull();
+
+        $this->assertDatabaseHas('export_jobs', [
+            'id' => $response->json('data.id'), 'storage_path' => null,
+        ]);
     });
 });
 

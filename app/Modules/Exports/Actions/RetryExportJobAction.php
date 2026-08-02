@@ -20,6 +20,14 @@ use Illuminate\Support\Facades\DB;
  *
  * Un export déjà transmis n'est pas relançable : `sentAt` renseigné signifie que
  * le client a reçu le fichier. Le renvoyer produirait un doublon chez lui.
+ *
+ * **La ligne est verrouillée** (`lockForUpdate`) — corrigé en Phase 10. Sans
+ * verrou, `attempt_count + 1` était lu hors transaction : deux relances
+ * simultanées lisaient toutes deux la même valeur et n'en écrivaient qu'un seul
+ * incrément. Le compteur aurait alors sous-estimé le nombre de tentatives, ce
+ * qui est exactement ce qu'il sert à mesurer. Le refus de relancer un export
+ * déjà transmis est lui aussi revérifié sous verrou : sans cela, deux relances
+ * concurrentes pouvaient passer le premier contrôle avant que l'une n'écrive.
  */
 final readonly class RetryExportJobAction
 {
@@ -32,11 +40,18 @@ final readonly class RetryExportJobAction
         }
 
         return DB::transaction(function () use ($job, $status, $context): ExportJob {
-            $before = $job->only(['status', 'attempt_count', 'error_message']);
+            /** @var ExportJob $locked */
+            $locked = ExportJob::whereKey($job->getKey())->lockForUpdate()->firstOrFail();
 
-            $job->update([
+            if ($locked->sent_at !== null) {
+                throw ExportJobNotRetryable::alreadySent();
+            }
+
+            $before = $locked->only(['status', 'attempt_count', 'error_message']);
+
+            $locked->update([
                 'status' => $status,
-                'attempt_count' => $job->attempt_count + 1,
+                'attempt_count' => $locked->attempt_count + 1,
                 'error_message' => null,
             ]);
 
@@ -44,14 +59,14 @@ final readonly class RetryExportJobAction
                 $context->organizationId,
                 $context->user,
                 'export_job.retried',
-                $job,
+                $locked,
                 $before,
-                $job->fresh()->only(['status', 'attempt_count', 'error_message']),
+                $locked->fresh()->only(['status', 'attempt_count', 'error_message']),
                 null,
                 $context->ipAddress,
             );
 
-            return $job->fresh();
+            return $locked->fresh();
         });
     }
 }

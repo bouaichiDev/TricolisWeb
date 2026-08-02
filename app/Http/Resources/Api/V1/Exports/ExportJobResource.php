@@ -11,6 +11,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * Exécution d'un export.
  *
+ * **`storagePath` n'y figure plus** — corrigé en Phase 10. Le chemin de
+ * stockage est une donnée interne : le publier révèle l'arborescence du serveur
+ * de fichiers et le nommage des dépôts distants. `DocumentCompactResource` le
+ * masquait déjà depuis la Phase 2 ; les deux ressources sont désormais
+ * cohérentes. `hasFile` suffit à savoir si un fichier a été produit.
+ *
  * @mixin ExportJob
  */
 class ExportJobResource extends JsonResource
@@ -27,7 +33,7 @@ class ExportJobResource extends JsonResource
             'entityType' => $this->entity_type,
             'entityId' => $this->entity_id,
             'fileName' => $this->file_name,
-            'storagePath' => $this->storage_path,
+            'hasFile' => $this->storage_path !== null,
             'status' => $this->status,
             'attemptCount' => $this->attempt_count,
             'generatedAt' => $this->generated_at?->toIso8601String(),

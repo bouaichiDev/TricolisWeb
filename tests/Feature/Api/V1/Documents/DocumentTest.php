@@ -53,5 +53,5 @@ it('hides a deleted document from listing and download', function (): void {
 it('does not expose a document from another organization', function (): void {
     $other = Organization::factory()->create();
     $document = Document::create(['organization_id' => $other->id, 'document_type' => 'proof', 'status' => 'active', 'file_name' => 'x.pdf', 'storage_path' => 'documents/x.pdf', 'mime_type' => 'application/pdf', 'size' => 1, 'created_by' => $this->user->id]);
-    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->getJson("/api/v1/documents/$document->id")->assertForbidden();
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->getJson("/api/v1/documents/$document->id")->assertNotFound();
 });

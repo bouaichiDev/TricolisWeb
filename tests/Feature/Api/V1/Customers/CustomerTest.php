@@ -78,6 +78,6 @@ describe('customers', function (): void {
             ->withHeaders($this->headers)
             ->getJson("/api/v1/customers/{$customer->id}");
 
-        $response->assertForbidden();
+        $response->assertNotFound();
     });
 });

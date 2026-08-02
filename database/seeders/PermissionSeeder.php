@@ -209,6 +209,26 @@ class PermissionSeeder extends Seeder
         ['code' => 'stock_reservations.create', 'name' => 'Créer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'create'],
         ['code' => 'stock_reservations.update', 'name' => 'Modifier une réservation de stock', 'module' => 'stock_reservations', 'action' => 'update'],
         ['code' => 'stock_reservations.release', 'name' => 'Libérer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'release'],
+
+        ['code' => 'customer_import_configurations.view', 'name' => 'Voir les configurations d\'import', 'module' => 'customer_import_configurations', 'action' => 'view'],
+        ['code' => 'customer_import_configurations.create', 'name' => 'Créer une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'create'],
+        ['code' => 'customer_import_configurations.update', 'name' => 'Modifier une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'update'],
+        ['code' => 'customer_import_configurations.delete', 'name' => 'Supprimer une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'delete'],
+
+        ['code' => 'customer_api_configurations.view', 'name' => 'Voir les accès API clients', 'module' => 'customer_api_configurations', 'action' => 'view'],
+        ['code' => 'customer_api_configurations.create', 'name' => 'Créer un accès API client', 'module' => 'customer_api_configurations', 'action' => 'create'],
+        ['code' => 'customer_api_configurations.update', 'name' => 'Modifier un accès API client', 'module' => 'customer_api_configurations', 'action' => 'update'],
+        ['code' => 'customer_api_configurations.delete', 'name' => 'Supprimer un accès API client', 'module' => 'customer_api_configurations', 'action' => 'delete'],
+        ['code' => 'customer_api_configurations.rotate_key', 'name' => 'Renouveler une clé API client', 'module' => 'customer_api_configurations', 'action' => 'rotate_key'],
+
+        ['code' => 'customer_export_configurations.view', 'name' => 'Voir les configurations d\'export', 'module' => 'customer_export_configurations', 'action' => 'view'],
+        ['code' => 'customer_export_configurations.create', 'name' => 'Créer une configuration d\'export', 'module' => 'customer_export_configurations', 'action' => 'create'],
+        ['code' => 'customer_export_configurations.update', 'name' => 'Modifier une configuration d\'export', 'module' => 'customer_export_configurations', 'action' => 'update'],
+        ['code' => 'customer_export_configurations.delete', 'name' => 'Supprimer une configuration d\'export', 'module' => 'customer_export_configurations', 'action' => 'delete'],
+
+        ['code' => 'export_jobs.view', 'name' => 'Voir les exports', 'module' => 'export_jobs', 'action' => 'view'],
+        ['code' => 'export_jobs.create', 'name' => 'Déclencher un export', 'module' => 'export_jobs', 'action' => 'create'],
+        ['code' => 'export_jobs.retry', 'name' => 'Relancer un export', 'module' => 'export_jobs', 'action' => 'retry'],
     ];
 
     public function run(): void

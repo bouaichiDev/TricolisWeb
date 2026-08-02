@@ -45,6 +45,11 @@ use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
+use App\Http\Controllers\Api\V1\Stock\StockBalanceController;
+use App\Http\Controllers\Api\V1\Stock\StockItemController;
+use App\Http\Controllers\Api\V1\Stock\StockLocationController;
+use App\Http\Controllers\Api\V1\Stock\StockMovementController;
+use App\Http\Controllers\Api\V1\Stock\StockReservationController;
 use App\Http\Controllers\Api\V1\Tours\TourController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
@@ -207,5 +212,28 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('provider-settlements', ProviderSettlementController::class)
             ->parameters(['provider-settlements' => 'providerSettlement'])
             ->except(['create', 'edit']);
+
+        // Stock client
+        Route::get('customers/{customer}/stock-items', [StockItemController::class, 'byCustomer'])->name('customers.stock-items.index');
+        Route::post('customers/{customer}/stock-items', [StockItemController::class, 'storeForCustomer'])->name('customers.stock-items.store');
+        Route::get('customers/{customer}/stock-balances', [StockBalanceController::class, 'byCustomer'])->name('customers.stock-balances.index');
+        Route::apiResource('stock-items', StockItemController::class)
+            ->parameters(['stock-items' => 'stockItem'])
+            ->except(['create', 'edit']);
+        // `tree` precede `{stockLocation}`, sinon elle serait captee comme un
+        // identifiant.
+        Route::get('stock-locations/tree', [StockLocationController::class, 'tree'])->name('stock-locations.tree');
+        Route::apiResource('stock-locations', StockLocationController::class)
+            ->parameters(['stock-locations' => 'stockLocation'])
+            ->except(['create', 'edit']);
+        Route::get('stock-balances', [StockBalanceController::class, 'index'])->name('stock-balances.index');
+        Route::get('stock-balances/{stockBalance}', [StockBalanceController::class, 'show'])->name('stock-balances.show');
+        Route::apiResource('stock-movements', StockMovementController::class)
+            ->parameters(['stock-movements' => 'stockMovement'])
+            ->only(['index', 'store', 'show']);
+        Route::post('stock-reservations/{stockReservation}/release', [StockReservationController::class, 'release'])->name('stock-reservations.release');
+        Route::apiResource('stock-reservations', StockReservationController::class)
+            ->parameters(['stock-reservations' => 'stockReservation'])
+            ->only(['index', 'store', 'show', 'update']);
     });
 });

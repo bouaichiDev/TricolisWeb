@@ -34,6 +34,11 @@ use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Stock\Models\StockBalance;
+use App\Modules\Stock\Models\StockItem;
+use App\Modules\Stock\Models\StockLocation;
+use App\Modules\Stock\Models\StockMovement;
+use App\Modules\Stock\Models\StockReservation;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -65,6 +70,11 @@ use App\Policies\ProviderSettlementLinePolicy;
 use App\Policies\ProviderSettlementPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
+use App\Policies\StockBalancePolicy;
+use App\Policies\StockItemPolicy;
+use App\Policies\StockLocationPolicy;
+use App\Policies\StockMovementPolicy;
+use App\Policies\StockReservationPolicy;
 use App\Policies\SubscriptionPolicy;
 use App\Policies\TourPeriodAssignmentPolicy;
 use App\Policies\TourPeriodPolicy;
@@ -118,6 +128,11 @@ class AuthServiceProvider extends ServiceProvider
         InvoiceLine::class => InvoiceLinePolicy::class,
         ProviderSettlement::class => ProviderSettlementPolicy::class,
         ProviderSettlementLine::class => ProviderSettlementLinePolicy::class,
+        StockItem::class => StockItemPolicy::class,
+        StockLocation::class => StockLocationPolicy::class,
+        StockBalance::class => StockBalancePolicy::class,
+        StockMovement::class => StockMovementPolicy::class,
+        StockReservation::class => StockReservationPolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

@@ -1,0 +1,111 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Shared\Database;
+
+use App\Modules\Addresses\Models\Address;
+use App\Modules\Addresses\Models\EntityAddress;
+use App\Modules\Agencies\Models\Agency;
+use App\Modules\Agencies\Models\Depot;
+use App\Modules\Contacts\Models\AddressContact;
+use App\Modules\Contacts\Models\Contact;
+use App\Modules\Contacts\Models\EntityContact;
+use App\Modules\Customers\Models\Customer;
+use App\Modules\Customers\Models\CustomerSite;
+use App\Modules\Documents\Models\Document;
+use App\Modules\Documents\Models\DocumentLink;
+use App\Modules\Identity\Models\Role;
+use App\Modules\Identity\Models\User;
+use App\Modules\Orders\Models\Order;
+use App\Modules\Organizations\Models\Organization;
+use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\Organizations\Models\Subscription;
+use Illuminate\Database\Eloquent\Relations\Relation;
+
+/**
+ * Valeurs métier stables utilisées pour les relations polymorphes.
+ *
+ * Aucun nom de classe PHP n'est stocké en base. Seules les entités réellement
+ * livrées y figurent : les alias des modules futurs (fournisseurs, chauffeurs,
+ * véhicules, réclamations, factures) seront ajoutés avec leur module.
+ */
+final class MorphMap
+{
+    public const string ORGANIZATION = 'organization';
+
+    public const string USER = 'user';
+
+    public const string ORGANIZATION_USER = 'organization_user';
+
+    public const string SUBSCRIPTION = 'subscription';
+
+    public const string ROLE = 'role';
+
+    public const string AGENCY = 'agency';
+
+    public const string ADDRESS = 'address';
+
+    public const string CONTACT = 'contact';
+
+    public const string DEPOT = 'depot';
+
+    public const string CUSTOMER = 'customer';
+
+    public const string CUSTOMER_SITE = 'customer_site';
+
+    public const string ORDER = 'order';
+
+    public const string DOCUMENT = 'document';
+
+    public const string ENTITY_ADDRESS = 'entity_address';
+
+    public const string ENTITY_CONTACT = 'entity_contact';
+
+    public const string ADDRESS_CONTACT = 'address_contact';
+
+    public const string DOCUMENT_LINK = 'document_link';
+
+    /**
+     * Enregistre la morph map auprès d'Eloquent.
+     *
+     * Les tables de liaison y figurent aussi : elles ne portent pas de relation
+     * polymorphe, mais elles sont auditées, et `AuditLog.entity_type` ne doit
+     * jamais contenir un nom de classe PHP.
+     */
+    public static function register(): void
+    {
+        Relation::morphMap([
+            self::ORGANIZATION => Organization::class,
+            self::USER => User::class,
+            self::ORGANIZATION_USER => OrganizationUser::class,
+            self::SUBSCRIPTION => Subscription::class,
+            self::ROLE => Role::class,
+            self::AGENCY => Agency::class,
+            self::ADDRESS => Address::class,
+            self::CONTACT => Contact::class,
+            self::DEPOT => Depot::class,
+            self::CUSTOMER => Customer::class,
+            self::CUSTOMER_SITE => CustomerSite::class,
+            self::DOCUMENT => Document::class,
+            self::ORDER => Order::class,
+            self::ENTITY_ADDRESS => EntityAddress::class,
+            self::ENTITY_CONTACT => EntityContact::class,
+            self::ADDRESS_CONTACT => AddressContact::class,
+            self::DOCUMENT_LINK => DocumentLink::class,
+        ]);
+    }
+
+    /**
+     * Retourne la classe Eloquent associée à un alias morphique.
+     *
+     * @return class-string|null
+     */
+    public static function class(string $alias): ?string
+    {
+        /** @var array<string, class-string>|null $map */
+        $map = Relation::morphMap();
+
+        return $map[$alias] ?? null;
+    }
+}

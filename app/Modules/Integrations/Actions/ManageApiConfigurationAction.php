@@ -31,7 +31,6 @@ final readonly class ManageApiConfigurationAction
             $configuration,
             $data->attributes->all(),
             'customer_api_configuration.updated',
-            self::AUDITED,
             $context,
         );
     }

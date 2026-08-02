@@ -52,7 +52,6 @@ final readonly class ManageExportConfigurationAction
             $configuration,
             $data->attributes->all(),
             'customer_export_configuration.updated',
-            self::AUDITED,
             $context,
         );
     }

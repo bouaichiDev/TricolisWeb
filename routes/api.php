@@ -15,6 +15,11 @@ use App\Http\Controllers\Api\V1\Billing\InvoiceLineController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogItemController;
 use App\Http\Controllers\Api\V1\Claims\ClaimController;
+use App\Http\Controllers\Api\V1\Communications\CommunicationAttachmentController;
+use App\Http\Controllers\Api\V1\Communications\CommunicationRuleController;
+use App\Http\Controllers\Api\V1\Communications\CommunicationTemplateController;
+use App\Http\Controllers\Api\V1\Communications\OrderCommunicationController;
+use App\Http\Controllers\Api\V1\Communications\OrderCommunicationStateController;
 use App\Http\Controllers\Api\V1\Contacts\ContactController;
 use App\Http\Controllers\Api\V1\Contacts\ContactLinkController;
 use App\Http\Controllers\Api\V1\Customers\CustomerController;
@@ -265,5 +270,28 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('export-jobs', ExportJobController::class)
             ->parameters(['export-jobs' => 'exportJob'])
             ->only(['index', 'store', 'show']);
+
+        // Communication et templates
+        Route::apiResource('communication-templates', CommunicationTemplateController::class)
+            ->parameters(['communication-templates' => 'communicationTemplate'])
+            ->except(['create', 'edit']);
+        Route::apiResource('communication-rules', CommunicationRuleController::class)
+            ->parameters(['communication-rules' => 'communicationRule'])
+            ->except(['create', 'edit']);
+
+        Route::get('orders/{order}/communications', [OrderCommunicationController::class, 'byOrder'])->name('orders.communications.index');
+        Route::post('orders/{order}/communications', [OrderCommunicationController::class, 'storeForOrder'])->name('orders.communications.store');
+
+        // Les transitions precedent l'apiResource : sans cela `{orderCommunication}`
+        // capterait `queue`, `cancel` et `retry` comme des identifiants.
+        Route::post('order-communications/{orderCommunication}/queue', [OrderCommunicationStateController::class, 'queue'])->name('order-communications.queue');
+        Route::post('order-communications/{orderCommunication}/cancel', [OrderCommunicationStateController::class, 'cancel'])->name('order-communications.cancel');
+        Route::post('order-communications/{orderCommunication}/retry', [OrderCommunicationStateController::class, 'retry'])->name('order-communications.retry');
+        Route::apiResource('order-communications.attachments', CommunicationAttachmentController::class)
+            ->parameters(['order-communications' => 'orderCommunication', 'attachments' => 'attachment'])
+            ->only(['index', 'store', 'show', 'destroy']);
+        Route::apiResource('order-communications', OrderCommunicationController::class)
+            ->parameters(['order-communications' => 'orderCommunication'])
+            ->except(['create', 'edit']);
     });
 });

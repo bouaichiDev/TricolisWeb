@@ -4,6 +4,11 @@ Destiné à l'application React. Ce document décrit **ce que le backend garanti
 aujourd'hui, pas ce qu'il pourrait faire. Aucun endpoint listé ici n'est
 hypothétique : les 308 sont exécutés par la suite de tests.
 
+> **Périmètre : la plateforme interne.** Cette API est celle du back-office
+> qu'utilisent les collaborateurs du transporteur. Les portails **client**,
+> **fournisseur** et **chauffeur** relèvent d'un second backend, à construire :
+> aucune route de ce document ne s'adresse à un utilisateur externe.
+
 ---
 
 ## 1. URL de base
@@ -526,7 +531,7 @@ communication, utilisez son `id`.
 | **Déclenchement automatique des règles** | Les `CommunicationRule` se créent et se listent, mais rien ne les exécute. |
 | **Callbacks fournisseur** | `deliveredAt` et `readAt` restent toujours nuls. |
 | **Génération de fichier d'export** | `ExportJob.hasFile` reste `false` ; `generatedAt` et `sentAt` restent nuls. |
-| **Portail client (`CustomerUser`)** | Aucun utilisateur ne peut être rattaché à un client. |
+| **Portails client, fournisseur et chauffeur** | Hors périmètre : cette API est celle de la **plateforme interne**. Aucun utilisateur ne peut être rattaché à un client, un fournisseur ou un chauffeur. Les portails feront l'objet d'un second backend. |
 | **Tableau de bord** | Aucun endpoint d'agrégation ; la permission `dashboard.view` existe mais ne garde rien. |
 | **Liste des permissions de l'utilisateur** | Non exposée sur `/auth/me`. Tentez l'action, traitez le 403. |
 

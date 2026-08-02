@@ -33,10 +33,17 @@ classes propres au diagramme interne    45
 total des classes UML                   63
 
 classes CONFORMES                       62
-classes MANQUANTES                       1   (CustomerUser)
+classes MANQUANTES                       1   (CustomerUser — hors périmètre)
 classes EN_TROP                          0
 classes INCOHÉRENTES                     0
 ```
+
+`CustomerUser` porte le statut `MANQUANT` parce que l'inventaire décrit ce qui
+existe : la classe est absente du code. Mais son absence **n'est pas un oubli des
+Phases 1 à 10** — elle relève du second backend, celui des portails. Voir §4.
+
+**Les dix phases livrées couvrent la plateforme interne**, et elles la couvrent
+intégralement : 62 classes sur 62.
 
 ## 3. Inventaire détaillé
 
@@ -126,7 +133,7 @@ est celui de leur parent, vérifié par `AddressPolicy` et `DocumentPolicy`.
 
 ---
 
-## 4. La seule classe manquante — `CustomerUser`
+## 4. `CustomerUser` — hors du périmètre interne
 
 Le diagramme interne la déclare, lignes 128-134, avec deux relations :
 
@@ -147,24 +154,55 @@ Elle n'a jamais été implémentée : aucune table, aucun modèle, aucune réfé
 dans le code — vérifié par recherche du nom et de la table sur l'ensemble de
 `app/` et `database/`.
 
-**Elle n'est pas créée par cette phase**, et c'est un choix, pas un oubli. Le §2
-est catégorique : « Ne créer aucune nouvelle classe métier persistée. Ne créer
-aucune nouvelle table métier. » Le §41 le répète. Le §3 prévoit précisément le
-statut `MANQUANT` pour ce cas : constater, documenter, ne pas construire.
+### Ce n'est pas un oubli, c'est une frontière
 
-Ce qu'elle apporterait est identifiable : elle rattache un `User` à un
-`Customer`, avec un indicateur d'administrateur — c'est le socle d'un **portail
-client**, où un contact du client se connecterait pour suivre ses commandes.
-L'enum `OrderSource` contient d'ailleurs déjà `CUSTOMER_PORTAL`, et
-`CustomerApiConfiguration` (Phase 8) couvre l'accès machine du même client.
+Les dix phases livrées constituent le **backend de la plateforme interne** : ce
+qu'utilisent les collaborateurs du transporteur. `CustomerUser` n'y a pas sa
+place, parce qu'elle ne sert à personne en interne — elle rattache un `User` à
+un `Customer` pour que ce contact **se connecte lui-même**.
 
-Aucune fonctionnalité livrée n'en dépend : rien, dans les Phases 1 à 9, ne la
-référence. Son absence ne casse rien ; elle laisse un pan du diagramme non
-réalisé.
+Elle appartient donc au **second backend, celui des portails**, qui reste à
+construire :
 
-**Reporté à une phase ultérieure**, avec son module : table, modèle, policy,
-routes et — surtout — le garde-fou qui empêcherait un utilisateur client de voir
-les commandes d'un autre client.
+```text
+portail client        CustomerUser  ← seule classe déjà décrite au diagramme
+portail fournisseur   à définir
+portail chauffeur     à définir
+```
+
+Deux éléments livrés la préfigurent déjà : l'enum `OrderSource` contient
+`CUSTOMER_PORTAL`, et `CustomerApiConfiguration` (Phase 8) couvre l'accès
+**machine** du même client — le portail en sera l'accès **humain**.
+
+Le §2 de cette phase confirme la décision indépendamment : « Ne créer aucune
+nouvelle classe métier persistée. Ne créer aucune nouvelle table métier. » Le
+§3 prévoit le statut `MANQUANT` pour exactement ce cas : constater, documenter,
+ne pas construire.
+
+Aucune fonctionnalité livrée n'en dépend : rien, dans les Phases 1 à 10, ne la
+référence.
+
+### Ce que les portails demanderont — et que les diagrammes ne disent pas encore
+
+`CustomerUser` est la **seule** classe de liaison entre un `User` et un tiers
+présente dans les diagrammes. Ni `Provider` ni `Driver` ne portent de `userId`,
+et aucune classe `ProviderUser` ou `DriverUser` n'est déclarée :
+
+```text
+class Provider {  id · organizationId · addressId · contactId · code · name · status  }
+class Driver   {  id · organizationId · providerId · addressId · contactId · code · name · status  }
+```
+
+Les portails fournisseur et chauffeur exigeront donc **d'abord une extension des
+diagrammes**, puis le module correspondant. Le portail client, lui, peut
+démarrer immédiatement : sa classe est déjà spécifiée.
+
+Dans les trois cas, le point délicat sera le même — et il ne ressemble à rien de
+ce que les dix phases ont traité. L'isolation actuelle repose sur une question :
+« cet utilisateur appartient-il à l'organisation active ? ». Un portail en pose
+une autre : « cet utilisateur a-t-il le droit de voir **cette commande-ci**,
+parmi celles de son propre client ? ». `BaseOrganizationPolicy` ne sait pas y
+répondre.
 
 ---
 

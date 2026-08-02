@@ -34,28 +34,39 @@ reproductibles.
 ```text
 classes UML                63   (18 partagées + 45 propres à l'interne)
 classes CONFORMES          62
-classes MANQUANTES          1   CustomerUser
+classes MANQUANTES          1   CustomerUser — hors périmètre interne
 classes EN_TROP             0
 classes INCOHÉRENTES        0
 ```
 
-### `CustomerUser` — la seule classe manquante
+### `CustomerUser` — hors du périmètre, par conception
 
 Déclarée au diagramme interne (lignes 128-134) avec deux relations vers
 `Customer` et `User`. **Jamais implémentée** : aucune table, aucun modèle,
 aucune référence dans le code.
 
-**Non créée par cette phase, et c'est un choix.** Le §2 est catégorique — « Ne
-créer aucune nouvelle classe métier persistée. Ne créer aucune nouvelle table
-métier » — et le §41 le répète. Le §3 prévoit exactement le statut `MANQUANT`
-pour ce cas : constater, documenter, ne pas construire.
+Elle porte le statut `MANQUANT` parce que l'inventaire décrit ce qui existe.
+Mais son absence **n'est pas une lacune des dix phases** : les Phases 1 à 10
+constituent le backend de la **plateforme interne**, celle qu'utilisent les
+collaborateurs du transporteur. `CustomerUser` n'y sert à personne — elle
+rattache un `User` à un `Customer` pour que ce contact **se connecte lui-même**.
 
-Ce qu'elle porterait est identifiable : le socle d'un **portail client**, où un
-contact du client se connecterait pour suivre ses commandes. `OrderSource`
-contient déjà `CUSTOMER_PORTAL`. Aucune fonctionnalité livrée n'en dépend.
+Elle relève du **second backend, celui des portails** :
 
-**Reporté**, avec son module complet — table, policy, routes, et le garde-fou
-qui empêcherait un utilisateur client de voir les commandes d'un autre client.
+```text
+portail client        CustomerUser  ← seule classe déjà décrite au diagramme
+portail fournisseur   à définir
+portail chauffeur     à définir
+```
+
+Deux éléments livrés la préfigurent : `OrderSource` contient `CUSTOMER_PORTAL`,
+et `CustomerApiConfiguration` (Phase 8) couvre l'accès **machine** du même
+client — le portail en sera l'accès **humain**.
+
+Le §2 de cette phase confirme la décision indépendamment : aucune nouvelle table
+métier. Aucune fonctionnalité livrée n'en dépend.
+
+**Sur ce périmètre, la conformité est donc totale : 62 classes internes sur 62.**
 
 ## 7-10. Tables et colonnes
 
@@ -300,7 +311,7 @@ la réponse quand les relations sont absentes.
 
 | # | Risque | Portée |
 |---|---|---|
-| 1 | **`CustomerUser` non implémentée** | Aucun portail client n'est possible. Aucune fonctionnalité livrée n'en dépend. |
+| 1 | ~~`CustomerUser` non implémentée~~ | **Ce n'est pas un risque** : la classe relève du second backend, celui des portails. Le périmètre interne est complet. Voir §3 et §26 *bis*. |
 | 2 | **SMS, WhatsApp et push échouent systématiquement** | Aucun fournisseur n'est raccordé. Délibéré et annoncé — un faux succès marquerait `SENT` ce qui n'est jamais parti. |
 | 3 | **Aucune règle de communication ne se déclenche seule** | Les onze `CommunicationEventType` ne sont émis par aucune phase. Les communications se créent par l'API. |
 | 4 | **Aucun export n'est produit** | `ExportJob.hasFile` reste `false`. Le §30 de la Phase 8 interdisait d'inventer un schéma métier. |
@@ -333,7 +344,7 @@ renvoie une erreur SQL là où elle devrait renvoyer un 409 lisible.
 
 | Élément | Motif |
 |---|---|
-| Module `CustomerUser` | §2 interdit de créer une table dans cette phase |
+| Module `CustomerUser` | Relève du second backend — portail client. Voir §26 *bis*. |
 | Transporteurs SMS, WhatsApp, push | Aucun fournisseur raccordé |
 | Génération de fichier d'export | Aucune règle de contenu définie |
 | Déclencheurs d'événements métier | Aucun `Event` Laravel dans le projet |
@@ -367,6 +378,49 @@ Trois points sur lesquels le frontend doit s'aligner :
 3. **`GET /orders/{id}` retourne `allowedTransitions`.** Construisez le menu de
    changement de statut à partir de cette liste plutôt que de recopier le graphe
    côté client.
+
+## 26 bis. Ce que couvrent les dix phases, et ce qui suit
+
+Les Phases 1 à 10 livrent **le backend de la plateforme interne** : l'outil des
+collaborateurs du transporteur. Sur ce périmètre, la couverture est complète —
+62 classes du diagramme sur 62.
+
+Trois **portails** restent à construire, dans un second backend :
+
+| Portail | Utilisateur | État des diagrammes |
+|---|---|---|
+| **Client** | Un contact du client suit ses commandes, dépose des demandes, récupère ses preuves de livraison | `CustomerUser` **déjà spécifiée** (`customerId`, `userId`, `status`, `isAdmin`) |
+| **Fournisseur** | Un fournisseur consulte les tournées qui lui sont affectées et ses décomptes | **à définir** — `Provider` ne porte pas de `userId`, aucune classe `ProviderUser` n'existe |
+| **Chauffeur** | Un chauffeur voit sa tournée du jour, pointe ses arrêts, saisit les preuves de livraison | **à définir** — `Driver` ne porte pas de `userId`, aucune classe `DriverUser` n'existe |
+
+Le portail client peut donc démarrer immédiatement ; les deux autres exigeront
+**d'abord une extension des diagrammes**.
+
+### Ce que l'interne a déjà préparé pour eux
+
+| Acquis | Portail servi |
+|---|---|
+| `OrderSource::CUSTOMER_PORTAL` | client |
+| `CustomerApiConfiguration` — accès machine du client (Phase 8) | client |
+| `TrackingEvent`, `ProofOfDelivery` — saisie terrain (Phase 5) | chauffeur |
+| `TourPeriodAssignment` — affectation chauffeur/véhicule (Phase 4) | chauffeur, fournisseur |
+| `ProviderSettlement` — décomptes (Phase 6) | fournisseur |
+| `OrderCommunication` — notification des tiers (Phase 9) | les trois |
+
+### Le point difficile, qui ne ressemble à rien de déjà traité
+
+L'isolation actuelle répond à une question : **« cet utilisateur appartient-il à
+l'organisation active ? »**. `BaseOrganizationPolicy` la traite pour les 49
+Policies.
+
+Un portail en pose une autre : **« cet utilisateur a-t-il le droit de voir
+*cette commande-ci*, parmi celles de son propre client ? »**. Un contact client
+ne doit voir que les commandes de son client ; un chauffeur, que les arrêts de
+sa tournée ; un fournisseur, que les prestations qui lui sont confiées.
+
+C'est un second axe d'isolation, **imbriqué** dans le premier, que le socle
+actuel ne sait pas exprimer. Il devra être conçu explicitement, pas dérivé de
+l'existant — et c'est là que se logeront les vraies failles si on l'improvise.
 
 ## 27. Fichiers
 
@@ -408,15 +462,18 @@ créés — conformément aux §2 et §41.
 
 ## 28. Conclusion
 
-Le backend couvre **62 des 63 classes** des diagrammes, avec 308 routes, 187
-permissions, 49 Policies et 737 tests au vert. Les quatre vulnérabilités
-trouvées sont corrigées. Les cinq incohérences restantes sont documentées, et
-chacune est un choix motivé plutôt qu'un oubli.
+Le backend de la **plateforme interne** est complet : **62 classes du diagramme
+sur 62**, 308 routes, 187 permissions, 49 Policies, 737 tests au vert. Les
+quatre vulnérabilités trouvées sont corrigées. Les cinq incohérences restantes
+sont documentées, et chacune est un choix motivé plutôt qu'un oubli.
 
-Ce qui manque est **délimité et nommé** : une classe non implémentée, trois
-canaux de communication sans fournisseur, un moteur d'export sans règles de
-contenu, des événements métier que rien n'émet. Aucun de ces manques n'est
-masqué par du code qui prétendrait fonctionner.
+La 63ᵉ classe — `CustomerUser` — n'y appartient pas : elle ouvre le second
+backend, celui des portails client, fournisseur et chauffeur.
+
+Ce qui manque est **délimité et nommé** : trois canaux de communication sans
+fournisseur, un moteur d'export sans règles de contenu, des événements métier
+que rien n'émet. Aucun de ces manques n'est masqué par du code qui prétendrait
+fonctionner.
 
 Le contrat frontend est écrit, et il dit aussi bien ce que l'API garantit que ce
 qu'elle ne fait pas encore.

@@ -73,10 +73,43 @@ class PermissionSeeder extends Seeder
 
         ['code' => 'audit.view', 'name' => 'Voir le journal d\'audit', 'module' => 'audit', 'action' => 'view'],
 
+        ['code' => 'catalogs.view', 'name' => 'Voir les catalogues', 'module' => 'catalogs', 'action' => 'view'],
+        ['code' => 'catalogs.create', 'name' => 'Créer un catalogue', 'module' => 'catalogs', 'action' => 'create'],
+        ['code' => 'catalogs.update', 'name' => 'Modifier un catalogue', 'module' => 'catalogs', 'action' => 'update'],
+        ['code' => 'catalogs.delete', 'name' => 'Supprimer un catalogue', 'module' => 'catalogs', 'action' => 'delete'],
+
         ['code' => 'orders.view', 'name' => 'Voir les commandes', 'module' => 'orders', 'action' => 'view'],
         ['code' => 'orders.create', 'name' => 'Créer une commande', 'module' => 'orders', 'action' => 'create'],
         ['code' => 'orders.update', 'name' => 'Modifier une commande', 'module' => 'orders', 'action' => 'update'],
         ['code' => 'orders.delete', 'name' => 'Supprimer une commande', 'module' => 'orders', 'action' => 'delete'],
+        ['code' => 'orders.cancel', 'name' => 'Annuler une commande', 'module' => 'orders', 'action' => 'cancel'],
+        ['code' => 'orders.duplicate', 'name' => 'Dupliquer une commande', 'module' => 'orders', 'action' => 'duplicate'],
+        ['code' => 'orders.change_status', 'name' => 'Changer le statut d’une commande', 'module' => 'orders', 'action' => 'change_status'],
+
+        ['code' => 'order_lines.view', 'name' => 'Voir les lignes de commande', 'module' => 'order_lines', 'action' => 'view'],
+        ['code' => 'order_lines.create', 'name' => 'Ajouter une ligne de commande', 'module' => 'order_lines', 'action' => 'create'],
+        ['code' => 'order_lines.update', 'name' => 'Modifier une ligne de commande', 'module' => 'order_lines', 'action' => 'update'],
+        ['code' => 'order_lines.delete', 'name' => 'Supprimer une ligne de commande', 'module' => 'order_lines', 'action' => 'delete'],
+
+        // Les référentiels « types de colis » et « types de regroupement » sont
+        // gouvernés par les permissions du module Colis : le cahier des charges
+        // ne prévoit pas de permission propre, et en inventer une créerait un
+        // code que rien ne vérifie ailleurs.
+        ['code' => 'packages.view', 'name' => 'Voir les colis', 'module' => 'packages', 'action' => 'view'],
+        ['code' => 'packages.create', 'name' => 'Créer un colis', 'module' => 'packages', 'action' => 'create'],
+        ['code' => 'packages.update', 'name' => 'Modifier un colis', 'module' => 'packages', 'action' => 'update'],
+        ['code' => 'packages.delete', 'name' => 'Supprimer un colis', 'module' => 'packages', 'action' => 'delete'],
+
+        ['code' => 'services.view', 'name' => 'Voir les services', 'module' => 'services', 'action' => 'view'],
+        ['code' => 'services.create', 'name' => 'Créer un service', 'module' => 'services', 'action' => 'create'],
+        ['code' => 'services.update', 'name' => 'Modifier un service', 'module' => 'services', 'action' => 'update'],
+        ['code' => 'services.delete', 'name' => 'Supprimer un service', 'module' => 'services', 'action' => 'delete'],
+
+        ['code' => 'order_services.view', 'name' => 'Voir les services d’une commande', 'module' => 'order_services', 'action' => 'view'],
+        ['code' => 'order_services.create', 'name' => 'Ajouter un service à une commande', 'module' => 'order_services', 'action' => 'create'],
+        ['code' => 'order_services.update', 'name' => 'Modifier un service de commande', 'module' => 'order_services', 'action' => 'update'],
+        ['code' => 'order_services.delete', 'name' => 'Supprimer un service de commande', 'module' => 'order_services', 'action' => 'delete'],
+        ['code' => 'order_services.change_status', 'name' => 'Changer le statut d’un service', 'module' => 'order_services', 'action' => 'change_status'],
     ];
 
     public function run(): void

@@ -16,4 +16,88 @@ enum OrderStatus: string
     case CANCELLED = 'cancelled';
     case PARTIALLY_INVOICED = 'partially_invoiced';
     case INVOICED = 'invoiced';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::DRAFT => 'Brouillon',
+            self::CONFIRMED => 'Confirmée',
+            self::READY => 'Prête',
+            self::PARTIALLY_PLANNED => 'Partiellement planifiée',
+            self::PLANNED => 'Planifiée',
+            self::IN_PROGRESS => 'En cours',
+            self::COMPLETED => 'Terminée',
+            self::CANCELLED => 'Annulée',
+            self::PARTIALLY_INVOICED => 'Partiellement facturée',
+            self::INVOICED => 'Facturée',
+        };
+    }
+
+    /**
+     * Transitions autorisées depuis ce statut, tous modules confondus.
+     *
+     * @return list<self>
+     */
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::DRAFT => [self::CONFIRMED, self::CANCELLED],
+            self::CONFIRMED => [self::READY, self::DRAFT, self::CANCELLED],
+            self::READY => [self::PARTIALLY_PLANNED, self::PLANNED, self::CONFIRMED, self::CANCELLED],
+            self::PARTIALLY_PLANNED => [self::PLANNED, self::READY, self::CANCELLED],
+            self::PLANNED => [self::IN_PROGRESS, self::PARTIALLY_PLANNED, self::CANCELLED],
+            self::IN_PROGRESS => [self::COMPLETED, self::CANCELLED],
+            self::COMPLETED => [self::PARTIALLY_INVOICED, self::INVOICED],
+            self::PARTIALLY_INVOICED => [self::INVOICED],
+            self::INVOICED, self::CANCELLED => [],
+        };
+    }
+
+    public function canTransitionTo(self $target): bool
+    {
+        return in_array($target, $this->allowedTransitions(), true);
+    }
+
+    /**
+     * Statuts qu'un opérateur peut poser lui-même à ce stade du projet.
+     *
+     * Les statuts de planification et de facturation sont produits par leurs
+     * modules respectifs, pas saisis à la main : les exposer maintenant
+     * permettrait de déclarer une commande « planifiée » sans tournée.
+     *
+     * @return list<self>
+     */
+    public static function manuallyAssignable(): array
+    {
+        return [self::DRAFT, self::CONFIRMED, self::READY, self::CANCELLED];
+    }
+
+    public function isManuallyAssignable(): bool
+    {
+        return in_array($this, self::manuallyAssignable(), true);
+    }
+
+    /**
+     * La commande accepte-t-elle encore des modifications de contenu ?
+     *
+     * Au-delà de `READY`, lignes, colis et services sont figés : ils sont
+     * engagés auprès de la planification et de l'exploitation.
+     */
+    public function allowsContentChanges(): bool
+    {
+        return in_array($this, [self::DRAFT, self::CONFIRMED], true);
+    }
+
+    /**
+     * Un motif est-il exigé pour passer à ce statut ?
+     */
+    public function requiresReason(): bool
+    {
+        return $this === self::CANCELLED;
+    }
+
+    public function isFinal(): bool
+    {
+        return $this->allowedTransitions() === [];
+    }
 }

@@ -8,6 +8,8 @@ use App\Modules\Addresses\Models\Address;
 use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
+use App\Modules\Catalogs\Models\CustomerCatalog;
+use App\Modules\Catalogs\Models\CustomerCatalogItem;
 use App\Modules\Contacts\Models\AddressContact;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
@@ -18,9 +20,18 @@ use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Models\OrderLine;
+use App\Modules\Orders\Models\OrderService;
+use App\Modules\Orders\Models\OrderServiceContact;
+use App\Modules\Orders\Models\OrderServicePackage;
+use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
+use App\Modules\Packages\Models\GroupingType;
+use App\Modules\Packages\Models\Package;
+use App\Modules\Packages\Models\PackageOrderLine;
+use App\Modules\Packages\Models\PackageType;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -58,6 +69,28 @@ final class MorphMap
 
     public const string DOCUMENT = 'document';
 
+    public const string ORDER_LINE = 'order_line';
+
+    public const string ORDER_SERVICE = 'order_service';
+
+    public const string ORDER_SERVICE_CONTACT = 'order_service_contact';
+
+    public const string ORDER_SERVICE_PACKAGE = 'order_service_package';
+
+    public const string SERVICE = 'service';
+
+    public const string CUSTOMER_CATALOG = 'customer_catalog';
+
+    public const string CUSTOMER_CATALOG_ITEM = 'customer_catalog_item';
+
+    public const string PACKAGE = 'package';
+
+    public const string PACKAGE_TYPE = 'package_type';
+
+    public const string GROUPING_TYPE = 'grouping_type';
+
+    public const string PACKAGE_ORDER_LINE = 'package_order_line';
+
     public const string ENTITY_ADDRESS = 'entity_address';
 
     public const string ENTITY_CONTACT = 'entity_contact';
@@ -89,6 +122,17 @@ final class MorphMap
             self::CUSTOMER_SITE => CustomerSite::class,
             self::DOCUMENT => Document::class,
             self::ORDER => Order::class,
+            self::ORDER_LINE => OrderLine::class,
+            self::ORDER_SERVICE => OrderService::class,
+            self::ORDER_SERVICE_CONTACT => OrderServiceContact::class,
+            self::ORDER_SERVICE_PACKAGE => OrderServicePackage::class,
+            self::SERVICE => Service::class,
+            self::CUSTOMER_CATALOG => CustomerCatalog::class,
+            self::CUSTOMER_CATALOG_ITEM => CustomerCatalogItem::class,
+            self::PACKAGE => Package::class,
+            self::PACKAGE_TYPE => PackageType::class,
+            self::GROUPING_TYPE => GroupingType::class,
+            self::PACKAGE_ORDER_LINE => PackageOrderLine::class,
             self::ENTITY_ADDRESS => EntityAddress::class,
             self::ENTITY_CONTACT => EntityContact::class,
             self::ADDRESS_CONTACT => AddressContact::class,

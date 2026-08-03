@@ -1,0 +1,102 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+skinparam ParticipantPadding 12
+skinparam BoxPadding 12
+
+title Tricolis V2 — Séquence 1 — Authentification et périmètre organisationnel
+
+actor "Client HTTP" as U
+participant "Middleware\nauth Sanctum" as S
+participant "EnsureOrganization\nContext" as M
+participant "Contrôleur" as C
+participant "Policy" as P
+participant "Query Object" as Q
+database "MySQL" as DB
+
+autonumber
+
+== Connexion ==
+
+U -> C : POST /auth/login\n{ email, password }
+activate C
+C -> DB : vérifie l'empreinte bcrypt
+DB --> C : utilisateur
+C --> U : 200 { token, user, organizations[] }
+deactivate C
+
+note over U, DB
+  Le jeton est retourné **une seule fois**.
+  Toutes les requêtes suivantes le présentent.
+end note
+
+== Toute requête métier suivante ==
+
+U -> S : Authorization: Bearer …\nX-Organization-Id: 01JZ…
+activate S
+
+alt jeton absent, invalide ou expiré
+  S --> U : 401 Unauthenticated
+end
+
+S -> M : utilisateur authentifié
+activate M
+
+alt en-tête X-Organization-Id malformé
+  M --> U : 422 identifiant invalide
+else en-tête absent
+  M --> U : 403 en-tête requis
+else utilisateur non membre de l'organisation
+  M --> U : 403 accès refusé
+end
+
+M -> C : organization_id injecté dans la requête
+deactivate M
+deactivate S
+activate C
+
+C -> C : requireOrganizationId()
+C -> P : authorize('view', ressource)
+activate P
+
+alt ressource d'une AUTRE organisation
+  P --> C : denyAsNotFound()
+  C --> U : **404** introuvable
+  note right of P
+    Un 403 confirmerait que cet
+    identifiant existe ailleurs.
+    L'existence ne se révèle pas.
+  end note
+else membre, mais sans la permission
+  P --> C : false
+  C --> U : **403** permission manquante
+  note right of P
+    Ici le 403 est utile : l'appelant
+    sait quoi demander à son
+    administrateur.
+  end note
+end
+
+P --> C : autorisé
+deactivate P
+
+C -> Q : paginate(profil, filtres, organizationId)
+activate Q
+Q -> DB : SELECT … WHERE organization_id = ?\nfiltres + tri en liste blanche
+DB --> Q : lignes
+Q --> C : LengthAwarePaginator
+deactivate Q
+
+C --> U : 200 { data, meta, links }
+deactivate C
+
+legend right
+  **296 des 308 routes** traversent cette séquence.
+  Les 12 exceptions sont les routes personnelles
+  (/auth/*) et la ressource /organizations elle-même.
+end legend
+
+@enduml

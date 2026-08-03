@@ -1,0 +1,114 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+skinparam ParticipantPadding 10
+skinparam BoxPadding 12
+
+title Tricolis V2 — Séquence 2 — Création d'une commande complète
+
+actor "Client HTTP" as U
+participant "OrderController" as C
+participant "StoreOrderRequest" as R
+participant "CreateFullOrder" as A
+participant "GenerateOrderNumber" as N
+participant "CreateOrderLines" as L
+participant "CreateOrderPackages" as P
+participant "CreateOrderServices" as S
+participant "RecalculateOrderTotals" as T
+participant "WriteAuditLog" as AU
+database "MySQL" as DB
+
+autonumber
+
+U -> C : POST /orders\n{ customerId, agencyId, orderDate,\nlines[], services[], packages[] }
+activate C
+
+C -> R : validation
+activate R
+
+alt lines[] vide
+  R --> U : 422 — une commande exige\nau moins une ligne
+else services[] vide
+  R --> U : 422 — une commande exige\nau moins un service
+else client ou agence d'une autre organisation
+  R --> U : 422 customerId / agencyId
+end
+
+R --> C : données validées
+deactivate R
+
+C -> C : authorize('create', Order)
+C -> A : execute(CreateOrderData,\norganizationId, user)
+activate A
+
+group DB::transaction — tout ou rien
+
+  A -> N : execute(organizationId, année)
+  activate N
+  N -> DB : SELECT … FOR UPDATE\nsur order_number_sequences
+  note right of N
+    Le verrou sérialise les demandes.
+    firstOrCreate ne suffisait pas :
+    deux requêtes concurrentes peuvent
+    toutes deux constater l'absence
+    de la séquence et tenter de la créer.
+  end note
+  N -> DB : increment(last_number)
+  N --> A : « ORD-2026-000001 »
+  deactivate N
+
+  A -> DB : INSERT orders
+
+  A -> L : execute(order, customer, lines)
+  activate L
+  L -> DB : INSERT order_lines
+  L --> A : lignes créées
+  deactivate L
+
+  A -> P : execute(order, packages, lines)
+  activate P
+  P -> DB : INSERT packages + package_order_lines
+  P --> A : colis créés
+  deactivate P
+
+  A -> S : execute(order, services, packages)
+  activate S
+  S -> DB : INSERT order_services\n+ order_service_packages
+  S --> A : services créés
+  deactivate S
+
+  A -> T : execute(order)
+  activate T
+  T -> DB : UPDATE poids, volume, nombre de colis
+  T --> A : totaux recalculés
+  deactivate T
+
+  A -> AU : order.created
+  activate AU
+  AU -> DB : INSERT audit_logs
+  deactivate AU
+
+end
+
+A --> C : Order
+deactivate A
+
+C --> U : 201 { data avec lines[],\nservices[], packages[] }
+deactivate C
+
+note over A, DB
+  Si **l'une** des sous-actions échoue, la transaction
+  est annulée : ni commande orpheline sans ligne,
+  ni numéro de séquence consommé pour rien.
+end note
+
+legend right
+  Modèle de **toute écriture composite** du projet :
+  une Action orchestre, une transaction englobe,
+  un seul audit conclut.
+end legend
+
+@enduml

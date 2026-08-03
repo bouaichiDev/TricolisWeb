@@ -1,0 +1,153 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+skinparam ParticipantPadding 10
+skinparam BoxPadding 12
+
+title Tricolis V2 — Séquence 4 — Communication : du modèle à l'envoi
+
+actor "Client HTTP" as U
+participant "OrderCommunication\nController" as C
+participant "CreateOrder\nCommunicationAction" as A
+participant "ResolveOrder\nCommunicationRecipient" as RC
+participant "CommunicationTemplate\nRenderer" as RD
+participant "QueueOrder\nCommunicationAction" as Q
+participant "ApplyCommunication\nTransition" as TR
+queue "File (database)" as F
+participant "SendOrder\nCommunicationJob" as J
+participant "CommunicationSender\nRegistry" as SD
+database "MySQL" as DB
+
+autonumber
+
+== 1. Création — le contenu est figé ==
+
+U -> C : POST /orders/{order}/communications\n{ templateId, channel: "email",\nrecipientRole: "customer" }
+activate C
+C -> A : execute(data, contexte)
+activate A
+
+A -> RC : resolve(rôle, commande, utilisateur)
+activate RC
+note right of RC
+  Le destinataire vient du **rôle**.
+  Pour les cinq rôles non-CUSTOM, les
+  coordonnées du payload sont ignorées :
+  sinon recipientRole serait décoratif.
+end note
+alt aucun contact ne porte le rôle demandé
+  RC --> U : 422 recipientRole
+  note right of RC
+    Refusé, jamais basculé sur le client :
+    substituer un destinataire est plus
+    grave qu'échouer.
+  end note
+end
+RC --> A : nom, e-mail, téléphone
+deactivate RC
+
+A -> A : le canal exige-t-il ce contact ?
+alt canal email sans adresse
+  A --> U : 422 recipientEmail
+else canal sms ou whatsapp sans téléphone
+  A --> U : 422 recipientPhone
+end
+
+A -> RD : render(modèle, variables)
+activate RD
+alt variable non déclarée dans availableVariables
+  RD --> U : 422 rendu refusé
+else notation à points ou expression
+  RD --> U : 422 motif non reconnu
+end
+RD --> A : { subject, body }\néchappés selon le canal
+deactivate RD
+
+A -> DB : INSERT order_communications\nsubject / body / variables **FIGÉS**
+note right of DB
+  Modifier le modèle plus tard ne changera
+  jamais ce message : c'est un snapshot de
+  ce qui part.
+end note
+A --> C : statut « draft »
+deactivate A
+C --> U : 201
+deactivate C
+
+== 2. Mise en file ==
+
+U -> C : POST /order-communications/{id}/queue
+activate C
+C -> C : authorize('queue')\n— distincte d'update
+C -> Q : execute(communication, contexte)
+activate Q
+Q -> TR : transition vers « queued »
+activate TR
+TR -> DB : SELECT … FOR UPDATE\npuis **relit** le statut en base
+alt transition interdite par l'enum
+  TR --> U : **409** « Envoyée » ne peut pas\npasser à « En file »
+end
+TR -> DB : UPDATE status, queued_at\n+ audit order_communication.queued
+TR --> Q : verrouillé et écrit
+deactivate TR
+Q -> F : dispatch(id, organizationId)
+Q --> C : 200 « queued »
+deactivate Q
+C --> U : 200
+deactivate C
+
+== 3. Envoi — asynchrone ==
+
+note over F, J : plus tard — php artisan queue:work
+
+F -> J : handle()
+activate J
+J -> DB : recharge la communication\npar son identifiant
+note right of J
+  Le Job ne porte que l'identifiant :
+  il agit sur l'état courant, pas sur
+  une copie sérialisée à la mise en file.
+end note
+
+alt statut ≠ « queued »
+  J --> F : s'arrête sans rien envoyer
+  note right of J
+    **Idempotence** : un second dispatch
+    trouve la communication déjà partie.
+  end note
+end
+
+J -> TR : transition vers « sending »
+J -> SD : for(canal)
+activate SD
+SD --> J : transporteur
+deactivate SD
+
+alt canal email ou notification interne
+  J -> TR : « sent » + providerMessageId + sentAt
+else canal sms, whatsapp ou push
+  note right of SD
+    Aucun fournisseur n'est raccordé.
+    Échec **explicite** : un faux succès
+    marquerait SENT un message qui
+    n'existe pas.
+  end note
+  J -> TR : « failed » + errorMessage
+end
+
+activate TR
+TR -> DB : UPDATE + audit\n(body et provider_response expurgés)
+deactivate TR
+deactivate J
+
+legend right
+  Seule séquence **asynchrone** du projet.
+  Deux processus sont requis :
+  queue:work pour l'envoi,
+  schedule:work pour les communications programmées.
+end legend
+
+@enduml

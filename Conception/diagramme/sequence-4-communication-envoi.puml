@@ -33,7 +33,7 @@ activate A
 A -> RC : resolve(rôle, commande, utilisateur)
 activate RC
 note right of RC
-  Le destinataire vient du **rôle**.
+  Le destinataire vient du rôle.
   Pour les cinq rôles non-CUSTOM, les
   coordonnées du payload sont ignorées :
   sinon recipientRole serait décoratif.
@@ -66,7 +66,7 @@ end
 RD --> A : { subject, body }\néchappés selon le canal
 deactivate RD
 
-A -> DB : INSERT order_communications\nsubject / body / variables **FIGÉS**
+A -> DB : INSERT order_communications\nsubject / body / variables FIGÉS
 note right of DB
   Modifier le modèle plus tard ne changera
   jamais ce message : c'est un snapshot de
@@ -86,9 +86,9 @@ C -> Q : execute(communication, contexte)
 activate Q
 Q -> TR : transition vers « queued »
 activate TR
-TR -> DB : SELECT … FOR UPDATE\npuis **relit** le statut en base
+TR -> DB : SELECT … FOR UPDATE\npuis relit le statut en base
 alt transition interdite par l'enum
-  TR --> U : **409** « Envoyée » ne peut pas\npasser à « En file »
+  TR --> U : 409 « Envoyée » ne peut pas\npasser à « En file »
 end
 TR -> DB : UPDATE status, queued_at\n+ audit order_communication.queued
 TR --> Q : verrouillé et écrit
@@ -115,7 +115,7 @@ end note
 alt statut ≠ « queued »
   J --> F : s'arrête sans rien envoyer
   note right of J
-    **Idempotence** : un second dispatch
+    Idempotence : un second dispatch
     trouve la communication déjà partie.
   end note
 end
@@ -131,7 +131,7 @@ alt canal email ou notification interne
 else canal sms, whatsapp ou push
   note right of SD
     Aucun fournisseur n'est raccordé.
-    Échec **explicite** : un faux succès
+    Échec explicite : un faux succès
     marquerait SENT un message qui
     n'existe pas.
   end note
@@ -144,7 +144,7 @@ deactivate TR
 deactivate J
 
 legend right
-  Seule séquence **asynchrone** du projet.
+  Seule séquence asynchrone du projet.
   Deux processus sont requis :
   queue:work pour l'envoi,
   schedule:work pour les communications programmées.

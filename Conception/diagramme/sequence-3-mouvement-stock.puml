@@ -41,7 +41,7 @@ end
 
 group DB::transaction
 
-  loop pour chaque emplacement, **trié par id**
+  loop pour chaque emplacement, trié par id
     A -> K : lockOrCreate(article, emplacement)
     activate K
     K -> K : DB::transactionLevel() > 0 ?
@@ -57,7 +57,7 @@ group DB::transaction
   end
 
   note over A, K
-    Le **tri par identifiant** donne à toutes les
+    Le tri par identifiant donne à toutes les
     transactions le même ordre de verrouillage.
     Sans lui, deux transferts croisés A→B et B→A
     s'interbloqueraient.
@@ -67,7 +67,7 @@ group DB::transaction
   activate B
   alt quantité disponible insuffisante
     B --> A : StockUnavailable
-    A --> U : **409** quantité disponible insuffisante
+    A --> U : 409 quantité disponible insuffisante
     note right of B
       La transaction est annulée :
       le solde reste exactement
@@ -102,7 +102,7 @@ C --> U : 201
 deactivate C
 
 legend right
-  Le solde n'est **jamais écrit à la main** :
+  Le solde n'est jamais écrit à la main :
   il est produit par les mouvements.
   C'est pourquoi stock_balances n'a ni route
   de création ni route de modification.

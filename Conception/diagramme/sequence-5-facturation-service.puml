@@ -36,7 +36,7 @@ G --> A : OrderService
 A -> G : assertOrderMatchesService()
 note right of G
   La ligne, le service et la commande
-  doivent désigner le **même client**.
+  doivent désigner le même client.
   Vérifier le seul périmètre de
   l'organisation ne suffirait pas.
 end note
@@ -49,7 +49,7 @@ CA -> M : bcmul, bcsub, bcadd — échelle 10
 activate M
 note right of M
   Aucun float, aucun round() PHP.
-  Les montants circulent en **chaînes**
+  Les montants circulent en chaînes
   de la base jusqu'au JSON.
 end note
 M --> CA : arrondi final à l'échelle 2
@@ -62,9 +62,9 @@ group DB::transaction
   A -> DB : INSERT invoice_lines
   alt ce service est déjà facturé
     DB --> A : violation de l'UNIQUE\nsur order_service_id
-    A --> U : **422** service déjà facturé
+    A --> U : 422 service déjà facturé
     note right of DB
-      Garantie au niveau **base**, pas
+      Garantie au niveau base, pas
       seulement applicatif : deux requêtes
       concurrentes ne peuvent pas facturer
       deux fois le même service.
@@ -80,7 +80,7 @@ group DB::transaction
   deactivate M
   T -> T : taxTotal = total − subtotal
   note right of T
-    **Déduit**, jamais sommé ligne à ligne.
+    Déduit, jamais sommé ligne à ligne.
     Sommer les taxes accumulerait un arrondi
     à chaque ligne, et le total cesserait
     d'égaler la somme des nombres affichés.
@@ -99,7 +99,7 @@ C --> U : 201 { data, subtotal: "450.00" }
 deactivate C
 
 legend right
-  **Deux unicités indépendantes** sur order_service_id :
+  Deux unicités indépendantes sur order_service_id :
   l'une sur invoice_lines, l'autre sur
   provider_settlement_lines. Un service se facture
   une fois au client et se décompte une fois au

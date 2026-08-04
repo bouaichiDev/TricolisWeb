@@ -100,13 +100,13 @@ C --> U : 201 { data avec lines[],\nservices[], packages[] }
 deactivate C
 
 note over A, DB
-  Si **l'une** des sous-actions échoue, la transaction
+  Si l'une des sous-actions échoue, la transaction
   est annulée : ni commande orpheline sans ligne,
   ni numéro de séquence consommé pour rien.
 end note
 
 legend right
-  Modèle de **toute écriture composite** du projet :
+  Modèle de toute écriture composite du projet :
   une Action orchestre, une transaction englobe,
   un seul audit conclut.
 end legend

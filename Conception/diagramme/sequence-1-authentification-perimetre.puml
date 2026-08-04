@@ -29,7 +29,7 @@ C --> U : 200 { token, user, organizations[] }
 deactivate C
 
 note over U, DB
-  Le jeton est retourné **une seule fois**.
+  Le jeton est retourné une seule fois.
   Toutes les requêtes suivantes le présentent.
 end note
 
@@ -59,24 +59,21 @@ deactivate S
 activate C
 
 C -> C : requireOrganizationId()
-C -> P : autorise(capacité, ressource)
+C -> P : autorise(action, ressource)
 activate P
 
 note right of C
-  La capacité découle de la **route appelée**,
-  et la Policy la traduit en permission :
-
-  GET    /customers        viewAny  →  « customers.view »
-  GET    /customers/{id}   view     →  « customers.view »
-  POST   /customers        create   →  « customers.create »
-  PATCH  /customers/{id}   update   →  « customers.update »
-  DELETE /customers/{id}   delete   →  « customers.delete »
-  PATCH  /customers/{id}/status  block  →  « customers.block »
+  L'action est déduite de la requête HTTP :
+  GET = lecture, POST = création,
+  PATCH = modification, DELETE = suppression.
+  Une route d'action métier porte la sienne,
+  comme PATCH /customers/{id}/status
+  pour le blocage d'un client.
 end note
 
 alt ressource d'une AUTRE organisation
   P --> C : denyAsNotFound()
-  C --> U : **404** introuvable
+  C --> U : 404 introuvable
   note right of P
     Un 403 confirmerait que cet
     identifiant existe ailleurs.
@@ -84,7 +81,7 @@ alt ressource d'une AUTRE organisation
   end note
 else membre, mais sans la permission
   P --> C : false
-  C --> U : **403** permission manquante
+  C --> U : 403 permission manquante
   note right of P
     Ici le 403 est utile : l'appelant
     sait quoi demander à son
@@ -106,7 +103,7 @@ C --> U : 200 { data, meta, links }
 deactivate C
 
 legend right
-  **296 des 308 routes** traversent cette séquence.
+  296 des 308 routes traversent cette séquence.
   Les 12 exceptions sont les routes personnelles
   (/auth/*) et la ressource /organizations elle-même.
 end legend

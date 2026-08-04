@@ -59,8 +59,20 @@ deactivate S
 activate C
 
 C -> C : requireOrganizationId()
-C -> P : authorize('view', ressource)
+C -> P : autorise(capacité, ressource)
 activate P
+
+note right of C
+  La capacité découle de la **route appelée**,
+  et la Policy la traduit en permission :
+
+  GET    /customers        viewAny  →  « customers.view »
+  GET    /customers/{id}   view     →  « customers.view »
+  POST   /customers        create   →  « customers.create »
+  PATCH  /customers/{id}   update   →  « customers.update »
+  DELETE /customers/{id}   delete   →  « customers.delete »
+  PATCH  /customers/{id}/status  block  →  « customers.block »
+end note
 
 alt ressource d'une AUTRE organisation
   P --> C : denyAsNotFound()

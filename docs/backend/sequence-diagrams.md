@@ -48,7 +48,8 @@ sequenceDiagram
 
     M->>C: organization_id injecté dans la requête
     C->>C: requireOrganizationId()
-    C->>P: authorize('view', $ressource)
+    C->>P: autorise(capacité, ressource)
+    Note right of C: La capacité découle de la route appelée,<br/>et la Policy la traduit en permission :<br/>GET /customers/{id} → view → « customers.view »<br/>POST /customers → create → « customers.create »<br/>PATCH /customers/{id}/status → block → « customers.block »
 
     alt ressource d'une AUTRE organisation
         P-->>C: denyAsNotFound()

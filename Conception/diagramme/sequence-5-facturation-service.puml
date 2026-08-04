@@ -9,10 +9,10 @@ title Tricolis V2 — Séquence 5 — Facturation d'un service exécuté
 
 actor "Client HTTP" as U
 participant "InvoiceLine\nController" as C
-participant "AddInvoiceLine\nAction" as A
+participant "AddInvoiceLine\nActAion" as A
 participant "BillingScopeGuard" as G
 participant "CalculateInvoice\nLineTotals" as CA
-participant "Money (bcmath)" as M
+participant "Money\ncalcul décimal" as M
 participant "RecalculateInvoice\nTotals" as T
 database "MySQL" as DB
 
@@ -41,18 +41,23 @@ end note
 G --> A : cohérent
 deactivate G
 
-A -> CA : totals(quantité, prixUnitaire,\ntauxRemise, tauxTaxe)
+A -> CA : quantité, prix unitaire,\ntaux de remise, taux de taxe
 activate CA
-CA -> M : bcmul, bcsub, bcadd — échelle 10
+CA -> M : quantité × prix, puis remise et taxe
 activate M
 note right of M
-  Aucun float, aucun round() PHP.
-  Les montants circulent en chaînes
-  de la base jusqu'au JSON.
+  Les quatre opérations gardent dix décimales.
+  L'arrondi n'a lieu qu'une seule fois, à la fin.
+  Arrondir à chaque étape ferait dériver le total
+  de quelques centimes sur une longue facture.
+
+  Aucun nombre à virgule flottante n'est employé :
+  les montants sont des chaînes de caractères,
+  de la base de données jusqu'à la réponse JSON.
 end note
-M --> CA : arrondi final à l'échelle 2
+M --> CA : montants arrondis à deux décimales
 deactivate M
-CA --> A : { totalExcludingTax,\ntotalIncludingTax }
+CA --> A : total hors taxe,\ntotal toutes taxes comprises
 deactivate CA
 
 group DB::transaction
@@ -69,14 +74,14 @@ group DB::transaction
     end note
   end
 
-  A -> T : execute(facture)
+  A -> T : recalcule les totaux de la facture
   activate T
-  T -> DB : SUM des lignes
-  T -> M : subtotal, total
+  T -> DB : relit toutes les lignes
+  T -> M : additionne les lignes
   activate M
-  M --> T : montants
+  M --> T : sous-total et total
   deactivate M
-  T -> T : taxTotal = total − subtotal
+  T -> T : total des taxes = total − sous-total
   note right of T
     Déduit, jamais sommé ligne à ligne.
     Sommer les taxes accumulerait un arrondi

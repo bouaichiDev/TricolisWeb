@@ -338,11 +338,11 @@ sequenceDiagram
     A->>G: assertOrderMatchesService()
     Note right of G: la ligne, le service et la commande<br/>doivent désigner le même client
 
-    A->>CA: totals(quantité, prix, remise, taxe)
-    CA->>M: bcmul, bcsub, bcadd — échelle 10
-    Note right of M: aucun float, aucun round() PHP.<br/>Les montants sont des CHAÎNES.
-    M-->>CA: totaux à l'échelle 2
-    CA-->>A: { totalExcludingTax, totalIncludingTax }
+    A->>CA: quantité, prix unitaire, taux de remise, taux de taxe
+    CA->>M: quantité × prix, puis remise et taxe
+    Note right of M: Les quatre opérations gardent dix décimales.<br/>L'arrondi n'a lieu qu'une fois, à la fin.<br/>Aucun nombre à virgule flottante : les montants<br/>sont des chaînes de caractères.
+    M-->>CA: montants arrondis à deux décimales
+    CA-->>A: total hors taxe, total toutes taxes comprises
 
     rect rgba(140, 200, 150, 0.15)
         Note over A,DB: DB::transaction
@@ -352,10 +352,10 @@ sequenceDiagram
             A-->>U: 422 — service déjà facturé
             Note right of DB: garantie au niveau base,<br/>pas seulement applicatif
         end
-        A->>T: execute(facture)
-        T->>DB: SUM des lignes
-        T->>M: subtotal, total
-        T->>T: taxTotal = total − subtotal
+        A->>T: recalcule les totaux de la facture
+        T->>DB: relit toutes les lignes
+        T->>M: additionne les lignes
+        T->>T: total des taxes = total − sous-total
         Note right of T: DÉDUIT, jamais sommé ligne à ligne :<br/>sinon les arrondis s'accumulent et<br/>le total n'égale plus la somme affichée
         T->>DB: UPDATE invoices
         T-->>A: totaux à jour

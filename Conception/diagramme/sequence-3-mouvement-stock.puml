@@ -4,8 +4,6 @@ skinparam shadowing false
 skinparam sequenceMessageAlign left
 skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 220
-skinparam ParticipantPadding 12
-skinparam BoxPadding 12
 
 title Tricolis V2 — Séquence 3 — Mouvement de stock et concurrence
 

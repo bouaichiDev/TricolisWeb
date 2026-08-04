@@ -3,29 +3,29 @@
 skinparam shadowing false
 skinparam sequenceMessageAlign left
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 220
+skinparam maxMessageSize 260
 skinparam ParticipantPadding 12
 skinparam BoxPadding 12
 
 title Tricolis V2 — Séquence 1 — Authentification et périmètre organisationnel
 
-actor "Client HTTP" as U
-participant "Middleware\nauth Sanctum" as S
-participant "EnsureOrganization\nContext" as M
-participant "Contrôleur" as C
-participant "Policy" as P
-participant "Query Object" as Q
+actor "Client de l'API" as U
+participant "Authentification" as S
+participant "Contexte\norganisation" as M
+participant "Contrôleur API" as C
+participant "Contrôle d'accès" as P
+participant "Requête filtrée" as Q
 database "MySQL" as DB
 
 autonumber
 
 == Connexion ==
 
-U -> C : POST /auth/login\n{ email, password }
+U -> C : POST /auth/login\n{ email, mot de passe }
 activate C
-C -> DB : vérifie l'empreinte bcrypt
+C -> DB : vérifie l'empreinte du mot de passe
 DB --> C : utilisateur
-C --> U : 200 { token, user, organizations[] }
+C --> U : 200 { jeton, utilisateur, organisations }
 deactivate C
 
 note over U, DB
@@ -35,53 +35,52 @@ end note
 
 == Toute requête métier suivante ==
 
-U -> S : Authorization: Bearer …\nX-Organization-Id: 01JZ…
+U -> S : GET /customers\nAuthorization : Bearer …\nX-Organization-Id : 01JZ…
 activate S
 
 alt jeton absent, invalide ou expiré
-  S --> U : 401 Unauthenticated
+  S --> U : 401 non authentifié
 end
 
 S -> M : utilisateur authentifié
 activate M
 
-alt en-tête X-Organization-Id malformé
+alt en-tête d'organisation malformé
   M --> U : 422 identifiant invalide
-else en-tête absent
+else en-tête d'organisation absent
   M --> U : 403 en-tête requis
-else utilisateur non membre de l'organisation
+else utilisateur non membre de cette organisation
   M --> U : 403 accès refusé
 end
 
-M -> C : organization_id injecté dans la requête
+M -> C : organisation active validée
 deactivate M
 deactivate S
 activate C
 
-C -> C : requireOrganizationId()
-C -> P : autorise(action, ressource)
+C -> P : contrôle du droit d'accès
 activate P
 
 note right of C
-  L'action est déduite de la requête HTTP :
-  GET = lecture, POST = création,
-  PATCH = modification, DELETE = suppression.
-  Une route d'action métier porte la sienne,
+  Le droit dépend du verbe HTTP :
+  GET pour lire, POST pour créer,
+  PATCH pour modifier, DELETE pour supprimer.
+  Les routes d'action portent le leur,
   comme PATCH /customers/{id}/status
-  pour le blocage d'un client.
+  qui exige le droit de bloquer un client.
 end note
 
-alt ressource d'une AUTRE organisation
-  P --> C : denyAsNotFound()
+alt donnée d'une autre organisation
+  P --> C : refus masqué
   C --> U : 404 introuvable
   note right of P
     Un 403 confirmerait que cet
     identifiant existe ailleurs.
     L'existence ne se révèle pas.
   end note
-else membre, mais sans la permission
-  P --> C : false
-  C --> U : 403 permission manquante
+else membre, mais sans le droit requis
+  P --> C : refus
+  C --> U : 403 droit manquant
   note right of P
     Ici le 403 est utile : l'appelant
     sait quoi demander à son
@@ -89,14 +88,14 @@ else membre, mais sans la permission
   end note
 end
 
-P --> C : autorisé
+P --> C : accès accordé
 deactivate P
 
-C -> Q : paginate(profil, filtres, organizationId)
+C -> Q : filtres, tri, pagination
 activate Q
-Q -> DB : SELECT … WHERE organization_id = ?\nfiltres + tri en liste blanche
+Q -> DB : lecture limitée à l'organisation active\ntri et filtres en liste blanche
 DB --> Q : lignes
-Q --> C : LengthAwarePaginator
+Q --> C : page de résultats
 deactivate Q
 
 C --> U : 200 { data, meta, links }
@@ -104,8 +103,8 @@ deactivate C
 
 legend right
   296 des 308 routes traversent cette séquence.
-  Les 12 exceptions sont les routes personnelles
-  (/auth/*) et la ressource /organizations elle-même.
+  Les 12 exceptions sont les routes du compte
+  (/auth/…) et les routes /organizations elles-mêmes.
 end legend
 
 @enduml

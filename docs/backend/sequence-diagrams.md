@@ -17,53 +17,52 @@ dépend : c'est ici que se décide qui voit quoi.
 ```mermaid
 sequenceDiagram
     autonumber
-    actor U as Client HTTP
-    participant S as Middleware auth Sanctum
-    participant M as EnsureOrganizationContext
-    participant C as Contrôleur
-    participant P as Policy
-    participant Q as Query Object
+    actor U as Client de l'API
+    participant S as Authentification
+    participant M as Contexte organisation
+    participant C as Contrôleur API
+    participant P as Contrôle d'accès
+    participant Q as Requête filtrée
     participant DB as MySQL
 
     Note over U: POST /auth/login
     U->>C: email + mot de passe
-    C->>DB: vérifie l'empreinte bcrypt
-    C-->>U: 200 { token, user, organizations[] }
+    C->>DB: vérifie l'empreinte du mot de passe
+    C-->>U: 200 { jeton, utilisateur, organisations }
 
     Note over U,DB: Toute requête métier suivante
 
-    U->>S: Authorization: Bearer …<br/>X-Organization-Id: 01JZ…
-    alt jeton absent ou invalide
-        S-->>U: 401 Unauthenticated
+    U->>S: GET /customers<br/>Authorization : Bearer …<br/>X-Organization-Id : 01JZ…
+    alt jeton absent, invalide ou expiré
+        S-->>U: 401 non authentifié
     end
     S->>M: utilisateur authentifié
 
-    alt en-tête malformé
+    alt en-tête d'organisation malformé
         M-->>U: 422 identifiant invalide
-    else en-tête absent
+    else en-tête d'organisation absent
         M-->>U: 403 en-tête requis
-    else non membre de l'organisation
+    else utilisateur non membre de cette organisation
         M-->>U: 403 accès refusé
     end
 
-    M->>C: organization_id injecté dans la requête
-    C->>C: requireOrganizationId()
-    C->>P: autorise(action, ressource)
-    Note right of C: L'action est déduite de la requête HTTP :<br/>GET = lecture, POST = création,<br/>PATCH = modification, DELETE = suppression.
+    M->>C: organisation active validée
+    C->>P: contrôle du droit d'accès
+    Note right of C: Le droit dépend du verbe HTTP :<br/>GET pour lire, POST pour créer,<br/>PATCH pour modifier, DELETE pour supprimer.
 
-    alt ressource d'une AUTRE organisation
-        P-->>C: denyAsNotFound()
+    alt donnée d'une autre organisation
+        P-->>C: refus masqué
         C-->>U: 404 introuvable
-    else membre, mais sans la permission
-        P-->>C: false
-        C-->>U: 403 permission manquante
+    else membre, mais sans le droit requis
+        P-->>C: refus
+        C-->>U: 403 droit manquant
     end
 
-    P->>C: autorisé
-    C->>Q: paginate(profil, filtres, organizationId)
-    Q->>DB: SELECT … WHERE organization_id = ? …
+    P->>C: accès accordé
+    C->>Q: filtres, tri, pagination
+    Q->>DB: lecture limitée à l'organisation active
     DB-->>Q: lignes
-    Q-->>C: LengthAwarePaginator
+    Q-->>C: page de résultats
     C-->>U: 200 { data, meta, links }
 ```
 

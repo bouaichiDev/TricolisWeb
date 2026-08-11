@@ -1,0 +1,308 @@
+{
+  "app": {
+    "name": "Tricolis",
+    "tagline": "Gestion du transport et de la logistique"
+  },
+  "common": {
+    "actions": "Actions",
+    "add": "Ajouter",
+    "back": "Retour",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "create": "Créer",
+    "delete": "Supprimer",
+    "download": "Télécharger",
+    "edit": "Modifier",
+    "filters": "Filtres",
+    "loading": "Chargement…",
+    "next": "Suivant",
+    "none": "—",
+    "previous": "Précédent",
+    "reset": "Réinitialiser",
+    "retry": "Réessayer",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "search": "Rechercher",
+    "searchPlaceholder": "Rechercher…",
+    "select": "Sélectionner",
+    "view": "Consulter",
+    "yes": "Oui",
+    "no": "Non",
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "optional": "facultatif"
+  },
+  "auth": {
+    "login": "Connexion",
+    "loginTitle": "Connexion à Tricolis",
+    "loginSubtitle": "Accédez à votre espace de gestion",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "logout": "Se déconnecter",
+    "profile": "Mon profil",
+    "invalidCredentials": "Adresse e-mail ou mot de passe incorrect.",
+    "noOrganization": "Votre compte n’est rattaché à aucune organisation.",
+    "sessionExpired": "Votre session a expiré, veuillez vous reconnecter."
+  },
+  "organization": {
+    "switcher": "Organisation active",
+    "switch": "Changer d’organisation",
+    "owner": "Propriétaire",
+    "current": "Organisation courante"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "administration": "Administration",
+    "organizations": "Organisations",
+    "users": "Utilisateurs",
+    "roles": "Rôles",
+    "agencies": "Agences",
+    "depots": "Dépôts",
+    "clients": "Clients",
+    "customers": "Clients",
+    "system": "Système",
+    "audit": "Journal d’audit"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Vue d’ensemble de l’organisation active",
+    "recentActivity": "Activité récente",
+    "noActivity": "Aucune activité enregistrée."
+  },
+  "table": {
+    "empty": "Aucun résultat",
+    "emptyHint": "Ajustez vos filtres ou créez un premier élément.",
+    "error": "Le chargement a échoué",
+    "rowsPerPage": "Lignes par page",
+    "page": "Page {{current}} sur {{total}}",
+    "totalRows": "{{count}} résultat",
+    "totalRows_other": "{{count}} résultats",
+    "sortAscending": "Trier par ordre croissant",
+    "sortDescending": "Trier par ordre décroissant"
+  },
+  "errors": {
+    "title": "Une erreur est survenue",
+    "network": "Le serveur est injoignable.",
+    "forbidden": "Accès refusé",
+    "forbiddenHint": "Vous n’avez pas la permission d’accéder à cette page. Contactez votre administrateur.",
+    "notFound": "Page introuvable",
+    "notFoundHint": "Cette adresse ne correspond à aucune page.",
+    "unexpected": "Une erreur inattendue s’est produite.",
+    "validation": "Les données fournies sont invalides."
+  },
+  "status": {
+    "active": "Actif",
+    "inactive": "Inactif",
+    "pending": "En attente",
+    "suspended": "Suspendu",
+    "closed": "Fermé",
+    "blocked": "Bloqué",
+    "invited": "Invité"
+  },
+  "confirm": {
+    "deleteTitle": "Confirmer la suppression",
+    "deleteDescription": "Cette action est irréversible.",
+    "deleteEntity": "Supprimer « {{name}} » ?"
+  },
+  "organizations": {
+    "title": "Organisations",
+    "subtitle": "Les organisations auxquelles vous appartenez",
+    "create": "Nouvelle organisation",
+    "edit": "Modifier l’organisation",
+    "detail": "Fiche organisation",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "legalName": "Raison sociale",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "status": "Statut",
+      "defaultLanguage": "Langue par défaut",
+      "defaultCurrency": "Devise par défaut",
+      "timezone": "Fuseau horaire"
+    }
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "subtitle": "Comptes ayant accès à l’organisation",
+    "create": "Nouvel utilisateur",
+    "edit": "Modifier l’utilisateur",
+    "fields": {
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Adresse e-mail",
+      "phone": "Téléphone",
+      "password": "Mot de passe",
+      "preferredLanguage": "Langue",
+      "status": "Statut",
+      "roles": "Rôles",
+      "lastLoginAt": "Dernière connexion"
+    }
+  },
+  "roles": {
+    "title": "Rôles",
+    "subtitle": "Ensembles de permissions attribuables aux utilisateurs",
+    "create": "Nouveau rôle",
+    "edit": "Modifier le rôle",
+    "permissions": "Permissions",
+    "permissionsCount": "{{count}} permission",
+    "permissionsCount_other": "{{count}} permissions",
+    "usersCount": "{{count}} utilisateur",
+    "usersCount_other": "{{count}} utilisateurs",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "description": "Description",
+      "isSystem": "Rôle système"
+    }
+  },
+  "agencies": {
+    "title": "Agences",
+    "subtitle": "Implantations de l’organisation",
+    "create": "Nouvelle agence",
+    "edit": "Modifier l’agence",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "status": "Statut"
+    }
+  },
+  "depots": {
+    "title": "Dépôts",
+    "subtitle": "Points de stockage rattachés aux agences",
+    "create": "Nouveau dépôt",
+    "edit": "Modifier le dépôt",
+    "selectAgencyFirst": "Choisissez d’abord une agence.",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "agency": "Agence",
+      "status": "Statut"
+    }
+  },
+  "customers": {
+    "title": "Clients",
+    "subtitle": "Donneurs d’ordre de l’organisation",
+    "create": "Nouveau client",
+    "edit": "Modifier le client",
+    "block": "Bloquer le client",
+    "unblock": "Débloquer le client",
+    "changeStatus": "Changer le statut",
+    "capabilities": "Capacités",
+    "tabs": {
+      "information": "Informations",
+      "sites": "Sites",
+      "contacts": "Contacts",
+      "documents": "Documents",
+      "configuration": "Configuration"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "legalName": "Raison sociale",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "paymentMode": "Mode de paiement",
+      "communicationMode": "Mode de communication",
+      "status": "Statut"
+    },
+    "capability": {
+      "catalogEnabled": "Catalogue",
+      "stockEnabled": "Stock",
+      "packageEnabled": "Colis",
+      "appointmentEnabled": "Rendez-vous",
+      "trackingEnabled": "Suivi"
+    }
+  },
+  "customerSites": {
+    "title": "Sites",
+    "create": "Nouveau site",
+    "edit": "Modifier le site",
+    "empty": "Aucun site enregistré pour ce client.",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "address": "Adresse",
+      "status": "Statut"
+    }
+  },
+  "addresses": {
+    "title": "Adresses",
+    "create": "Nouvelle adresse",
+    "select": "Choisir une adresse",
+    "fields": {
+      "addressLine1": "Adresse",
+      "addressLine2": "Complément",
+      "addressLine3": "Complément (suite)",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "country": "Pays",
+      "latitude": "Latitude",
+      "longitude": "Longitude"
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "create": "Nouveau contact",
+    "select": "Choisir un contact",
+    "notAUser": "Un contact n’est pas un compte utilisateur.",
+    "fields": {
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "mobile": "Mobile",
+      "preferredLanguage": "Langue",
+      "isActive": "Actif"
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "upload": "Téléverser un document",
+    "uploading": "Téléversement…",
+    "empty": "Aucun document.",
+    "fields": {
+      "fileName": "Fichier",
+      "documentType": "Type",
+      "size": "Taille",
+      "createdAt": "Ajouté le"
+    }
+  },
+  "audit": {
+    "title": "Journal d’audit",
+    "subtitle": "Historique des opérations de l’organisation",
+    "detail": "Détail de l’entrée",
+    "readOnly": "Le journal est en lecture seule.",
+    "fields": {
+      "createdAt": "Date",
+      "user": "Utilisateur",
+      "action": "Action",
+      "entityType": "Type d’entité",
+      "entityId": "Identifiant",
+      "ipAddress": "Adresse IP",
+      "oldValues": "Valeurs précédentes",
+      "newValues": "Nouvelles valeurs"
+    }
+  },
+  "validation": {
+    "required": "Ce champ est obligatoire.",
+    "email": "Adresse e-mail invalide.",
+    "min": "Au moins {{count}} caractère.",
+    "min_other": "Au moins {{count}} caractères.",
+    "max": "Au plus {{count}} caractère.",
+    "max_other": "Au plus {{count}} caractères.",
+    "code": "Lettres, chiffres, tirets et tirets bas uniquement.",
+    "number": "Valeur numérique attendue."
+  },
+  "toast": {
+    "created": "Création effectuée.",
+    "updated": "Modifications enregistrées.",
+    "deleted": "Suppression effectuée.",
+    "uploaded": "Document téléversé."
+  }
+}

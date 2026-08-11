@@ -31,7 +31,13 @@
     "no": "Non",
     "enabled": "Activé",
     "disabled": "Désactivé",
-    "optional": "facultatif"
+    "optional": "facultatif",
+    "searchGlobal": "Rechercher…",
+    "refresh": "Rafraîchir",
+    "all": "Tous",
+    "of": "sur",
+    "showingRange": "Affichage de {{from}} à {{to}} sur {{total}} résultats",
+    "detail": "Détail"
   },
   "auth": {
     "login": "Connexion",
@@ -64,7 +70,10 @@
     "clients": "Clients",
     "customers": "Clients",
     "system": "Système",
-    "audit": "Journal d’audit"
+    "audit": "Journal d’audit",
+    "main": "Navigation principale",
+    "collapse": "Réduire le menu",
+    "resources": "Ressources"
   },
   "dashboard": {
     "title": "Tableau de bord",

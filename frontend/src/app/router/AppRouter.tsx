@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
+import { CustomerListPage } from '@/modules/customers/pages/CustomerListPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { ForbiddenPage } from '@/modules/system/pages/ForbiddenPage'
 import { NotFoundPage } from '@/modules/system/pages/NotFoundPage'
@@ -35,6 +36,15 @@ export function AppRouter() {
           element={
             <ProtectedRoute permission="dashboard.view">
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/customers"
+          element={
+            <ProtectedRoute permission="customers.view">
+              <CustomerListPage />
             </ProtectedRoute>
           }
         />

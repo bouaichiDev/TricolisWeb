@@ -1,8 +1,10 @@
 import {
+  Boxes,
   Building2,
   ClipboardList,
   LayoutDashboard,
   Network,
+  Settings,
   Shield,
   Users,
   Warehouse,
@@ -12,74 +14,73 @@ import {
 /**
  * Configuration unique du menu.
  *
- * Le §10 l'exige : une seule source, pas de menu recopié dans plusieurs
- * composants. Chaque entrée porte sa permission, et la barre latérale filtre —
+ * Le §10 l'exige : une seule source, jamais un menu recopié dans plusieurs
+ * composants. Chaque entrée porte sa permission ; la barre latérale filtre, et
  * un groupe dont aucune entrée n'est autorisée disparaît entièrement plutôt que
  * d'afficher un titre vide.
  *
- * Les codes de permission sont ceux du backend, sans exception : `customers.view`
- * existe dans le seeder, `dashboard.view` aussi.
+ * Les maquettes distinguent deux formes : des entrées de premier niveau, et un
+ * groupe « Administration » repliable dont les enfants sont indentés. La
+ * structure ci-dessous porte cette distinction — `children` absent signifie une
+ * entrée simple.
  */
 export interface NavItem {
   /** Clé i18n, jamais un libellé en dur. */
   labelKey: string
   to: string
-  icon: LucideIcon
   permission: string
 }
 
-export interface NavGroup {
+export interface NavEntry {
   labelKey: string
-  items: NavItem[]
+  icon: LucideIcon
+  /** Route pour une entrée simple ; absent pour un groupe repliable. */
+  to?: string
+  permission?: string
+  children?: NavItem[]
 }
 
-export const navigation: NavGroup[] = [
+export const navigation: NavEntry[] = [
   {
     labelKey: 'nav.dashboard',
-    items: [
-      {
-        labelKey: 'nav.dashboard',
-        to: '/dashboard',
-        icon: LayoutDashboard,
-        permission: 'dashboard.view',
-      },
+    icon: LayoutDashboard,
+    to: '/dashboard',
+    permission: 'dashboard.view',
+  },
+  {
+    labelKey: 'nav.customers',
+    icon: Building2,
+    to: '/customers',
+    permission: 'customers.view',
+  },
+  {
+    labelKey: 'nav.resources',
+    icon: Boxes,
+    children: [
+      { labelKey: 'nav.agencies', to: '/agencies', permission: 'agencies.view' },
+      { labelKey: 'nav.depots', to: '/depots', permission: 'depots.view' },
     ],
   },
   {
     labelKey: 'nav.administration',
-    items: [
-      {
-        labelKey: 'nav.organizations',
-        to: '/organizations',
-        icon: Building2,
-        permission: 'organizations.view',
-      },
-      { labelKey: 'nav.users', to: '/users', icon: Users, permission: 'users.view' },
-      { labelKey: 'nav.roles', to: '/roles', icon: Shield, permission: 'roles.view' },
-      { labelKey: 'nav.agencies', to: '/agencies', icon: Network, permission: 'agencies.view' },
-      { labelKey: 'nav.depots', to: '/depots', icon: Warehouse, permission: 'depots.view' },
-    ],
-  },
-  {
-    labelKey: 'nav.clients',
-    items: [
-      {
-        labelKey: 'nav.customers',
-        to: '/customers',
-        icon: Building2,
-        permission: 'customers.view',
-      },
-    ],
-  },
-  {
-    labelKey: 'nav.system',
-    items: [
-      {
-        labelKey: 'nav.audit',
-        to: '/audit',
-        icon: ClipboardList,
-        permission: 'audit_logs.view',
-      },
+    icon: Settings,
+    children: [
+      { labelKey: 'nav.users', to: '/users', permission: 'users.view' },
+      { labelKey: 'nav.roles', to: '/roles', permission: 'roles.view' },
+      { labelKey: 'nav.organizations', to: '/organizations', permission: 'organizations.view' },
+      { labelKey: 'nav.audit', to: '/audit', permission: 'audit_logs.view' },
     ],
   },
 ]
+
+/** Icônes des entrées simples, pour le fil d'Ariane et les titres de page. */
+export const sectionIcons: Record<string, LucideIcon> = {
+  '/dashboard': LayoutDashboard,
+  '/customers': Building2,
+  '/agencies': Network,
+  '/depots': Warehouse,
+  '/users': Users,
+  '/roles': Shield,
+  '/organizations': Building2,
+  '/audit': ClipboardList,
+}

@@ -1,61 +1,155 @@
+import { ChevronDown, PanelLeftClose, Truck } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 
-import { navigation } from '@/app/router/navigation'
+import { navigation, type NavEntry } from '@/app/router/navigation'
 import { usePermissions } from '@/shared/hooks/usePermission'
 import { cn } from '@/shared/utils/cn'
 
 interface AppSidebarProps {
   /** Appelé après un clic : ferme le tiroir sur mobile, sans effet ailleurs. */
   onNavigate?: () => void
+  onCollapse?: () => void
 }
 
 /**
- * Navigation principale, filtrée par les permissions.
+ * Navigation principale — panneau sombre des maquettes.
  *
- * Un groupe dont aucune entrée n'est autorisée n'affiche pas son titre : un
- * intitulé « Administration » sans rien dessous laisserait croire à un défaut
- * d'affichage.
+ * Deux formes d'entrées : simples, et groupes repliables dont les enfants sont
+ * indentés. Un groupe s'ouvre automatiquement quand la route courante lui
+ * appartient — sinon l'utilisateur qui arrive par un lien direct verrait son
+ * emplacement replié et se croirait ailleurs.
  */
-export function AppSidebar({ onNavigate }: AppSidebarProps) {
+export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
   const { t } = useTranslation()
   const { has } = usePermissions()
+  const location = useLocation()
 
-  const groups = navigation
-    .map((group) => ({ ...group, items: group.items.filter((item) => has(item.permission)) }))
-    .filter((group) => group.items.length > 0)
+  const entries = navigation
+    .map((entry) => ({
+      ...entry,
+      children: entry.children?.filter((child) => has(child.permission)),
+    }))
+    .filter((entry) =>
+      entry.children ? entry.children.length > 0 : has(entry.permission ?? ''),
+    )
 
   return (
-    <nav className="flex h-full flex-col gap-6 overflow-y-auto p-4" aria-label={t('nav.dashboard')}>
-      {groups.map((group) => (
-        <div key={group.labelKey} className="flex flex-col gap-1">
-          {group.items.length > 1 || group.labelKey !== group.items[0].labelKey ? (
-            <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t(group.labelKey)}
-            </p>
-          ) : null}
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <Link
+        to="/dashboard"
+        onClick={onNavigate}
+        className="flex h-16 shrink-0 items-center gap-2.5 px-5"
+      >
+        <Truck className="size-6 text-sidebar-primary" aria-hidden />
+        <span className="text-lg font-semibold tracking-tight">
+          {t('app.name')} <span className="text-sidebar-primary">V2</span>
+        </span>
+      </Link>
 
-          {group.items.map((item) => (
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4" aria-label={t('nav.main')}>
+        {entries.map((entry) =>
+          entry.children ? (
+            <NavGroup
+              key={entry.labelKey}
+              entry={entry as NavEntry & { children: NonNullable<NavEntry['children']> }}
+              pathname={location.pathname}
+              onNavigate={onNavigate}
+            />
+          ) : (
             <NavLink
-              key={item.to}
-              to={item.to}
+              key={entry.to}
+              to={entry.to ?? '/'}
+              onClick={onNavigate}
+              className={({ isActive }) => linkClass(isActive)}
+            >
+              <entry.icon className="size-[18px] shrink-0" aria-hidden />
+              <span className="truncate">{t(entry.labelKey)}</span>
+            </NavLink>
+          ),
+        )}
+      </nav>
+
+      {onCollapse ? (
+        <button
+          type="button"
+          onClick={onCollapse}
+          className="flex shrink-0 items-center gap-2.5 border-t border-sidebar-border px-5 py-4 text-sm text-sidebar-foreground/70 transition-colors hover:text-sidebar-foreground"
+        >
+          <PanelLeftClose className="size-4" aria-hidden />
+          {t('nav.collapse')}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function linkClass(isActive: boolean): string {
+  return cn(
+    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+    isActive
+      ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground'
+      : 'text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+  )
+}
+
+function NavGroup({
+  entry,
+  pathname,
+  onNavigate,
+}: {
+  entry: NavEntry & { children: NonNullable<NavEntry['children']> }
+  pathname: string
+  onNavigate?: () => void
+}) {
+  const { t } = useTranslation()
+  const containsCurrent = entry.children.some((child) => pathname.startsWith(child.to))
+  const [open, setOpen] = useState(containsCurrent)
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+          containsCurrent
+            ? 'text-sidebar-foreground'
+            : 'text-sidebar-foreground/75 hover:text-sidebar-foreground',
+        )}
+      >
+        <entry.icon className="size-[18px] shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-left">{t(entry.labelKey)}</span>
+        <ChevronDown
+          className={cn('size-4 shrink-0 transition-transform', open && 'rotate-180')}
+          aria-hidden
+        />
+      </button>
+
+      {open ? (
+        <div className="mt-1 space-y-1 pl-4">
+          {entry.children.map((child) => (
+            <NavLink
+              key={child.to}
+              to={child.to}
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                  'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                   isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
-                    : 'text-sidebar-foreground',
+                    ? 'bg-sidebar-primary font-medium text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
                 )
               }
             >
-              <item.icon className="size-4 shrink-0" aria-hidden />
-              <span className="truncate">{t(item.labelKey)}</span>
+              <span className="size-1.5 shrink-0 rounded-full bg-current opacity-60" aria-hidden />
+              <span className="truncate">{t(child.labelKey)}</span>
             </NavLink>
           ))}
         </div>
-      ))}
-    </nav>
+      ) : null}
+    </div>
   )
 }

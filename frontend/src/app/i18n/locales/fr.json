@@ -226,7 +226,20 @@
       "packageEnabled": "Colis",
       "appointmentEnabled": "Rendez-vous",
       "trackingEnabled": "Suivi"
-    }
+    },
+    "sections": {
+      "general": "Informations générales",
+      "configuration": "Configuration"
+    },
+    "capabilitiesHint": "Fonctionnalités ouvertes à ce client.",
+    "freeTextHint": "Champ libre : aucune liste imposée par l’API.",
+    "codeLocked": "Le code identifie le client auprès des intégrations et n’est pas modifiable.",
+    "createTitle": "Nouveau client",
+    "createSubtitle": "Enregistrer un donneur d’ordre",
+    "notFound": "Ce client n’existe pas dans l’organisation active.",
+    "deleteConfirm": "Supprimer définitivement « {{name}} » ? Cette action est irréversible.",
+    "blockConfirm": "Bloquer « {{name}} » ? Ses commandes en cours ne pourront plus avancer.",
+    "unblockConfirm": "Débloquer « {{name}} » ? Le client pourra de nouveau passer commande."
   },
   "customerSites": {
     "title": "Sites",
@@ -237,8 +250,10 @@
       "code": "Code",
       "name": "Nom",
       "address": "Adresse",
-      "status": "Statut"
-    }
+      "status": "Statut",
+      "siteType": "Type"
+    },
+    "default": "Par défaut"
   },
   "addresses": {
     "title": "Adresses",
@@ -268,7 +283,9 @@
       "mobile": "Mobile",
       "preferredLanguage": "Langue",
       "isActive": "Actif"
-    }
+    },
+    "apiMissingTitle": "Liste indisponible",
+    "apiMissingHint": "L’API ne permet pas encore de lister les contacts d’un client : GET /contacts n’accepte ni entityType ni entityId. Le manque est consigné au rapport de phase."
   },
   "documents": {
     "title": "Documents",
@@ -280,7 +297,9 @@
       "documentType": "Type",
       "size": "Taille",
       "createdAt": "Ajouté le"
-    }
+    },
+    "apiMissingTitle": "Liste indisponible",
+    "apiMissingHint": "L’API ne permet pas encore de lister les documents d’un client : GET /documents n’accepte ni entityType ni entityId. Le manque est consigné au rapport de phase."
   },
   "audit": {
     "title": "Journal d’audit",

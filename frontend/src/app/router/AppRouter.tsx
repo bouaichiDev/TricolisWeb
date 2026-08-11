@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
+import { CustomerCreatePage } from '@/modules/customers/pages/CustomerCreatePage'
+import { CustomerDetailPage } from '@/modules/customers/pages/CustomerDetailPage'
+import { CustomerEditPage } from '@/modules/customers/pages/CustomerEditPage'
 import { CustomerListPage } from '@/modules/customers/pages/CustomerListPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { ForbiddenPage } from '@/modules/system/pages/ForbiddenPage'
@@ -45,6 +48,33 @@ export function AppRouter() {
           element={
             <ProtectedRoute permission="customers.view">
               <CustomerListPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/customers/create"
+          element={
+            <ProtectedRoute permission="customers.create">
+              <CustomerCreatePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/customers/:id"
+          element={
+            <ProtectedRoute permission="customers.view">
+              <CustomerDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/customers/:id/edit"
+          element={
+            <ProtectedRoute permission="customers.update">
+              <CustomerEditPage />
             </ProtectedRoute>
           }
         />

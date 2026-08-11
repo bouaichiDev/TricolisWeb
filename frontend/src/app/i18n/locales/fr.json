@@ -37,7 +37,9 @@
     "all": "Tous",
     "of": "sur",
     "showingRange": "Affichage de {{from}} à {{to}} sur {{total}} résultats",
-    "detail": "Détail"
+    "detail": "Détail",
+    "createdAt": "Créé le",
+    "updatedAt": "Modifié le"
   },
   "auth": {
     "login": "Connexion",
@@ -178,8 +180,16 @@
       "name": "Nom",
       "email": "E-mail",
       "phone": "Téléphone",
-      "status": "Statut"
-    }
+      "status": "Statut",
+      "shortName": "Nom court",
+      "loadingPoint": "Point de chargement",
+      "color": "Couleur"
+    },
+    "sections": {
+      "general": "Informations générales",
+      "operations": "Exploitation"
+    },
+    "colorHint": "Couleur d’identification sur les plannings, au format hexadécimal."
   },
   "depots": {
     "title": "Dépôts",
@@ -192,7 +202,15 @@
       "name": "Nom",
       "agency": "Agence",
       "status": "Statut"
-    }
+    },
+    "empty": "Aucun dépôt pour cette agence.",
+    "selectAgency": "Agence",
+    "chooseAgency": "Sélectionnez une agence pour voir ses dépôts.",
+    "sections": {
+      "general": "Informations générales"
+    },
+    "editSubtitle": "Modifier le dépôt",
+    "tabTitle": "Dépôts"
   },
   "customers": {
     "title": "Clients",
@@ -251,24 +269,36 @@
       "name": "Nom",
       "address": "Adresse",
       "status": "Statut",
-      "siteType": "Type"
+      "siteType": "Type",
+      "isDefault": "Site par défaut"
     },
-    "default": "Par défaut"
+    "default": "Par défaut",
+    "subtitle": "Lieux de livraison et d’enlèvement du client",
+    "sections": {
+      "identity": "Identité du site"
+    },
+    "addressHint": "L’adresse est créée avec le site et lui reste rattachée.",
+    "defaultHint": "Le site par défaut est proposé en premier lors d’une commande."
   },
   "addresses": {
-    "title": "Adresses",
+    "title": "Adresse",
     "create": "Nouvelle adresse",
     "select": "Choisir une adresse",
     "fields": {
+      "name": "Libellé",
       "addressLine1": "Adresse",
       "addressLine2": "Complément",
-      "addressLine3": "Complément (suite)",
+      "addressNumber": "Numéro",
+      "route": "Voie",
       "postalCode": "Code postal",
       "city": "Ville",
       "country": "Pays",
-      "latitude": "Latitude",
-      "longitude": "Longitude"
-    }
+      "instructions": "Consignes d’accès",
+      "timeWindow": "Créneau",
+      "timeWindowFrom": "Créneau — début",
+      "timeWindowTo": "Créneau — fin"
+    },
+    "countryHint": "Code ISO à deux lettres, par exemple FR."
   },
   "contacts": {
     "title": "Contacts",
@@ -325,7 +355,8 @@
     "max": "Au plus {{count}} caractère.",
     "max_other": "Au plus {{count}} caractères.",
     "code": "Lettres, chiffres, tirets et tirets bas uniquement.",
-    "number": "Valeur numérique attendue."
+    "number": "Valeur numérique attendue.",
+    "country": "Le code pays doit comporter deux lettres."
   },
   "toast": {
     "created": "Création effectuée.",

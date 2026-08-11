@@ -1,12 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+import { customerRoutes } from './routes/customerRoutes'
+import { guarded } from './routes/guarded'
+import { resourceRoutes } from './routes/resourceRoutes'
 import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
-import { CustomerCreatePage } from '@/modules/customers/pages/CustomerCreatePage'
-import { CustomerDetailPage } from '@/modules/customers/pages/CustomerDetailPage'
-import { CustomerEditPage } from '@/modules/customers/pages/CustomerEditPage'
-import { CustomerListPage } from '@/modules/customers/pages/CustomerListPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { ForbiddenPage } from '@/modules/system/pages/ForbiddenPage'
 import { NotFoundPage } from '@/modules/system/pages/NotFoundPage'
@@ -16,8 +15,9 @@ import { NotFoundPage } from '@/modules/system/pages/NotFoundPage'
  *
  * Toutes les routes métier vivent sous une unique `ProtectedRoute` englobante,
  * qui vérifie l'authentification ; la permission, elle, est déclarée route par
- * route. Ce découpage évite de répéter le contrôle de session dix fois tout en
- * gardant chaque permission visible à côté de sa page.
+ * route. Les routes sont regroupées par domaine dans `routes/` : une table
+ * unique dépassait vite la taille lisible, et chaque domaine se relit
+ * désormais isolément.
  */
 export function AppRouter() {
   return (
@@ -33,51 +33,10 @@ export function AppRouter() {
         }
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={guarded('dashboard.view', <DashboardPage />)} />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute permission="dashboard.view">
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/customers"
-          element={
-            <ProtectedRoute permission="customers.view">
-              <CustomerListPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/customers/create"
-          element={
-            <ProtectedRoute permission="customers.create">
-              <CustomerCreatePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/customers/:id"
-          element={
-            <ProtectedRoute permission="customers.view">
-              <CustomerDetailPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/customers/:id/edit"
-          element={
-            <ProtectedRoute permission="customers.update">
-              <CustomerEditPage />
-            </ProtectedRoute>
-          }
-        />
+        {customerRoutes}
+        {resourceRoutes}
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

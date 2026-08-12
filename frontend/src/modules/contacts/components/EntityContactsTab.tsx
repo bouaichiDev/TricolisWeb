@@ -1,30 +1,29 @@
-import { Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { EmptyState } from '@/shared/components/feedback/EmptyState'
+import { EntityAddressesPanel } from '@/modules/addresses/components/EntityAddressesPanel'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 
 /**
- * Contacts rattaches a une entite.
+ * Adresses d'un client, chacune avec ses contacts.
  *
- * **L'API ne permet pas cette lecture.** `GET /contacts` ne filtre que sur
- * `search` et `isActive` ; les routes de liaison partent du contact
- * (`GET /contacts/{contact}/links`), pas de l'entite. Lister ici tous les
- * contacts de l'organisation afficherait ceux des autres clients — exactement
- * ce que le §1 interdit de contourner.
+ * Le modèle ne prévoit pas de « contacts du client » flottants : un client
+ * porte des **adresses** — livraison, facturation — et chaque adresse porte les
+ * contacts qui la concernent. Qui prévenir dépend du lieu, pas du client dans
+ * l'absolu : le magasinier d'un entrepôt n'est pas le comptable du siège.
  *
- * Le manque est consigne au rapport de phase. Il se comble par un filtre
- * `entityType` / `entityId` sur `GET /contacts`, sans nouvelle table.
+ * Cet onglet affichait auparavant un message d'indisponibilité : `GET /contacts`
+ * et `GET /addresses` n'acceptaient pas `entityType` / `entityId`, alors que la
+ * création les acceptait déjà. Le filtre existe désormais des deux côtés.
  */
 export function CustomerContactsTab({ entityId }: { entityId: string }) {
   const { t } = useTranslation()
 
   return (
-    <SectionCard title={t('contacts.title')} description={t('contacts.notAUser')}>
-      <EmptyState
-        icon={Users}
-        title={t('contacts.apiMissingTitle')}
-        description={t('contacts.apiMissingHint', { id: entityId })}
+    <SectionCard title={t('addresses.title')} description={t('addresses.customerHint')}>
+      <EntityAddressesPanel
+        entityType="customer"
+        entityId={entityId}
+        emptyMessage={t('addresses.emptyCustomer')}
       />
     </SectionCard>
   )

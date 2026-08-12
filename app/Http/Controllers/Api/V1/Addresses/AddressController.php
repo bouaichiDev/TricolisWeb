@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Addresses;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Addresses\ListAddressRequest;
 use App\Http\Requests\Api\V1\Addresses\StoreAddressRequest;
 use App\Http\Requests\Api\V1\Addresses\UpdateAddressRequest;
 use App\Http\Resources\Api\V1\Addresses\AddressResource;
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Addresses\Models\EntityAddress;
 use App\Shared\Database\EntityLinkResolver;
-use App\Shared\Http\Requests\ListRequest;
 use App\Shared\Http\Responses\ApiResponse;
 use App\Shared\Support\InputMapper;
 use Illuminate\Http\JsonResponse;
@@ -30,12 +30,28 @@ class AddressController extends Controller
      * Permission requise : `addresses.view`. Une adresse est visible dès qu'une
      * liaison `EntityAddress` la rattache à l'organisation active. Recherche sur
      * `name`, `address_line_1`, `city`, `postal_code`.
+     *
+     * `entityType` / `entityId` bornent la liste aux adresses d'une entité —
+     * les adresses d'un client, celle d'un site. Les liaisons correspondantes
+     * sont alors chargées et exposées : c'est elles qui portent le type
+     * (`delivery`, `billing`) et le drapeau par défaut, pas l'adresse.
      */
-    public function index(ListRequest $request): JsonResponse
+    public function index(ListAddressRequest $request): JsonResponse
     {
         $org = $this->requireOrganizationId();
         $this->authorize('viewAny', [Address::class, $org]);
         $query = Address::whereHas('entityAddresses', fn ($q) => $q->where('organization_id', $org));
+
+        if ($request->hasEntityFilter()) {
+            $entityType = $request->validated('entityType');
+            $entityId = $request->validated('entityId');
+
+            $scope = fn ($q) => $q->where('organization_id', $org)
+                ->where('entity_type', $entityType)
+                ->where('entity_id', $entityId);
+
+            $query->whereHas('entityAddresses', $scope)->with(['entityAddresses' => $scope]);
+        }
         if ($request->filled('search')) {
             $search = $request->validated('search');
             $query->where(fn ($q) => $q->where('name', 'like', "%$search%")->orWhere('address_line_1', 'like', "%$search%")->orWhere('city', 'like', "%$search%")->orWhere('postal_code', 'like', "%$search%"));

@@ -48,7 +48,11 @@ export function CustomerSiteDetailPage() {
         </dl>
       </SectionCard>
 
-      {address.data ? <AddressCard address={address.data} /> : null}
+      {/* L'adresse du site porte ses propres contacts : le magasinier d'un
+          entrepôt n'est pas le comptable du siège du client. */}
+      <SectionCard title={t('addresses.title')} description={t('addresses.siteHint')}>
+        {address.data ? <AddressCard address={address.data} /> : null}
+      </SectionCard>
 
       <ConfirmDialog
         open={confirmDelete}

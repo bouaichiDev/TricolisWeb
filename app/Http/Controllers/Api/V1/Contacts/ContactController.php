@@ -39,6 +39,19 @@ class ContactController extends Controller
         $org = $this->requireOrganizationId();
         $this->authorize('viewAny', [Contact::class, $org]);
         $query = Contact::whereHas('entityContacts', fn ($q) => $q->where('organization_id', $org));
+
+        if ($request->hasEntityFilter()) {
+            $entityType = $request->validated('entityType');
+            $entityId = $request->validated('entityId');
+
+            // Les liaisons sont chargées en même temps : elles portent le rôle
+            // du contact et le drapeau principal, que le contact lui-même ignore.
+            $scope = fn ($q) => $q->where('organization_id', $org)
+                ->where('entity_type', $entityType)
+                ->where('entity_id', $entityId);
+
+            $query->whereHas('entityContacts', $scope)->with(['entityContacts' => $scope]);
+        }
         if ($request->filled('search')) {
             $search = $request->validated('search');
             $query->where(fn ($q) => $q->where('first_name', 'like', "%$search%")->orWhere('last_name', 'like', "%$search%")->orWhere('email', 'like', "%$search%")->orWhere('phone', 'like', "%$search%"));

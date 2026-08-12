@@ -15,10 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 /**
  * Fiche client à onglets.
  *
- * Les cinq onglets du §20 sont livrés. Les six autres — catalogues, commandes,
- * stock, factures, réclamations, intégrations — sont explicitement réservés aux
- * phases suivantes : les afficher vides annoncerait des fonctionnalités
- * absentes.
+ * L'onglet « Contacts » du §20 est devenu « Adresses » : le modèle rattache les
+ * contacts à une adresse, pas au client. Un client porte plusieurs adresses —
+ * livraison, facturation — et chacune porte les contacts qui la concernent.
+ *
+ * Les six autres onglets — catalogues, commandes, stock, factures,
+ * réclamations, intégrations — sont explicitement réservés aux phases
+ * suivantes : les afficher vides annoncerait des fonctionnalités absentes.
  */
 export function CustomerDetailPage() {
   const { t } = useTranslation()
@@ -38,7 +41,7 @@ export function CustomerDetailPage() {
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="information">{t('customers.tabs.information')}</TabsTrigger>
           <TabsTrigger value="sites">{t('customers.tabs.sites')}</TabsTrigger>
-          <TabsTrigger value="contacts">{t('customers.tabs.contacts')}</TabsTrigger>
+          <TabsTrigger value="addresses">{t('customers.tabs.addresses')}</TabsTrigger>
           <TabsTrigger value="documents">{t('customers.tabs.documents')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('customers.tabs.configuration')}</TabsTrigger>
         </TabsList>
@@ -51,7 +54,7 @@ export function CustomerDetailPage() {
           <CustomerSitesTab customerId={customer.id} />
         </TabsContent>
 
-        <TabsContent value="contacts" className="mt-6">
+        <TabsContent value="addresses" className="mt-6">
           <CustomerContactsTab entityId={customer.id} />
         </TabsContent>
 

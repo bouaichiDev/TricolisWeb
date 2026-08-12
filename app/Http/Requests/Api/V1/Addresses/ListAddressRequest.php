@@ -2,29 +2,38 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Api\V1\Contacts;
+namespace App\Http\Requests\Api\V1\Addresses;
 
 use App\Shared\Database\MorphMap;
 use App\Shared\Http\Requests\ListRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
 /**
- * Filtres propres aux contacts, en plus des filtres de liste communs.
+ * Filtres de la liste des adresses.
  *
- * `entityType` / `entityId` bornent la liste aux contacts d'une entité — ceux
- * d'un client, ceux d'un site. La création acceptait déjà ces clés pour créer
- * la liaison ; la lecture ne les proposait pas, ce qui rendait impossible de
- * savoir quels contacts appartiennent à quel client.
+ * `entityType` / `entityId` répondent à une question que l'API ne savait pas
+ * poser : **quelles adresses appartiennent à ce client ?** La création les
+ * acceptait déjà — `StoreAddressRequest` s'en sert pour créer la liaison — mais
+ * la lecture ne les proposait pas. Il fallait donc lister toutes les adresses
+ * de l'organisation puis interroger les liaisons une par une.
+ *
+ * Les alias autorisés sont ceux de `StoreAddressRequest` : les deux extrémités
+ * de la même relation parlent le même vocabulaire.
  */
-class ListContactRequest extends ListRequest
+class ListAddressRequest extends ListRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return array_merge(parent::rules(), [
-            'isActive' => ['sometimes', 'boolean'],
             'entityType' => ['sometimes', 'string', Rule::in($this->allowedEntityTypes())],
             'entityId' => ['required_with:entityType', 'ulid'],
         ]);

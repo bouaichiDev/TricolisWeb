@@ -32,9 +32,55 @@ export interface AddressCreatePayload extends AddressPayload {
   addressType?: string | null
 }
 
+/** Contact rattaché à une adresse — relevé sur `AddressContactResource`. */
+export interface AddressContact {
+  id: string
+  addressId: string
+  contactId: string
+  contactRole: string | null
+  isPrimary: boolean
+  contact: {
+    id: string
+    firstName: string
+    lastName: string
+    phone: string | null
+    mobile: string | null
+    email: string | null
+  }
+}
+
 export const addressesApi = {
   list: (params: { page?: number; perPage?: number; search?: string; status?: string }) =>
     api.get<ApiCollection<Address>>('/addresses', { query: params }),
+
+  /**
+   * Adresses d'une entité, avec leurs liaisons.
+   *
+   * `entityType` / `entityId` sont acceptés par `GET /addresses` : c'est le
+   * seul moyen de savoir quelles adresses appartiennent à un client, et la
+   * réponse porte alors le type de chaque liaison.
+   */
+  listForEntity: (entityType: AddressEntityType, entityId: string) =>
+    api.get<ApiCollection<Address>>('/addresses', {
+      query: { entityType, entityId, perPage: 100 },
+    }),
+
+  /** Contacts rattachés à une adresse. Réponse non paginée. */
+  contacts: (addressId: string) =>
+    api
+      .get<ApiResource<AddressContact[]>>(`/addresses/${addressId}/contacts`)
+      .then((response) => response.data),
+
+  attachContact: (
+    addressId: string,
+    payload: { contactId: string; contactRole?: string; isPrimary?: boolean },
+  ) =>
+    api
+      .post<ApiResource<AddressContact>>(`/addresses/${addressId}/contacts`, payload)
+      .then((response) => response.data),
+
+  detachContact: (addressId: string, linkId: string) =>
+    api.delete<void>(`/addresses/${addressId}/contacts/${linkId}`),
 
   get: (id: string) =>
     api.get<ApiResource<Address>>(`/addresses/${id}`).then((response) => response.data),

@@ -38,6 +38,21 @@ class AddressResource extends JsonResource
             'timeWindowTo' => $this->time_window_to,
             'isDefault' => $this->is_default,
             'status' => $this->status,
+            /**
+             * Liaisons vers les entités qui utilisent cette adresse.
+             *
+             * Présentes seulement lorsque l'appelant a filtré par entité : ce
+             * sont elles qui portent le type — livraison, facturation — et le
+             * drapeau par défaut **pour cette entité**. L'`isDefault` ci-dessus
+             * appartient à l'adresse elle-même et ne dit pas la même chose.
+             */
+            'links' => $this->whenLoaded('entityAddresses', fn () => $this->entityAddresses->map(fn ($link) => [
+                'id' => $link->id,
+                'entityType' => $link->entity_type,
+                'entityId' => $link->entity_id,
+                'addressType' => $link->address_type,
+                'isDefault' => (bool) $link->is_default,
+            ])),
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,
         ];

@@ -348,11 +348,18 @@ l'interface le dit.
 `meta.total` d'une page d'un seul élément par module — la requête la plus légère
 donnant un total exact. Un endpoint dédié éviterait quatre requêtes.
 
-**2. Impossible de lister les contacts ou documents d'une entité.** Ni
-`GET /contacts` ni `GET /documents` n'acceptent `entityType` / `entityId`, et
-les routes de liaison partent du contact ou du document, pas de l'entité. Les
-onglets correspondants de la fiche client affichent donc un message explicite
-plutôt qu'une liste vide qui laisserait croire à une absence de données.
+**2. Documents d'une entité — toujours ouvert.** `GET /documents` n'accepte pas
+`entityType` / `entityId`, et les routes de liaison partent du document, pas de
+l'entité. L'onglet correspondant de la fiche client affiche donc un message
+explicite plutôt qu'une liste vide qui laisserait croire à une absence de
+données.
+
+> **Fermé depuis, pour les adresses et les contacts.** `GET /addresses` et
+> `GET /contacts` acceptent désormais `entityType` / `entityId`, et renvoient
+> les liaisons qui portent le type — livraison, facturation — et le rôle du
+> contact. L'onglet « Contacts » de la fiche client est devenu « Adresses » :
+> le modèle rattache les contacts à une adresse, pas au client.
+> Voir `docs/frontend/phase-1-entity-addresses.md`.
 
 **3. L'email d'un membre n'est pas modifiable via `/organization-users`.**
 `UpdateOrganizationUserRequest` ne l'accepte pas ; il relève de
@@ -398,9 +405,9 @@ vérifie automatiquement que les codes utilisés existent côté serveur.
 ## 20. Prochaine phase
 
 1. Trancher la divergence de maquettes signalée au §13.
-2. Décider des trois manques d'API du §17 — en particulier le filtre
-   `entityType` / `entityId` sur `/contacts` et `/documents`, qui débloque deux
-   onglets déjà construits.
+2. Décider des manques d'API restants du §17 — le filtre
+   `entityType` / `entityId` sur `/documents`, qui débloque le dernier onglet
+   construit sur un message d'indisponibilité.
 3. Tests E2E si Playwright est installé.
 4. Découpage du bundle par route avant l'arrivée des modules métier.
 

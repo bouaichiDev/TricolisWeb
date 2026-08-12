@@ -288,7 +288,8 @@
       "sites": "Sites",
       "contacts": "Contacts",
       "documents": "Documents",
-      "configuration": "Configuration"
+      "configuration": "Configuration",
+      "addresses": "Adresses"
     },
     "fields": {
       "code": "Code",
@@ -360,7 +361,18 @@
       "timeWindowFrom": "Créneau — début",
       "timeWindowTo": "Créneau — fin"
     },
-    "countryHint": "Code ISO à deux lettres, par exemple FR."
+    "countryHint": "Code ISO à deux lettres, par exemple FR.",
+    "empty": "Aucune adresse",
+    "emptyHint": "Ajoutez une adresse pour préciser où livrer et qui prévenir.",
+    "emptyCustomer": "Aucune adresse pour ce client",
+    "customerHint": "Chaque adresse porte ses propres contacts — livraison, facturation.",
+    "siteHint": "Les contacts ci-dessous sont ceux de cette adresse.",
+    "default": "Par défaut",
+    "noContact": "Aucun contact rattaché à cette adresse.",
+    "primaryContact": "Principal",
+    "detachContact": "Détacher le contact",
+    "contactAttached": "Contact rattaché à l’adresse.",
+    "contactDetached": "Contact détaché de l’adresse."
   },
   "contacts": {
     "title": "Contacts",
@@ -472,5 +484,20 @@
     "address": "Adresse",
     "contact": "Contact",
     "document": "Document"
+  },
+  "addressTypes": {
+    "delivery": "Livraison",
+    "billing": "Facturation",
+    "load": "Chargement",
+    "operations": "Exploitation",
+    "other": "Autre"
+  },
+  "contactRoles": {
+    "load": "Chargement",
+    "delivery": "Livraison",
+    "billing": "Facturation",
+    "operations": "Exploitation",
+    "emergency": "Urgence",
+    "other": "Autre"
   }
 }

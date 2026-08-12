@@ -136,7 +136,7 @@ export function AddressCard({
             ) : null}
           </div>
 
-          <AddressContactList addressId={address.id} />
+          <AddressContactList addressId={address.id} editable={entity !== undefined} />
         </div>
       )}
 

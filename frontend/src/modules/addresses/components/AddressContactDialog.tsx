@@ -44,26 +44,32 @@ interface AddressContactDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (payload: NewContactPayload) => Promise<unknown>
+  /** Valeurs existantes : le dialogue passe alors en modification. */
+  defaultValues?: Partial<ContactFormValues>
 }
 
 /**
- * Ajout d'un contact à une adresse.
+ * Saisie d'un contact d'adresse, en création comme en modification.
  *
- * Le contact est créé puis rattaché : l'API n'expose pas de création directe
- * sur une adresse, et un contact doit exister dans l'organisation avant d'y
- * être rattaché. Le rôle vaut pour ce lieu — un même contact peut être
- * livraison ici et facturation ailleurs.
+ * À la création, le contact est créé puis rattaché : l'API n'expose pas de
+ * création directe sur une adresse, et un contact doit exister dans
+ * l'organisation avant d'y être rattaché.
+ *
+ * Le rôle vaut pour ce lieu — un même contact peut être livraison ici et
+ * facturation ailleurs.
  */
 export function AddressContactDialog({
   open,
   onOpenChange,
   onSubmit,
+  defaultValues,
 }: AddressContactDialogProps) {
   const { t } = useTranslation()
+  const isEdit = defaultValues !== undefined
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
-    defaultValues: DEFAULTS,
+    defaultValues: { ...DEFAULTS, ...defaultValues },
   })
 
   const { formError, handleError, clearError } = useApiFormError(form)
@@ -90,8 +96,10 @@ export function AddressContactDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('addresses.addContact')}</DialogTitle>
-          <DialogDescription>{t('addresses.addContactHint')}</DialogDescription>
+          <DialogTitle>{isEdit ? t('addresses.editContact') : t('addresses.addContact')}</DialogTitle>
+          <DialogDescription>
+            {isEdit ? t('addresses.editContactHint') : t('addresses.addContactHint')}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
@@ -122,7 +130,11 @@ export function AddressContactDialog({
               {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? t('common.saving') : t('common.add')}
+              {form.formState.isSubmitting
+                ? t('common.saving')
+                : isEdit
+                  ? t('common.save')
+                  : t('common.add')}
             </Button>
           </DialogFooter>
         </form>

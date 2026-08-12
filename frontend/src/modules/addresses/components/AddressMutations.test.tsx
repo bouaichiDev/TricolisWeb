@@ -4,7 +4,13 @@ import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
 import { EntityAddressesPanel } from './EntityAddressesPanel'
-import { addressesHandler, contactsHandler, CUSTOMER_ID, makeAddress, makeLink } from './addressTestData'
+import {
+  addressesHandler,
+  contactsHandler,
+  CUSTOMER_ID,
+  makeAddress,
+  makeLink,
+} from './addressTestData'
 import { withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
@@ -21,6 +27,7 @@ const editor = withPermissions([
   'addresses.update',
   'addresses.delete',
   'contacts.create',
+  'contacts.update',
 ])
 
 function panel(membership = editor) {

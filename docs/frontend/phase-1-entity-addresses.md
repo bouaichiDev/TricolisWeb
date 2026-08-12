@@ -91,10 +91,29 @@ contenu — vérifié par test.
 | `src/modules/contacts/components/EntityContactsTab.tsx` | Remplace le message d'indisponibilité |
 | `src/modules/customers/pages/CustomerDetailPage.tsx` | L'onglet « Contacts » devient « Adresses » |
 | `src/modules/customerSites/pages/CustomerSiteDetailPage.tsx` | L'adresse du site porte ses contacts |
+| `src/modules/customerSites/hooks/useCustomerSiteMutations.ts` | L'adresse d'un site vise le site, plus le client |
+| `src/modules/addresses/components/AddressContactList.tsx` | Modification d'un contact |
 
 Une adresse peut porter **deux liaisons vers le même client** avec des types
 différents — livraison et facturation. Chacune donne sa propre carte : n'en
 afficher qu'une ferait disparaître l'un des deux rôles.
+
+### L'adresse d'un site n'appartient pas au client
+
+À la création d'un site, l'adresse était rattachée au **client** : elle
+apparaissait donc dans l'onglet « Adresses » du client, à côté de ses adresses
+de livraison et de facturation, alors qu'elle appartient au site.
+
+Elle ne pouvait pas viser le site directement — celui-ci n'existe pas encore,
+il lui faut un `addressId`. Elle est donc créée **sans entité**, ce qui la
+rattache à l'organisation : c'est la valeur par défaut de `EntityLinkResolver`,
+et le sens en est juste — toute adresse appartient à son organisation, puis
+s'ajoute aux entités qui l'utilisent. Le rattachement au site est posé une fois
+celui-ci créé.
+
+Les sites créés **avant** cette correction gardent leur liaison vers le client :
+leur adresse continue d'apparaître dans les deux écrans. Supprimer cette liaison
+depuis l'onglet « Adresses » du client suffit à corriger le cas.
 
 ### Vocabulaire des types
 
@@ -125,7 +144,7 @@ de `links` sans filtre, refus d'un alias hors liste, `entityId` obligatoire avec
 `entityType`, isolation face à une entité d'une autre organisation. Mêmes
 vérifications pour les contacts.
 
-**Frontend** — 18 tests, deux fichiers :
+**Frontend** — 23 tests, trois fichiers :
 
 - `EntityAddressesPanel.test.tsx` — paramètres réellement envoyés, type porté
   par la liaison, une carte par liaison, liaison d'une autre entité écartée,
@@ -134,7 +153,10 @@ vérifications pour les contacts.
 - `AddressMutations.test.tsx` — ajout masqué sans `addresses.create`, type et
   entité envoyés à la création, refus d'une adresse sans ligne postale,
   confirmation avant suppression, ordre des deux appels à l'ajout de contact,
-  422 du serveur reporté dans le formulaire.
+  422 du serveur reporté dans le formulaire ;
+- `AddressContactEdit.test.tsx` — modification masquée sans `contacts.update`,
+  formulaire pré-rempli, liaison laissée intacte quand le rôle ne change pas,
+  liaison refaite dans le bon ordre quand il change.
 
 ---
 
@@ -142,7 +164,7 @@ vérifications pour les contacts.
 
 ```
 Backend   767 tests, 2559 assertions   — passent
-Frontend  110 tests   — passent
+Frontend  115 tests, 20 fichiers   — passent
 ```
 
 `pint`, `typecheck`, `lint`, `build` : conformes. Aucun fichier au-dessus de
@@ -156,6 +178,13 @@ Frontend  110 tests   — passent
 `entityId` : l'onglet « Documents » de la fiche client conserve son message
 d'indisponibilité. La correction serait identique à celle-ci — dites-moi si je
 la fais.
+
+**Modifier un contact.** Le nom, le téléphone et l'email appartiennent au
+**contact** et se modifient par `PATCH /contacts/{id}`. Le rôle et le drapeau
+principal appartiennent à la **liaison**, qui n'a pas de `PATCH` — seuls `POST`
+et `DELETE` existent sur `/addresses/{id}/contacts`. Elle est donc refaite, le
+nouveau rattachement créé **avant** que l'ancien soit retiré : un échec au
+milieu laisserait sinon le contact détaché de l'adresse.
 
 **Rattacher un contact déjà existant.** Le dialogue crée toujours un nouveau
 contact, puis le rattache. Réutiliser un contact déjà présent dans

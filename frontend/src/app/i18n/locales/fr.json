@@ -383,7 +383,9 @@
     "formHint": "Le type détermine l’usage de l’adresse pour cette fiche.",
     "defaultHint": "Adresse proposée en premier pour ce type.",
     "primaryHint": "Contact à prévenir en priorité pour cette adresse.",
-    "deleteConfirm": "Supprimer cette adresse et toutes ses liaisons ? Cette action est irréversible."
+    "deleteConfirm": "Supprimer cette adresse et toutes ses liaisons ? Cette action est irréversible.",
+    "editContact": "Modifier le contact",
+    "editContactHint": "Le rôle et le drapeau principal valent pour cette adresse."
   },
   "contacts": {
     "title": "Contacts",

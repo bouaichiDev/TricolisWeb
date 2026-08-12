@@ -88,6 +88,56 @@ export function useDeleteEntityAddress({ entityType, entityId }: EntityRef) {
   })
 }
 
+export interface ContactEdit extends NewContactPayload {
+  contactId: string
+  /** Liaison actuelle vers l'adresse, à refaire si le rôle change. */
+  linkId: string
+  currentRole: string | null
+  currentIsPrimary: boolean
+}
+
+/**
+ * Modification d'un contact rattaché à une adresse.
+ *
+ * Deux ressources distinctes : le **contact** porte le nom, le téléphone et
+ * l'email ; la **liaison** porte le rôle et le drapeau principal. Le premier se
+ * modifie par `PATCH /contacts/{id}`. La seconde n'a pas de `PATCH` — seuls
+ * `POST` et `DELETE` existent sur `/addresses/{id}/contacts` — elle est donc
+ * refaite : la nouvelle liaison est créée avant que l'ancienne soit retirée,
+ * pour qu'un échec ne laisse pas le contact détaché.
+ */
+export function useUpdateAddressContact(addressId: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: async (payload: ContactEdit) => {
+      await contactsApi.update(payload.contactId, {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        phone: payload.phone,
+        email: payload.email,
+      })
+
+      const linkChanged =
+        payload.contactRole !== payload.currentRole || payload.isPrimary !== payload.currentIsPrimary
+
+      if (linkChanged) {
+        await addressesApi.attachContact(addressId, {
+          contactId: payload.contactId,
+          contactRole: payload.contactRole,
+          isPrimary: payload.isPrimary,
+        })
+        await addressesApi.detachContact(addressId, payload.linkId)
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: entityAddressKeys.contacts(addressId) })
+      toast.success(t('toast.updated'))
+    },
+  })
+}
+
 export interface NewContactPayload {
   firstName: string
   lastName: string

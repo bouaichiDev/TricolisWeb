@@ -1,4 +1,5 @@
 import { useCreateCustomerSite, useUpdateCustomerSite } from './useCustomerSites'
+import { addressesApi } from '@/modules/addresses/api/addresses.api'
 import { useCreateAddress, useUpdateAddress } from '@/modules/addresses/hooks/useAddresses'
 import { toAddressPayload } from '@/modules/addresses/schemas/addressSchema'
 import type { CustomerSiteFormValues } from '../schemas/customerSiteSchema'
@@ -19,13 +20,22 @@ export function useCreateSiteWithAddress(customerId: string) {
   return {
     isPending: createAddress.isPending || createSite.isPending,
     submit: async (values: CustomerSiteFormValues) => {
-      const address = await createAddress.mutateAsync({
-        ...toAddressPayload(values),
-        entityType: 'customer',
-        entityId: customerId,
-      })
+      /**
+       * L'adresse est créée **sans entité**, donc rattachée à l'organisation.
+       *
+       * Elle ne peut pas viser le site, qui n'existe pas encore — il lui faut
+       * un `addressId`. Et elle ne doit pas viser le client : elle apparaîtrait
+       * alors dans ses adresses, à côté de ses adresses de livraison et de
+       * facturation, alors qu'elle appartient au site. C'était le cas avant
+       * cette correction.
+       *
+       * Le rattachement à l'organisation est la valeur par défaut de l'API
+       * (`EntityLinkResolver`) : toute adresse appartient à son organisation,
+       * et s'ajoute ensuite aux entités qui l'utilisent.
+       */
+      const address = await createAddress.mutateAsync(toAddressPayload(values))
 
-      return createSite.mutateAsync({
+      const site = await createSite.mutateAsync({
         addressId: address.id,
         code: values.code,
         name: values.siteName,
@@ -33,6 +43,16 @@ export function useCreateSiteWithAddress(customerId: string) {
         isDefault: values.isDefault,
         status: values.status,
       })
+
+      // Le site existe : l'adresse peut enfin le désigner.
+      await addressesApi.linkEntity(address.id, {
+        entityType: 'customer_site',
+        entityId: site.id,
+        addressType: 'delivery',
+        isDefault: values.isDefault,
+      })
+
+      return site
     },
   }
 }

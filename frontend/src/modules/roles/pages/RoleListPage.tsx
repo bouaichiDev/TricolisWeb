@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useRoleList } from '../hooks/useRoles'
-import type { Role } from '../types/role'
+import { isEditableRole, type Role } from '../types/role'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
@@ -38,12 +38,23 @@ export function RoleListPage() {
       key: 'name',
       header: t('roles.fields.name'),
       cell: (row) => (
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
           {row.name}
           {row.isSystem ? (
             <Badge variant="secondary" className="font-normal">
               {t('roles.system')}
             </Badge>
+          ) : null}
+          {/* Le §23 demande de marquer clairement ce qui n'est pas modifiable :
+              un rôle système visible mais silencieusement verrouillé donnerait
+              l'impression d'une panne au premier clic. */}
+          {isEditableRole(row) ? null : (
+            <Badge variant="outline" className="font-normal">
+              {t('roles.readOnly')}
+            </Badge>
+          )}
+          {row.scope === 'platform' ? (
+            <Badge className="font-normal">{t('roles.platform')}</Badge>
           ) : null}
         </span>
       ),

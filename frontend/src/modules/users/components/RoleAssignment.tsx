@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { useRoleList } from '@/modules/roles/hooks/useRoles'
+import { isEditableRole } from '@/modules/roles/types/role'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { ListSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
@@ -16,8 +17,12 @@ interface RoleAssignmentProps {
 /**
  * Attribution des rôles d'un membre.
  *
- * Les rôles proposés sont ceux de l'organisation active — l'API refuse un rôle
- * d'une autre organisation avec un 422, autant ne pas le proposer.
+ * Seuls les rôles **attribuables** sont proposés : locaux, non système, non
+ * plateforme. Un rôle système porte l'intégralité des permissions de son
+ * organisation ; l'attribuer transmettrait des droits que l'attribuant ne
+ * détient pas nécessairement, et contournerait le plafond de délégation.
+ *
+ * L'API refuse ces rôles par un 422 ; les masquer évite d'y conduire.
  */
 export function RoleAssignment({ selected, onChange, disabled = false }: RoleAssignmentProps) {
   const { t } = useTranslation()
@@ -26,7 +31,8 @@ export function RoleAssignment({ selected, onChange, disabled = false }: RoleAss
   if (isPending) return <ListSkeleton rows={4} />
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />
 
-  const roles = data?.data ?? []
+  const roles = (data?.data ?? []).filter(isEditableRole)
+
   if (roles.length === 0) {
     return <EmptyState title={t('users.noRoles')} description={t('users.noRolesHint')} />
   }

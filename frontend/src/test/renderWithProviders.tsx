@@ -57,6 +57,9 @@ export function renderWithProviders(ui: ReactElement, options: Options = {}): Re
     permissions: (membership?.permissions ?? []).map((permission) => permission.code),
     agencies: membership?.agencies ?? [],
     isOwner: membership?.isOwner ?? false,
+    // Lu sur l'ensemble des appartenances, comme en production : un rôle
+    // plateforme n'est pas rattaché à l'organisation active.
+    isPlatformAdmin: memberships.some((item) => item.roles.some((role) => role.scope === 'platform')),
     isAuthenticated,
     isLoading,
     login: async () => {},

@@ -9,15 +9,25 @@ import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { DetailField } from '@/shared/components/layout/DetailField'
 import { EntityHeader } from '@/shared/components/layout/EntityHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
+import { usePermissions } from '@/shared/hooks/usePermission'
 import { formatDateTime } from '@/shared/utils/format'
 
-export function OrganizationDetailPage() {
+/**
+ * Fiche d'une organisation.
+ *
+ * `organizationId` permet de réutiliser la page pour « Mon organisation », où
+ * l'identifiant ne vient pas de l'URL mais de l'appartenance active — ce qui
+ * empêche d'atteindre l'organisation d'un tiers en modifiant l'adresse.
+ */
+export function OrganizationDetailPage({ organizationId }: { organizationId?: string } = {}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  const { data: organization, isPending, error, refetch } = useOrganization(id)
+  const target = organizationId ?? id
+  const { isPlatformAdmin } = usePermissions()
+  const { data: organization, isPending, error, refetch } = useOrganization(target)
   const remove = useDeleteOrganization()
 
   if (isPending) return <DetailSkeleton />
@@ -30,9 +40,13 @@ export function OrganizationDetailPage() {
         title={organization.name}
         subtitle={organization.code}
         status={organization.status}
-        editTo={`/organizations/${id}/edit`}
+        editTo={`/organizations/${target}/edit`}
         editPermission="organizations.update"
-        onDelete={() => setConfirmDelete(true)}
+        // La suppression relève de la plateforme. Sans rappel, `EntityHeader`
+        // n'affiche pas le bouton : un administrateur d'organisme ne se voit
+        // donc pas proposer une action que l'API refuserait — et qui, avant
+        // cette correction, aurait réussi.
+        onDelete={isPlatformAdmin ? () => setConfirmDelete(true) : undefined}
         deletePermission="organizations.delete"
       />
 
@@ -80,7 +94,7 @@ export function OrganizationDetailPage() {
         confirmLabel={t('common.delete')}
         isPending={remove.isPending}
         onConfirm={() => {
-          remove.mutate(id, {
+          remove.mutate(target, {
             onSuccess: () => {
               setConfirmDelete(false)
               void navigate('/organizations')

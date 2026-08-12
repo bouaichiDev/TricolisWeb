@@ -10,10 +10,21 @@
  * donc les rôles, les permissions et les agences accessibles.
  */
 
+/**
+ * Portée d'un rôle, telle que la renvoie l'API.
+ *
+ * C'est la seule marque d'autorité plateforme. Ni le code, ni le nom ne sont
+ * concluants : un rôle appelé « SuperAdmin » sans portée plateforme est un rôle
+ * ordinaire, et le backend le traite comme tel.
+ */
+export type RoleScope = 'platform' | 'organization'
+
 export interface AuthRole {
   id: string
   code: string
   name: string
+  scope: RoleScope | null
+  isSystem: boolean
 }
 
 export interface AuthPermission {
@@ -80,6 +91,15 @@ export interface AuthContextValue {
   permissions: string[]
   agencies: AuthAgency[]
   isOwner: boolean
+  /**
+   * L'utilisateur administre-t-il la plateforme ?
+   *
+   * Calculé sur **toutes** ses appartenances, pas seulement l'active : un rôle
+   * plateforme n'appartient à aucune organisation et se rattache à l'une
+   * quelconque de ses adhésions. Le borner à l'organisation courante ferait
+   * disparaître l'autorité au moindre changement d'organisation.
+   */
+  isPlatformAdmin: boolean
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>

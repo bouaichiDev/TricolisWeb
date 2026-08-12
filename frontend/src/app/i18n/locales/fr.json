@@ -75,7 +75,8 @@
     "audit": "Journal d’audit",
     "main": "Navigation principale",
     "collapse": "Réduire le menu",
-    "resources": "Ressources"
+    "resources": "Ressources",
+    "myOrganization": "Mon organisation"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -147,7 +148,9 @@
       "identity": "Identité",
       "legal": "Informations légales",
       "preferences": "Préférences"
-    }
+    },
+    "mine": "Mon organisation",
+    "noActive": "Aucune organisation active"
   },
   "users": {
     "title": "Utilisateurs",
@@ -185,7 +188,8 @@
       "identity": "Identité",
       "account": "Compte",
       "roles": "Rôles"
-    }
+    },
+    "assignableOnly": "Les rôles système et plateforme ne sont pas attribuables."
   },
   "roles": {
     "title": "Rôles",
@@ -193,8 +197,8 @@
     "create": "Nouveau rôle",
     "edit": "Modifier le rôle",
     "permissions": "Permissions",
-    "permissionsCount": "{{count}} permission",
-    "permissionsCount_other": "{{count}} permissions",
+    "permissionsCount": "{{count}} permission sélectionnée sur {{total}} attribuable",
+    "permissionsCount_other": "{{count}} permissions sélectionnées sur {{total}} attribuables",
     "usersCount": "{{count}} utilisateur",
     "usersCount_other": "{{count}} utilisateurs",
     "fields": {
@@ -218,7 +222,15 @@
     "sections": {
       "general": "Informations générales",
       "permissions": "Permissions"
-    }
+    },
+    "readOnly": "Lecture seule",
+    "systemLocked": "Rôle livré avec l’application : il n’est ni modifiable ni supprimable.",
+    "platform": "Plateforme",
+    "scopeReadOnly": "Portée",
+    "organizationField": "Organisation",
+    "scopeFixed": "Un rôle créé ici s’applique à cette organisation uniquement.",
+    "permissionsDelegable": "Seules les permissions que vous pouvez vous-même accorder sont proposées.",
+    "scopeOrganization": "Organisation"
   },
   "agencies": {
     "title": "Agences",

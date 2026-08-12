@@ -4,12 +4,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { RolePermissionsPanel } from '../components/RolePermissionsPanel'
 import { useDeleteRole, useRole } from '../hooks/useRoles'
+import { isEditableRole } from '../types/role'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { DetailField } from '@/shared/components/layout/DetailField'
 import { EntityHeader } from '@/shared/components/layout/EntityHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
+import { Badge } from '@/shared/components/ui/badge'
 
 export function RoleDetailPage() {
   const { t } = useTranslation()
@@ -24,23 +26,37 @@ export function RoleDetailPage() {
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />
   if (!role) return null
 
+  const editable = isEditableRole(role)
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Un rôle système ne propose pas la suppression : il est livré par le
-          seeder et le retirer casserait les comptes qui s'en servent. */}
+      {/* Un rôle système ou plateforme n'offre ni modification ni suppression :
+          il est livré avec l'application, et les comptes qui s'en servent
+          dépendent de son contenu. Seule la suppression était masquée avant
+          cette correction — le lien de modification restait proposé, pour un
+          refus certain. */}
       <EntityHeader
         title={role.name}
         subtitle={role.code}
         status={role.status}
-        editTo={`/roles/${id}/edit`}
-        editPermission="roles.update"
-        onDelete={role.isSystem ? undefined : () => setConfirmDelete(true)}
+        editTo={editable ? `/roles/${id}/edit` : undefined}
+        editPermission={editable ? 'roles.update' : undefined}
+        onDelete={editable ? () => setConfirmDelete(true) : undefined}
         deletePermission="roles.delete"
+        actions={
+          role.isSystem ? (
+            <Badge variant="secondary" className="self-center font-normal">
+              {t('roles.readOnly')}
+            </Badge>
+          ) : null
+        }
       />
 
       <SectionCard title={t('roles.sections.general')}>
         <dl className="grid gap-x-8 sm:grid-cols-3">
-          <DetailField label={t('roles.fields.scope')}>{role.scope}</DetailField>
+          <DetailField label={t('roles.fields.scope')}>
+            {role.scope === 'platform' ? t('roles.platform') : t('roles.scopeOrganization')}
+          </DetailField>
           <DetailField label={t('roles.fields.isSystem')}>
             {role.isSystem ? t('common.yes') : t('common.no')}
           </DetailField>

@@ -29,6 +29,16 @@ export interface NavItem {
   labelKey: string
   to: string
   permission: string
+  /**
+   * Entrée réservée à l'administration de la plateforme.
+   *
+   * Une permission ne suffit pas à trancher : un administrateur d'organisme
+   * détient légitimement `organizations.view` pour consulter la sienne, sans
+   * devoir accéder à l'annuaire global.
+   */
+  platformOnly?: boolean
+  /** Entrée cachée **à** la plateforme : son équivalent local. */
+  organizationOnly?: boolean
 }
 
 export interface NavEntry {
@@ -37,6 +47,7 @@ export interface NavEntry {
   /** Route pour une entrée simple ; absent pour un groupe repliable. */
   to?: string
   permission?: string
+  platformOnly?: boolean
   children?: NavItem[]
 }
 
@@ -65,9 +76,24 @@ export const navigation: NavEntry[] = [
     labelKey: 'nav.administration',
     icon: Settings,
     children: [
+      // Deux entrées mutuellement exclusives pour la même notion : la
+      // plateforme administre toutes les organisations, un organisme n'accède
+      // qu'à la sienne. Afficher un annuaire global à un administrateur local
+      // lui laissait croire à un périmètre qu'il n'a pas.
+      {
+        labelKey: 'nav.organizations',
+        to: '/organizations',
+        permission: 'organizations.view',
+        platformOnly: true,
+      },
+      {
+        labelKey: 'nav.myOrganization',
+        to: '/my-organization',
+        permission: 'organizations.view',
+        organizationOnly: true,
+      },
       { labelKey: 'nav.users', to: '/users', permission: 'users.view' },
       { labelKey: 'nav.roles', to: '/roles', permission: 'roles.view' },
-      { labelKey: 'nav.organizations', to: '/organizations', permission: 'organizations.view' },
       { labelKey: 'nav.audit', to: '/audit', permission: 'audit.view' },
     ],
   },
@@ -82,5 +108,6 @@ export const sectionIcons: Record<string, LucideIcon> = {
   '/users': Users,
   '/roles': Shield,
   '/organizations': Building2,
+  '/my-organization': Building2,
   '/audit': ClipboardList,
 }

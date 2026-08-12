@@ -2,6 +2,7 @@ import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
 import { AuditLogPage } from '@/modules/audit/pages/AuditLogPage'
+import { MyOrganizationPage } from '@/modules/organizations/pages/MyOrganizationPage'
 import { OrganizationCreatePage } from '@/modules/organizations/pages/OrganizationCreatePage'
 import { OrganizationDetailPage } from '@/modules/organizations/pages/OrganizationDetailPage'
 import { OrganizationEditPage } from '@/modules/organizations/pages/OrganizationEditPage'
@@ -63,25 +64,36 @@ export const adminRoutes = [
     element={guarded('roles.update', <RoleEditPage />)}
   />,
 
+  // L'annuaire global et la création relèvent de la plateforme. Sans
+  // `platformOnly`, masquer le bouton suffisait à croire la route protégée :
+  // saisir /organizations/create dans la barre d'adresse ouvrait le formulaire.
   <Route
     key="organizations"
     path="/organizations"
-    element={guarded('organizations.view', <OrganizationListPage />)}
+    element={guarded('organizations.view', <OrganizationListPage />, { platformOnly: true })}
   />,
   <Route
     key="organization-create"
     path="/organizations/create"
-    element={guarded('organizations.create', <OrganizationCreatePage />)}
+    element={guarded('organizations.create', <OrganizationCreatePage />, { platformOnly: true })}
   />,
   <Route
     key="organization-detail"
     path="/organizations/:id"
-    element={guarded('organizations.view', <OrganizationDetailPage />)}
+    element={guarded('organizations.view', <OrganizationDetailPage />, { platformOnly: true })}
   />,
   <Route
     key="organization-edit"
     path="/organizations/:id/edit"
-    element={guarded('organizations.update', <OrganizationEditPage />)}
+    element={guarded('organizations.update', <OrganizationEditPage />, { platformOnly: true })}
+  />,
+
+  // Point d'entrée d'un administrateur d'organisme : sa propre organisation,
+  // désignée par l'appartenance active et non par l'URL.
+  <Route
+    key="my-organization"
+    path="/my-organization"
+    element={guarded('organizations.view', <MyOrganizationPage />)}
   />,
 
   <Route key="audit" path="/audit" element={guarded('audit.view', <AuditLogPage />)} />,

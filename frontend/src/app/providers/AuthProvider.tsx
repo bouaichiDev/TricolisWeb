@@ -41,6 +41,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = meQuery.data?.user ?? null
   const memberships = useMemo<AuthMembership[]>(() => user?.organizations ?? [], [user])
 
+  /**
+   * Autorité plateforme.
+   *
+   * Lue sur l'ensemble des appartenances : un rôle plateforme n'a pas
+   * d'organisation et se rattache à l'une quelconque des adhésions du compte.
+   * La restreindre à l'organisation active la ferait disparaître dès que
+   * l'utilisateur change d'organisation.
+   *
+   * Ce booléen ne protège rien : il évite de proposer une action que l'API
+   * refuserait. Le backend reste seul juge.
+   */
+  const isPlatformAdmin = useMemo(
+    () => memberships.some((item) => item.roles.some((role) => role.scope === 'platform')),
+    [memberships],
+  )
+
   const membership = useMemo(() => {
     if (memberships.length === 0) return null
 
@@ -63,10 +79,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session.setOrganizationId(nextId)
       setOrganizationId(nextId)
 
-      // Toutes les données en cache appartiennent à l'organisation précédente.
-      // Les invalider en bloc est le seul moyen sûr : une invalidation
-      // sélective laisserait passer ce qu'on aurait oublié de lister.
-      void queryClient.invalidateQueries()
+      /**
+       * Toutes les données en cache appartiennent à l'organisation précédente.
+       *
+       * Elles sont **retirées**, pas seulement invalidées. Une invalidation les
+       * marque périmées mais les laisse affichées pendant le rechargement — et
+       * `placeholderData: (previous) => previous`, que portent toutes les
+       * listes, les y maintiendrait activement. L'utilisateur verrait les
+       * clients de l'organisation qu'il vient de quitter.
+       *
+       * L'identité est conservée puis invalidée : la vider déconnecterait
+       * l'utilisateur le temps du rechargement. Ses rôles et ses permissions en
+       * dépendent — ils sont portés par l'appartenance, pas par le compte — et
+       * arrivent donc avec la réponse de `/auth/me`.
+       */
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY[0],
+      })
+      void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY })
     },
     [queryClient],
   )
@@ -115,13 +145,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       permissions: membership?.permissions.map((permission) => permission.code) ?? [],
       agencies: membership?.agencies ?? [],
       isOwner: membership?.isOwner ?? false,
+      isPlatformAdmin,
       isAuthenticated: token !== null && user !== null,
       isLoading: token !== null && meQuery.isPending,
       login,
       logout,
       switchOrganization,
     }),
-    [user, memberships, membership, token, meQuery.isPending, login, logout, switchOrganization],
+    [
+      user,
+      memberships,
+      membership,
+      isPlatformAdmin,
+      token,
+      meQuery.isPending,
+      login,
+      logout,
+      switchOrganization,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

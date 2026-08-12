@@ -23,17 +23,33 @@ interface AppSidebarProps {
  */
 export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
   const { t } = useTranslation()
-  const { has } = usePermissions()
+  const { has, isPlatformAdmin } = usePermissions()
   const location = useLocation()
+
+  /**
+   * Une entrée est visible si la permission est là **et** si sa portée
+   * correspond. Les deux conditions sont distinctes : `organizations.view`
+   * autorise un administrateur d'organisme à consulter la sienne, sans lui
+   * ouvrir l'annuaire global de la plateforme.
+   */
+  const visible = (item: { permission: string; platformOnly?: boolean; organizationOnly?: boolean }) => {
+    if (item.platformOnly === true && !isPlatformAdmin) return false
+    if (item.organizationOnly === true && isPlatformAdmin) return false
+
+    return has(item.permission)
+  }
 
   const entries = navigation
     .map((entry) => ({
       ...entry,
-      children: entry.children?.filter((child) => has(child.permission)),
+      children: entry.children?.filter(visible),
     }))
-    .filter((entry) =>
-      entry.children ? entry.children.length > 0 : has(entry.permission ?? ''),
-    )
+    .filter((entry) => {
+      if (entry.children) return entry.children.length > 0
+      if (entry.platformOnly === true && !isPlatformAdmin) return false
+
+      return has(entry.permission ?? '')
+    })
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">

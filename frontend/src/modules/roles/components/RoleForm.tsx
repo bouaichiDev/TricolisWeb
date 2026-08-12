@@ -11,6 +11,7 @@ import { FormActions } from '@/shared/components/form/FormActions'
 import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
 import { StatusSelect } from '@/shared/components/form/StatusSelect'
 import { TextField } from '@/shared/components/form/TextField'
+import { DetailField } from '@/shared/components/layout/DetailField'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
@@ -21,10 +22,21 @@ interface RoleFormProps {
   onCancel: () => void
   submitLabel: string
   lockCode?: boolean
+  /** Nom de l'organisation d'accueil, affiché en lecture. */
+  organizationName?: string
 }
 
 /**
  * Formulaire de rôle.
+ *
+ * La **portée** et le **drapeau système** ne sont pas saisissables. Un rôle créé
+ * ici s'applique à l'organisation active et n'est pas système : l'API l'impose,
+ * et proposer un champ laisserait croire à un choix qui n'existe pas. Le
+ * formulaire proposait auparavant une portée libre — un administrateur pouvait y
+ * écrire « platform » et le backend l'enregistrait.
+ *
+ * Les deux valeurs restent affichées, en lecture : les taire priverait
+ * l'utilisateur d'une information utile.
  *
  * L'attribution des permissions a sa propre permission côté API,
  * `roles.assign_permissions`, distincte de `roles.update` : sans elle le bloc
@@ -38,6 +50,7 @@ export function RoleForm({
   onCancel,
   submitLabel,
   lockCode = false,
+  organizationName,
 }: RoleFormProps) {
   const { t } = useTranslation()
   const { has } = usePermissions()
@@ -76,12 +89,6 @@ export function RoleForm({
             description={lockCode ? t('roles.codeLocked') : undefined}
           />
           <TextField form={form} name="name" label={t('roles.fields.name')} required />
-          <TextField
-            form={form}
-            name="scope"
-            label={t('roles.fields.scope')}
-            description={t('roles.scopeHint')}
-          />
           <StatusSelect
             form={form}
             name="status"
@@ -89,11 +96,19 @@ export function RoleForm({
             options={ROLE_STATUSES}
           />
         </div>
+
+        <dl className="mt-6 grid gap-x-8 border-t pt-4 sm:grid-cols-2">
+          <DetailField label={t('roles.organizationField')}>{organizationName}</DetailField>
+          <DetailField label={t('roles.scopeReadOnly')}>
+            {t('roles.scopeOrganization')}
+          </DetailField>
+        </dl>
+        <p className="mt-2 text-xs text-muted-foreground">{t('roles.scopeFixed')}</p>
       </SectionCard>
 
       <SectionCard
         title={t('roles.sections.permissions')}
-        description={canAssign ? t('roles.permissionsHint') : t('roles.permissionsReadOnly')}
+        description={canAssign ? t('roles.permissionsDelegable') : t('roles.permissionsReadOnly')}
       >
         <PermissionPicker
           selected={permissionIds}

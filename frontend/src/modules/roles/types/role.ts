@@ -7,13 +7,19 @@ export interface Permission {
   action: string
 }
 
-/** Rôle — champs relevés sur `RoleResource`. */
+/**
+ * Rôle — champs relevés sur `RoleResource`.
+ *
+ * `organizationId` est nullable : un rôle de portée plateforme n'appartient à
+ * aucune organisation. Un administrateur d'organisme n'en voit jamais, la liste
+ * étant bornée à son organisation côté API.
+ */
 export interface Role {
   id: string
-  organizationId: string
+  organizationId: string | null
   code: string
   name: string
-  scope: string | null
+  scope: 'platform' | 'organization' | null
   isSystem: boolean
   status: string
   /** Chargé par `index` et `show` ; absent des réponses qui n'ont pas fait le `with`. */
@@ -21,6 +27,17 @@ export interface Role {
 }
 
 export const ROLE_STATUSES = ['active', 'inactive'] as const
+
+/**
+ * Un rôle est-il modifiable depuis l'administration d'un organisme ?
+ *
+ * Les mêmes trois conditions que `RolePolicy` côté backend. Les répéter ici
+ * n'est pas une duplication de la sécurité — c'est éviter de proposer un
+ * bouton qui mènerait à un refus.
+ */
+export function isEditableRole(role: Role): boolean {
+  return !role.isSystem && role.scope !== 'platform'
+}
 
 export interface RoleFilters {
   page: number

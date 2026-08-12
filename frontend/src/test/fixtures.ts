@@ -16,11 +16,41 @@ export function makeMembership(overrides: Partial<AuthMembership> = {}): AuthMem
     name: 'Tricolis SAS',
     isOwner: false,
     isPrimary: true,
-    roles: [{ id: '01JQZ00000000000000ROLE1', code: 'admin', name: 'Administrateur' }],
+    roles: [
+      {
+        id: '01JQZ00000000000000ROLE1',
+        code: 'admin',
+        name: 'Administrateur',
+        scope: 'organization',
+        isSystem: true,
+      },
+    ],
     permissions: [],
     agencies: [],
     ...overrides,
   }
+}
+
+/**
+ * Appartenance conférant l'autorité plateforme.
+ *
+ * Le rôle porte `scope: 'platform'` — la seule marque qui compte. Un rôle
+ * simplement nommé « SuperAdmin » sans cette portée reste ordinaire, et les
+ * tests s'appuient sur cette distinction.
+ */
+export function platformMembership(overrides: Partial<AuthMembership> = {}): AuthMembership {
+  return makeMembership({
+    roles: [
+      {
+        id: '01JQZ0000000000000PLATF1',
+        code: 'superadmin',
+        name: 'Administrateur plateforme',
+        scope: 'platform',
+        isSystem: true,
+      },
+    ],
+    ...overrides,
+  })
 }
 
 /** Raccourci : la liste de codes est ce que les gardes consomment réellement. */

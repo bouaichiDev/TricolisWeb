@@ -49,9 +49,18 @@ export function CustomerSiteDetailPage() {
       </SectionCard>
 
       {/* L'adresse du site porte ses propres contacts : le magasinier d'un
-          entrepôt n'est pas le comptable du siège du client. */}
+          entrepôt n'est pas le comptable du siège du client.
+
+          Ni modification ni suppression ici : l'adresse a été créée avec le
+          site et se modifie depuis son formulaire. La retirer laisserait un
+          site sans lieu, ce que le modèle n'admet pas. */}
       <SectionCard title={t('addresses.title')} description={t('addresses.siteHint')}>
-        {address.data ? <AddressCard address={address.data} /> : null}
+        {address.data ? (
+          <AddressCard
+            address={address.data}
+            entity={{ entityType: 'customer_site', entityId: siteId }}
+          />
+        ) : null}
       </SectionCard>
 
       <ConfirmDialog

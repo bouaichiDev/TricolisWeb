@@ -79,6 +79,10 @@ contenu — vérifié par test.
 | Fichier | Rôle |
 | --- | --- |
 | `src/modules/addresses/hooks/useEntityAddresses.ts` | **créé** — adresses d'une entité, contacts d'une adresse |
+| `src/modules/addresses/hooks/useEntityAddressMutations.ts` | **créé** — création, modification, suppression, ajout de contact |
+| `src/modules/addresses/components/AddressFormDialog.tsx` | **créé** — saisie d'une adresse et de son type |
+| `src/modules/addresses/components/AddressContactDialog.tsx` | **créé** — création puis rattachement d'un contact |
+| `src/modules/contacts/api/contacts.api.ts` | **créé** — `POST /contacts` |
 | `src/modules/addresses/components/EntityAddressesPanel.tsx` | **créé** — liste des adresses, une carte par liaison |
 | `src/modules/addresses/components/AddressContactList.tsx` | **créé** — contacts d'une adresse |
 | `src/modules/addresses/components/AddressCard.tsx` | Type de liaison, drapeau par défaut, contacts |
@@ -121,11 +125,16 @@ de `links` sans filtre, refus d'un alias hors liste, `entityId` obligatoire avec
 `entityType`, isolation face à une entité d'une autre organisation. Mêmes
 vérifications pour les contacts.
 
-**Frontend** — `src/modules/addresses/components/EntityAddressesPanel.test.tsx`,
-10 tests : paramètres réellement envoyés, type porté par la liaison, une carte
-par liaison, liaison d'une autre entité écartée, contacts affichés, adresse sans
-contact annoncée, détachement masqué sans `addresses.update`, états vide et
-d'erreur.
+**Frontend** — 18 tests, deux fichiers :
+
+- `EntityAddressesPanel.test.tsx` — paramètres réellement envoyés, type porté
+  par la liaison, une carte par liaison, liaison d'une autre entité écartée,
+  contacts affichés, adresse sans contact annoncée, détachement masqué sans
+  `addresses.update`, états vide et d'erreur ;
+- `AddressMutations.test.tsx` — ajout masqué sans `addresses.create`, type et
+  entité envoyés à la création, refus d'une adresse sans ligne postale,
+  confirmation avant suppression, ordre des deux appels à l'ajout de contact,
+  422 du serveur reporté dans le formulaire.
 
 ---
 
@@ -133,7 +142,7 @@ d'erreur.
 
 ```
 Backend   767 tests, 2559 assertions   — passent
-Frontend  102 tests   — passent
+Frontend  110 tests   — passent
 ```
 
 `pint`, `typecheck`, `lint`, `build` : conformes. Aucun fichier au-dessus de
@@ -148,8 +157,13 @@ Frontend  102 tests   — passent
 d'indisponibilité. La correction serait identique à celle-ci — dites-moi si je
 la fais.
 
-**Création et rattachement depuis l'interface.** Les écrans lisent les adresses
-et leurs contacts, et permettent de détacher un contact. Ajouter une adresse à
-un client, ou y rattacher un contact existant, passe pour l'instant par l'API
-(`POST /addresses`, `POST /addresses/{id}/contacts`) : les formulaires
-correspondants relèvent d'un tour suivant.
+**Rattacher un contact déjà existant.** Le dialogue crée toujours un nouveau
+contact, puis le rattache. Réutiliser un contact déjà présent dans
+l'organisation — le même comptable pour deux adresses — demanderait un
+sélecteur adossé à `GET /contacts`. La route existe ; l'écran, non.
+
+**Changer le type sans quitter la carte.** La modification d'une adresse permet
+de passer de livraison à facturation, au prix de deux appels : la nouvelle
+liaison est créée **avant** que l'ancienne soit retirée, l'API refusant de
+supprimer la dernière liaison d'une adresse. Un `PATCH` sur la liaison
+simplifierait, mais la route n'existe pas.

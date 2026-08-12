@@ -3,61 +3,25 @@ import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
 import { EntityAddressesPanel } from './EntityAddressesPanel'
-import { paginated, withPermissions } from '@/test/fixtures'
+import {
+  addressesHandler,
+  contactsHandler,
+  CUSTOMER_ID,
+  makeAddress,
+  makeAddressContact,
+  makeLink,
+} from './addressTestData'
+import { withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
-const CUSTOMER_ID = '01JQZ000000000000000CUST'
+const viewer = withPermissions(['addresses.view'])
 
-function address(id: string, overrides: Record<string, unknown> = {}) {
-  return {
-    id,
-    code: null,
-    // Nommée : l'en-tête affiche le nom, le corps l'adresse postale. Sans nom,
-    // les deux affichent la même ligne et l'assertion devient ambiguë.
-    name: 'Entrepôt Nord',
-    addressLine1: '12 rue de la Gare',
-    addressLine2: null,
-    addressLine3: null,
-    floor: null,
-    addressNumber: null,
-    route: null,
-    sublocality: null,
-    postalCode: '75001',
-    city: 'Paris',
-    town: null,
-    country: 'FR',
-    latitude: null,
-    longitude: null,
-    instructions: null,
-    timeWindowFrom: null,
-    timeWindowTo: null,
-    isDefault: false,
-    status: 'active',
-    createdAt: '2026-01-01T00:00:00.000000Z',
-    updatedAt: '2026-01-01T00:00:00.000000Z',
-    ...overrides,
-  }
-}
-
-function link(id: string, addressType: string, isDefault = false) {
-  return { id, entityType: 'customer', entityId: CUSTOMER_ID, addressType, isDefault }
-}
-
-/** Capture les paramètres envoyés : le filtrage est serveur, pas local. */
-function addressesHandler(rows: unknown[], queries: URLSearchParams[] = []) {
-  return http.get(`${API}/addresses`, ({ request }) => {
-    queries.push(new URL(request.url).searchParams)
-
-    return HttpResponse.json(paginated(rows))
+function panel() {
+  renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
+    membership: viewer,
   })
 }
-
-function contactsHandler(rows: unknown[] = []) {
-  return http.get(`${API}/addresses/:id/contacts`, () => HttpResponse.json({ data: rows, meta: [] }))
-}
-
-const viewer = withPermissions(['addresses.view'])
 
 /**
  * Un client porte plusieurs adresses — livraison, facturation — et chacune
@@ -68,11 +32,8 @@ const viewer = withPermissions(['addresses.view'])
 describe('EntityAddressesPanel', () => {
   it('demande les adresses de la seule entité consultée', async () => {
     const queries: URLSearchParams[] = []
-    server.use(addressesHandler([address('a1')], queries), contactsHandler())
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    server.use(addressesHandler([makeAddress('a1')], queries), contactsHandler())
+    panel()
 
     await screen.findByText('Entrepôt Nord')
 
@@ -83,15 +44,12 @@ describe('EntityAddressesPanel', () => {
   it('affiche le type porté par la liaison', async () => {
     server.use(
       addressesHandler([
-        address('a1', { links: [link('l1', 'delivery')] }),
-        address('a2', { name: 'Siège', links: [link('l2', 'billing', true)] }),
+        makeAddress('a1', { links: [makeLink('l1', 'delivery')] }),
+        makeAddress('a2', { name: 'Siège', links: [makeLink('l2', 'billing', true)] }),
       ]),
       contactsHandler(),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     expect(await screen.findByText('Livraison')).toBeInTheDocument()
     expect(screen.getByText('Facturation')).toBeInTheDocument()
@@ -106,14 +64,11 @@ describe('EntityAddressesPanel', () => {
   it('rend une carte par liaison quand une adresse en porte plusieurs', async () => {
     server.use(
       addressesHandler([
-        address('a1', { links: [link('l1', 'delivery'), link('l2', 'billing')] }),
+        makeAddress('a1', { links: [makeLink('l1', 'delivery'), makeLink('l2', 'billing')] }),
       ]),
       contactsHandler(),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     await screen.findByText('Livraison')
     expect(screen.getByText('Facturation')).toBeInTheDocument()
@@ -123,16 +78,15 @@ describe('EntityAddressesPanel', () => {
   it('écarte une liaison qui vise une autre entité', async () => {
     server.use(
       addressesHandler([
-        address('a1', {
-          links: [{ id: 'l9', entityType: 'customer', entityId: 'AUTRE', addressType: 'billing', isDefault: false }],
+        makeAddress('a1', {
+          links: [
+            { id: 'l9', entityType: 'customer', entityId: 'AUTRE', addressType: 'billing', isDefault: false },
+          ],
         }),
       ]),
       contactsHandler(),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     await screen.findByText('Entrepôt Nord')
     expect(screen.queryByText('Facturation')).not.toBeInTheDocument()
@@ -140,29 +94,10 @@ describe('EntityAddressesPanel', () => {
 
   it('affiche les contacts rattachés à l’adresse', async () => {
     server.use(
-      addressesHandler([address('a1', { links: [link('l1', 'delivery')] })]),
-      contactsHandler([
-        {
-          id: 'c1',
-          addressId: 'a1',
-          contactId: 'ct1',
-          contactRole: 'delivery',
-          isPrimary: true,
-          contact: {
-            id: 'ct1',
-            firstName: 'Sara',
-            lastName: 'Amrani',
-            phone: '+212600000000',
-            mobile: null,
-            email: 'sara@example.test',
-          },
-        },
-      ]),
+      addressesHandler([makeAddress('a1', { links: [makeLink('l1', 'delivery')] })]),
+      contactsHandler([makeAddressContact()]),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     expect(await screen.findByText('Sara Amrani')).toBeInTheDocument()
     expect(screen.getByText('sara@example.test')).toBeInTheDocument()
@@ -171,42 +106,20 @@ describe('EntityAddressesPanel', () => {
 
   it('dit qu’une adresse n’a aucun contact plutôt que de ne rien montrer', async () => {
     server.use(
-      addressesHandler([address('a1', { links: [link('l1', 'delivery')] })]),
+      addressesHandler([makeAddress('a1', { links: [makeLink('l1', 'delivery')] })]),
       contactsHandler([]),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     expect(await screen.findByText('Aucun contact rattaché à cette adresse.')).toBeInTheDocument()
   })
 
   it('masque le détachement sans addresses.update', async () => {
     server.use(
-      addressesHandler([address('a1', { links: [link('l1', 'delivery')] })]),
-      contactsHandler([
-        {
-          id: 'c1',
-          addressId: 'a1',
-          contactId: 'ct1',
-          contactRole: null,
-          isPrimary: false,
-          contact: {
-            id: 'ct1',
-            firstName: 'Sara',
-            lastName: 'Amrani',
-            phone: null,
-            mobile: null,
-            email: null,
-          },
-        },
-      ]),
+      addressesHandler([makeAddress('a1', { links: [makeLink('l1', 'delivery')] })]),
+      contactsHandler([makeAddressContact()]),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     await screen.findByText('Sara Amrani')
     expect(screen.queryByRole('button', { name: 'Détacher le contact' })).not.toBeInTheDocument()
@@ -233,16 +146,13 @@ describe('EntityAddressesPanel', () => {
         HttpResponse.json({ message: 'Service indisponible.' }, { status: 500 }),
       ),
     )
-
-    renderWithProviders(<EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} />, {
-      membership: viewer,
-    })
+    panel()
 
     expect(await screen.findByText('Service indisponible.')).toBeInTheDocument()
   })
 
   it('n’affiche pas les contacts quand l’écran ne les demande pas', async () => {
-    server.use(addressesHandler([address('a1', { links: [link('l1', 'delivery')] })]))
+    server.use(addressesHandler([makeAddress('a1', { links: [makeLink('l1', 'delivery')] })]))
 
     renderWithProviders(
       <EntityAddressesPanel entityType="customer" entityId={CUSTOMER_ID} hideContacts />,

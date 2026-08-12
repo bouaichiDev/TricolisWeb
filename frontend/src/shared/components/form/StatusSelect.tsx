@@ -16,6 +16,14 @@ interface StatusSelectProps<T extends FieldValues> {
   label: string
   /** Valeurs acceptees par l'API pour ce champ. Aucune n'est inventee ici. */
   options: readonly string[]
+  /**
+   * Espace de noms i18n des libelles.
+   *
+   * Le composant sert aussi a des listes qui ne sont pas des statuts — type
+   * d'adresse, role de contact. Le prefixe evite de les entasser sous `status`,
+   * ou « livraison » cohabiterait avec « actif ».
+   */
+  translationPrefix?: string
 }
 
 /**
@@ -30,6 +38,7 @@ export function StatusSelect<T extends FieldValues>({
   name,
   label,
   options,
+  translationPrefix = 'status',
 }: StatusSelectProps<T>) {
   const { t } = useTranslation()
 
@@ -48,7 +57,7 @@ export function StatusSelect<T extends FieldValues>({
         <SelectContent>
           {options.map((option) => (
             <SelectItem key={option} value={option}>
-              {t(`status.${option}`, { defaultValue: option })}
+              {t(`${translationPrefix}.${option}`, { defaultValue: option })}
             </SelectItem>
           ))}
         </SelectContent>

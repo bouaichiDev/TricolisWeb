@@ -1,9 +1,14 @@
-import { MapPin } from 'lucide-react'
+import { MapPin, Pencil, Trash2, UserPlus } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AddressContactDialog } from './AddressContactDialog'
 import { AddressContactList } from './AddressContactList'
-import type { Address } from '../types/address'
+import { useAddContactToAddress } from '../hooks/useEntityAddressMutations'
+import type { Address, AddressEntityType } from '../types/address'
+import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { Badge } from '@/shared/components/ui/badge'
+import { Button } from '@/shared/components/ui/button'
 
 /** Lignes affichables d'une adresse, dans l'ordre postal. */
 function postalLines(address: Address): string[] {
@@ -22,6 +27,10 @@ interface AddressCardProps {
   isDefault?: boolean
   /** Masque les contacts, sur les écrans où ils n'ont pas leur place. */
   hideContacts?: boolean
+  /** Entité consultée. Absente sur les écrans en lecture seule. */
+  entity?: { entityType: AddressEntityType; entityId: string }
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
 /**
@@ -35,8 +44,18 @@ export function AddressCard({
   addressType,
   isDefault = false,
   hideContacts = false,
+  entity,
+  onEdit,
+  onDelete,
 }: AddressCardProps) {
   const { t } = useTranslation()
+  const [addingContact, setAddingContact] = useState(false)
+
+  const addContact = useAddContactToAddress(
+    entity ?? { entityType: 'customer', entityId: '' },
+    address.id,
+  )
+
   const window =
     address.timeWindowFrom && address.timeWindowTo
       ? `${address.timeWindowFrom.slice(0, 5)} – ${address.timeWindowTo.slice(0, 5)}`
@@ -66,11 +85,34 @@ export function AddressCard({
           </p>
         </div>
 
-        {window ? (
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {t('addresses.fields.timeWindow')} : {window}
-          </span>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {window ? (
+            <span className="text-xs text-muted-foreground">
+              {t('addresses.fields.timeWindow')} : {window}
+            </span>
+          ) : null}
+
+          {onEdit ? (
+            <PermissionGuard permission="addresses.update">
+              <Button variant="ghost" size="icon" aria-label={t('common.edit')} onClick={onEdit}>
+                <Pencil className="size-4" aria-hidden />
+              </Button>
+            </PermissionGuard>
+          ) : null}
+
+          {onDelete ? (
+            <PermissionGuard permission="addresses.delete">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t('common.delete')}
+                onClick={onDelete}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            </PermissionGuard>
+          ) : null}
+        </div>
       </div>
 
       {address.instructions ? (
@@ -79,12 +121,32 @@ export function AddressCard({
 
       {hideContacts ? null : (
         <div className="flex flex-col gap-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('contacts.title')}
-          </h4>
+          <div className="flex items-center justify-between gap-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('contacts.title')}
+            </h4>
+
+            {entity ? (
+              <PermissionGuard permission="contacts.create">
+                <Button variant="outline" size="sm" onClick={() => setAddingContact(true)}>
+                  <UserPlus className="size-4" aria-hidden />
+                  {t('addresses.addContact')}
+                </Button>
+              </PermissionGuard>
+            ) : null}
+          </div>
+
           <AddressContactList addressId={address.id} />
         </div>
       )}
+
+      {entity ? (
+        <AddressContactDialog
+          open={addingContact}
+          onOpenChange={setAddingContact}
+          onSubmit={(payload) => addContact.mutateAsync(payload)}
+        />
+      ) : null}
     </div>
   )
 }

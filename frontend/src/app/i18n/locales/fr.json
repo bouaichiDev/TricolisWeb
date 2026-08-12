@@ -359,7 +359,10 @@
       "instructions": "Consignes d’accès",
       "timeWindow": "Créneau",
       "timeWindowFrom": "Créneau — début",
-      "timeWindowTo": "Créneau — fin"
+      "timeWindowTo": "Créneau — fin",
+      "addressType": "Type d’adresse",
+      "isDefault": "Adresse par défaut",
+      "contactRole": "Rôle du contact"
     },
     "countryHint": "Code ISO à deux lettres, par exemple FR.",
     "empty": "Aucune adresse",
@@ -372,7 +375,15 @@
     "primaryContact": "Principal",
     "detachContact": "Détacher le contact",
     "contactAttached": "Contact rattaché à l’adresse.",
-    "contactDetached": "Contact détaché de l’adresse."
+    "contactDetached": "Contact détaché de l’adresse.",
+    "add": "Ajouter une adresse",
+    "edit": "Modifier l’adresse",
+    "addContact": "Ajouter un contact",
+    "addContactHint": "Le contact est créé puis rattaché à cette adresse.",
+    "formHint": "Le type détermine l’usage de l’adresse pour cette fiche.",
+    "defaultHint": "Adresse proposée en premier pour ce type.",
+    "primaryHint": "Contact à prévenir en priorité pour cette adresse.",
+    "deleteConfirm": "Supprimer cette adresse et toutes ses liaisons ? Cette action est irréversible."
   },
   "contacts": {
     "title": "Contacts",

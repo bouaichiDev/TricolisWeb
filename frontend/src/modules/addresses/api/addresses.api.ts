@@ -82,6 +82,16 @@ export const addressesApi = {
   detachContact: (addressId: string, linkId: string) =>
     api.delete<void>(`/addresses/${addressId}/contacts/${linkId}`),
 
+  /** Rattache une adresse existante à une entité, avec son type. */
+  linkEntity: (
+    addressId: string,
+    payload: { entityType: AddressEntityType; entityId: string; addressType: string; isDefault: boolean },
+  ) => api.post<ApiResource<{ id: string }>>(`/addresses/${addressId}/links`, payload),
+
+  /** Retire une liaison. L'API refuse la dernière : l'adresse deviendrait invisible. */
+  unlinkEntity: (addressId: string, linkId: string) =>
+    api.delete<void>(`/addresses/${addressId}/links/${linkId}`),
+
   get: (id: string) =>
     api.get<ApiResource<Address>>(`/addresses/${id}`).then((response) => response.data),
 

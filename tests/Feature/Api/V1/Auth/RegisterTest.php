@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Identity\Models\Permission;
+use App\Modules\Identity\Models\Role;
+use App\Modules\Identity\Services\PlatformAccess;
 
 beforeEach(function (): void {
     $this->seed();
@@ -44,7 +46,26 @@ describe('transporter registration', function (): void {
             'organization_id' => $organizationId,
             'code' => 'admin',
         ]);
-        $this->assertDatabaseCount('role_permissions', Permission::count() * 2);
+        // Le rôle `admin` de l'organisation créée reçoit tout **sauf** les
+        // permissions réservées à la plateforme : s'inscrire ne donne pas le
+        // droit de créer d'autres organisations.
+        $organizational = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
+
+        $this->assertDatabaseCount(
+            'role_permissions',
+            Permission::count()          // rôle plateforme semé
+            + $organizational * 2        // rôle admin de l'organisation semée et de la nouvelle
+        );
+
+        $registeredRole = Role::where('organization_id', $organizationId)->firstOrFail();
+
+        foreach (PlatformAccess::PLATFORM_PERMISSIONS as $code) {
+            $this->assertDatabaseMissing('role_permissions', [
+                'role_id' => $registeredRole->id,
+                'permission_id' => Permission::where('code', $code)->value('id'),
+            ]);
+        }
+
         $this->assertDatabaseHas('personal_access_tokens', ['tokenable_id' => $userId]);
     });
 

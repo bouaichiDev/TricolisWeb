@@ -9,9 +9,11 @@ use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\RolePermission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserRole;
+use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Shared\Enums\OrganizationStatus;
+use App\Shared\Enums\RoleScope;
 use App\Shared\Enums\UserStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -66,12 +68,18 @@ final readonly class RegisterTransporter
                 'organization_id' => $organization->id,
                 'code' => 'admin',
                 'name' => 'Administrateur',
-                'scope' => 'organization',
+                'scope' => RoleScope::ORGANIZATION->value,
                 'is_system' => true,
                 'status' => 'active',
             ]);
 
-            foreach (Permission::pluck('id') as $permissionId) {
+            // Les permissions réservées à la plateforme sont écartées. Sans ce
+            // retrait, toute inscription au formulaire public produisait un
+            // compte capable de créer et de supprimer des organisations : il
+            // suffisait de s'inscrire pour administrer Tricolis.
+            $organizationalPermissions = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->pluck('id');
+
+            foreach ($organizationalPermissions as $permissionId) {
                 RolePermission::create([
                     'role_id' => $adminRole->id,
                     'permission_id' => $permissionId,

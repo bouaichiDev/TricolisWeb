@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\Organizations\StoreOrganizationRequest;
 use App\Http\Requests\Api\V1\Organizations\UpdateOrganizationRequest;
 use App\Http\Resources\Api\V1\Organizations\OrganizationResource;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Shared\Enums\OrganizationStatus;
@@ -27,11 +28,19 @@ use Illuminate\Support\Facades\DB;
  */
 class OrganizationController extends Controller
 {
+    public function __construct(private readonly PlatformAccess $platform) {}
+
     /**
-     * Lister ses organisations.
+     * Lister les organisations.
      *
-     * Aucune permission métier : seules les organisations dont l'utilisateur est
-     * membre sont renvoyées. Recherche sur `name` et `code`, filtre `status`.
+     * Deux portées, et une seule requête : un administrateur plateforme les voit
+     * toutes, tout autre utilisateur ne voit que celles dont il est membre.
+     *
+     * Le bornage est fait ici, pas dans la policy : `viewAny` doit rester
+     * autorisé pour tous, cette liste servant précisément à choisir son
+     * organisation active.
+     *
+     * Recherche sur `name` et `code`, filtre `status`.
      */
     public function index(ListRequest $request): JsonResponse
     {
@@ -40,9 +49,13 @@ class OrganizationController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $query = Organization::whereHas('organizationUsers', static function ($query) use ($user): void {
-            $query->where('user_id', $user->id);
-        });
+        $query = Organization::query();
+
+        if (! $this->platform->isPlatformAdmin($user)) {
+            $query->whereHas('organizationUsers', static function ($query) use ($user): void {
+                $query->where('user_id', $user->id);
+            });
+        }
 
         if ($request->filled('search')) {
             $search = $request->validated('search');

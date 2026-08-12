@@ -10,13 +10,13 @@ use App\Http\Requests\Api\V1\Identity\UpdateOrganizationUserRequest;
 use App\Http\Resources\Api\V1\Identity\OrganizationUserResource;
 use App\Modules\Identity\Actions\CreateOrganizationMember;
 use App\Modules\Identity\Models\UserRole;
+use App\Modules\Identity\Services\RoleAssignmentGuard;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Shared\Http\Requests\ListRequest;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 /**
  * Rattachements utilisateur↔organisation. Les rôles sont portés par le
@@ -24,6 +24,8 @@ use Illuminate\Validation\Rule;
  */
 class OrganizationUserController extends Controller
 {
+    public function __construct(private readonly RoleAssignmentGuard $roleGuard) {}
+
     /**
      * Lister les membres de l'organisation active.
      *
@@ -53,7 +55,10 @@ class OrganizationUserController extends Controller
         $org = $this->requireOrganizationId();
         $this->authorize('create', [OrganizationUser::class, $org]);
 
-        $membership = $createMember->execute($request->validated(), $org);
+        $data = $request->validated();
+        $this->roleGuard->assertAssignable($request->user(), $org, $data['roleIds'] ?? []);
+
+        $membership = $createMember->execute($data, $org);
         $this->audit($request, $org, 'created', $membership, null, $membership->load('roles')->toArray());
 
         return ApiResponse::created(new OrganizationUserResource($membership->load(['user', 'roles'])));
@@ -82,7 +87,7 @@ class OrganizationUserController extends Controller
         $this->authorize('update', $organizationUser);
         $oldValues = $organizationUser->load('roles')->toArray();
         $data = $request->validated();
-        $this->validateRoles($data['roleIds'] ?? [], $organizationUser->organization_id);
+        $this->roleGuard->assertAssignable($request->user(), $organizationUser->organization_id, $data['roleIds'] ?? []);
         DB::transaction(function () use ($data, $organizationUser) {
             $organizationUser->user->update(array_filter(['first_name' => $data['firstName'] ?? null, 'last_name' => $data['lastName'] ?? null, 'phone' => $data['phone'] ?? null, 'preferred_language' => $data['preferredLanguage'] ?? null], fn ($value) => $value !== null));
             $organizationUser->update(array_filter(['is_owner' => $data['isOwner'] ?? null, 'is_primary' => $data['isPrimary'] ?? null, 'status' => $data['status'] ?? null], fn ($value) => $value !== null));
@@ -111,11 +116,6 @@ class OrganizationUserController extends Controller
         $this->audit($request, $organizationUser->organization_id, 'status_changed', $organizationUser, $oldValues, $organizationUser->fresh()->toArray());
 
         return ApiResponse::noContent();
-    }
-
-    private function validateRoles(array $ids, string $org): void
-    {
-        validator(['roleIds' => $ids], ['roleIds.*' => [Rule::exists('roles', 'id')->where('organization_id', $org)]])->validate();
     }
 
     private function syncRoles(OrganizationUser $membership, array $roleIds): void

@@ -19,6 +19,15 @@ interface ProtectedRouteProps {
    * un formulaire voué à l'échec.
    */
   platformOnly?: boolean
+  /**
+   * Route propre à l'activité d'un organisme.
+   *
+   * Un compte plateforme en est écarté. Techniquement il pourrait y accéder —
+   * il est membre d'une organisation, ce que le schéma impose pour porter un
+   * rôle — mais clients, agences et dépôts appartiennent aux organismes. L'y
+   * laisser entrer par l'URL contredirait le menu qui ne les propose pas.
+   */
+  organizationOnly?: boolean
 }
 
 /**
@@ -34,6 +43,7 @@ export function ProtectedRoute({
   permission,
   requireAll = false,
   platformOnly = false,
+  organizationOnly = false,
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth()
   const { has, hasAny, hasAll, isPlatformAdmin } = usePermissions()
@@ -47,6 +57,12 @@ export function ProtectedRoute({
 
   if (platformOnly && !isPlatformAdmin) {
     return <Navigate to="/forbidden" replace />
+  }
+
+  // Renvoi vers son propre périmètre plutôt qu'un refus : le compte plateforme
+  // n'a rien fait d'interdit, cette page ne le concerne simplement pas.
+  if (organizationOnly && isPlatformAdmin) {
+    return <Navigate to="/organizations" replace />
   }
 
   if (permission !== undefined) {

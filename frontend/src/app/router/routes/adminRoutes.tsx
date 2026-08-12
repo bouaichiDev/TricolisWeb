@@ -29,39 +29,39 @@ export const adminRoutes = [
   <Route
     key="users"
     path="/users"
-    element={guarded('users.view', <UserListPage />)}
+    element={guarded('users.view', <UserListPage />, { organizationOnly: true })}
   />,
   <Route
     key="user-create"
     path="/users/create"
-    element={guarded('users.create', <UserCreatePage />)}
+    element={guarded('users.create', <UserCreatePage />, { organizationOnly: true })}
   />,
   <Route
     key="user-detail"
     path="/users/:id"
-    element={guarded('users.view', <UserDetailPage />)}
+    element={guarded('users.view', <UserDetailPage />, { organizationOnly: true })}
   />,
   <Route
     key="user-edit"
     path="/users/:id/edit"
-    element={guarded('users.update', <UserEditPage />)}
+    element={guarded('users.update', <UserEditPage />, { organizationOnly: true })}
   />,
 
-  <Route key="roles" path="/roles" element={guarded('roles.view', <RoleListPage />)} />,
+  <Route key="roles" path="/roles" element={guarded('roles.view', <RoleListPage />, { organizationOnly: true })} />,
   <Route
     key="role-create"
     path="/roles/create"
-    element={guarded('roles.create', <RoleCreatePage />)}
+    element={guarded('roles.create', <RoleCreatePage />, { organizationOnly: true })}
   />,
   <Route
     key="role-detail"
     path="/roles/:id"
-    element={guarded('roles.view', <RoleDetailPage />)}
+    element={guarded('roles.view', <RoleDetailPage />, { organizationOnly: true })}
   />,
   <Route
     key="role-edit"
     path="/roles/:id/edit"
-    element={guarded('roles.update', <RoleEditPage />)}
+    element={guarded('roles.update', <RoleEditPage />, { organizationOnly: true })}
   />,
 
   // L'annuaire global et la création relèvent de la plateforme. Sans
@@ -93,8 +93,8 @@ export const adminRoutes = [
   <Route
     key="my-organization"
     path="/my-organization"
-    element={guarded('organizations.view', <MyOrganizationPage />)}
+    element={guarded('organizations.view', <MyOrganizationPage />, { organizationOnly: true })}
   />,
 
-  <Route key="audit" path="/audit" element={guarded('audit.view', <AuditLogPage />)} />,
+  <Route key="audit" path="/audit" element={guarded('audit.view', <AuditLogPage />, { organizationOnly: true })} />,
 ]

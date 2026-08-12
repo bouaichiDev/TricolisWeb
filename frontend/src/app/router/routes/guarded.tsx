@@ -11,6 +11,8 @@ interface GuardOptions {
    * global. La permission dit ce qu'on peut faire, la portée dit sur quoi.
    */
   platformOnly?: boolean
+  /** Route propre à l'activité d'un organisme : le compte plateforme en sort. */
+  organizationOnly?: boolean
 }
 
 /**
@@ -25,7 +27,11 @@ export function guarded(
   options: GuardOptions = {},
 ): ReactElement {
   return (
-    <ProtectedRoute permission={permission} platformOnly={options.platformOnly}>
+    <ProtectedRoute
+      permission={permission}
+      platformOnly={options.platformOnly}
+      organizationOnly={options.organizationOnly}
+    >
       {element}
     </ProtectedRoute>
   )

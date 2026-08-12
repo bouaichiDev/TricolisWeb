@@ -19,36 +19,36 @@ import { DepotListPage } from '@/modules/depots/pages/DepotListPage'
  * d'abord de choisir une agence.
  */
 export const resourceRoutes = [
-  <Route key="agencies" path="/agencies" element={guarded('agencies.view', <AgencyListPage />)} />,
+  <Route key="agencies" path="/agencies" element={guarded('agencies.view', <AgencyListPage />, { organizationOnly: true })} />,
   <Route
     key="agency-create"
     path="/agencies/create"
-    element={guarded('agencies.create', <AgencyCreatePage />)}
+    element={guarded('agencies.create', <AgencyCreatePage />, { organizationOnly: true })}
   />,
   <Route
     key="agency-detail"
     path="/agencies/:id"
-    element={guarded('agencies.view', <AgencyDetailPage />)}
+    element={guarded('agencies.view', <AgencyDetailPage />, { organizationOnly: true })}
   />,
   <Route
     key="agency-edit"
     path="/agencies/:id/edit"
-    element={guarded('agencies.update', <AgencyEditPage />)}
+    element={guarded('agencies.update', <AgencyEditPage />, { organizationOnly: true })}
   />,
-  <Route key="depots" path="/depots" element={guarded('depots.view', <DepotListPage />)} />,
+  <Route key="depots" path="/depots" element={guarded('depots.view', <DepotListPage />, { organizationOnly: true })} />,
   <Route
     key="depot-create"
     path="/agencies/:agencyId/depots/create"
-    element={guarded('depots.create', <DepotCreatePage />)}
+    element={guarded('depots.create', <DepotCreatePage />, { organizationOnly: true })}
   />,
   <Route
     key="depot-detail"
     path="/agencies/:agencyId/depots/:depotId"
-    element={guarded('depots.view', <DepotDetailPage />)}
+    element={guarded('depots.view', <DepotDetailPage />, { organizationOnly: true })}
   />,
   <Route
     key="depot-edit"
     path="/agencies/:agencyId/depots/:depotId/edit"
-    element={guarded('depots.update', <DepotEditPage />)}
+    element={guarded('depots.update', <DepotEditPage />, { organizationOnly: true })}
   />,
 ]

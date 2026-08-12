@@ -213,18 +213,38 @@ l'adresse.
 
 ---
 
-## 9. Menu corrigé
+## 9. Menu corrigé — deux menus, pas un menu filtré
 
-| SuperAdmin | Admin / Propriétaire |
+Une première version se contentait de permuter l'entrée « Organisations » et
+« Mon organisation » dans un menu unique. C'était insuffisant : un compte
+plateforme est **techniquement membre d'une organisation** — le schéma l'impose,
+`user_roles` pointant vers `organization_users` — et en détient donc les
+permissions. Il voyait Clients, Ressources et tout le menu Administration.
+
+Un compte plateforme administre les organisations inscrites. Les clients, les
+agences et les dépôts appartiennent aux organismes, pas à lui. Le menu est donc
+**choisi**, pas filtré :
+
+| Compte plateforme | Compte d'organisme |
 | --- | --- |
-| Organisations | Mon organisation |
-| Utilisateurs | Utilisateurs |
-| Rôles | Rôles |
-| Journal d'audit | Journal d'audit |
+| Organisations | Tableau de bord |
+| | Clients |
+| | Ressources → Agences, Dépôts |
+| | Administration → Mon organisation, Utilisateurs, Rôles, Journal d'audit |
 
-Les deux entrées sont mutuellement exclusives, portées par `platformOnly` et
-`organizationOnly` dans `navigation.ts`. Un groupe dont aucune entrée n'est
-visible disparaît entièrement, titre compris.
+`navigation.ts` expose `platformNavigation` et `organizationNavigation` ;
+`AppSidebar` choisit d'après `isPlatformAdmin`. Le logo et la redirection
+d'accueil suivent la même règle via `homeRoute()` : un compte plateforme n'a pas
+de tableau de bord, celui-ci comptant des clients et des agences.
+
+Le menu plateforme ne compte qu'une entrée, et c'est voulu. Utilisateurs, rôles
+et journal d'audit sont portés par une organisation ; les proposer ici
+obligerait à en désigner une, ce qui n'a pas de sens depuis la plateforme.
+
+Symétriquement, toutes les routes d'organisme portent `organizationOnly` : un
+compte plateforme y est **renvoyé** vers `/organizations`, pas refusé. Il n'a
+rien fait d'interdit — la page ne le concerne pas. Sans ce garde, l'URL
+contredisait le menu.
 
 `OrganizationSwitcher` est inchangé : il n'affichait déjà que les appartenances
 réelles, et n'a jamais permis de saisir un identifiant. Avec une seule
@@ -261,10 +281,14 @@ de `/auth/me`, puisqu'ils sont portés par l'appartenance.
 | `src/shared/hooks/usePermission.ts` | `isPlatformAdmin` exposé |
 | `src/app/guards/ProtectedRoute.tsx` | `platformOnly` |
 | `src/app/guards/PermissionGuard.tsx` | `platformOnly` ; `permission` devient facultative |
-| `src/app/router/navigation.ts` | Entrées Organisations / Mon organisation |
-| `src/app/layouts/AppSidebar.tsx` | Filtrage par portée |
-| `src/app/router/routes/guarded.tsx` | Option `platformOnly` |
+| `src/app/router/navigation.ts` | Deux menus séparés ; `homeRoute()` |
+| `src/app/layouts/AppSidebar.tsx` | Choix du menu selon la portée ; cible du logo |
+| `src/app/layouts/Breadcrumbs.tsx` | Parcourt les deux menus |
+| `src/app/router/AppRouter.tsx` | Redirection d'accueil selon la portée |
+| `src/app/router/routes/guarded.tsx` | Options `platformOnly` et `organizationOnly` |
 | `src/app/router/routes/adminRoutes.tsx` | Routes organisations réservées ; `/my-organization` |
+| `src/app/router/routes/customerRoutes.tsx` | `organizationOnly` |
+| `src/app/router/routes/resourceRoutes.tsx` | `organizationOnly` |
 | `src/modules/organizations/pages/MyOrganizationPage.tsx` | **créé** |
 | `src/modules/organizations/pages/OrganizationDetailPage.tsx` | Réutilisable ; suppression réservée |
 | `src/modules/roles/components/RoleForm.tsx` | Portée retirée de la saisie, affichée en lecture |
@@ -282,12 +306,13 @@ de `/auth/me`, puisqu'ils sont portés par l'appartenance.
 
 ## 12. Tests frontend
 
-23 tests ajoutés, **87 au total**, 16 fichiers.
+28 tests ajoutés, **92 au total**, 17 fichiers.
 
 | Fichier | Couverture |
 | --- | --- |
 | `src/app/guards/PlatformScope.test.tsx` | SuperAdmin voit l'action ; admin local ne la voit pas malgré la permission ; un rôle nommé « SuperAdmin » n'accorde rien ; `/organizations/create` refusée en accès direct |
-| `src/app/layouts/AppSidebarScope.test.tsx` | Organisations vs Mon organisation ; cible `/my-organization` ; aucune sans la permission |
+| `src/app/layouts/AppSidebarScope.test.tsx` | Menu plateforme réduit aux organisations, sans Clients ni Ressources ni Administration malgré les permissions ; menu d'organisme sans annuaire global ; cible du logo |
+| `src/app/guards/OrganizationScope.test.tsx` | Compte plateforme renvoyé depuis un écran d'organisme, sans présenter le renvoi comme un refus |
 | `src/modules/roles/components/RoleForm.test.tsx` | Aucune portée saisissable ; aucun champ système ; portée et organisation en lecture ; charge utile sans portée ; permissions bornées à la réponse de l'API ; « Tout cocher » ; compteur |
 | `src/modules/roles/pages/SystemRoleLock.test.tsx` | Rôle local modifiable ; rôle système sans action ; page d'édition refusée et expliquée |
 | `src/modules/users/components/RoleAssignment.test.tsx` | Rôles système et plateforme écartés ; message quand il n'en reste aucun |
@@ -346,8 +371,8 @@ Trois tests affirmaient le comportement désormais interdit. Ils ont été
 ## 14. Résultats
 
 ```
-Backend   758 tests, 2527 assertions   — passent
-Frontend   87 tests, 16 fichiers       — passent
+Backend   758 tests, 2535 assertions   — passent
+Frontend   92 tests, 17 fichiers       — passent
 ```
 
 `pint` : conforme. `npm run typecheck` : aucune erreur. `npm run lint` : aucune

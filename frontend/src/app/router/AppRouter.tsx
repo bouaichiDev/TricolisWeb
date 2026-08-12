@@ -6,10 +6,12 @@ import { guarded } from './routes/guarded'
 import { resourceRoutes } from './routes/resourceRoutes'
 import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
+import { homeRoute } from '@/app/router/navigation'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { ForbiddenPage } from '@/modules/system/pages/ForbiddenPage'
 import { NotFoundPage } from '@/modules/system/pages/NotFoundPage'
+import { usePermissions } from '@/shared/hooks/usePermission'
 
 /**
  * Table des routes.
@@ -33,8 +35,11 @@ export function AppRouter() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={guarded('dashboard.view', <DashboardPage />)} />
+        <Route index element={<Home />} />
+        <Route
+          path="/dashboard"
+          element={guarded('dashboard.view', <DashboardPage />, { organizationOnly: true })}
+        />
 
         {customerRoutes}
         {resourceRoutes}
@@ -44,4 +49,17 @@ export function AppRouter() {
       </Route>
     </Routes>
   )
+}
+
+/**
+ * Point d'entrée après connexion.
+ *
+ * Il dépend de la portée du compte : un compte plateforme n'a pas de tableau de
+ * bord — celui-ci compte des clients et des agences, qui appartiennent aux
+ * organismes — et arrive donc sur la liste des organisations inscrites.
+ */
+function Home() {
+  const { isPlatformAdmin } = usePermissions()
+
+  return <Navigate to={homeRoute(isPlatformAdmin)} replace />
 }

@@ -3,7 +3,12 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 
-import { navigation, type NavEntry } from '@/app/router/navigation'
+import {
+  homeRoute,
+  organizationNavigation,
+  platformNavigation,
+  type NavEntry,
+} from '@/app/router/navigation'
 import { usePermissions } from '@/shared/hooks/usePermission'
 import { cn } from '@/shared/utils/cn'
 
@@ -27,34 +32,28 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
   const location = useLocation()
 
   /**
-   * Une entrée est visible si la permission est là **et** si sa portée
-   * correspond. Les deux conditions sont distinctes : `organizations.view`
-   * autorise un administrateur d'organisme à consulter la sienne, sans lui
-   * ouvrir l'annuaire global de la plateforme.
+   * Le menu dépend d'abord de la portée du compte, ensuite des permissions.
+   *
+   * Un compte plateforme reçoit le menu plateforme, pas le menu d'organisme
+   * expurgé : il administre les organisations inscrites, et les clients, les
+   * agences ou les dépôts appartiennent aux organismes. Le lui montrer, même
+   * partiellement, lui promettait un périmètre qui n'est pas le sien.
    */
-  const visible = (item: { permission: string; platformOnly?: boolean; organizationOnly?: boolean }) => {
-    if (item.platformOnly === true && !isPlatformAdmin) return false
-    if (item.organizationOnly === true && isPlatformAdmin) return false
+  const tree = isPlatformAdmin ? platformNavigation : organizationNavigation
 
-    return has(item.permission)
-  }
-
-  const entries = navigation
+  const entries = tree
     .map((entry) => ({
       ...entry,
-      children: entry.children?.filter(visible),
+      children: entry.children?.filter((child) => has(child.permission)),
     }))
-    .filter((entry) => {
-      if (entry.children) return entry.children.length > 0
-      if (entry.platformOnly === true && !isPlatformAdmin) return false
-
-      return has(entry.permission ?? '')
-    })
+    .filter((entry) =>
+      entry.children ? entry.children.length > 0 : has(entry.permission ?? ''),
+    )
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <Link
-        to="/dashboard"
+        to={homeRoute(isPlatformAdmin)}
         onClick={onNavigate}
         className="flex h-16 shrink-0 items-center gap-2.5 px-5"
       >

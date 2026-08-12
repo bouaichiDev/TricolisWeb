@@ -19,26 +19,18 @@ import {
  * un groupe dont aucune entrée n'est autorisée disparaît entièrement plutôt que
  * d'afficher un titre vide.
  *
- * Les maquettes distinguent deux formes : des entrées de premier niveau, et un
- * groupe « Administration » repliable dont les enfants sont indentés. La
- * structure ci-dessous porte cette distinction — `children` absent signifie une
- * entrée simple.
+ * **Deux menus, pas un menu filtré.** L'administration de la plateforme et
+ * celle d'un organisme ne sont pas deux niveaux de la même chose : un compte
+ * plateforme gère les organisations inscrites, et n'a que faire des clients,
+ * des agences ou des dépôts — qui appartiennent aux organismes, pas à lui.
+ * Filtrer entrée par entrée produisait un menu d'organisme amputé, où le compte
+ * plateforme voyait « Clients » et « Mon organisation » sans raison.
  */
 export interface NavItem {
   /** Clé i18n, jamais un libellé en dur. */
   labelKey: string
   to: string
   permission: string
-  /**
-   * Entrée réservée à l'administration de la plateforme.
-   *
-   * Une permission ne suffit pas à trancher : un administrateur d'organisme
-   * détient légitimement `organizations.view` pour consulter la sienne, sans
-   * devoir accéder à l'annuaire global.
-   */
-  platformOnly?: boolean
-  /** Entrée cachée **à** la plateforme : son équivalent local. */
-  organizationOnly?: boolean
 }
 
 export interface NavEntry {
@@ -47,11 +39,17 @@ export interface NavEntry {
   /** Route pour une entrée simple ; absent pour un groupe repliable. */
   to?: string
   permission?: string
-  platformOnly?: boolean
   children?: NavItem[]
 }
 
-export const navigation: NavEntry[] = [
+/**
+ * Menu d'un organisme.
+ *
+ * Son activité : ses clients, ses ressources, ses utilisateurs, ses rôles.
+ * « Mon organisation » remplace l'annuaire global — un organisme n'a accès
+ * qu'à la sienne.
+ */
+export const organizationNavigation: NavEntry[] = [
   {
     labelKey: 'nav.dashboard',
     icon: LayoutDashboard,
@@ -76,28 +74,41 @@ export const navigation: NavEntry[] = [
     labelKey: 'nav.administration',
     icon: Settings,
     children: [
-      // Deux entrées mutuellement exclusives pour la même notion : la
-      // plateforme administre toutes les organisations, un organisme n'accède
-      // qu'à la sienne. Afficher un annuaire global à un administrateur local
-      // lui laissait croire à un périmètre qu'il n'a pas.
-      {
-        labelKey: 'nav.organizations',
-        to: '/organizations',
-        permission: 'organizations.view',
-        platformOnly: true,
-      },
-      {
-        labelKey: 'nav.myOrganization',
-        to: '/my-organization',
-        permission: 'organizations.view',
-        organizationOnly: true,
-      },
+      { labelKey: 'nav.myOrganization', to: '/my-organization', permission: 'organizations.view' },
       { labelKey: 'nav.users', to: '/users', permission: 'users.view' },
       { labelKey: 'nav.roles', to: '/roles', permission: 'roles.view' },
       { labelKey: 'nav.audit', to: '/audit', permission: 'audit.view' },
     ],
   },
 ]
+
+/**
+ * Menu de la plateforme.
+ *
+ * Une seule entrée, et c'est voulu : un compte plateforme administre les
+ * organisations inscrites. Les utilisateurs, les rôles et le journal d'audit
+ * sont portés par une organisation — les proposer ici obligerait à en désigner
+ * une, ce qui n'a pas de sens depuis la plateforme.
+ */
+export const platformNavigation: NavEntry[] = [
+  {
+    labelKey: 'nav.organizations',
+    icon: Building2,
+    to: '/organizations',
+    permission: 'organizations.view',
+  },
+]
+
+/**
+ * Page d'accueil selon la portée du compte.
+ *
+ * Un compte plateforme n'a pas de tableau de bord : celui-ci compte des clients
+ * et des agences, qui appartiennent aux organismes. Son point d'entrée est la
+ * liste des organisations inscrites.
+ */
+export function homeRoute(isPlatformAdmin: boolean): string {
+  return isPlatformAdmin ? '/organizations' : '/dashboard'
+}
 
 /** Icônes des entrées simples, pour le fil d'Ariane et les titres de page. */
 export const sectionIcons: Record<string, LucideIcon> = {

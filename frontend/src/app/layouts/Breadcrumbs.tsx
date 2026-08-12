@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
-import { navigation } from '@/app/router/navigation'
+import { organizationNavigation, platformNavigation } from '@/app/router/navigation'
 
 /**
  * Fil d'Ariane déduit de l'URL.
@@ -20,10 +20,16 @@ const ACTION_LABELS: Record<string, string> = {
   edit: 'common.edit',
 }
 
+/**
+ * Les deux menus sont parcourus, quelle que soit la portée du compte.
+ *
+ * Le fil d'Ariane nomme la page atteinte ; borner la recherche au menu du
+ * compte laisserait sans libellé une page accessible autrement que par le menu.
+ */
 function labelForRoot(segment: string): string | null {
   const path = `/${segment}`
 
-  for (const entry of navigation) {
+  for (const entry of [...organizationNavigation, ...platformNavigation]) {
     if (entry.to === path) return entry.labelKey
     const child = entry.children?.find((item) => item.to === path)
     if (child) return child.labelKey

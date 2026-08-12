@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+import { adminRoutes } from './routes/adminRoutes'
 import { customerRoutes } from './routes/customerRoutes'
 import { guarded } from './routes/guarded'
 import { resourceRoutes } from './routes/resourceRoutes'
@@ -37,6 +38,7 @@ export function AppRouter() {
 
         {customerRoutes}
         {resourceRoutes}
+        {adminRoutes}
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

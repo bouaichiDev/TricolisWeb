@@ -7,6 +7,16 @@ import { Skeleton } from '@/shared/components/ui/skeleton'
  * squelette garde la mise en page stable, donc l'oeil ne saute pas quand les
  * donnees arrivent.
  */
+export function ListSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: rows }, (_, index) => (
+        <Skeleton key={index} className="h-9 w-full" />
+      ))}
+    </div>
+  )
+}
+
 export function DetailSkeleton({ rows = 6 }: { rows?: number }) {
   return (
     <div className="flex flex-col gap-6">

@@ -68,7 +68,7 @@ export const navigation: NavEntry[] = [
       { labelKey: 'nav.users', to: '/users', permission: 'users.view' },
       { labelKey: 'nav.roles', to: '/roles', permission: 'roles.view' },
       { labelKey: 'nav.organizations', to: '/organizations', permission: 'organizations.view' },
-      { labelKey: 'nav.audit', to: '/audit', permission: 'audit_logs.view' },
+      { labelKey: 'nav.audit', to: '/audit', permission: 'audit.view' },
     ],
   },
 ]

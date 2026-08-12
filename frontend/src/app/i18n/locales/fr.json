@@ -81,7 +81,8 @@
     "title": "Tableau de bord",
     "subtitle": "Vue d’ensemble de l’organisation active",
     "recentActivity": "Activité récente",
-    "noActivity": "Aucune activité enregistrée."
+    "noActivity": "Aucune activité enregistrée.",
+    "welcome": "Bonjour {{name}}"
   },
   "table": {
     "empty": "Aucun résultat",
@@ -109,9 +110,10 @@
     "inactive": "Inactif",
     "pending": "En attente",
     "suspended": "Suspendu",
-    "closed": "Fermé",
+    "closed": "Clôturé",
     "blocked": "Bloqué",
-    "invited": "Invité"
+    "invited": "Invité",
+    "disabled": "Désactivé"
   },
   "confirm": {
     "deleteTitle": "Confirmer la suppression",
@@ -133,7 +135,18 @@
       "status": "Statut",
       "defaultLanguage": "Langue par défaut",
       "defaultCurrency": "Devise par défaut",
-      "timezone": "Fuseau horaire"
+      "timezone": "Fuseau horaire",
+      "registrationNumber": "Numéro d’immatriculation",
+      "taxNumber": "Numéro de TVA",
+      "preferredLanguage": "Langue",
+      "currencyCode": "Devise"
+    },
+    "createHint": "Vous en devenez automatiquement propriétaire et membre principal.",
+    "preferencesHint": "Valeurs par défaut appliquées aux écrans de l’organisation.",
+    "sections": {
+      "identity": "Identité",
+      "legal": "Informations légales",
+      "preferences": "Préférences"
     }
   },
   "users": {
@@ -150,7 +163,28 @@
       "preferredLanguage": "Langue",
       "status": "Statut",
       "roles": "Rôles",
-      "lastLoginAt": "Dernière connexion"
+      "lastLoginAt": "Dernière connexion",
+      "name": "Nom",
+      "passwordConfirmation": "Confirmation du mot de passe",
+      "isOwner": "Propriétaire",
+      "isPrimary": "Organisation principale",
+      "joinedAt": "Membre depuis"
+    },
+    "createHint": "Le compte et son rattachement sont créés ensemble.",
+    "disable": "Désactiver",
+    "disabled": "Utilisateur désactivé.",
+    "disableConfirm": "Désactiver {{name}} ? Le compte est conservé mais ne pourra plus se connecter.",
+    "accountHint": "Le mot de passe initial n’est demandé qu’à la création.",
+    "rolesHint": "Les rôles s’appliquent à cette organisation uniquement.",
+    "ownerHint": "Un propriétaire contourne les vérifications de permission.",
+    "primaryHint": "Organisation proposée par défaut à la connexion.",
+    "noRoles": "Aucun rôle disponible",
+    "noRolesHint": "Créez d’abord un rôle pour pouvoir en attribuer.",
+    "noAssignedRoles": "Aucun rôle attribué.",
+    "sections": {
+      "identity": "Identité",
+      "account": "Compte",
+      "roles": "Rôles"
     }
   },
   "roles": {
@@ -167,7 +201,23 @@
       "code": "Code",
       "name": "Nom",
       "description": "Description",
-      "isSystem": "Rôle système"
+      "isSystem": "Rôle système",
+      "scope": "Portée",
+      "status": "Statut"
+    },
+    "system": "Système",
+    "codeLocked": "Le code n’est pas modifiable après création.",
+    "scopeHint": "Portée facultative, par exemple « agency ».",
+    "permissionsHint": "Cochez les permissions accordées par ce rôle.",
+    "permissionsReadOnly": "Lecture seule : la permission « roles.assign_permissions » est requise.",
+    "permissionsTotal": "Permissions accordées",
+    "selectAll": "Tout cocher",
+    "unselectAll": "Tout décocher",
+    "noPermissions": "Aucune permission",
+    "noPermissionsHint": "Ce rôle n’accorde actuellement aucun accès.",
+    "sections": {
+      "general": "Informations générales",
+      "permissions": "Permissions"
     }
   },
   "agencies": {
@@ -344,7 +394,17 @@
       "entityId": "Identifiant",
       "ipAddress": "Adresse IP",
       "oldValues": "Valeurs précédentes",
-      "newValues": "Nouvelles valeurs"
+      "newValues": "Nouvelles valeurs",
+      "userId": "Utilisateur"
+    },
+    "empty": "Aucune entrée pour ces critères.",
+    "changes": "Champs modifiés",
+    "noChanges": "Aucun champ modifié n’a été enregistré pour cette entrée.",
+    "filters": {
+      "action": "Action",
+      "entityType": "Type d’entité",
+      "createdFrom": "À partir du",
+      "createdTo": "Jusqu’au"
     }
   },
   "validation": {
@@ -356,12 +416,49 @@
     "max_other": "Au plus {{count}} caractères.",
     "code": "Lettres, chiffres, tirets et tirets bas uniquement.",
     "number": "Valeur numérique attendue.",
-    "country": "Le code pays doit comporter deux lettres."
+    "country": "Le code pays doit comporter deux lettres.",
+    "currency": "Le code devise doit comporter trois lettres.",
+    "password": "Le mot de passe doit contenir au moins 8 caractères.",
+    "passwordMismatch": "Les deux mots de passe ne correspondent pas."
   },
   "toast": {
     "created": "Création effectuée.",
     "updated": "Modifications enregistrées.",
     "deleted": "Suppression effectuée.",
     "uploaded": "Document téléversé."
+  },
+  "auditActions": {
+    "created": "Création",
+    "updated": "Modification",
+    "deleted": "Suppression",
+    "status_changed": "Changement de statut",
+    "restored": "Restauration"
+  },
+  "permissionModules": {
+    "organizations": "Organisations",
+    "users": "Utilisateurs",
+    "roles": "Rôles",
+    "agencies": "Agences",
+    "depots": "Dépôts",
+    "customers": "Clients",
+    "customer_sites": "Sites client",
+    "addresses": "Adresses",
+    "contacts": "Contacts",
+    "documents": "Documents",
+    "audit": "Audit",
+    "dashboard": "Tableau de bord"
+  },
+  "entities": {
+    "organization": "Organisation",
+    "organization_user": "Rattachement",
+    "user": "Utilisateur",
+    "role": "Rôle",
+    "agency": "Agence",
+    "depot": "Dépôt",
+    "customer": "Client",
+    "customer_site": "Site client",
+    "address": "Adresse",
+    "contact": "Contact",
+    "document": "Document"
   }
 }

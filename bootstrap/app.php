@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\GrantPlatformAdmin;
 use App\Http\Middleware\EnsureOrganizationContext;
 use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     // commandes des modules doivent etre declarees.
     ->withCommands([
         ProcessScheduledCommunications::class,
+        GrantPlatformAdmin::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

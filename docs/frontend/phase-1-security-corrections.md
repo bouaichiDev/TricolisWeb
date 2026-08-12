@@ -69,6 +69,8 @@ compte. C'est ce qui rend vaine la tentative de créer un rôle nommé
 | `app/Modules/Identity/Services/RoleAssignmentGuard.php` | Rôles attribuables à un membre |
 | `database/migrations/2026_08_12_100000_allow_platform_scoped_roles.php` | `organization_id` nullable |
 | `tests/Feature/Hardening/PrivilegeEscalationTest.php` | 20 tests d'attaque |
+| `app/Console/Commands/GrantPlatformAdmin.php` | Confère ou retire l'autorité plateforme |
+| `database/seeders/PlatformAdminSeeder.php` | Compte plateforme de développement |
 
 ### Modifiés
 
@@ -88,6 +90,8 @@ compte. C'est ce qui rend vaine la tentative de créer un rôle nommé
 | `app/Modules/Identity/Actions/RegisterTransporter.php` | Permissions plateforme écartées à l'inscription |
 | `database/seeders/PermissionSeeder.php` | `organizations.delete` |
 | `database/seeders/RoleSeeder.php` | Rôle plateforme ; retrait des permissions plateforme du rôle `admin` |
+| `database/seeders/DatabaseSeeder.php` | Appelle `PlatformAdminSeeder` |
+| `bootstrap/app.php` | Enregistre `tricolis:platform-admin` |
 
 ---
 
@@ -408,18 +412,35 @@ module non touché, et il repasse à la relance. À corriger dans la fabrique de
 
 ---
 
-## 16. Ce qui reste à décider
+## 16. Désigner un administrateur de plateforme
 
-**Aucun administrateur de plateforme n'existe.** Le rôle `superadmin` est semé
-mais n'est attribué à personne. C'est volontaire — voir §13 — mais cela signifie
-qu'aujourd'hui **plus personne ne peut créer d'organisation** par l'API, hors
-inscription publique. Deux voies :
+Le rôle `superadmin` est semé mais n'est attribué à personne : l'attribuer est
+une décision d'exploitation, et l'automatiser recréerait le défaut corrigé.
 
-1. attacher le rôle à un compte par une commande Artisan dédiée ;
-2. l'attacher directement en base pour le compte d'exploitation.
+**En production ou sur un environnement existant** :
 
-La première est préférable si plusieurs environnements sont concernés. Dites-moi
-laquelle vous voulez et je la livre.
+```bash
+php artisan tricolis:platform-admin contact@exemple.test
+php artisan tricolis:platform-admin contact@exemple.test --revoke
+```
+
+La commande est idempotente et refuse explicitement un compte inconnu, un rôle
+plateforme absent, ou un compte sans appartenance — `user_roles` pointant vers
+`organization_users`, le rôle doit s'accrocher à une adhésion.
+
+**En développement**, `PlatformAdminSeeder` crée `superadmin@tricolis.dev`, mot
+de passe `DEV_ADMIN_PASSWORD`. Il tourne en environnement `local` uniquement,
+pas `testing` : la suite vérifie qu'aucun compte n'obtient l'autorité plateforme
+par défaut, et un seeder qui l'accorderait invaliderait cette garantie.
+
+Le compte est **distinct** d'`admin@tricolis.dev`, et il le fallait : un compte
+plateforme ne voit ni clients, ni agences, ni son organisation. Accorder
+l'autorité au compte d'organisme lui aurait fait perdre tout ce qu'il sert à
+tester.
+
+Il est membre **simple** — pas propriétaire — de l'organisation de
+développement : le rattachement n'est qu'un support technique, et aucun droit
+d'organisme ne doit lui venir de là.
 
 **L'inscription publique reste ouverte.** `POST /auth/register` crée toujours une
 organisation et son propriétaire, sans autorité plateforme. C'est cohérent avec

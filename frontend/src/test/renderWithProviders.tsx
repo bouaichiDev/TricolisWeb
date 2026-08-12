@@ -1,0 +1,78 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, type RenderResult } from '@testing-library/react'
+import type { ReactElement, ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+
+import { makeMembership, makeUser } from './fixtures'
+import { AuthContext } from '@/app/providers/AuthProvider'
+import type { AuthContextValue, AuthMembership } from '@/shared/types/auth'
+
+interface Options {
+  /** Appartenance active ; ses permissions sont celles que verront les gardes. */
+  membership?: AuthMembership | null
+  /** Appartenances disponibles ; par défaut, la seule appartenance active. */
+  memberships?: AuthMembership[]
+  route?: string
+  isAuthenticated?: boolean
+  isLoading?: boolean
+  /** Espion sur le changement d'organisation. */
+  onSwitchOrganization?: (organizationId: string) => void
+}
+
+/**
+ * Monte un composant dans les mêmes fournisseurs qu'en production.
+ *
+ * L'authentification est injectée directement dans le contexte plutôt que
+ * simulée via `/auth/me` : les tests portent sur ce que l'interface fait d'un
+ * jeu de permissions donné, pas sur la façon dont il est chargé — ce dernier
+ * point a son propre test.
+ *
+ * Les nouvelles tentatives sont désactivées : un test qui échoue doit échouer
+ * tout de suite, pas après trois requêtes.
+ */
+export function renderWithProviders(ui: ReactElement, options: Options = {}): RenderResult {
+  const {
+    membership = makeMembership(),
+    route = '/',
+    isAuthenticated = true,
+    isLoading = false,
+    onSwitchOrganization = () => {},
+  } = options
+
+  const memberships = options.memberships ?? (membership ? [membership] : [])
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, staleTime: 0, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  })
+
+  const auth: AuthContextValue = {
+    user: makeUser(memberships),
+    memberships,
+    membership,
+    organizationId: membership?.id ?? null,
+    roles: membership?.roles ?? [],
+    permissions: (membership?.permissions ?? []).map((permission) => permission.code),
+    agencies: membership?.agencies ?? [],
+    isOwner: membership?.isOwner ?? false,
+    isAuthenticated,
+    isLoading,
+    login: async () => {},
+    logout: async () => {},
+    switchOrganization: onSwitchOrganization,
+  }
+
+  function Wrapper({ children }: { children: ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={auth}>
+          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        </AuthContext.Provider>
+      </QueryClientProvider>
+    )
+  }
+
+  return render(ui, { wrapper: Wrapper })
+}

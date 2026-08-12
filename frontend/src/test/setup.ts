@@ -1,9 +1,23 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, vi } from 'vitest'
+
+import { server } from './server'
+// Les tests interrogent l'interface par ses libellés visibles ; sans cette
+// initialisation, les composants afficheraient les clés i18n brutes.
+import '@/app/i18n'
+
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' })
+})
 
 afterEach(() => {
   cleanup()
+  server.resetHandlers()
+})
+
+afterAll(() => {
+  server.close()
 })
 
 /**

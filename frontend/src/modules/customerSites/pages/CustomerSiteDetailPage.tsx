@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useCustomerSite, useDeleteCustomerSite } from '../hooks/useCustomerSites'
-import { AddressCard } from '@/modules/addresses/components/AddressCard'
-import { useAddress } from '@/modules/addresses/hooks/useAddresses'
+import { EntityAddressesPanel } from '@/modules/addresses/components/EntityAddressesPanel'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
@@ -19,7 +18,6 @@ export function CustomerSiteDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const { data: site, isPending, error, refetch } = useCustomerSite(customerId, siteId)
-  const address = useAddress(site?.addressId)
   const remove = useDeleteCustomerSite(customerId)
 
   if (isPending) return <DetailSkeleton />
@@ -48,19 +46,19 @@ export function CustomerSiteDetailPage() {
         </dl>
       </SectionCard>
 
-      {/* L'adresse du site porte ses propres contacts : le magasinier d'un
-          entrepôt n'est pas le comptable du siège du client.
+      {/* Un site porte ses adresses, comme un client porte les siennes : une
+          adresse de livraison, une adresse de facturation si elle diffère. Le
+          site n'en affichait qu'une, en lecture, et rien ne permettait d'en
+          ajouter.
 
-          Ni modification ni suppression ici : l'adresse a été créée avec le
-          site et se modifie depuis son formulaire. La retirer laisserait un
-          site sans lieu, ce que le modèle n'admet pas. */}
+          L'adresse désignée par `site.addressId` figure parmi elles : elle est
+          rattachée au site depuis sa création. */}
       <SectionCard title={t('addresses.title')} description={t('addresses.siteHint')}>
-        {address.data ? (
-          <AddressCard
-            address={address.data}
-            entity={{ entityType: 'customer_site', entityId: siteId }}
-          />
-        ) : null}
+        <EntityAddressesPanel
+          entityType="customer_site"
+          entityId={siteId}
+          emptyMessage={t('addresses.emptySite')}
+        />
       </SectionCard>
 
       <ConfirmDialog

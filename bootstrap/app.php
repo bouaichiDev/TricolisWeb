@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\GrantPlatformAdmin;
+use App\Console\Commands\RepairSiteAddressLinks;
 use App\Http\Middleware\EnsureOrganizationContext;
 use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use Illuminate\Foundation\Application;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         ProcessScheduledCommunications::class,
         GrantPlatformAdmin::class,
+        RepairSiteAddressLinks::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

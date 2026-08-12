@@ -151,6 +151,26 @@ describe('EntityAddressesPanel', () => {
     expect(await screen.findByText('Service indisponible.')).toBeInTheDocument()
   })
 
+  /**
+   * Un site porte ses adresses comme un client porte les siennes. Le filtre
+   * change d'alias, rien d'autre : c'est ce qui sépare les deux écrans, une
+   * adresse de site ne figurant pas dans les adresses du client.
+   */
+  it('interroge le site quand l’entité est un site client', async () => {
+    const queries: URLSearchParams[] = []
+    server.use(addressesHandler([makeAddress('a1')], queries), contactsHandler())
+
+    renderWithProviders(
+      <EntityAddressesPanel entityType="customer_site" entityId="01JQZ000000000000000SITE" />,
+      { membership: viewer },
+    )
+
+    await screen.findByText('Entrepôt Nord')
+
+    expect(queries[0].get('entityType')).toBe('customer_site')
+    expect(queries[0].get('entityId')).toBe('01JQZ000000000000000SITE')
+  })
+
   it('n’affiche pas les contacts quand l’écran ne les demande pas', async () => {
     server.use(addressesHandler([makeAddress('a1', { links: [makeLink('l1', 'delivery')] })]))
 

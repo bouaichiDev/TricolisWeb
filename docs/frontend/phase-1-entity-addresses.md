@@ -90,7 +90,8 @@ contenu — vérifié par test.
 | `src/modules/addresses/types/address.ts` | `links`, `ADDRESS_TYPES`, `CONTACT_ROLES` |
 | `src/modules/contacts/components/EntityContactsTab.tsx` | Remplace le message d'indisponibilité |
 | `src/modules/customers/pages/CustomerDetailPage.tsx` | L'onglet « Contacts » devient « Adresses » |
-| `src/modules/customerSites/pages/CustomerSiteDetailPage.tsx` | L'adresse du site porte ses contacts |
+| `src/modules/customerSites/pages/CustomerSiteDetailPage.tsx` | Panneau d'adresses complet, comme la fiche client |
+| `app/Console/Commands/RepairSiteAddressLinks.php` | **créé** — répare les liaisons existantes |
 | `src/modules/customerSites/hooks/useCustomerSiteMutations.ts` | L'adresse d'un site vise le site, plus le client |
 | `src/modules/addresses/components/AddressContactList.tsx` | Modification d'un contact |
 
@@ -111,9 +112,27 @@ et le sens en est juste — toute adresse appartient à son organisation, puis
 s'ajoute aux entités qui l'utilisent. Le rattachement au site est posé une fois
 celui-ci créé.
 
-Les sites créés **avant** cette correction gardent leur liaison vers le client :
-leur adresse continue d'apparaître dans les deux écrans. Supprimer cette liaison
-depuis l'onglet « Adresses » du client suffit à corriger le cas.
+Les sites créés **avant** cette correction gardent leur liaison vers le client.
+Une commande la répare :
+
+```bash
+php artisan tricolis:repair-site-address-links --dry-run
+php artisan tricolis:repair-site-address-links
+```
+
+La règle est vérifiable, donc sûre : une adresse désignée par
+`customer_sites.address_id` **est** l'adresse d'un site ; une liaison vers le
+client portant cette même adresse ne peut être que l'artefact du défaut. La
+bonne liaison est créée avant que la fautive soit retirée, aucune adresse n'est
+supprimée, et une adresse du client qui n'est l'adresse d'aucun site n'est pas
+touchée.
+
+### Un site gère ses adresses comme un client
+
+La fiche site n'affichait que l'adresse désignée par `site.addressId`, en
+lecture. Elle porte désormais le même panneau que la fiche client — ajout,
+modification, suppression, contacts — avec `entityType: customer_site`. Le
+filtre change d'alias, rien d'autre : c'est ce qui sépare les deux écrans.
 
 ### Vocabulaire des types
 
@@ -163,8 +182,8 @@ vérifications pour les contacts.
 ## 6. Résultats
 
 ```
-Backend   767 tests, 2559 assertions   — passent
-Frontend  115 tests, 20 fichiers   — passent
+Backend   771 tests, 2570 assertions   — passent
+Frontend  116 tests, 20 fichiers   — passent
 ```
 
 `pint`, `typecheck`, `lint`, `build` : conformes. Aucun fichier au-dessus de

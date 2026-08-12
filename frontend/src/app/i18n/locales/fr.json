@@ -369,7 +369,7 @@
     "emptyHint": "Ajoutez une adresse pour préciser où livrer et qui prévenir.",
     "emptyCustomer": "Aucune adresse pour ce client",
     "customerHint": "Chaque adresse porte ses propres contacts — livraison, facturation.",
-    "siteHint": "Les contacts ci-dessous sont ceux de cette adresse.",
+    "siteHint": "Chaque adresse du site porte ses propres contacts.",
     "default": "Par défaut",
     "noContact": "Aucun contact rattaché à cette adresse.",
     "primaryContact": "Principal",
@@ -385,7 +385,8 @@
     "primaryHint": "Contact à prévenir en priorité pour cette adresse.",
     "deleteConfirm": "Supprimer cette adresse et toutes ses liaisons ? Cette action est irréversible.",
     "editContact": "Modifier le contact",
-    "editContactHint": "Le rôle et le drapeau principal valent pour cette adresse."
+    "editContactHint": "Le rôle et le drapeau principal valent pour cette adresse.",
+    "emptySite": "Aucune adresse pour ce site"
   },
   "contacts": {
     "title": "Contacts",

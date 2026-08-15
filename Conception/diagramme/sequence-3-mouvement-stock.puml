@@ -1,0 +1,109 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+
+title Tricolis V2 — Séquence 3 — Mouvement de stock et concurrence
+
+actor "Client HTTP" as U
+participant "StockMovement\nController" as C
+participant "CreateStockMovement\nAction" as A
+participant "StockScopeGuard" as G
+participant "StockBalanceLocker" as K
+participant "RecalculateStock\nBalance" as B
+database "MySQL" as DB
+
+autonumber
+
+U -> C : POST /stock-movements\n{ stockItemId, sourceLocationId,\nmovementType: "outbound", quantity: 500 }
+activate C
+
+C -> C : authorize('create', StockMovement)
+C -> A : execute(data, contexte)
+activate A
+
+A -> G : article et emplacements\ndans l'organisation active ?
+activate G
+alt article ou emplacement hors périmètre
+  G --> U : 422 stockItemId / sourceLocationId
+end
+G --> A : validés
+deactivate G
+
+A -> A : assertStructure()
+alt ni source ni destination
+  A --> U : 422 — un mouvement doit avoir\nune origine ou une destination
+end
+
+group DB::transaction
+
+  loop pour chaque emplacement, trié par id
+    A -> K : lockOrCreate(article, emplacement)
+    activate K
+    K -> K : DB::transactionLevel() > 0 ?
+    note right of K
+      Verrouiller hors transaction serait
+      inutile : le verrou serait relâché
+      immédiatement. L'appel lève une
+      RuntimeException dans ce cas.
+    end note
+    K -> DB : SELECT … FOR UPDATE\nsur stock_balances
+    K --> A : solde verrouillé
+    deactivate K
+  end
+
+  note over A, K
+    Le tri par identifiant donne à toutes les
+    transactions le même ordre de verrouillage.
+    Sans lui, deux transferts croisés A→B et B→A
+    s'interbloqueraient.
+  end note
+
+  A -> B : assertAvailable(solde source, 500)
+  activate B
+  alt quantité disponible insuffisante
+    B --> A : StockUnavailable
+    A --> U : 409 quantité disponible insuffisante
+    note right of B
+      La transaction est annulée :
+      le solde reste exactement
+      ce qu'il était.
+    end note
+  end
+  B --> A : suffisant
+  deactivate B
+
+  A -> DB : INSERT stock_movements
+
+  A -> B : execute(solde source, −500)
+  activate B
+  B -> B : quantity ≥ 0\nreserved ≥ 0\nreserved ≤ quantity
+  note right of B
+    Troisième barrière, après la validation
+    et le verrou : le solde ne peut pas
+    devenir négatif, même si une étape
+    amont a été franchie à tort.
+  end note
+  B -> DB : UPDATE stock_balances
+  B --> A : solde recalculé
+  deactivate B
+
+  A -> DB : INSERT audit_logs\n(stock_movement.created)
+
+end
+
+A --> C : StockMovement
+deactivate A
+C --> U : 201
+deactivate C
+
+legend right
+  Le solde n'est jamais écrit à la main :
+  il est produit par les mouvements.
+  C'est pourquoi stock_balances n'a ni route
+  de création ni route de modification.
+end legend
+
+@enduml

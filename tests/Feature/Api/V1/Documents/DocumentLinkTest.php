@@ -99,6 +99,6 @@ describe('document links', function (): void {
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->getJson("/api/v1/documents/{$foreignDocument->id}/links")
-            ->assertForbidden();
+            ->assertNotFound();
     });
 });

@@ -60,7 +60,7 @@ describe('customer sites', function (): void {
                 'code' => 'site-2',
                 'name' => 'Entrepôt interdit',
             ])
-            ->assertForbidden();
+            ->assertNotFound();
     });
 
     it('updates and deletes a site', function (): void {
@@ -93,6 +93,6 @@ describe('customer sites', function (): void {
         $this->actingAs($this->user, 'sanctum')
             ->withHeaders($this->headers)
             ->getJson("/api/v1/customers/{$foreignCustomer->id}/sites")
-            ->assertForbidden();
+            ->assertNotFound();
     });
 });

@@ -89,7 +89,7 @@ describe('contacts', function (): void {
             ->withHeaders($this->headers)
             ->getJson("/api/v1/contacts/{$contact->id}");
 
-        $response->assertForbidden();
+        $response->assertNotFound();
     });
 
     it('updates a contact', function (): void {

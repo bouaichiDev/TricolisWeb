@@ -10,6 +10,7 @@ use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
 use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Catalogs\Models\CustomerCatalogItem;
+use App\Modules\Claims\Models\Claim;
 use App\Modules\Contacts\Models\AddressContact;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
@@ -35,12 +36,14 @@ use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
 use App\Modules\Packages\Models\PackageType;
+use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
+use App\Modules\Tracking\Models\TrackingEvent;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -126,6 +129,12 @@ final class MorphMap
 
     public const string TOUR_PERIOD_ASSIGNMENT = 'tour_period_assignment';
 
+    public const string TRACKING_EVENT = 'tracking_event';
+
+    public const string PROOF_OF_DELIVERY = 'proof_of_delivery';
+
+    public const string CLAIM = 'claim';
+
     /**
      * Enregistre la morph map auprès d'Eloquent.
      *
@@ -173,6 +182,9 @@ final class MorphMap
             self::TOUR_STOP_SERVICE => TourStopService::class,
             self::TOUR_PERIOD => TourPeriod::class,
             self::TOUR_PERIOD_ASSIGNMENT => TourPeriodAssignment::class,
+            self::TRACKING_EVENT => TrackingEvent::class,
+            self::PROOF_OF_DELIVERY => ProofOfDelivery::class,
+            self::CLAIM => Claim::class,
         ]);
     }
 

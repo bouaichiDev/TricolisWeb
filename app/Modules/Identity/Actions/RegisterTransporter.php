@@ -10,6 +10,7 @@ use App\Modules\Identity\Models\RolePermission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserRole;
 use App\Modules\Identity\Services\PlatformAccess;
+use App\Modules\Organizations\Actions\SyncOrganizationMenu;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Shared\Enums\OrganizationStatus;
@@ -90,6 +91,10 @@ final readonly class RegisterTransporter
                 'organization_user_id' => $organizationUser->id,
                 'role_id' => $adminRole->id,
             ]);
+
+            // Même menu de base qu'une organisation créée par la plateforme :
+            // s'inscrire ne doit pas donner un back-office vide de réglages.
+            app(SyncOrganizationMenu::class)->execute($organization->id);
 
             $token = $user->createToken($deviceName)->plainTextToken;
 

@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Organizations\UpdateOrganizationRequest;
 use App\Http\Resources\Api\V1\Organizations\OrganizationResource;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\PlatformAccess;
+use App\Modules\Organizations\Actions\SyncOrganizationMenu;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Shared\Enums\OrganizationStatus;
@@ -116,6 +117,12 @@ class OrganizationController extends Controller
                 'status' => UserStatus::ACTIVE,
                 'joined_at' => now(),
             ]);
+
+            // Le menu de base est posé dans la même transaction : une
+            // organisation créée sans lui n'aurait rien à montrer dans son
+            // écran de réglage, et son administrateur ne saurait pas quelles
+            // entrées existent.
+            app(SyncOrganizationMenu::class)->execute($organization->id);
 
             return $organization;
         });

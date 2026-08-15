@@ -44,6 +44,8 @@ configurable : cela rendrait possible d'en fabriquer un cassé.
 | `app/Modules/Organizations/Services/MenuResolver.php` | Compose le menu effectif |
 | `app/Http/Controllers/Api/V1/Organizations/MenuController.php` | Les trois routes |
 | `app/Http/Requests/Api/V1/Organizations/UpdateMenuRequest.php` | Visibilité et position seules |
+| `app/Modules/Organizations/Actions/SyncOrganizationMenu.php` | Donne le menu de base à une organisation |
+| `app/Console/Commands/SyncOrganizationMenus.php` | Met à jour les organisations existantes |
 | `database/migrations/2026_08_13_110000_create_organization_menu_items_table.php` | La table |
 
 ```
@@ -56,12 +58,24 @@ PATCH /api/v1/menu             visibilité et ordre         organizations.update
 dans aucune organisation, et exiger l'en-tête lui interdirait l'accès. Le
 résolveur choisit le catalogue d'après la portée du compte.
 
-### Une ligne par entrée **personnalisée**
+### Chaque organisation reçoit le menu de base
 
-`organization_menu_items` ne contient pas une ligne par entrée du catalogue :
-l'absence de ligne signifie « valeurs par défaut ». Une organisation qui ne
-touche à rien n'a donc aucune ligne, et une entrée ajoutée au catalogue
-apparaît d'elle-même partout — sans migration de données.
+`SyncOrganizationMenu` donne à une organisation une ligne pour chaque entrée du
+catalogue. Il est appelé aux deux endroits où une organisation naît —
+`POST /organizations` et l'inscription publique — dans la même transaction :
+une organisation créée sans lui n'aurait rien à montrer dans son écran de
+réglage, et son administrateur ne saurait pas quelles entrées existent.
+
+**La règle qui rend l'ensemble tenable : créer les lignes manquantes, ne jamais
+toucher aux existantes.** Deux exigences tirent en sens contraire —
+l'administrateur doit voir le menu de base, ce qui suppose des lignes ; et une
+entrée ajoutée à une phase suivante doit parvenir aux organisations déjà
+créées, ce qu'un instantané figé empêcherait. L'action est donc rejouable, et
+ce qu'une organisation a choisi de masquer le reste.
+
+Le **repli du résolveur est conservé** : une entrée sans ligne reste visible.
+C'est le filet de sécurité si la synchronisation est oubliée après une phase —
+mieux vaut une entrée de trop qu'un écran devenu inatteignable.
 
 ### Frontend
 
@@ -124,6 +138,9 @@ affichée plutôt que laissée à deviner.
 | `refuses to hide an entry the organization must keep` | Un organisme qui se coupe l'accès à son administration |
 | `rejects a code that is not in the catalogue` | Une ligne orpheline en base |
 | `drops a group left without any visible child` | Un groupe au titre vide |
+| `leaves an existing choice untouched` | Une phase qui réinitialiserait les réglages d'une organisation |
+| `adds an entry that appeared after the organization was created` | Une organisation ancienne privée des entrées d'une nouvelle phase |
+| `never gives an organization a platform entry` | Une organisation croyant pouvoir régler une entrée plateforme |
 
 Le test des routes lit `frontend/src/app/router/routes/*.tsx` plutôt qu'une
 liste recopiée : une liste recopiée aurait le même défaut que ce qu'elle
@@ -132,22 +149,37 @@ copie de travail.
 
 ---
 
-## 7. Ce que ça change pour la suite
+## 7. Procédure à chaque nouvelle phase
 
-Les modules des phases suivantes — commandes, planning, stock, facturation —
-s'ajoutent au catalogue et deviennent aussitôt masquables par organisation, sans
-autre travail.
+Quand une phase ajoute des écrans, le menu suit en trois gestes :
 
-Le catalogue ne contient que des entrées **réellement atteignables**. Y inscrire
-un module à venir proposerait un écran qui n'existe pas : le test des routes
-l'interdit.
+```bash
+# 1. déclarer les entrées dans app/Shared/Menu/MenuCatalogue.php
+#    (route, icône, permission, section, position, parent)
+
+# 2. vérifier que route et permission existent réellement
+./vendor/bin/pest tests/Feature/Hardening/MenuPermissionConsistencyTest.php
+
+# 3. donner les nouvelles entrées aux organisations déjà créées
+php artisan tricolis:sync-organization-menus
+```
+
+La commande accepte `--organization=<code>` pour se limiter à une seule.
+
+Elle est **rejouable** : elle ne crée que ce qui manque et ne réinitialise
+jamais les choix d'une organisation. Une organisation qui a masqué « Dépôts »
+la retrouve masquée après chaque phase.
+
+Le catalogue ne doit contenir que des entrées **réellement atteignables**. Y
+inscrire un module à venir proposerait un écran qui n'existe pas : le test des
+routes l'interdit, et c'est pourquoi l'étape 2 précède l'étape 3.
 
 ---
 
 ## 8. Résultats
 
 ```
-Backend   794 tests, 2618 assertions   — passent
+Backend   805 tests, 2639 assertions   — passent
 Frontend  123 tests, 20 fichiers        — passent
 ```
 

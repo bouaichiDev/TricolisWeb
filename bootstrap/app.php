@@ -2,6 +2,7 @@
 
 use App\Console\Commands\GrantPlatformAdmin;
 use App\Console\Commands\RepairSiteAddressLinks;
+use App\Console\Commands\SyncOrganizationMenus;
 use App\Http\Middleware\EnsureOrganizationContext;
 use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use Illuminate\Foundation\Application;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ProcessScheduledCommunications::class,
         GrantPlatformAdmin::class,
         RepairSiteAddressLinks::class,
+        SyncOrganizationMenus::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

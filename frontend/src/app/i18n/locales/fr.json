@@ -513,5 +513,18 @@
     "operations": "Exploitation",
     "emergency": "Urgence",
     "other": "Autre"
+  },
+  "menuSections": {
+    "dashboard": "Tableau de bord",
+    "customers": "Clients",
+    "resources": "Ressources",
+    "operations": "Exploitation",
+    "stock": "Stock",
+    "billing": "Facturation",
+    "communications": "Communications",
+    "integrations": "Intégrations",
+    "administration": "Administration",
+    "platform": "Plateforme",
+    "other": "Autres"
   }
 }

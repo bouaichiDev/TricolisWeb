@@ -10,6 +10,12 @@ use Illuminate\Database\Seeder;
 class PermissionSeeder extends Seeder
 {
     /**
+     * Référentiel des permissions.
+     *
+     * La section de menu n'y figure pas : elle est déduite du module par
+     * `PermissionMenuMap`, avec les rares exceptions déclarées par code. La
+     * répéter sur 188 lignes inviterait à l'incohérence.
+     *
      * @var array<int, array{code: string, name: string, module: string, action: string}>
      */
     private array $permissions = [
@@ -254,15 +260,27 @@ class PermissionSeeder extends Seeder
         ['code' => 'communication_attachments.delete', 'name' => 'Supprimer une pièce jointe', 'module' => 'communication_attachments', 'action' => 'delete'],
     ];
 
+    /**
+     * La section de menu est **réappliquée** à chaque exécution, alors que le
+     * reste ne l'est qu'à la création.
+     *
+     * `firstOrCreate` ne touche pas une ligne existante : sur une base déjà
+     * semée, la colonne resterait vide et le formulaire de rôle n'aurait rien
+     * pour grouper. Le reclassement d'une permission d'une section à l'autre
+     * doit d'ailleurs pouvoir se rejouer.
+     */
     public function run(): void
     {
         foreach ($this->permissions as $permission) {
-            Permission::firstOrCreate(
+            $section = PermissionMenuMap::sectionFor($permission['code'], $permission['module']);
+
+            Permission::updateOrCreate(
                 ['code' => $permission['code']],
                 [
                     'name' => $permission['name'],
                     'module' => $permission['module'],
                     'action' => $permission['action'],
+                    'menu_section' => $section->value,
                 ]
             );
         }

@@ -21,6 +21,14 @@ class PermissionResource extends JsonResource
             'code' => $this->code,
             'name' => $this->name,
             'module' => $this->module,
+            /**
+             * Découpe métier, distincte du module qui est technique.
+             *
+             * Le formulaire de rôle groupe dessus : les 48 modules du
+             * référentiel donnaient 48 sections, dans lesquelles composer un
+             * rôle était impraticable.
+             */
+            'menuSection' => $this->menu_section,
             'action' => $this->action,
         ];
     }

@@ -16,15 +16,33 @@ import { API, server } from '@/test/server'
  * tests vérifient que le formulaire se contente de ce qu'il reçoit.
  */
 const delegable = [
-  { id: 'p1', code: 'customers.view', name: 'Voir les clients', module: 'customers', action: 'view' },
+  {
+    id: 'p1',
+    code: 'customers.view',
+    name: 'Voir les clients',
+    module: 'customers',
+    menuSection: 'customers',
+    action: 'view',
+  },
   {
     id: 'p2',
-    code: 'customers.create',
-    name: 'Créer un client',
-    module: 'customers',
-    action: 'create',
+    code: 'contacts.view',
+    name: 'Voir les contacts',
+    module: 'contacts',
+    // Module différent, **même section** : c'est tout l'intérêt du
+    // regroupement, les 48 modules du référentiel se ramenant à une dizaine
+    // de sections.
+    menuSection: 'customers',
+    action: 'view',
   },
-  { id: 'p3', code: 'agencies.view', name: 'Voir les agences', module: 'agencies', action: 'view' },
+  {
+    id: 'p3',
+    code: 'agencies.view',
+    name: 'Voir les agences',
+    module: 'agencies',
+    menuSection: 'resources',
+    action: 'view',
+  },
 ]
 
 function permissionsHandler(rows = delegable) {
@@ -116,6 +134,7 @@ describe('RoleForm', () => {
       const onSubmit = setup()
       await screen.findByText('Voir les clients')
 
+      // Le premier bloc est « Clients » : deux permissions, deux modules.
       const buttons = screen.getAllByRole('button', { name: 'Tout cocher' })
       await userEvent.click(buttons[0])
 
@@ -130,6 +149,33 @@ describe('RoleForm', () => {
       const selected = onSubmit.mock.calls[0][1] as string[]
       expect(selected).not.toContain('p-platform')
       expect(selected.every((id) => delegable.some((permission) => permission.id === id))).toBe(true)
+    })
+
+    /**
+     * Deux modules, une seule section : le formulaire n'affiche pas un bloc par
+     * module mais un bloc par section. Sur le référentiel réel, c'est la
+     * différence entre 48 blocs et une dizaine.
+     */
+    it('groupe par section de menu et non par module', async () => {
+      setup()
+
+      expect(await screen.findByRole('heading', { name: 'Clients' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Ressources' })).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'contacts' })).not.toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: 'Tout cocher' })).toHaveLength(2)
+    })
+
+    /**
+     * « Clients » avant « Ressources » : l'ordre suit `MenuSection::position()`,
+     * pas l'alphabet — qui placerait « Administration » en tête.
+     */
+    it('ordonne les sections comme le backend les ordonne', async () => {
+      setup()
+
+      await screen.findByRole('heading', { name: 'Clients' })
+      const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+
+      expect(headings).toEqual(['Clients', 'Ressources'])
     })
 
     it('affiche le décompte sur le seul ensemble délégable', async () => {

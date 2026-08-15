@@ -189,6 +189,26 @@ class PermissionSeeder extends Seeder
         ['code' => 'provider_settlement_lines.create', 'name' => 'Ajouter une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'create'],
         ['code' => 'provider_settlement_lines.update', 'name' => 'Modifier une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'update'],
         ['code' => 'provider_settlement_lines.delete', 'name' => 'Supprimer une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'delete'],
+
+        ['code' => 'stock_items.view', 'name' => 'Voir les articles de stock', 'module' => 'stock_items', 'action' => 'view'],
+        ['code' => 'stock_items.create', 'name' => 'Créer un article de stock', 'module' => 'stock_items', 'action' => 'create'],
+        ['code' => 'stock_items.update', 'name' => 'Modifier un article de stock', 'module' => 'stock_items', 'action' => 'update'],
+        ['code' => 'stock_items.delete', 'name' => 'Supprimer un article de stock', 'module' => 'stock_items', 'action' => 'delete'],
+
+        ['code' => 'stock_locations.view', 'name' => 'Voir les emplacements', 'module' => 'stock_locations', 'action' => 'view'],
+        ['code' => 'stock_locations.create', 'name' => 'Créer un emplacement', 'module' => 'stock_locations', 'action' => 'create'],
+        ['code' => 'stock_locations.update', 'name' => 'Modifier un emplacement', 'module' => 'stock_locations', 'action' => 'update'],
+        ['code' => 'stock_locations.delete', 'name' => 'Supprimer un emplacement', 'module' => 'stock_locations', 'action' => 'delete'],
+
+        ['code' => 'stock_balances.view', 'name' => 'Voir les soldes de stock', 'module' => 'stock_balances', 'action' => 'view'],
+
+        ['code' => 'stock_movements.view', 'name' => 'Voir les mouvements de stock', 'module' => 'stock_movements', 'action' => 'view'],
+        ['code' => 'stock_movements.create', 'name' => 'Créer un mouvement de stock', 'module' => 'stock_movements', 'action' => 'create'],
+
+        ['code' => 'stock_reservations.view', 'name' => 'Voir les réservations de stock', 'module' => 'stock_reservations', 'action' => 'view'],
+        ['code' => 'stock_reservations.create', 'name' => 'Créer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'create'],
+        ['code' => 'stock_reservations.update', 'name' => 'Modifier une réservation de stock', 'module' => 'stock_reservations', 'action' => 'update'],
+        ['code' => 'stock_reservations.release', 'name' => 'Libérer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'release'],
     ];
 
     public function run(): void

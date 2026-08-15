@@ -43,6 +43,11 @@ use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Stock\Models\StockBalance;
+use App\Modules\Stock\Models\StockItem;
+use App\Modules\Stock\Models\StockLocation;
+use App\Modules\Stock\Models\StockMovement;
+use App\Modules\Stock\Models\StockReservation;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -52,11 +57,11 @@ use App\Modules\Tracking\Models\TrackingEvent;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
- * Valeurs métier stables utilisées pour les relations polymorphes.
+ * Valeurs mÃ©tier stables utilisÃ©es pour les relations polymorphes.
  *
- * Aucun nom de classe PHP n'est stocké en base. Seules les entités réellement
- * livrées y figurent : les alias des modules futurs (fournisseurs, chauffeurs,
- * véhicules, réclamations, factures) seront ajoutés avec leur module.
+ * Aucun nom de classe PHP n'est stockÃ© en base. Seules les entitÃ©s rÃ©ellement
+ * livrÃ©es y figurent : les alias des modules futurs (fournisseurs, chauffeurs,
+ * vÃ©hicules, rÃ©clamations, factures) seront ajoutÃ©s avec leur module.
  */
 final class MorphMap
 {
@@ -150,11 +155,21 @@ final class MorphMap
 
     public const string PROVIDER_SETTLEMENT_LINE = 'provider_settlement_line';
 
+    public const string STOCK_ITEM = 'stock_item';
+
+    public const string STOCK_LOCATION = 'stock_location';
+
+    public const string STOCK_BALANCE = 'stock_balance';
+
+    public const string STOCK_MOVEMENT = 'stock_movement';
+
+    public const string STOCK_RESERVATION = 'stock_reservation';
+
     /**
-     * Enregistre la morph map auprès d'Eloquent.
+     * Enregistre la morph map auprÃ¨s d'Eloquent.
      *
      * Les tables de liaison y figurent aussi : elles ne portent pas de relation
-     * polymorphe, mais elles sont auditées, et `AuditLog.entity_type` ne doit
+     * polymorphe, mais elles sont auditÃ©es, et `AuditLog.entity_type` ne doit
      * jamais contenir un nom de classe PHP.
      */
     public static function register(): void
@@ -205,11 +220,33 @@ final class MorphMap
             self::INVOICE_LINE_ADDRESS_SNAPSHOT => InvoiceLineAddressSnapshot::class,
             self::PROVIDER_SETTLEMENT => ProviderSettlement::class,
             self::PROVIDER_SETTLEMENT_LINE => ProviderSettlementLine::class,
+            self::STOCK_ITEM => StockItem::class,
+            self::STOCK_LOCATION => StockLocation::class,
+            self::STOCK_BALANCE => StockBalance::class,
+            self::STOCK_MOVEMENT => StockMovement::class,
+            self::STOCK_RESERVATION => StockReservation::class,
         ]);
     }
 
     /**
-     * Retourne la classe Eloquent associée à un alias morphique.
+     * Alias mÃ©tier connus, indexÃ©s par alias.
+     *
+     * Sert notamment Ã  valider `StockMovement.sourceEntityType` : la liste des
+     * types autorisÃ©s est **dÃ©rivÃ©e** de la morph map, jamais recopiÃ©e â€” une
+     * copie divergerait au premier module ajoutÃ©.
+     *
+     * @return array<string, class-string>
+     */
+    public static function registered(): array
+    {
+        /** @var array<string, class-string> $map */
+        $map = Relation::morphMap();
+
+        return $map;
+    }
+
+    /**
+     * Retourne la classe Eloquent associÃ©e Ã  un alias morphique.
      *
      * @return class-string|null
      */

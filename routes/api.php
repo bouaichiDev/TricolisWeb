@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\Billing\InvoiceController;
+use App\Http\Controllers\Api\V1\Billing\InvoiceLineController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogItemController;
 use App\Http\Controllers\Api\V1\Claims\ClaimController;
@@ -41,6 +43,8 @@ use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Packages\PackageTypeController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
+use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
+use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
 use App\Http\Controllers\Api\V1\Tours\TourController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
@@ -187,5 +191,21 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('orders/{order}/claims', [ClaimController::class, 'byOrder'])->name('orders.claims');
         Route::get('tours/{tour}/claims', [ClaimController::class, 'byTour'])->name('tours.claims');
         Route::apiResource('claims', ClaimController::class)->except(['create', 'edit']);
+
+        // Facturation client
+        Route::apiResource('invoices.lines', InvoiceLineController::class)
+            ->parameters(['lines' => 'line'])
+            ->except(['create', 'edit']);
+        Route::apiResource('invoices', InvoiceController::class)->except(['create', 'edit']);
+
+        // Decomptes fournisseurs
+        Route::get('providers/{provider}/settlements', [ProviderSettlementController::class, 'byProvider'])->name('providers.settlements.index');
+        Route::post('providers/{provider}/settlements', [ProviderSettlementController::class, 'storeForProvider'])->name('providers.settlements.store');
+        Route::apiResource('provider-settlements.lines', ProviderSettlementLineController::class)
+            ->parameters(['provider-settlements' => 'providerSettlement', 'lines' => 'line'])
+            ->except(['create', 'edit']);
+        Route::apiResource('provider-settlements', ProviderSettlementController::class)
+            ->parameters(['provider-settlements' => 'providerSettlement'])
+            ->except(['create', 'edit']);
     });
 });

@@ -169,6 +169,26 @@ class PermissionSeeder extends Seeder
         ['code' => 'claims.create', 'name' => 'Créer une réclamation', 'module' => 'claims', 'action' => 'create'],
         ['code' => 'claims.update', 'name' => 'Modifier une réclamation', 'module' => 'claims', 'action' => 'update'],
         ['code' => 'claims.delete', 'name' => 'Supprimer une réclamation', 'module' => 'claims', 'action' => 'delete'],
+
+        ['code' => 'invoices.view', 'name' => 'Voir les factures', 'module' => 'invoices', 'action' => 'view'],
+        ['code' => 'invoices.create', 'name' => 'Créer une facture', 'module' => 'invoices', 'action' => 'create'],
+        ['code' => 'invoices.update', 'name' => 'Modifier une facture', 'module' => 'invoices', 'action' => 'update'],
+        ['code' => 'invoices.delete', 'name' => 'Supprimer une facture', 'module' => 'invoices', 'action' => 'delete'],
+
+        ['code' => 'invoice_lines.view', 'name' => 'Voir les lignes de facture', 'module' => 'invoice_lines', 'action' => 'view'],
+        ['code' => 'invoice_lines.create', 'name' => 'Ajouter une ligne de facture', 'module' => 'invoice_lines', 'action' => 'create'],
+        ['code' => 'invoice_lines.update', 'name' => 'Modifier une ligne de facture', 'module' => 'invoice_lines', 'action' => 'update'],
+        ['code' => 'invoice_lines.delete', 'name' => 'Supprimer une ligne de facture', 'module' => 'invoice_lines', 'action' => 'delete'],
+
+        ['code' => 'provider_settlements.view', 'name' => 'Voir les décomptes fournisseurs', 'module' => 'provider_settlements', 'action' => 'view'],
+        ['code' => 'provider_settlements.create', 'name' => 'Créer un décompte fournisseur', 'module' => 'provider_settlements', 'action' => 'create'],
+        ['code' => 'provider_settlements.update', 'name' => 'Modifier un décompte fournisseur', 'module' => 'provider_settlements', 'action' => 'update'],
+        ['code' => 'provider_settlements.delete', 'name' => 'Supprimer un décompte fournisseur', 'module' => 'provider_settlements', 'action' => 'delete'],
+
+        ['code' => 'provider_settlement_lines.view', 'name' => 'Voir les lignes de décompte', 'module' => 'provider_settlement_lines', 'action' => 'view'],
+        ['code' => 'provider_settlement_lines.create', 'name' => 'Ajouter une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'create'],
+        ['code' => 'provider_settlement_lines.update', 'name' => 'Modifier une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'update'],
+        ['code' => 'provider_settlement_lines.delete', 'name' => 'Supprimer une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'delete'],
     ];
 
     public function run(): void

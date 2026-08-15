@@ -9,6 +9,8 @@ use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
 use App\Modules\Audit\Models\AuditLog;
+use App\Modules\Billing\Models\Invoice;
+use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Claims\Models\Claim;
 use App\Modules\Contacts\Models\Contact;
@@ -30,6 +32,8 @@ use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\PackageType;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\ProviderSettlements\Models\ProviderSettlement;
+use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -49,12 +53,16 @@ use App\Policies\DocumentPolicy;
 use App\Policies\DriverPolicy;
 use App\Policies\EntityAddressPolicy;
 use App\Policies\EntityContactPolicy;
+use App\Policies\InvoiceLinePolicy;
+use App\Policies\InvoicePolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
 use App\Policies\PackageReferentialPolicy;
 use App\Policies\ProofOfDeliveryPolicy;
 use App\Policies\ProviderPolicy;
+use App\Policies\ProviderSettlementLinePolicy;
+use App\Policies\ProviderSettlementPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
 use App\Policies\SubscriptionPolicy;
@@ -106,6 +114,10 @@ class AuthServiceProvider extends ServiceProvider
         TrackingEvent::class => TrackingEventPolicy::class,
         ProofOfDelivery::class => ProofOfDeliveryPolicy::class,
         Claim::class => ClaimPolicy::class,
+        Invoice::class => InvoicePolicy::class,
+        InvoiceLine::class => InvoiceLinePolicy::class,
+        ProviderSettlement::class => ProviderSettlementPolicy::class,
+        ProviderSettlementLine::class => ProviderSettlementLinePolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

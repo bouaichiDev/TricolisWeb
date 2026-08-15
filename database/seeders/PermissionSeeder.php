@@ -110,6 +110,147 @@ class PermissionSeeder extends Seeder
         ['code' => 'order_services.update', 'name' => 'Modifier un service de commande', 'module' => 'order_services', 'action' => 'update'],
         ['code' => 'order_services.delete', 'name' => 'Supprimer un service de commande', 'module' => 'order_services', 'action' => 'delete'],
         ['code' => 'order_services.change_status', 'name' => 'Changer le statut d’un service', 'module' => 'order_services', 'action' => 'change_status'],
+
+        ['code' => 'providers.view', 'name' => 'Voir les fournisseurs', 'module' => 'providers', 'action' => 'view'],
+        ['code' => 'providers.create', 'name' => 'Créer un fournisseur', 'module' => 'providers', 'action' => 'create'],
+        ['code' => 'providers.update', 'name' => 'Modifier un fournisseur', 'module' => 'providers', 'action' => 'update'],
+        ['code' => 'providers.delete', 'name' => 'Supprimer un fournisseur', 'module' => 'providers', 'action' => 'delete'],
+
+        ['code' => 'drivers.view', 'name' => 'Voir les chauffeurs', 'module' => 'drivers', 'action' => 'view'],
+        ['code' => 'drivers.create', 'name' => 'Créer un chauffeur', 'module' => 'drivers', 'action' => 'create'],
+        ['code' => 'drivers.update', 'name' => 'Modifier un chauffeur', 'module' => 'drivers', 'action' => 'update'],
+        ['code' => 'drivers.delete', 'name' => 'Supprimer un chauffeur', 'module' => 'drivers', 'action' => 'delete'],
+
+        ['code' => 'vehicle_types.view', 'name' => 'Voir les types de véhicule', 'module' => 'vehicle_types', 'action' => 'view'],
+        ['code' => 'vehicle_types.create', 'name' => 'Créer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'create'],
+        ['code' => 'vehicle_types.update', 'name' => 'Modifier un type de véhicule', 'module' => 'vehicle_types', 'action' => 'update'],
+        ['code' => 'vehicle_types.delete', 'name' => 'Supprimer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'delete'],
+
+        ['code' => 'vehicles.view', 'name' => 'Voir les véhicules', 'module' => 'vehicles', 'action' => 'view'],
+        ['code' => 'vehicles.create', 'name' => 'Créer un véhicule', 'module' => 'vehicles', 'action' => 'create'],
+        ['code' => 'vehicles.update', 'name' => 'Modifier un véhicule', 'module' => 'vehicles', 'action' => 'update'],
+        ['code' => 'vehicles.delete', 'name' => 'Supprimer un véhicule', 'module' => 'vehicles', 'action' => 'delete'],
+
+        ['code' => 'tours.view', 'name' => 'Voir les tournées', 'module' => 'tours', 'action' => 'view'],
+        ['code' => 'tours.create', 'name' => 'Créer une tournée', 'module' => 'tours', 'action' => 'create'],
+        ['code' => 'tours.update', 'name' => 'Modifier une tournée', 'module' => 'tours', 'action' => 'update'],
+        ['code' => 'tours.delete', 'name' => 'Supprimer une tournée', 'module' => 'tours', 'action' => 'delete'],
+
+        ['code' => 'tour_stops.view', 'name' => 'Voir les arrêts', 'module' => 'tour_stops', 'action' => 'view'],
+        ['code' => 'tour_stops.create', 'name' => 'Créer un arrêt', 'module' => 'tour_stops', 'action' => 'create'],
+        ['code' => 'tour_stops.update', 'name' => 'Modifier un arrêt', 'module' => 'tour_stops', 'action' => 'update'],
+        ['code' => 'tour_stops.delete', 'name' => 'Supprimer un arrêt', 'module' => 'tour_stops', 'action' => 'delete'],
+        ['code' => 'tour_stops.reorder', 'name' => 'Réordonner les arrêts', 'module' => 'tour_stops', 'action' => 'reorder'],
+
+        ['code' => 'tour_stop_services.view', 'name' => 'Voir les services planifiés', 'module' => 'tour_stop_services', 'action' => 'view'],
+        ['code' => 'tour_stop_services.create', 'name' => 'Planifier un service', 'module' => 'tour_stop_services', 'action' => 'create'],
+        ['code' => 'tour_stop_services.update', 'name' => 'Modifier un service planifié', 'module' => 'tour_stop_services', 'action' => 'update'],
+        ['code' => 'tour_stop_services.delete', 'name' => 'Retirer un service planifié', 'module' => 'tour_stop_services', 'action' => 'delete'],
+        ['code' => 'tour_stop_services.reorder', 'name' => 'Réordonner les services d\'un arrêt', 'module' => 'tour_stop_services', 'action' => 'reorder'],
+
+        ['code' => 'tour_periods.view', 'name' => 'Voir les périodes', 'module' => 'tour_periods', 'action' => 'view'],
+        ['code' => 'tour_periods.create', 'name' => 'Créer une période', 'module' => 'tour_periods', 'action' => 'create'],
+        ['code' => 'tour_periods.update', 'name' => 'Modifier une période', 'module' => 'tour_periods', 'action' => 'update'],
+        ['code' => 'tour_periods.delete', 'name' => 'Supprimer une période', 'module' => 'tour_periods', 'action' => 'delete'],
+        ['code' => 'tour_periods.reorder', 'name' => 'Réordonner les périodes', 'module' => 'tour_periods', 'action' => 'reorder'],
+
+        ['code' => 'tour_period_assignments.view', 'name' => 'Voir les affectations', 'module' => 'tour_period_assignments', 'action' => 'view'],
+        ['code' => 'tour_period_assignments.create', 'name' => 'Créer une affectation', 'module' => 'tour_period_assignments', 'action' => 'create'],
+        ['code' => 'tour_period_assignments.update', 'name' => 'Modifier une affectation', 'module' => 'tour_period_assignments', 'action' => 'update'],
+        ['code' => 'tour_period_assignments.delete', 'name' => 'Supprimer une affectation', 'module' => 'tour_period_assignments', 'action' => 'delete'],
+
+        ['code' => 'tracking_events.view', 'name' => 'Voir les événements de suivi', 'module' => 'tracking_events', 'action' => 'view'],
+        ['code' => 'tracking_events.create', 'name' => 'Créer un événement de suivi', 'module' => 'tracking_events', 'action' => 'create'],
+
+        ['code' => 'proofs_of_delivery.view', 'name' => 'Voir les preuves de livraison', 'module' => 'proofs_of_delivery', 'action' => 'view'],
+        ['code' => 'proofs_of_delivery.create', 'name' => 'Créer une preuve de livraison', 'module' => 'proofs_of_delivery', 'action' => 'create'],
+
+        ['code' => 'claims.view', 'name' => 'Voir les réclamations', 'module' => 'claims', 'action' => 'view'],
+        ['code' => 'claims.create', 'name' => 'Créer une réclamation', 'module' => 'claims', 'action' => 'create'],
+        ['code' => 'claims.update', 'name' => 'Modifier une réclamation', 'module' => 'claims', 'action' => 'update'],
+        ['code' => 'claims.delete', 'name' => 'Supprimer une réclamation', 'module' => 'claims', 'action' => 'delete'],
+
+        ['code' => 'invoices.view', 'name' => 'Voir les factures', 'module' => 'invoices', 'action' => 'view'],
+        ['code' => 'invoices.create', 'name' => 'Créer une facture', 'module' => 'invoices', 'action' => 'create'],
+        ['code' => 'invoices.update', 'name' => 'Modifier une facture', 'module' => 'invoices', 'action' => 'update'],
+        ['code' => 'invoices.delete', 'name' => 'Supprimer une facture', 'module' => 'invoices', 'action' => 'delete'],
+
+        ['code' => 'invoice_lines.view', 'name' => 'Voir les lignes de facture', 'module' => 'invoice_lines', 'action' => 'view'],
+        ['code' => 'invoice_lines.create', 'name' => 'Ajouter une ligne de facture', 'module' => 'invoice_lines', 'action' => 'create'],
+        ['code' => 'invoice_lines.update', 'name' => 'Modifier une ligne de facture', 'module' => 'invoice_lines', 'action' => 'update'],
+        ['code' => 'invoice_lines.delete', 'name' => 'Supprimer une ligne de facture', 'module' => 'invoice_lines', 'action' => 'delete'],
+
+        ['code' => 'provider_settlements.view', 'name' => 'Voir les décomptes fournisseurs', 'module' => 'provider_settlements', 'action' => 'view'],
+        ['code' => 'provider_settlements.create', 'name' => 'Créer un décompte fournisseur', 'module' => 'provider_settlements', 'action' => 'create'],
+        ['code' => 'provider_settlements.update', 'name' => 'Modifier un décompte fournisseur', 'module' => 'provider_settlements', 'action' => 'update'],
+        ['code' => 'provider_settlements.delete', 'name' => 'Supprimer un décompte fournisseur', 'module' => 'provider_settlements', 'action' => 'delete'],
+
+        ['code' => 'provider_settlement_lines.view', 'name' => 'Voir les lignes de décompte', 'module' => 'provider_settlement_lines', 'action' => 'view'],
+        ['code' => 'provider_settlement_lines.create', 'name' => 'Ajouter une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'create'],
+        ['code' => 'provider_settlement_lines.update', 'name' => 'Modifier une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'update'],
+        ['code' => 'provider_settlement_lines.delete', 'name' => 'Supprimer une ligne de décompte', 'module' => 'provider_settlement_lines', 'action' => 'delete'],
+
+        ['code' => 'stock_items.view', 'name' => 'Voir les articles de stock', 'module' => 'stock_items', 'action' => 'view'],
+        ['code' => 'stock_items.create', 'name' => 'Créer un article de stock', 'module' => 'stock_items', 'action' => 'create'],
+        ['code' => 'stock_items.update', 'name' => 'Modifier un article de stock', 'module' => 'stock_items', 'action' => 'update'],
+        ['code' => 'stock_items.delete', 'name' => 'Supprimer un article de stock', 'module' => 'stock_items', 'action' => 'delete'],
+
+        ['code' => 'stock_locations.view', 'name' => 'Voir les emplacements', 'module' => 'stock_locations', 'action' => 'view'],
+        ['code' => 'stock_locations.create', 'name' => 'Créer un emplacement', 'module' => 'stock_locations', 'action' => 'create'],
+        ['code' => 'stock_locations.update', 'name' => 'Modifier un emplacement', 'module' => 'stock_locations', 'action' => 'update'],
+        ['code' => 'stock_locations.delete', 'name' => 'Supprimer un emplacement', 'module' => 'stock_locations', 'action' => 'delete'],
+
+        ['code' => 'stock_balances.view', 'name' => 'Voir les soldes de stock', 'module' => 'stock_balances', 'action' => 'view'],
+
+        ['code' => 'stock_movements.view', 'name' => 'Voir les mouvements de stock', 'module' => 'stock_movements', 'action' => 'view'],
+        ['code' => 'stock_movements.create', 'name' => 'Créer un mouvement de stock', 'module' => 'stock_movements', 'action' => 'create'],
+
+        ['code' => 'stock_reservations.view', 'name' => 'Voir les réservations de stock', 'module' => 'stock_reservations', 'action' => 'view'],
+        ['code' => 'stock_reservations.create', 'name' => 'Créer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'create'],
+        ['code' => 'stock_reservations.update', 'name' => 'Modifier une réservation de stock', 'module' => 'stock_reservations', 'action' => 'update'],
+        ['code' => 'stock_reservations.release', 'name' => 'Libérer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'release'],
+
+        ['code' => 'customer_import_configurations.view', 'name' => 'Voir les configurations d\'import', 'module' => 'customer_import_configurations', 'action' => 'view'],
+        ['code' => 'customer_import_configurations.create', 'name' => 'Créer une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'create'],
+        ['code' => 'customer_import_configurations.update', 'name' => 'Modifier une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'update'],
+        ['code' => 'customer_import_configurations.delete', 'name' => 'Supprimer une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'delete'],
+
+        ['code' => 'customer_api_configurations.view', 'name' => 'Voir les accès API clients', 'module' => 'customer_api_configurations', 'action' => 'view'],
+        ['code' => 'customer_api_configurations.create', 'name' => 'Créer un accès API client', 'module' => 'customer_api_configurations', 'action' => 'create'],
+        ['code' => 'customer_api_configurations.update', 'name' => 'Modifier un accès API client', 'module' => 'customer_api_configurations', 'action' => 'update'],
+        ['code' => 'customer_api_configurations.delete', 'name' => 'Supprimer un accès API client', 'module' => 'customer_api_configurations', 'action' => 'delete'],
+        ['code' => 'customer_api_configurations.rotate_key', 'name' => 'Renouveler une clé API client', 'module' => 'customer_api_configurations', 'action' => 'rotate_key'],
+
+        ['code' => 'customer_export_configurations.view', 'name' => 'Voir les configurations d\'export', 'module' => 'customer_export_configurations', 'action' => 'view'],
+        ['code' => 'customer_export_configurations.create', 'name' => 'Créer une configuration d\'export', 'module' => 'customer_export_configurations', 'action' => 'create'],
+        ['code' => 'customer_export_configurations.update', 'name' => 'Modifier une configuration d\'export', 'module' => 'customer_export_configurations', 'action' => 'update'],
+        ['code' => 'customer_export_configurations.delete', 'name' => 'Supprimer une configuration d\'export', 'module' => 'customer_export_configurations', 'action' => 'delete'],
+
+        ['code' => 'export_jobs.view', 'name' => 'Voir les exports', 'module' => 'export_jobs', 'action' => 'view'],
+        ['code' => 'export_jobs.create', 'name' => 'Déclencher un export', 'module' => 'export_jobs', 'action' => 'create'],
+        ['code' => 'export_jobs.retry', 'name' => 'Relancer un export', 'module' => 'export_jobs', 'action' => 'retry'],
+
+        ['code' => 'communication_templates.view', 'name' => 'Voir les modèles de message', 'module' => 'communication_templates', 'action' => 'view'],
+        ['code' => 'communication_templates.create', 'name' => 'Créer un modèle de message', 'module' => 'communication_templates', 'action' => 'create'],
+        ['code' => 'communication_templates.update', 'name' => 'Modifier un modèle de message', 'module' => 'communication_templates', 'action' => 'update'],
+        ['code' => 'communication_templates.delete', 'name' => 'Supprimer un modèle de message', 'module' => 'communication_templates', 'action' => 'delete'],
+
+        ['code' => 'communication_rules.view', 'name' => 'Voir les règles de communication', 'module' => 'communication_rules', 'action' => 'view'],
+        ['code' => 'communication_rules.create', 'name' => 'Créer une règle de communication', 'module' => 'communication_rules', 'action' => 'create'],
+        ['code' => 'communication_rules.update', 'name' => 'Modifier une règle de communication', 'module' => 'communication_rules', 'action' => 'update'],
+        ['code' => 'communication_rules.delete', 'name' => 'Supprimer une règle de communication', 'module' => 'communication_rules', 'action' => 'delete'],
+
+        ['code' => 'order_communications.view', 'name' => 'Voir les communications', 'module' => 'order_communications', 'action' => 'view'],
+        ['code' => 'order_communications.create', 'name' => 'Créer une communication', 'module' => 'order_communications', 'action' => 'create'],
+        ['code' => 'order_communications.update', 'name' => 'Modifier une communication', 'module' => 'order_communications', 'action' => 'update'],
+        ['code' => 'order_communications.delete', 'name' => 'Supprimer une communication', 'module' => 'order_communications', 'action' => 'delete'],
+        ['code' => 'order_communications.queue', 'name' => 'Mettre une communication en file', 'module' => 'order_communications', 'action' => 'queue'],
+        ['code' => 'order_communications.cancel', 'name' => 'Annuler une communication', 'module' => 'order_communications', 'action' => 'cancel'],
+        ['code' => 'order_communications.retry', 'name' => 'Relancer une communication', 'module' => 'order_communications', 'action' => 'retry'],
+
+        ['code' => 'communication_attachments.view', 'name' => 'Voir les pièces jointes', 'module' => 'communication_attachments', 'action' => 'view'],
+        ['code' => 'communication_attachments.create', 'name' => 'Ajouter une pièce jointe', 'module' => 'communication_attachments', 'action' => 'create'],
+        ['code' => 'communication_attachments.delete', 'name' => 'Supprimer une pièce jointe', 'module' => 'communication_attachments', 'action' => 'delete'],
     ];
 
     public function run(): void

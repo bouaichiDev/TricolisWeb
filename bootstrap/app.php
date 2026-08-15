@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureOrganizationContext;
+use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         apiPrefix: 'api/v1',
     )
+    // La decouverte automatique ne balaie que `app/Console/Commands` : les
+    // commandes des modules doivent etre declarees.
+    ->withCommands([
+        ProcessScheduledCommunications::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'organization' => EnsureOrganizationContext::class,

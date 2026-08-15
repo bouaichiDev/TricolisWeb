@@ -22,12 +22,16 @@ use App\Http\Controllers\Api\V1\Customers\CustomerSiteController;
 use App\Http\Controllers\Api\V1\Documents\DocumentController;
 use App\Http\Controllers\Api\V1\Documents\DocumentLinkController;
 use App\Http\Controllers\Api\V1\Drivers\DriverController;
+use App\Http\Controllers\Api\V1\Exports\ExportConfigurationController;
+use App\Http\Controllers\Api\V1\Exports\ExportJobController;
 use App\Http\Controllers\Api\V1\Fleet\VehicleController;
 use App\Http\Controllers\Api\V1\Fleet\VehicleTypeController;
 use App\Http\Controllers\Api\V1\Identity\OrganizationUserController;
 use App\Http\Controllers\Api\V1\Identity\PermissionController;
 use App\Http\Controllers\Api\V1\Identity\RoleController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
+use App\Http\Controllers\Api\V1\Integrations\ApiConfigurationController;
+use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Http\Controllers\Api\V1\Orders\OrderDocumentController;
 use App\Http\Controllers\Api\V1\Orders\OrderHistoryController;
@@ -235,5 +239,31 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('stock-reservations', StockReservationController::class)
             ->parameters(['stock-reservations' => 'stockReservation'])
             ->only(['index', 'store', 'show', 'update']);
+
+        // Integrations clients
+        Route::get('customers/{customer}/import-configurations', [ImportConfigurationController::class, 'byCustomer'])->name('customers.import-configurations.index');
+        Route::post('customers/{customer}/import-configurations', [ImportConfigurationController::class, 'storeForCustomer'])->name('customers.import-configurations.store');
+        Route::get('customers/{customer}/api-configurations', [ApiConfigurationController::class, 'byCustomer'])->name('customers.api-configurations.index');
+        Route::post('customers/{customer}/api-configurations', [ApiConfigurationController::class, 'storeForCustomer'])->name('customers.api-configurations.store');
+        Route::get('customers/{customer}/export-configurations', [ExportConfigurationController::class, 'byCustomer'])->name('customers.export-configurations.index');
+        Route::post('customers/{customer}/export-configurations', [ExportConfigurationController::class, 'storeForCustomer'])->name('customers.export-configurations.store');
+
+        Route::apiResource('customer-import-configurations', ImportConfigurationController::class)
+            ->parameters(['customer-import-configurations' => 'configuration'])
+            ->except(['create', 'edit']);
+        // `rotate-key` precede l'apiResource : sans cela `{configuration}` la
+        // capterait comme un identifiant.
+        Route::post('customer-api-configurations/{configuration}/rotate-key', [ApiConfigurationController::class, 'rotateKey'])->name('customer-api-configurations.rotate-key');
+        Route::apiResource('customer-api-configurations', ApiConfigurationController::class)
+            ->parameters(['customer-api-configurations' => 'configuration'])
+            ->except(['create', 'edit']);
+        Route::apiResource('customer-export-configurations', ExportConfigurationController::class)
+            ->parameters(['customer-export-configurations' => 'configuration'])
+            ->except(['create', 'edit']);
+
+        Route::post('export-jobs/{exportJob}/retry', [ExportJobController::class, 'retry'])->name('export-jobs.retry');
+        Route::apiResource('export-jobs', ExportJobController::class)
+            ->parameters(['export-jobs' => 'exportJob'])
+            ->only(['index', 'store', 'show']);
     });
 });

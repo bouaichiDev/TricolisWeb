@@ -22,10 +22,14 @@ use App\Modules\Customers\Models\CustomerSite;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Drivers\Models\Driver;
+use App\Modules\Exports\Models\CustomerExportConfiguration;
+use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
+use App\Modules\Integrations\Models\CustomerApiConfiguration;
+use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderLine;
 use App\Modules\Orders\Models\OrderService;
@@ -165,6 +169,14 @@ final class MorphMap
 
     public const string STOCK_RESERVATION = 'stock_reservation';
 
+    public const string CUSTOMER_IMPORT_CONFIGURATION = 'customer_import_configuration';
+
+    public const string CUSTOMER_API_CONFIGURATION = 'customer_api_configuration';
+
+    public const string CUSTOMER_EXPORT_CONFIGURATION = 'customer_export_configuration';
+
+    public const string EXPORT_JOB = 'export_job';
+
     /**
      * Enregistre la morph map auprÃ¨s d'Eloquent.
      *
@@ -225,6 +237,10 @@ final class MorphMap
             self::STOCK_BALANCE => StockBalance::class,
             self::STOCK_MOVEMENT => StockMovement::class,
             self::STOCK_RESERVATION => StockReservation::class,
+            self::CUSTOMER_IMPORT_CONFIGURATION => CustomerImportConfiguration::class,
+            self::CUSTOMER_API_CONFIGURATION => CustomerApiConfiguration::class,
+            self::CUSTOMER_EXPORT_CONFIGURATION => CustomerExportConfiguration::class,
+            self::EXPORT_JOB => ExportJob::class,
         ]);
     }
 

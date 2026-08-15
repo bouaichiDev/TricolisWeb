@@ -19,10 +19,14 @@ use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Models\CustomerSite;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Drivers\Models\Driver;
+use App\Modules\Exports\Models\CustomerExportConfiguration;
+use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
+use App\Modules\Integrations\Models\CustomerApiConfiguration;
+use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
@@ -50,7 +54,10 @@ use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\ClaimPolicy;
 use App\Policies\ContactPolicy;
+use App\Policies\CustomerApiConfigurationPolicy;
 use App\Policies\CustomerCatalogPolicy;
+use App\Policies\CustomerExportConfigurationPolicy;
+use App\Policies\CustomerImportConfigurationPolicy;
 use App\Policies\CustomerPolicy;
 use App\Policies\CustomerSitePolicy;
 use App\Policies\DepotPolicy;
@@ -58,6 +65,7 @@ use App\Policies\DocumentPolicy;
 use App\Policies\DriverPolicy;
 use App\Policies\EntityAddressPolicy;
 use App\Policies\EntityContactPolicy;
+use App\Policies\ExportJobPolicy;
 use App\Policies\InvoiceLinePolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\OrderPolicy;
@@ -133,6 +141,10 @@ class AuthServiceProvider extends ServiceProvider
         StockBalance::class => StockBalancePolicy::class,
         StockMovement::class => StockMovementPolicy::class,
         StockReservation::class => StockReservationPolicy::class,
+        CustomerImportConfiguration::class => CustomerImportConfigurationPolicy::class,
+        CustomerApiConfiguration::class => CustomerApiConfigurationPolicy::class,
+        CustomerExportConfiguration::class => CustomerExportConfigurationPolicy::class,
+        ExportJob::class => ExportJobPolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

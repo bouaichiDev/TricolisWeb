@@ -39,6 +39,11 @@ use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Packages\PackageTypeController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
+use App\Http\Controllers\Api\V1\Tours\TourController;
+use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
+use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
+use App\Http\Controllers\Api\V1\Tours\TourStopController;
+use App\Http\Controllers\Api\V1\Tours\TourStopServiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(static function (): void {
@@ -136,5 +141,25 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->parameters(['lines' => 'line'])
             ->except(['create', 'edit']);
         Route::apiResource('orders', OrderController::class)->except(['create', 'edit']);
+
+        // Planification — les routes `reorder` precedent les apiResource pour
+        // qu'aucune ne soit captee comme un identifiant.
+        Route::post('tours/{tour}/stops/reorder', [TourStopController::class, 'reorder'])->name('tours.stops.reorder');
+        Route::post('tours/{tour}/stops/{tourStop}/services/reorder', [TourStopServiceController::class, 'reorder'])->name('tours.stops.services.reorder');
+        Route::post('tours/{tour}/periods/reorder', [TourPeriodController::class, 'reorder'])->name('tours.periods.reorder');
+
+        Route::apiResource('tours.stops.services', TourStopServiceController::class)
+            ->parameters(['stops' => 'tourStop', 'services' => 'tourStopService'])
+            ->except(['create', 'edit']);
+        Route::apiResource('tours.stops', TourStopController::class)
+            ->parameters(['stops' => 'tourStop'])
+            ->except(['create', 'edit']);
+        Route::apiResource('tours.periods.assignments', TourPeriodAssignmentController::class)
+            ->parameters(['periods' => 'tourPeriod', 'assignments' => 'assignment'])
+            ->except(['create', 'edit']);
+        Route::apiResource('tours.periods', TourPeriodController::class)
+            ->parameters(['periods' => 'tourPeriod'])
+            ->except(['create', 'edit']);
+        Route::apiResource('tours', TourController::class)->except(['create', 'edit']);
     });
 });

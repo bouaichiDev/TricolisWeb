@@ -18,6 +18,9 @@ use App\Http\Controllers\Api\V1\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Customers\CustomerSiteController;
 use App\Http\Controllers\Api\V1\Documents\DocumentController;
 use App\Http\Controllers\Api\V1\Documents\DocumentLinkController;
+use App\Http\Controllers\Api\V1\Drivers\DriverController;
+use App\Http\Controllers\Api\V1\Fleet\VehicleController;
+use App\Http\Controllers\Api\V1\Fleet\VehicleTypeController;
 use App\Http\Controllers\Api\V1\Identity\OrganizationUserController;
 use App\Http\Controllers\Api\V1\Identity\PermissionController;
 use App\Http\Controllers\Api\V1\Identity\RoleController;
@@ -35,6 +38,7 @@ use App\Http\Controllers\Api\V1\Packages\GroupingTypeController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Packages\PackageTypeController;
+use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(static function (): void {
@@ -93,6 +97,14 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('roles', RoleController::class)->except(['create', 'edit']);
         Route::apiResource('users', UserController::class)->except(['create', 'edit']);
         Route::apiResource('organization-users', OrganizationUserController::class)->except(['create', 'edit']);
+        Route::apiResource('providers', ProviderController::class)->except(['create', 'edit']);
+        Route::apiResource('drivers', DriverController::class)->except(['create', 'edit']);
+        // Sans ce renommage, Laravel genere le parametre `vehicle_type` et la
+        // liaison implicite vers $vehicleType ne se fait pas.
+        Route::apiResource('vehicle-types', VehicleTypeController::class)
+            ->parameters(['vehicle-types' => 'vehicleType'])
+            ->except(['create', 'edit']);
+        Route::apiResource('vehicles', VehicleController::class)->except(['create', 'edit']);
         Route::apiResource('services', ServiceController::class)->except(['create', 'edit']);
         Route::get('package-types', [PackageTypeController::class, 'index'])->name('package-types.index');
         Route::post('package-types', [PackageTypeController::class, 'store'])->name('package-types.store');

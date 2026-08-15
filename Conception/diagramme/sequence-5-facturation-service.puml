@@ -1,0 +1,112 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 220
+
+title Tricolis V2 — Séquence 5 — Facturation d'un service exécuté
+
+actor "Client HTTP" as U
+participant "InvoiceLine\nController" as C
+participant "AddInvoiceLine\nActAion" as A
+participant "BillingScopeGuard" as G
+participant "CalculateInvoice\nLineTotals" as CA
+participant "Money\ncalcul décimal" as M
+participant "RecalculateInvoice\nTotals" as T
+database "MySQL" as DB
+
+autonumber
+
+U -> C : POST /invoices/{invoice}/lines\n{ orderServiceId, description,\nquantity: 1, unitPrice: 450 }
+activate C
+
+C -> C : authorize('create', InvoiceLine)
+C -> A : execute(facture, data, contexte)
+activate A
+
+A -> G : orderService(id, client de la facture)
+activate G
+alt service appartenant à un autre client
+  G --> U : 422 orderServiceId
+end
+G --> A : OrderService
+A -> G : assertOrderMatchesService()
+note right of G
+  La ligne, le service et la commande
+  doivent désigner le même client.
+  Vérifier le seul périmètre de
+  l'organisation ne suffirait pas.
+end note
+G --> A : cohérent
+deactivate G
+
+A -> CA : quantité, prix unitaire,\ntaux de remise, taux de taxe
+activate CA
+CA -> M : quantité × prix, puis remise et taxe
+activate M
+note right of M
+  Les quatre opérations gardent dix décimales.
+  L'arrondi n'a lieu qu'une seule fois, à la fin.
+  Arrondir à chaque étape ferait dériver le total
+  de quelques centimes sur une longue facture.
+
+  Aucun nombre à virgule flottante n'est employé :
+  les montants sont des chaînes de caractères,
+  de la base de données jusqu'à la réponse JSON.
+end note
+M --> CA : montants arrondis à deux décimales
+deactivate M
+CA --> A : total hors taxe,\ntotal toutes taxes comprises
+deactivate CA
+
+group DB::transaction
+
+  A -> DB : INSERT invoice_lines
+  alt ce service est déjà facturé
+    DB --> A : violation de l'UNIQUE\nsur order_service_id
+    A --> U : 422 service déjà facturé
+    note right of DB
+      Garantie au niveau base, pas
+      seulement applicatif : deux requêtes
+      concurrentes ne peuvent pas facturer
+      deux fois le même service.
+    end note
+  end
+
+  A -> T : recalcule les totaux de la facture
+  activate T
+  T -> DB : relit toutes les lignes
+  T -> M : additionne les lignes
+  activate M
+  M --> T : sous-total et total
+  deactivate M
+  T -> T : total des taxes = total − sous-total
+  note right of T
+    Déduit, jamais sommé ligne à ligne.
+    Sommer les taxes accumulerait un arrondi
+    à chaque ligne, et le total cesserait
+    d'égaler la somme des nombres affichés.
+  end note
+  T -> DB : UPDATE invoices\n(subtotal, tax_total, total)
+  T --> A : totaux à jour
+  deactivate T
+
+  A -> DB : INSERT audit_logs\n(invoice_line.created)
+
+end
+
+A --> C : InvoiceLine
+deactivate A
+C --> U : 201 { data, subtotal: "450.00" }
+deactivate C
+
+legend right
+  Deux unicités indépendantes sur order_service_id :
+  l'une sur invoice_lines, l'autre sur
+  provider_settlement_lines. Un service se facture
+  une fois au client et se décompte une fois au
+  fournisseur — il peut être les deux.
+end legend
+
+@enduml

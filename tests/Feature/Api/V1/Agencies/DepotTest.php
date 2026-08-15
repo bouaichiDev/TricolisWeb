@@ -53,7 +53,7 @@ describe('depots', function (): void {
         $this->actingAs($this->user, 'sanctum')
             ->withHeaders($this->headers)
             ->getJson("/api/v1/agencies/{$foreignAgency->id}/depots/{$foreignDepot->id}")
-            ->assertForbidden();
+            ->assertNotFound();
     });
 
     it('rejects a forbidden sort column on the depot list', function (): void {

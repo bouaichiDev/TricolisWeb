@@ -167,12 +167,18 @@ class CustomerController extends Controller
     /**
      * Changer le statut d'un client.
      *
-     * Permission requise : `customers.update`. Le changement est audité avec
+     * Permission requise : `customers.update`, ou **`customers.block`** lorsque
+     * le statut visé est `blocked`. Bloquer un client interrompt ses commandes ;
+     * ce n'est pas une correction de fiche. Le changement est audité avec
      * l'ancien et le nouveau statut.
      */
     public function updateStatus(UpdateCustomerStatusRequest $request, Customer $customer): JsonResponse
     {
-        $this->authorize('update', $customer);
+        $this->authorize(
+            $request->validated('status') === CustomerStatus::BLOCKED->value ? 'block' : 'update',
+            $customer,
+        );
+
         $oldValues = ['status' => $customer->status?->value];
         $customer->update(['status' => $request->validated('status')]);
         $this->audit($request, $customer->organization_id, 'status_changed', $customer, $oldValues, ['status' => $customer->status?->value]);

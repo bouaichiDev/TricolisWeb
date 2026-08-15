@@ -91,7 +91,7 @@ describe('addresses', function (): void {
             ->withHeaders($this->headers)
             ->getJson("/api/v1/addresses/{$address->id}");
 
-        $response->assertForbidden();
+        $response->assertNotFound();
     });
 
     it('updates an address', function (): void {

@@ -25,14 +25,14 @@ it('creates a draft order with at least one line', function (): void {
         ->postJson('/api/v1/orders', [
             'customerId' => $this->customer->id,
             'agencyId' => $this->agency->id,
-            'orderNumber' => 'ORD-0001',
             'orderDate' => now()->toISOString(),
             'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 2]],
             'services' => [$this->orderService],
         ]);
 
+    // Le numéro est attribué par la séquence, jamais par l'appelant.
     $response->assertCreated()
-        ->assertJsonPath('data.orderNumber', 'ORD-0001')
+        ->assertJsonPath('data.orderNumber', 'ORD-'.now()->format('Y').'-000001')
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonCount(1, 'data.lines')
         ->assertJsonCount(1, 'data.services');
@@ -45,7 +45,6 @@ it('requires at least one order line', function (): void {
         ->postJson('/api/v1/orders', [
             'customerId' => $this->customer->id,
             'agencyId' => $this->agency->id,
-            'orderNumber' => 'ORD-EMPTY',
             'orderDate' => now()->toISOString(),
             'lines' => [],
             'services' => [$this->orderService],
@@ -57,7 +56,6 @@ it('requires at least one order service', function (): void {
         ->postJson('/api/v1/orders', [
             'customerId' => $this->customer->id,
             'agencyId' => $this->agency->id,
-            'orderNumber' => 'ORD-NO-SERVICE',
             'orderDate' => now()->toISOString(),
             'lines' => [['name' => 'Article', 'quantity' => 1]],
             'services' => [],
@@ -70,7 +68,6 @@ it('prevents using a customer from another organization', function (): void {
         ->postJson('/api/v1/orders', [
             'customerId' => $customer->id,
             'agencyId' => $this->agency->id,
-            'orderNumber' => 'ORD-INVALID',
             'orderDate' => now()->toISOString(),
             'lines' => [['name' => 'Article', 'quantity' => 1]],
             'services' => [$this->orderService],

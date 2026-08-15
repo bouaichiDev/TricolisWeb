@@ -13,6 +13,10 @@ use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Claims\Models\Claim;
+use App\Modules\Communications\Models\CommunicationAttachment;
+use App\Modules\Communications\Models\CommunicationRule;
+use App\Modules\Communications\Models\CommunicationTemplate;
+use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
 use App\Modules\Customers\Models\Customer;
@@ -53,6 +57,9 @@ use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\ClaimPolicy;
+use App\Policies\CommunicationAttachmentPolicy;
+use App\Policies\CommunicationRulePolicy;
+use App\Policies\CommunicationTemplatePolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\CustomerApiConfigurationPolicy;
 use App\Policies\CustomerCatalogPolicy;
@@ -68,6 +75,7 @@ use App\Policies\EntityContactPolicy;
 use App\Policies\ExportJobPolicy;
 use App\Policies\InvoiceLinePolicy;
 use App\Policies\InvoicePolicy;
+use App\Policies\OrderCommunicationPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
@@ -145,6 +153,10 @@ class AuthServiceProvider extends ServiceProvider
         CustomerApiConfiguration::class => CustomerApiConfigurationPolicy::class,
         CustomerExportConfiguration::class => CustomerExportConfigurationPolicy::class,
         ExportJob::class => ExportJobPolicy::class,
+        CommunicationTemplate::class => CommunicationTemplatePolicy::class,
+        CommunicationRule::class => CommunicationRulePolicy::class,
+        OrderCommunication::class => OrderCommunicationPolicy::class,
+        CommunicationAttachment::class => CommunicationAttachmentPolicy::class,
         Document::class => DocumentPolicy::class,
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,

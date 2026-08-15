@@ -49,7 +49,6 @@ final readonly class ManageImportConfigurationAction
             $configuration,
             $data->attributes->all(),
             'customer_import_configuration.updated',
-            self::AUDITED,
             $context,
         );
     }

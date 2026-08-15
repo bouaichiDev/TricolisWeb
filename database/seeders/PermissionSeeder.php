@@ -229,6 +229,28 @@ class PermissionSeeder extends Seeder
         ['code' => 'export_jobs.view', 'name' => 'Voir les exports', 'module' => 'export_jobs', 'action' => 'view'],
         ['code' => 'export_jobs.create', 'name' => 'Déclencher un export', 'module' => 'export_jobs', 'action' => 'create'],
         ['code' => 'export_jobs.retry', 'name' => 'Relancer un export', 'module' => 'export_jobs', 'action' => 'retry'],
+
+        ['code' => 'communication_templates.view', 'name' => 'Voir les modèles de message', 'module' => 'communication_templates', 'action' => 'view'],
+        ['code' => 'communication_templates.create', 'name' => 'Créer un modèle de message', 'module' => 'communication_templates', 'action' => 'create'],
+        ['code' => 'communication_templates.update', 'name' => 'Modifier un modèle de message', 'module' => 'communication_templates', 'action' => 'update'],
+        ['code' => 'communication_templates.delete', 'name' => 'Supprimer un modèle de message', 'module' => 'communication_templates', 'action' => 'delete'],
+
+        ['code' => 'communication_rules.view', 'name' => 'Voir les règles de communication', 'module' => 'communication_rules', 'action' => 'view'],
+        ['code' => 'communication_rules.create', 'name' => 'Créer une règle de communication', 'module' => 'communication_rules', 'action' => 'create'],
+        ['code' => 'communication_rules.update', 'name' => 'Modifier une règle de communication', 'module' => 'communication_rules', 'action' => 'update'],
+        ['code' => 'communication_rules.delete', 'name' => 'Supprimer une règle de communication', 'module' => 'communication_rules', 'action' => 'delete'],
+
+        ['code' => 'order_communications.view', 'name' => 'Voir les communications', 'module' => 'order_communications', 'action' => 'view'],
+        ['code' => 'order_communications.create', 'name' => 'Créer une communication', 'module' => 'order_communications', 'action' => 'create'],
+        ['code' => 'order_communications.update', 'name' => 'Modifier une communication', 'module' => 'order_communications', 'action' => 'update'],
+        ['code' => 'order_communications.delete', 'name' => 'Supprimer une communication', 'module' => 'order_communications', 'action' => 'delete'],
+        ['code' => 'order_communications.queue', 'name' => 'Mettre une communication en file', 'module' => 'order_communications', 'action' => 'queue'],
+        ['code' => 'order_communications.cancel', 'name' => 'Annuler une communication', 'module' => 'order_communications', 'action' => 'cancel'],
+        ['code' => 'order_communications.retry', 'name' => 'Relancer une communication', 'module' => 'order_communications', 'action' => 'retry'],
+
+        ['code' => 'communication_attachments.view', 'name' => 'Voir les pièces jointes', 'module' => 'communication_attachments', 'action' => 'view'],
+        ['code' => 'communication_attachments.create', 'name' => 'Ajouter une pièce jointe', 'module' => 'communication_attachments', 'action' => 'create'],
+        ['code' => 'communication_attachments.delete', 'name' => 'Supprimer une pièce jointe', 'module' => 'communication_attachments', 'action' => 'delete'],
     ];
 
     public function run(): void

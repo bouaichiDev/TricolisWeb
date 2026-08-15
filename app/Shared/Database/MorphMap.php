@@ -14,6 +14,10 @@ use App\Modules\Billing\Models\InvoiceLineAddressSnapshot;
 use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Catalogs\Models\CustomerCatalogItem;
 use App\Modules\Claims\Models\Claim;
+use App\Modules\Communications\Models\CommunicationAttachment;
+use App\Modules\Communications\Models\CommunicationRule;
+use App\Modules\Communications\Models\CommunicationTemplate;
+use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\AddressContact;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
@@ -177,6 +181,14 @@ final class MorphMap
 
     public const string EXPORT_JOB = 'export_job';
 
+    public const string COMMUNICATION_TEMPLATE = 'communication_template';
+
+    public const string COMMUNICATION_RULE = 'communication_rule';
+
+    public const string ORDER_COMMUNICATION = 'order_communication';
+
+    public const string COMMUNICATION_ATTACHMENT = 'communication_attachment';
+
     /**
      * Enregistre la morph map auprÃ¨s d'Eloquent.
      *
@@ -241,6 +253,10 @@ final class MorphMap
             self::CUSTOMER_API_CONFIGURATION => CustomerApiConfiguration::class,
             self::CUSTOMER_EXPORT_CONFIGURATION => CustomerExportConfiguration::class,
             self::EXPORT_JOB => ExportJob::class,
+            self::COMMUNICATION_TEMPLATE => CommunicationTemplate::class,
+            self::COMMUNICATION_RULE => CommunicationRule::class,
+            self::ORDER_COMMUNICATION => OrderCommunication::class,
+            self::COMMUNICATION_ATTACHMENT => CommunicationAttachment::class,
         ]);
     }
 

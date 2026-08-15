@@ -526,5 +526,11 @@
     "administration": "Administration",
     "platform": "Plateforme",
     "other": "Autres"
+  },
+  "menu": {
+    "settings": "Menu de navigation",
+    "settingsHint": "Choisissez les entrées visibles par les utilisateurs de cette organisation. Les entrées masquées disparaissent pour tout le monde.",
+    "alwaysVisible": "Toujours visible — la masquer priverait l’organisation de ses écrans d’administration.",
+    "saved": "Menu enregistré."
   }
 }

@@ -1,6 +1,8 @@
 <?php
 
 use App\Modules\Identity\Models\Permission;
+use App\Shared\Menu\MenuCatalogue;
+use App\Shared\Menu\MenuEntry;
 
 /**
  * Cohérence entre le menu du frontend et le référentiel de permissions.
@@ -71,4 +73,60 @@ it('guards routes with permissions that exist too', function (): void {
 
     expect(array_unique($required))->not->toBeEmpty()
         ->and(array_diff(array_unique($required), $known))->toBe([]);
+});
+
+/**
+ * Le catalogue de menu est désormais la source : c'est lui que le frontend
+ * consomme. Ses permissions et ses routes doivent donc exister, faute de quoi
+ * l'entrée disparaît ou mène à « Page introuvable ».
+ */
+describe('menu catalogue', function (): void {
+    it('names only permissions that exist', function (): void {
+        $required = array_values(array_filter(array_map(
+            static fn (MenuEntry $entry): ?string => $entry->permission,
+            MenuCatalogue::entries(),
+        )));
+
+        expect(array_diff($required, Permission::pluck('code')->all()))->toBe([]);
+    });
+
+    /**
+     * Une route du catalogue absente du routeur React donne « Page introuvable »
+     * — ce que l'utilisateur a déjà vu quand le menu proposait /organizations
+     * avant que la page n'existe.
+     */
+    it('names only routes declared in the React router', function (): void {
+        $directory = base_path('frontend/src/app/router/routes');
+
+        if (! is_dir($directory)) {
+            $this->markTestSkipped('Le frontend n’est pas présent dans cette copie de travail.');
+        }
+
+        $declared = [];
+
+        foreach (glob($directory.'/*.tsx') ?: [] as $file) {
+            preg_match_all('/path="([^"]+)"/', (string) file_get_contents($file), $matches);
+            $declared = array_merge($declared, $matches[1]);
+        }
+
+        $declared[] = '/dashboard';
+
+        $routes = array_values(array_filter(array_map(
+            static fn (MenuEntry $entry): ?string => $entry->route,
+            MenuCatalogue::entries(),
+        )));
+
+        expect(array_diff($routes, $declared))->toBe([]);
+    });
+
+    it('gives every child a parent that exists', function (): void {
+        $codes = MenuCatalogue::codes();
+
+        $parents = array_values(array_filter(array_map(
+            static fn (MenuEntry $entry): ?string => $entry->parent,
+            MenuCatalogue::entries(),
+        )));
+
+        expect(array_diff($parents, $codes))->toBe([]);
+    });
 });

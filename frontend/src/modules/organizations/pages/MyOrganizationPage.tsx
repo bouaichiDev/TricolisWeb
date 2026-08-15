@@ -1,7 +1,11 @@
+import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 
 import { OrganizationDetailPage } from './OrganizationDetailPage'
+import { MenuSettingsPanel } from '@/modules/menu/components/MenuSettingsPanel'
+import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
+import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useAuth } from '@/shared/hooks/useAuth'
 
 /**
@@ -17,6 +21,7 @@ import { useAuth } from '@/shared/hooks/useAuth'
  * dans la barre d'adresse n'a donc aucune prise ici.
  */
 export function MyOrganizationPage() {
+  const { t } = useTranslation()
   const { organizationId, isLoading } = useAuth()
 
   if (isLoading) return null
@@ -25,7 +30,19 @@ export function MyOrganizationPage() {
     return <EmptyState title="Aucune organisation active" />
   }
 
-  return <OrganizationDetailPage organizationId={organizationId} />
+  return (
+    <div className="flex flex-col gap-6">
+      <OrganizationDetailPage organizationId={organizationId} />
+
+      {/* Régler le menu relève de l'administration de l'organisation, d'où la
+          même permission que sa modification. */}
+      <PermissionGuard permission="organizations.update">
+        <SectionCard title={t('menu.settings')}>
+          <MenuSettingsPanel />
+        </SectionCard>
+      </PermissionGuard>
+    </div>
+  )
 }
 
 /** Redirection depuis une ancienne adresse de liste, pour un compte local. */

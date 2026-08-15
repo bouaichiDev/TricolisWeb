@@ -18,6 +18,22 @@ abstract class Controller
     use AuthorizesRequests;
 
     /**
+     * Organisation active, ou `null` lorsque l'appelant n'en désigne aucune.
+     *
+     * Utile aux routes qui servent les deux portées : un compte plateforme
+     * n'agit dans aucune organisation, et exiger l'en-tête lui interdirait
+     * l'accès. Les routes qui *travaillent* dans une organisation continuent
+     * d'utiliser `requireOrganizationId()`, qui vérifie aussi l'appartenance.
+     */
+    protected function organizationId(): ?string
+    {
+        /** @var CurrentOrganizationContext $context */
+        $context = Container::getInstance()->make(CurrentOrganizationContext::class);
+
+        return $context->hasOrganizationAccess() ? $context->getOrganizationId() : null;
+    }
+
+    /**
      * @throws AuthorizationException
      */
     protected function requireOrganizationId(): string

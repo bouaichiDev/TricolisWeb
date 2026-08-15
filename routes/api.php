@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\V1\Orders\OrderLineController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceContactController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceController;
 use App\Http\Controllers\Api\V1\Orders\ServiceController;
+use App\Http\Controllers\Api\V1\Organizations\MenuController;
 use App\Http\Controllers\Api\V1\Organizations\OrganizationController;
 use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
 use App\Http\Controllers\Api\V1\Packages\GroupingTypeController;
@@ -87,7 +88,14 @@ Route::prefix('auth')->name('auth.')->group(static function (): void {
 Route::middleware('auth:sanctum')->group(static function (): void {
     Route::apiResource('organizations', OrganizationController::class)->except(['create', 'edit']);
 
+    // Le menu effectif se lit sans en-tete d'organisation : un compte
+    // plateforme n'en a pas, et le resolveur choisit le catalogue d'apres la
+    // portee du compte.
+    Route::get('menu', [MenuController::class, 'index'])->name('menu.index');
+
     Route::middleware('organization')->group(static function (): void {
+        Route::get('menu/catalogue', [MenuController::class, 'catalogue'])->name('menu.catalogue');
+        Route::patch('menu', [MenuController::class, 'update'])->name('menu.update');
         Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
         Route::post('subscription', [SubscriptionController::class, 'store'])->name('subscription.store');
         Route::patch('subscription', [SubscriptionController::class, 'update'])->name('subscription.update');

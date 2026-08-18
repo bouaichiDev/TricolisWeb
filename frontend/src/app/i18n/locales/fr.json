@@ -76,7 +76,13 @@
     "main": "Navigation principale",
     "collapse": "Réduire le menu",
     "resources": "Ressources",
-    "myOrganization": "Mon organisation"
+    "myOrganization": "Mon organisation",
+    "services": "Services",
+    "packageTypes": "Types de colis",
+    "groupingTypes": "Types de regroupement",
+    "operations": "Exploitation",
+    "orders": "Commandes",
+    "catalogs": "Catalogues"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -457,7 +463,8 @@
     "country": "Le code pays doit comporter deux lettres.",
     "currency": "Le code devise doit comporter trois lettres.",
     "password": "Le mot de passe doit contenir au moins 8 caractères.",
-    "passwordMismatch": "Les deux mots de passe ne correspondent pas."
+    "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
+    "integer": "Nombre entier attendu."
   },
   "toast": {
     "created": "Création effectuée.",
@@ -532,5 +539,56 @@
     "settingsHint": "Choisissez les entrées visibles par les utilisateurs de cette organisation. Les entrées masquées disparaissent pour tout le monde.",
     "alwaysVisible": "Toujours visible — la masquer priverait l’organisation de ses écrans d’administration.",
     "saved": "Menu enregistré."
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Prestations que Tricolis exécute pour ses clients",
+    "create": "Nouveau service",
+    "edit": "Modifier le service",
+    "codeLocked": "Le code identifie le service pour les commandes.",
+    "unitHint": "Unité de comptage : heure, palette, colis…",
+    "behaviourHint": "Ces choix déterminent ce que le formulaire de commande exigera.",
+    "requiresAddressHint": "Une adresse d’exécution sera obligatoire.",
+    "requiresContactHint": "Un contact sur place sera obligatoire.",
+    "billable": "Facturé au client",
+    "payable": "Payé au prestataire",
+    "minutes": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "sections": {
+      "general": "Informations générales",
+      "behaviour": "Comportement"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "unit": "Unité",
+      "defaultDurationMinutes": "Durée par défaut",
+      "billableToCustomer": "Facturable au client",
+      "payableToProvider": "Payable au prestataire",
+      "requiresAddress": "Exige une adresse",
+      "requiresContact": "Exige un contact",
+      "status": "Statut"
+    }
+  },
+  "packages": {
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "status": "Statut"
+    }
+  },
+  "packageTypes": {
+    "title": "Types de colis",
+    "subtitle": "Palette, carton, bac — la nature physique d’un colis",
+    "create": "Nouveau type de colis",
+    "edit": "Modifier le type de colis",
+    "empty": "Aucun type de colis"
+  },
+  "groupingTypes": {
+    "title": "Types de regroupement",
+    "subtitle": "La façon dont les colis sont assemblés",
+    "create": "Nouveau type de regroupement",
+    "edit": "Modifier le type de regroupement",
+    "empty": "Aucun type de regroupement"
   }
 }

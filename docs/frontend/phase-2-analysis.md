@@ -114,10 +114,14 @@ commande. Réel, pas fabriqué depuis `updatedAt`.
 | §11 colonne et filtre `priority` | Aucun champ `priority` sur `Order` | Non affiché |
 | §11 `requestedDateFrom` / `To` | `requestedDate` seul, date unique | Filtre à date unique |
 | §15 réordonner les arrêts | Aucune route `reorder` pour les services | `sequence` saisie, pas de glisser-déposer |
-| §24 recherche sur `/package-types` | `index` sans filtre | Liste simple |
 | §29 `billingStatus` sur `OrderService` | Absent de la ressource | Non affiché |
 
 Aucune de ces absences ne sera contournée par une invention.
+
+> **Correction.** Une première lecture concluait que `/package-types` n'offrait
+> aucun filtre. C'est faux : `PackageReferentialController::index` supporte
+> `search` sur `code` et `name`, le filtre `status`, et le tri sur `code`,
+> `name`, `created_at`. La recherche sera donc bien proposée.
 
 ---
 

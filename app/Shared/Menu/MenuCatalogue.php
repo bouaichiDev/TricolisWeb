@@ -86,6 +86,47 @@ final class MenuCatalogue
                 parent: 'resources',
             ),
 
+            // Exploitation — Phase 2. Les référentiels de colis sont
+            // gouvernés par `packages.*` : `PermissionSeeder` ne leur donne
+            // aucune permission propre.
+            new MenuEntry(
+                code: 'operations',
+                labelKey: 'nav.operations',
+                icon: 'ClipboardList',
+                section: MenuSection::OPERATIONS,
+                position: 30,
+            ),
+            new MenuEntry(
+                code: 'services',
+                labelKey: 'nav.services',
+                icon: 'Wrench',
+                section: MenuSection::OPERATIONS,
+                position: 32,
+                route: '/services',
+                permission: 'services.view',
+                parent: 'operations',
+            ),
+            new MenuEntry(
+                code: 'package-types',
+                labelKey: 'nav.packageTypes',
+                icon: 'Package',
+                section: MenuSection::OPERATIONS,
+                position: 33,
+                route: '/package-types',
+                permission: 'packages.view',
+                parent: 'operations',
+            ),
+            new MenuEntry(
+                code: 'grouping-types',
+                labelKey: 'nav.groupingTypes',
+                icon: 'Layers',
+                section: MenuSection::OPERATIONS,
+                position: 34,
+                route: '/package-grouping-types',
+                permission: 'packages.view',
+                parent: 'operations',
+            ),
+
             // L'administration ne se masque pas : un organisme qui la
             // retirerait n'aurait plus d'écran pour revenir en arrière.
             new MenuEntry(

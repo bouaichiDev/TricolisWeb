@@ -2,12 +2,15 @@ import {
   Boxes,
   Building2,
   ClipboardList,
+  Layers,
   LayoutDashboard,
   Network,
+  Package,
   Settings,
   Shield,
   Users,
   Warehouse,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -32,6 +35,9 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   Shield,
   ClipboardList,
+  Wrench,
+  Package,
+  Layers,
 }
 
 export function menuIcon(name: string): LucideIcon {

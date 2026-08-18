@@ -411,3 +411,54 @@ lecture, comme l'email d'un membre en Phase 1.
 | `allowsContentChanges` pilote l'édition | confirmé |
 | Pas de page globale `/catalogs` | confirmé |
 | `AsyncSelect`, `AddressSelector`, `ContactSelector` à créer | §43 — confirmé |
+
+
+---
+
+## 14. Les clés temporaires : ce que le backend accepte réellement
+
+Le §23 du prompt corrigé demande des clés stables et interdit l'index du
+tableau. Le backend ne traite pas les deux cas de la même façon.
+
+**Les colis acceptent une clé libre.** `CreateOrderPackages::execute()` indexe
+le résultat par trois entrées :
+
+```php
+$created[(string) $index] = $model;
+$created[$model->id] = $model;
+if ($package->key !== null) { $created[$package->key] = $model; }
+```
+
+`parentKey` et `services[].packages[].packageKey` peuvent donc porter un
+identifiant stable.
+
+**Les lignes non.** `CreateOrderLines::execute()` n'indexe que par la position
+et par l'identifiant :
+
+```php
+$created[(string) $index] = $model;
+$created[$model->id] = $model;
+```
+
+Il n'existe pas de `lines[].key` dans `StoreOrderRequest`. **`lineKey` doit
+donc valoir la position de la ligne dans le tableau envoyé.**
+
+### La conciliation retenue
+
+Le §23 a raison sur le fond : dans l'état du formulaire, retirer une ligne
+décalerait toutes les positions suivantes et casserait les affectations déjà
+faites. Chaque ligne porte donc un identifiant stable en mémoire —
+`crypto.randomUUID()` — et **la position n'est calculée qu'au moment de
+sérialiser**, sur le tableau définitif. L'index ne sert jamais d'identité.
+
+### Contrainte d'ordre sur les colis
+
+`CreateOrderPackages` construit son index au fil de la boucle : un colis
+désigné comme parent doit **précéder** ses enfants dans le tableau. Le
+formulaire sérialisera donc les colis en parcourant l'arbre de haut en bas.
+
+### Ce qui manquerait côté API
+
+Un `lines[].key` accepté par `StoreOrderRequest` et indexé comme celui des
+colis rendrait les deux cas symétriques, et le formulaire n'aurait plus à
+convertir. Le manque est consigné, pas contourné.

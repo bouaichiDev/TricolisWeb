@@ -635,5 +635,74 @@
       "height": "Hauteur",
       "status": "Statut"
     }
+  },
+  "orders": {
+    "title": "Commandes",
+    "subtitle": "Demandes de transport et de manutention",
+    "create": "Nouvelle commande",
+    "empty": "Aucune commande",
+    "created": "Commande créée.",
+    "duplicated": "Commande dupliquée.",
+    "statusChanged": "Statut de la commande modifié.",
+    "searchPlaceholder": "N°, référence externe ou client…",
+    "lineCount": "{{count}} ligne",
+    "lineCount_other": "{{count}} lignes",
+    "serviceCount": "{{count}} service",
+    "serviceCount_other": "{{count}} services",
+    "fields": {
+      "orderNumber": "N° commande",
+      "externalReference": "Référence externe",
+      "customerReference": "Référence client",
+      "customer": "Client",
+      "agency": "Agence",
+      "depot": "Dépôt",
+      "orderType": "Type",
+      "orderDate": "Date",
+      "source": "Source",
+      "status": "Statut",
+      "content": "Contenu",
+      "requestedDate": "Date demandée",
+      "city": "Ville",
+      "currencyCode": "Devise",
+      "groupCode": "Code de groupe",
+      "internalRemark": "Remarque interne",
+      "workerRemark": "Consigne exécutant",
+      "weight": "Poids",
+      "volume": "Volume",
+      "packageCount": "Colis"
+    }
+  },
+  "orderStatuses": {
+    "draft": "Brouillon",
+    "confirmed": "Confirmée",
+    "ready": "Prête",
+    "partially_planned": "Partiellement planifiée",
+    "planned": "Planifiée",
+    "in_progress": "En cours",
+    "completed": "Terminée",
+    "cancelled": "Annulée",
+    "partially_invoiced": "Partiellement facturée",
+    "invoiced": "Facturée"
+  },
+  "orderSources": {
+    "internal": "Saisie interne",
+    "customer_portal": "Portail client",
+    "rest_api": "API",
+    "csv_import": "Import CSV",
+    "excel_import": "Import Excel",
+    "xml_import": "Import XML",
+    "stock": "Stock",
+    "catalog": "Catalogue"
+  },
+  "orderServiceStatuses": {
+    "draft": "Brouillon",
+    "pending": "En attente",
+    "ready_to_plan": "À planifier",
+    "planned": "Planifié",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "cancelled": "Annulé",
+    "invoiced": "Facturé"
   }
 }

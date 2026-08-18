@@ -6,6 +6,7 @@ import { PackageTypeListPage } from '@/modules/packages/pages/PackageTypeListPag
 import { ServiceCreatePage } from '@/modules/services/pages/ServiceCreatePage'
 import { ServiceDetailPage } from '@/modules/services/pages/ServiceDetailPage'
 import { ServiceEditPage } from '@/modules/services/pages/ServiceEditPage'
+import { OrderListPage } from '@/modules/orders/pages/OrderListPage'
 import { ServiceListPage } from '@/modules/services/pages/ServiceListPage'
 
 /**
@@ -19,6 +20,12 @@ import { ServiceListPage } from '@/modules/services/pages/ServiceListPage'
  * organismes, pas à la plateforme.
  */
 export const operationsRoutes = [
+  <Route
+    key="orders"
+    path="/orders"
+    element={guarded('orders.view', <OrderListPage />, { organizationOnly: true })}
+  />,
+
   <Route
     key="services"
     path="/services"

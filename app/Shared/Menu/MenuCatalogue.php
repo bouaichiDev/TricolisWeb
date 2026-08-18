@@ -58,6 +58,10 @@ final class MenuCatalogue
                 permission: 'customers.view',
             ),
 
+            // Les catalogues n'ont pas de route globale : l'entree ouvre la
+            // liste des clients, d'ou on atteint le catalogue de chacun.
+            // Pointer vers /catalogs appellerait une API qui n'existe pas.
+
             new MenuEntry(
                 code: 'resources',
                 labelKey: 'nav.resources',
@@ -95,6 +99,16 @@ final class MenuCatalogue
                 icon: 'ClipboardList',
                 section: MenuSection::OPERATIONS,
                 position: 30,
+            ),
+            new MenuEntry(
+                code: 'orders',
+                labelKey: 'nav.orders',
+                icon: 'ClipboardList',
+                section: MenuSection::OPERATIONS,
+                position: 31,
+                route: '/orders',
+                permission: 'orders.view',
+                parent: 'operations',
             ),
             new MenuEntry(
                 code: 'services',

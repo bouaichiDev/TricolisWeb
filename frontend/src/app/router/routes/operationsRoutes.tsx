@@ -6,6 +6,9 @@ import { PackageTypeListPage } from '@/modules/packages/pages/PackageTypeListPag
 import { ServiceCreatePage } from '@/modules/services/pages/ServiceCreatePage'
 import { ServiceDetailPage } from '@/modules/services/pages/ServiceDetailPage'
 import { ServiceEditPage } from '@/modules/services/pages/ServiceEditPage'
+import { OrderCreatePage } from '@/modules/orders/pages/OrderCreatePage'
+import { OrderDetailPage } from '@/modules/orders/pages/OrderDetailPage'
+import { OrderEditPage } from '@/modules/orders/pages/OrderEditPage'
 import { OrderListPage } from '@/modules/orders/pages/OrderListPage'
 import { ServiceListPage } from '@/modules/services/pages/ServiceListPage'
 
@@ -24,6 +27,21 @@ export const operationsRoutes = [
     key="orders"
     path="/orders"
     element={guarded('orders.view', <OrderListPage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="order-create"
+    path="/orders/create"
+    element={guarded('orders.create', <OrderCreatePage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="order-detail"
+    path="/orders/:id"
+    element={guarded('orders.view', <OrderDetailPage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="order-edit"
+    path="/orders/:id/edit"
+    element={guarded('orders.update', <OrderEditPage />, { organizationOnly: true })}
   />,
 
   <Route

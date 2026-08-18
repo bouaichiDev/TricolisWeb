@@ -20,11 +20,18 @@ export const catalogKeys = {
     [...catalogKeys.all, 'detail', customerId, catalogId] as const,
 }
 
-export function useCatalogList(customerId: string, filters: CatalogFilters) {
+/**
+ * Catalogues d'un client.
+ *
+ * `enabled` permet de ne rien demander lorsque la capacité `catalogEnabled` du
+ * client est désactivée : la réponse serait vide, et l'appel n'aurait servi
+ * qu'à faire patienter.
+ */
+export function useCatalogList(customerId: string, filters: CatalogFilters, enabled = true) {
   return useQuery({
     queryKey: catalogKeys.list(customerId, filters),
     queryFn: () => catalogsApi.list(customerId, filters),
-    enabled: customerId !== '',
+    enabled: enabled && customerId !== '',
     placeholderData: (previous) => previous,
   })
 }

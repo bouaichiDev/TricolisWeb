@@ -33,7 +33,7 @@ export function CustomerCatalogsTab({ customerId, catalogEnabled }: CustomerCata
   const [filters, setFilters] = useState<CatalogFilters>({ page: 1, perPage: 25 })
   const [deleting, setDeleting] = useState<Catalog | null>(null)
 
-  const { data, isPending, error, refetch } = useCatalogList(customerId, filters)
+  const { data, isPending, error, refetch } = useCatalogList(customerId, filters, catalogEnabled)
   const remove = useDeleteCatalog(customerId)
 
   if (!catalogEnabled) {

@@ -57,3 +57,15 @@ globalThis.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 }
+
+/**
+ * Capture du pointeur et defilement programmatique.
+ *
+ * Radix s'en sert pour ses listes deroulantes ; jsdom ne les implemente pas,
+ * et leur absence fait echouer l'ouverture d'un `Select` avant toute
+ * assertion. Ce sont des manques de l'environnement, pas du composant.
+ */
+Element.prototype.hasPointerCapture = () => false
+Element.prototype.setPointerCapture = () => {}
+Element.prototype.releasePointerCapture = () => {}
+Element.prototype.scrollIntoView = () => {}

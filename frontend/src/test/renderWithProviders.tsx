@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, type RenderResult } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import { makeMembership, makeUser } from './fixtures'
 import { AuthContext } from '@/app/providers/AuthProvider'
@@ -13,6 +13,13 @@ interface Options {
   /** Appartenances disponibles ; par défaut, la seule appartenance active. */
   memberships?: AuthMembership[]
   route?: string
+  /**
+   * Motif de route sous lequel monter le composant.
+   *
+   * Nécessaire dès qu'une page lit `useParams` : sans motif, `/orders/:id` ne
+   * serait jamais apparié et l'identifiant resterait indéfini.
+   */
+  routePath?: string
   isAuthenticated?: boolean
   isLoading?: boolean
   /** Espion sur le changement d'organisation. */
@@ -34,6 +41,7 @@ export function renderWithProviders(ui: ReactElement, options: Options = {}): Re
   const {
     membership = makeMembership(),
     route = '/',
+    routePath,
     isAuthenticated = true,
     isLoading = false,
     onSwitchOrganization = () => {},
@@ -71,7 +79,15 @@ export function renderWithProviders(ui: ReactElement, options: Options = {}): Re
     return (
       <QueryClientProvider client={queryClient}>
         <AuthContext.Provider value={auth}>
-          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+          <MemoryRouter initialEntries={[route]}>
+            {routePath === undefined ? (
+              children
+            ) : (
+              <Routes>
+                <Route path={routePath} element={children} />
+              </Routes>
+            )}
+          </MemoryRouter>
         </AuthContext.Provider>
       </QueryClientProvider>
     )

@@ -8,6 +8,9 @@ import { CustomerListPage } from '@/modules/customers/pages/CustomerListPage'
 import { CustomerSiteCreatePage } from '@/modules/customerSites/pages/CustomerSiteCreatePage'
 import { CustomerSiteDetailPage } from '@/modules/customerSites/pages/CustomerSiteDetailPage'
 import { CustomerSiteEditPage } from '@/modules/customerSites/pages/CustomerSiteEditPage'
+import { CatalogCreatePage } from '@/modules/catalogs/pages/CatalogCreatePage'
+import { CatalogDetailPage } from '@/modules/catalogs/pages/CatalogDetailPage'
+import { CatalogEditPage } from '@/modules/catalogs/pages/CatalogEditPage'
 
 /**
  * Clients et sites client.
@@ -48,5 +51,24 @@ export const customerRoutes = [
     key="site-edit"
     path="/customers/:customerId/sites/:siteId/edit"
     element={guarded('customer_sites.update', <CustomerSiteEditPage />, { organizationOnly: true })}
+  />,
+
+  // Catalogues — Phase 2. Toujours imbriqués sous le client : il n'existe pas
+  // de route globale `/catalogs`, et en inventer une appellerait une API
+  // absente.
+  <Route
+    key="catalog-create"
+    path="/customers/:customerId/catalogs/create"
+    element={guarded('catalogs.create', <CatalogCreatePage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="catalog-detail"
+    path="/customers/:customerId/catalogs/:catalogId"
+    element={guarded('catalogs.view', <CatalogDetailPage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="catalog-edit"
+    path="/customers/:customerId/catalogs/:catalogId/edit"
+    element={guarded('catalogs.update', <CatalogEditPage />, { organizationOnly: true })}
   />,
 ]

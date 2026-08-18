@@ -5,6 +5,7 @@ import { CustomerConfigurationTab } from '../components/CustomerConfigurationTab
 import { CustomerHeader } from '../components/CustomerHeader'
 import { CustomerInformationTab } from '../components/CustomerInformationTab'
 import { useCustomer } from '../hooks/useCustomers'
+import { CustomerCatalogsTab } from '@/modules/catalogs/components/CustomerCatalogsTab'
 import { CustomerContactsTab } from '@/modules/contacts/components/EntityContactsTab'
 import { CustomerDocumentsTab } from '@/modules/documents/components/EntityDocumentsTab'
 import { CustomerSitesTab } from '@/modules/customerSites/components/CustomerSitesTab'
@@ -43,6 +44,7 @@ export function CustomerDetailPage() {
           <TabsTrigger value="sites">{t('customers.tabs.sites')}</TabsTrigger>
           <TabsTrigger value="addresses">{t('customers.tabs.addresses')}</TabsTrigger>
           <TabsTrigger value="documents">{t('customers.tabs.documents')}</TabsTrigger>
+          <TabsTrigger value="catalogs">{t('customers.tabs.catalogs')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('customers.tabs.configuration')}</TabsTrigger>
         </TabsList>
 
@@ -60,6 +62,16 @@ export function CustomerDetailPage() {
 
         <TabsContent value="documents" className="mt-6">
           <CustomerDocumentsTab entityId={customer.id} />
+        </TabsContent>
+
+        {/* Le catalogue est facultatif : l'onglet existe toujours, et dit
+            lui-même quand la capacité est désactivée. Le masquer laisserait
+            croire que la fonction n'existe pas. */}
+        <TabsContent value="catalogs" className="mt-6">
+          <CustomerCatalogsTab
+            customerId={customer.id}
+            catalogEnabled={customer.catalogEnabled}
+          />
         </TabsContent>
 
         <TabsContent value="configuration" className="mt-6">

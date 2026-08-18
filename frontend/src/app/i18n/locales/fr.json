@@ -295,7 +295,8 @@
       "contacts": "Contacts",
       "documents": "Documents",
       "configuration": "Configuration",
-      "addresses": "Adresses"
+      "addresses": "Adresses",
+      "catalogs": "Catalogues"
     },
     "fields": {
       "code": "Code",
@@ -590,5 +591,49 @@
     "create": "Nouveau type de regroupement",
     "edit": "Modifier le type de regroupement",
     "empty": "Aucun type de regroupement"
+  },
+  "catalogs": {
+    "title": "Catalogues",
+    "subtitle": "Articles que ce client fait transporter",
+    "create": "Nouveau catalogue",
+    "edit": "Modifier le catalogue",
+    "empty": "Aucun catalogue pour ce client",
+    "items": "{{count}} article",
+    "items_other": "{{count}} articles",
+    "deleteConfirm": "Supprimer « {{name}} » et tous ses articles ? Cette action est irréversible.",
+    "disabledTitle": "Catalogue désactivé pour ce client",
+    "disabledHint": "Activez la capacité « Catalogue » dans la configuration du client. Une commande reste créable sans catalogue, avec des lignes saisies à la main.",
+    "tabs": {
+      "information": "Informations",
+      "items": "Articles"
+    },
+    "sections": {
+      "general": "Informations générales"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "description": "Description",
+      "status": "Statut",
+      "itemCount": "Articles"
+    }
+  },
+  "catalogItems": {
+    "create": "Nouvel article",
+    "edit": "Modifier l’article",
+    "empty": "Aucun article dans ce catalogue",
+    "hint": "Le code article identifie la référence chez le client.",
+    "fields": {
+      "articleCode": "Code article",
+      "barcode": "Code-barres",
+      "name": "Nom",
+      "description": "Description",
+      "weight": "Poids",
+      "volume": "Volume",
+      "length": "Longueur",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "status": "Statut"
+    }
   }
 }

@@ -330,8 +330,10 @@ orpheline produit un 422 sur un chemin imbriqué — d'où le mapper du §31.
 
 **Les prix sont obligatoires à la création d'un service.**
 `customerUnitPrice`, `customerTotalPrice`, `providerUnitCost` et
-`providerTotalCost` sont `required`. Le §29 interdit de construire un moteur
-tarifaire : les champs seront saisis, avec `0` par défaut, sans calcul inventé.
+`providerTotalCost` sont `required`. Le prompt corrigé tranche : ne pas
+construire de moteur tarifaire, **et ne pas mettre `0` silencieusement**. Les
+quatre champs seront donc **saisis explicitement**, sans valeur par défaut ni
+calcul inventé — un `0` posé d'office serait une donnée métier fabriquée.
 
 **Le catalogue est facultatif** (§7) : `lines.*.catalogItemId` est `nullable`,
 et `name` devient requis en son absence. Les deux chemins seront testés (§60).
@@ -342,3 +344,66 @@ filtre de liste : c'est la source d'une ligne, au sens du §18.
 **Au moins un service est obligatoire** : `services` est `required|array|min:1`,
 comme `lines`. Une commande sans service ne peut pas être créée — le formulaire
 doit l'annoncer avant l'étape de vérification, pas après le refus.
+
+
+---
+
+## 13. Vérifications complémentaires — prompt corrigé
+
+Le prompt corrigé confirme l'absence d'`OrderStop` et valide la branche de
+base. Trois de ses énoncés ne correspondent pourtant pas au backend réel.
+
+### `plannedFrom`, `plannedTo`, `actualStartAt`, `actualEndAt` n'existent pas
+
+Le §25 les liste parmi les champs d'`OrderService`. Ils sont absents **du
+modèle, de la migration et de la ressource** :
+
+```bash
+grep -E "planned_from|actual_start_at" app/Modules/Orders/Models/OrderService.php   # rien
+grep -E "planned_from|actual_start_at" database/migrations/*order_services*         # rien
+```
+
+C'est cohérent avec le §2 du même prompt : la planification appartient à
+`TourStopService` et `TourStop`, phase ultérieure. Ces champs ne seront ni
+affichés ni saisis.
+
+### Les snapshots de contact ne portent pas le suffixe `Snapshot`
+
+Le §27 nomme `firstNameSnapshot`, `phoneSnapshot`… Ce sont les **colonnes**.
+`OrderServiceContactResource` les expose sans suffixe :
+
+```
+id  orderServiceId  contactId  contactRole
+firstName  lastName  phone  mobile  email
+isPrimary  createdAt
+```
+
+Le §45 demande de typer le contrat API, pas les colonnes SQL : ce sont ces
+noms-là qui seront utilisés.
+
+### La modification d'une commande ne touche ni au client ni à l'agence
+
+`UpdateOrderRequest` n'accepte que :
+
+```
+depotId  externalReference  customerReference  orderType
+groupCode  orderDate  currencyCode  internalRemark  workerRemark
+```
+
+`customerId` et `agencyId` en sont absents : une commande ne change pas de
+client ni d'agence après création. Le formulaire d'édition les affichera en
+lecture, comme l'email d'un membre en Phase 1.
+
+### Ce que le prompt corrigé confirme
+
+| Point | État |
+| --- | --- |
+| Branche de base `fix/phase-1-organization-roles-permissions` | conforme — §0.1 |
+| Absence d'`OrderStop` et d'`order_stops.*` | confirmée |
+| `OrderService` = unité opérationnelle adressée | confirmé |
+| Wizard à 5 étapes, sans étape « Arrêts » | confirmé |
+| Clés temporaires par `crypto.randomUUID()`, jamais l'index | §23 — retenu |
+| `allowedTransitions` pilote le dialogue de statut | confirmé |
+| `allowsContentChanges` pilote l'édition | confirmé |
+| Pas de page globale `/catalogs` | confirmé |
+| `AsyncSelect`, `AddressSelector`, `ContactSelector` à créer | §43 — confirmé |

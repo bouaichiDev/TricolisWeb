@@ -17,6 +17,17 @@ export const ORDER_STATUSES = [
   'invoiced',
 ] as const
 
+/**
+ * Statuts qu'un opérateur peut poser lui-même — relevé sur
+ * `OrderStatus::manuallyAssignable()`.
+ *
+ * Les statuts de planification et de facturation sont produits par leurs
+ * modules : les proposer à la saisie laisserait déclarer une commande
+ * « planifiée » sans tournée. Cette liste ne sert qu'à **expliquer** pourquoi
+ * un statut n'est pas proposé ; l'autorisation reste celle du serveur.
+ */
+export const ORDER_MANUALLY_ASSIGNABLE = ['draft', 'confirmed', 'ready', 'cancelled'] as const
+
 export const ORDER_SOURCES = [
   'internal',
   'customer_portal',

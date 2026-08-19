@@ -15,6 +15,14 @@ export interface AsyncOption {
   value: string
   label: string
   hint?: string
+  /**
+   * Option montrée mais non sélectionnable.
+   *
+   * Sert à afficher un ensemble complet — les dix statuts d'une commande, par
+   * exemple — sans laisser choisir ce que le serveur refuserait. Le `hint` dit
+   * alors pourquoi.
+   */
+  disabled?: boolean
 }
 
 interface AsyncSelectProps {
@@ -77,7 +85,7 @@ export function AsyncSelect({
 
         <SelectContent>
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value} disabled={option.disabled}>
               <span className="flex flex-col">
                 {option.label}
                 {option.hint ? (

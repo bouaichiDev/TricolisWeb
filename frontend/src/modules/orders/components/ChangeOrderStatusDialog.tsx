@@ -15,11 +15,14 @@ import {
 } from '@/shared/components/ui/dialog'
 
 import { useChangeOrderStatus } from '../hooks/useOrders'
+import { ORDER_MANUALLY_ASSIGNABLE, ORDER_STATUSES } from '../types/order'
 
 interface ChangeOrderStatusDialogProps {
   orderId: string
   /** Transitions calculées par le backend ; l'écran n'en déduit aucune autre. */
   allowedTransitions: string[]
+  /** Statut actuel, pour le distinguer des statuts simplement hors d'atteinte. */
+  currentStatus: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -27,9 +30,19 @@ interface ChangeOrderStatusDialogProps {
 /**
  * Changement de statut d'une commande.
  *
- * Les statuts proposés sont exactement ceux de `allowedTransitions`, produits
- * par `OrderDetailResource` : la machine à états vit dans le backend, la
- * reproduire ici la ferait diverger au premier ajout de statut.
+ * **Les dix statuts sont montrés**, pour que le cycle de vie complet reste
+ * lisible. Seuls ceux d'`allowedTransitions` sont sélectionnables : la machine
+ * à états vit dans le backend, et proposer une transition qu'il refuserait ne
+ * ferait que produire un 409.
+ *
+ * Deux raisons distinctes rendent un statut indisponible, et l'écran les
+ * distingue :
+ *
+ * - **la transition n'existe pas** depuis le statut actuel — on ne passe pas de
+ *   « Brouillon » à « Terminée » sans passer par les étapes intermédiaires ;
+ * - **le statut ne se pose pas à la main** : planification et facturation sont
+ *   produites par leurs modules, les déclarer ici laisserait croire qu'une
+ *   commande est planifiée sans tournée.
  *
  * Un 409 signifie que l'état a changé entre l'affichage et l'envoi. Son message
  * est rédigé pour être lu tel quel, il n'est pas réécrit.
@@ -37,6 +50,7 @@ interface ChangeOrderStatusDialogProps {
 export function ChangeOrderStatusDialog({
   orderId,
   allowedTransitions,
+  currentStatus,
   open,
   onOpenChange,
 }: ChangeOrderStatusDialogProps) {
@@ -44,6 +58,23 @@ export function ChangeOrderStatusDialog({
   const [status, setStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const changeStatus = useChangeOrderStatus(orderId)
+
+  const options = ORDER_STATUSES.map((value) => {
+    const allowed = allowedTransitions.includes(value)
+
+    return {
+      value,
+      label: t(`orderStatuses.${value}`),
+      disabled: !allowed,
+      hint: allowed
+        ? undefined
+        : value === currentStatus
+          ? t('orders.statusDialog.current')
+          : (ORDER_MANUALLY_ASSIGNABLE as readonly string[]).includes(value)
+            ? t('orders.statusDialog.unreachable')
+            : t('orders.statusDialog.systemManaged'),
+    }
+  })
 
   const submit = () => {
     if (status === '') return
@@ -78,18 +109,16 @@ export function ChangeOrderStatusDialog({
           <Alert>
             <AlertDescription>{t('orders.noTransition')}</AlertDescription>
           </Alert>
-        ) : (
-          <AsyncSelect
-            label={t('orders.statusDialog.newStatus')}
-            value={status}
-            onChange={setStatus}
-            options={allowedTransitions.map((value) => ({
-              value,
-              label: t(`orderStatuses.${value}`, { defaultValue: value }),
-            }))}
-            required
-          />
-        )}
+        ) : null}
+
+        <AsyncSelect
+          label={t('orders.statusDialog.newStatus')}
+          value={status}
+          onChange={setStatus}
+          options={options}
+          required
+          description={t('orders.statusDialog.hint')}
+        />
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

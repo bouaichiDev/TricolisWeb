@@ -9,6 +9,7 @@ import { useServiceOptions } from '../../hooks/useServiceScope'
 import type { PackageDraft, ServiceDraft } from '../../schemas/orderDraft'
 import { ORDER_SERVICE_STATUSES } from '../../types/order'
 import { fieldError, issuesOf, type OrderErrorReport } from '../../schemas/orderErrors'
+import { withDerivedTotals } from '../../schemas/servicePricing'
 import { AddressPicker } from './AddressPicker'
 import { OrderServiceContactsEditor } from './OrderServiceContactsEditor'
 import { OrderServiceMeasures } from './OrderServiceMeasures'
@@ -39,7 +40,7 @@ export function OrderServiceCard({
   customerId,
   packages,
   report,
-  onChange,
+  onChange: onChangeRaw,
   onRemove,
   canRemove,
 }: OrderServiceCardProps) {
@@ -47,6 +48,11 @@ export function OrderServiceCard({
   const services = useServiceOptions()
   const issues = issuesOf(report, service.key)
   const picked = services.byId.get(service.serviceId)
+
+  // Toute modification passe par ici : les totaux suivent le prix unitaire et
+  // la quantité sans que l'on ait à y penser dans chaque champ.
+  const onChange = (values: Partial<ServiceDraft>) =>
+    onChangeRaw(withDerivedTotals(service, values))
 
   const onServiceChange = (serviceId: string) => {
     const chosen = services.byId.get(serviceId)
@@ -135,7 +141,13 @@ export function OrderServiceCard({
         />
       </div>
 
-      <OrderServiceMeasures service={service} issues={issues} onChange={onChange} />
+      <OrderServiceMeasures
+        service={service}
+        issues={issues}
+        onChange={onChange}
+        billableToCustomer={picked?.billableToCustomer}
+        payableToProvider={picked?.payableToProvider}
+      />
 
       <div className="mt-4 border-t pt-4">
         <ControlledField

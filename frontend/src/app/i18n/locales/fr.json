@@ -733,7 +733,10 @@
       "searchPlaceholder": "Code article, code-barres ou libellé…",
       "fromCatalog": "Article : {{name}}",
       "noItem": "Aucun article ne correspond.",
-      "origin": "Origine"
+      "origin": "Origine",
+      "edit": "Modifier la ligne",
+      "create": "Ajouter une ligne",
+      "deleteConfirm": "Retirer cette ligne de la commande ?"
     },
     "packages": {
       "title": "Colis",
@@ -754,7 +757,11 @@
       "overAssigned": "La quantité affectée dépasse la quantité commandée.",
       "noLines": "Aucune ligne affectée à ce colis.",
       "detach": "Retirer cette ligne du colis",
-      "assignedQuantity": "Quantité affectée"
+      "assignedQuantity": "Quantité affectée",
+      "edit": "Modifier le colis",
+      "create": "Ajouter un colis",
+      "deleteConfirm": "Retirer ce colis de la commande ?",
+      "parent": "Colis parent"
     },
     "services": {
       "title": "Services",
@@ -784,7 +791,7 @@
       "noPackages": "Aucun colis déclaré à l’étape précédente.",
       "handlingInstructions": "Consignes de manutention",
       "pricing": "Montants",
-      "pricingHint": "Ces montants sont exigés par le serveur ; ils ne sont pas remplis d’office.",
+      "pricingHint": "Ce que la prestation est facturée au client, et ce qu’elle coûte au prestataire. Les totaux se calculent depuis le prix unitaire et la quantité ; vous pouvez les corriger.",
       "timing": "Créneau demandé",
       "sequenceHint": "Ordre de passage. Deux services ne peuvent pas partager la même séquence.",
       "serviceNumberHint": "Identifiant du service dans la commande. Unique.",
@@ -792,7 +799,13 @@
       "pickCustomerFirst": "Choisissez d’abord un client à l’étape Général.",
       "pickSiteFirst": "Choisissez un site pour voir ses adresses.",
       "sourceCustomer": "Client",
-      "sourceSite": "Site du client"
+      "sourceSite": "Site du client",
+      "notBillable": "Ce service n’est pas facturable au client.",
+      "notPayable": "Ce service n’est pas payable à un prestataire.",
+      "edit": "Modifier le service",
+      "created": "Service ajouté.",
+      "deleteConfirm": "Retirer ce service de la commande ?",
+      "changeStatus": "Changer le statut du service"
     },
     "review": {
       "title": "Récapitulatif",
@@ -818,7 +831,11 @@
       "description": "Seules les transitions autorisées par le statut actuel sont proposées.",
       "newStatus": "Nouveau statut",
       "reason": "Motif",
-      "submit": "Appliquer"
+      "submit": "Appliquer",
+      "hint": "Le cycle complet est affiché ; seules les transitions possibles depuis le statut actuel sont sélectionnables.",
+      "current": "Statut actuel",
+      "unreachable": "Pas atteignable depuis le statut actuel",
+      "systemManaged": "Posé par la planification ou la facturation, pas à la main"
     },
     "duplicate": {
       "title": "Dupliquer la commande",
@@ -829,7 +846,14 @@
       "contacts": "Contacts des services",
       "documents": "Documents",
       "submit": "Dupliquer"
-    }
+    },
+    "entityHistory": {
+      "title": "Historique",
+      "show": "Voir l’historique",
+      "empty": "Aucun évènement enregistré pour cet élément.",
+      "needsPermission": "La consultation du journal demande la permission « audit.view »."
+    },
+    "contentLocked": "Le contenu de cette commande est figé : lignes, colis et services ne sont plus modifiables."
   },
   "orderStatuses": {
     "draft": "Brouillon",

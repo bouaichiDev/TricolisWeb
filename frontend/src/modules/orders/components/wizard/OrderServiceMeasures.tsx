@@ -9,18 +9,32 @@ interface OrderServiceMeasuresProps {
   service: ServiceDraft
   issues: OrderIssue[]
   onChange: (values: Partial<ServiceDraft>) => void
+  /** Drapeaux du service du référentiel, quand un service est choisi. */
+  billableToCustomer?: boolean
+  payableToProvider?: boolean
 }
 
 /**
  * Créneau, mesures et montants d'un service.
  *
- * Les quatre montants sont `required` côté serveur ; le §29 interdit d'y poser
- * `0` en douce, ils sont donc saisis comme les autres champs obligatoires.
+ * **À quoi servent les montants** : ils portent la valeur commerciale de la
+ * prestation — ce que le client paie d'un côté, ce que le prestataire coûte de
+ * l'autre. Les quatre sont `required` côté serveur ; le §29 interdit d'y poser
+ * `0` en douce, ils sont donc saisis.
+ *
+ * Les totaux se déduisent du prix unitaire et de la quantité, tout en restant
+ * modifiables : une remise ou un forfait s'écrivent à la main.
+ *
+ * `billableToCustomer` et `payableToProvider` viennent du référentiel : quand
+ * un service n'est pas facturable, l'écran le dit plutôt que de laisser saisir
+ * un montant qui ne sera jamais facturé.
  */
 export function OrderServiceMeasures({
   service,
   issues,
   onChange,
+  billableToCustomer,
+  payableToProvider,
 }: OrderServiceMeasuresProps) {
   const { t } = useTranslation()
 
@@ -69,7 +83,14 @@ export function OrderServiceMeasures({
 
       <fieldset className="mt-4 border-t pt-4">
         <legend className="mb-1 text-sm font-medium">{t('orders.services.pricing')}</legend>
-        <p className="mb-3 text-xs text-muted-foreground">{t('orders.services.pricingHint')}</p>
+        <p className="text-xs text-muted-foreground">{t('orders.services.pricingHint')}</p>
+        {billableToCustomer === false ? (
+          <p className="text-xs text-muted-foreground">{t('orders.services.notBillable')}</p>
+        ) : null}
+        {payableToProvider === false ? (
+          <p className="text-xs text-muted-foreground">{t('orders.services.notPayable')}</p>
+        ) : null}
+        <div className="mb-3" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {field('customerUnitPrice', t('orders.fields.customerUnitPrice'), 'number')}
           {field('customerTotalPrice', t('orders.fields.customerTotalPrice'), 'number')}

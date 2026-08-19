@@ -84,8 +84,12 @@ describe('OrderDetailPage', () => {
     expect(screen.getByText('PAL-1')).toBeInTheDocument()
   })
 
-  /** Les transitions viennent du backend ; l'écran n'en propose aucune autre. */
-  it('ne propose que les transitions autorisées', async () => {
+  /**
+   * Le cycle complet est visible, mais seules les transitions du backend sont
+   * sélectionnables : montrer les dix statuts renseigne, en laisser choisir un
+   * hors d'atteinte produirait un 409.
+   */
+  it('montre les dix statuts et ne rend sélectionnables que les transitions permises', async () => {
     renderDetail(makeOrderDetail(), ['orders.view', 'orders.change_status'])
 
     await userEvent.click(await screen.findByRole('button', { name: /Changer le statut/i }))
@@ -93,9 +97,21 @@ describe('OrderDetailPage', () => {
 
     const listbox = await screen.findByRole('listbox')
 
-    expect(within(listbox).getByRole('option', { name: 'Confirmée' })).toBeInTheDocument()
-    expect(within(listbox).getByRole('option', { name: 'Annulée' })).toBeInTheDocument()
-    expect(within(listbox).queryByRole('option', { name: 'Facturée' })).not.toBeInTheDocument()
+    expect(within(listbox).getAllByRole('option')).toHaveLength(10)
+
+    expect(within(listbox).getByRole('option', { name: /^Confirmée/ })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    expect(within(listbox).getByRole('option', { name: /^Annulée/ })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+
+    // Facturée est montrée, mais posée par la facturation, pas à la main.
+    const invoiced = within(listbox).getByRole('option', { name: /^Facturée/ })
+    expect(invoiced).toHaveAttribute('aria-disabled', 'true')
+    expect(invoiced).toHaveTextContent(/pas à la main/i)
   })
 
   it('dit qu’aucune transition n’est possible quand la liste est vide', async () => {
@@ -127,7 +143,7 @@ describe('OrderDetailPage', () => {
 
     expect(screen.queryByRole('link', { name: 'Modifier' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument()
-    expect(screen.getByText(/n’est plus modifiable/i)).toBeInTheDocument()
+    expect(screen.getByText(/le contenu de cette commande est figé/i)).toBeInTheDocument()
   })
 
   it('offre la modification tant que le contenu est ouvert', async () => {
@@ -161,7 +177,7 @@ describe('OrderDetailPage', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /Changer le statut/i }))
     await userEvent.click(await screen.findByRole('combobox'))
-    await userEvent.click(await screen.findByRole('option', { name: 'Confirmée' }))
+    await userEvent.click(await screen.findByRole('option', { name: /^Confirmée/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Appliquer' }))
 
     await waitFor(() => {

@@ -79,7 +79,7 @@ export function OrderDetailPage() {
 
       {!order.allowsContentChanges ? (
         <Alert>
-          <AlertDescription>{t('orders.locked')}</AlertDescription>
+          <AlertDescription>{t('orders.contentLocked')}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -98,7 +98,11 @@ export function OrderDetailPage() {
         </TabsContent>
 
         <TabsContent value="lines" className="mt-6">
-          <OrderLinesTab lines={order.lines ?? []} />
+          <OrderLinesTab
+            orderId={order.id}
+            lines={order.lines ?? []}
+            editable={order.allowsContentChanges}
+          />
         </TabsContent>
 
         <TabsContent value="packages" className="mt-6">
@@ -106,11 +110,18 @@ export function OrderDetailPage() {
             orderId={order.id}
             packages={order.packages ?? []}
             lines={order.lines ?? []}
+            editable={order.allowsContentChanges}
           />
         </TabsContent>
 
         <TabsContent value="services" className="mt-6">
-          <OrderServicesTab services={order.services ?? []} packages={order.packages ?? []} />
+          <OrderServicesTab
+            orderId={order.id}
+            customerId={order.customerId}
+            services={order.services ?? []}
+            packages={order.packages ?? []}
+            editable={order.allowsContentChanges}
+          />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
@@ -125,6 +136,7 @@ export function OrderDetailPage() {
       <ChangeOrderStatusDialog
         orderId={order.id}
         allowedTransitions={order.allowedTransitions}
+        currentStatus={order.status}
         open={statusOpen}
         onOpenChange={setStatusOpen}
       />

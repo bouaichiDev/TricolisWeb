@@ -10,6 +10,7 @@ import { Button } from '@/shared/components/ui/button'
 import type { LineDraft } from '../../schemas/orderDraft'
 import { fieldError, type OrderIssue } from '../../schemas/orderErrors'
 import { CatalogItemPicker } from './CatalogItemPicker'
+import { LineDimensionFields } from './LineDimensionFields'
 
 interface OrderLineCardProps {
   line: LineDraft
@@ -166,31 +167,7 @@ export function OrderLineCard({
         />
       </div>
 
-      <fieldset className="mt-4 border-t pt-4">
-        <legend className="mb-3 text-sm font-medium">{t('orders.lines.dimensions')}</legend>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(
-            [
-              ['length', 'orders.fields.length'],
-              ['width', 'orders.fields.width'],
-              ['height', 'orders.fields.height'],
-              ['purchasePrice', 'orders.fields.purchasePrice'],
-              ['sellingPrice', 'orders.fields.sellingPrice'],
-            ] as const
-          ).map(([name, labelKey]) => (
-            <ControlledField
-              key={name}
-              label={t(labelKey)}
-              type="number"
-              min="0"
-              step="0.001"
-              value={line[name]}
-              onChange={(value) => onChange({ [name]: value } as Partial<LineDraft>)}
-              error={fieldError(issues, name)}
-            />
-          ))}
-        </div>
-      </fieldset>
+      <LineDimensionFields line={line} issues={issues} onChange={onChange} />
 
       <div className="mt-4">
         <ControlledField

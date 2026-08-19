@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
+import { Disclosure } from '@/shared/components/layout/Disclosure'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
@@ -14,6 +15,7 @@ import type { OrderLine } from '../../types/orderDetail'
 import { EntityHistory } from './EntityHistory'
 import { OrderLineDialog } from './OrderLineDialog'
 import { OrderLineFields } from './OrderLineFields'
+import { SummaryRow } from './SummaryRow'
 
 interface OrderLinesTabProps {
   orderId: string
@@ -23,7 +25,11 @@ interface OrderLinesTabProps {
 }
 
 /**
- * Lignes de la commande, avec leur historique et leur modification.
+ * Lignes de la commande.
+ *
+ * Cinq valeurs en clair — code-barres, quantité, poids, volume, statut — et le
+ * reste sous le repli. Une ligne porte une vingtaine de champs ; les afficher
+ * tous noyait les trois qu'on lit vraiment.
  *
  * `fromCatalog` est calculé par la ressource : il dit si la ligne provient d'un
  * article de catalogue ou d'une saisie libre. Les deux coexistent dans une même
@@ -100,15 +106,26 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
                 ) : null}
               </div>
 
-              <div className="mt-3">
-                <OrderLineFields line={line} />
+              <div className="mt-2">
+                <SummaryRow
+                  items={[
+                    { labelKey: 'orders.fields.barcode', value: line.barcode },
+                    { labelKey: 'orders.fields.quantity', value: line.quantity },
+                    { labelKey: 'orders.fields.weight', value: line.weight },
+                    { labelKey: 'orders.fields.volume', value: line.volume },
+                    { labelKey: 'orders.fields.status', value: line.status },
+                  ]}
+                />
               </div>
 
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t('orders.lines.trackedHint')}
-              </p>
-
               <div className="mt-2 border-t pt-2">
+                <Disclosure>
+                  <OrderLineFields line={line} />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {t('orders.lines.trackedHint')}
+                  </p>
+                </Disclosure>
+
                 <EntityHistory entityType="order_line" entityId={line.id} />
               </div>
             </li>

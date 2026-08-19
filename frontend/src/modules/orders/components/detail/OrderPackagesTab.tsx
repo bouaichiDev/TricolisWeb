@@ -1,9 +1,8 @@
-import { CornerDownRight, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
-import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
@@ -13,10 +12,10 @@ import { Button } from '@/shared/components/ui/button'
 
 import { useDeleteOrderPackage } from '../../hooks/useOrderContent'
 import { usePackageTree } from '../../hooks/useOrders'
+import { orderLineUsage } from '../../schemas/orderAllocations'
 import type { OrderLine, OrderPackage, PackageTreeNode } from '../../types/orderDetail'
-import { EntityHistory } from './EntityHistory'
 import { OrderPackageDialog } from './OrderPackageDialog'
-import { OrderPackageFields } from './OrderPackageFields'
+import { PackageNodeCard } from './PackageNodeCard'
 import { packageDisplayName } from './packageParents'
 
 interface FlatNode {
@@ -57,7 +56,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
 
   const byId = new Map(packages.map((item) => [item.id, item]))
   const parentName = new Map(packages.map((item) => [item.id, packageDisplayName(item)]))
-  const lineName = new Map(lines.map((line) => [line.id, line.name]))
+  const usage = orderLineUsage(lines, packages)
 
   const addAction = editable ? (
     <PermissionGuard permission="packages.create">
@@ -86,84 +85,21 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
             const detail = byId.get(node.id)
 
             return (
-              <li
+              <PackageNodeCard
                 key={node.id}
-                style={{ marginLeft: `${depth * 1.5}rem` }}
-                className="rounded-md border p-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="flex items-center gap-2 font-medium">
-                    {depth > 0 ? (
-                      <CornerDownRight className="size-4 text-muted-foreground" aria-hidden />
-                    ) : null}
-                    {node.reference ?? node.barcode ?? node.id}
-                  </span>
-
-                  <div className="flex items-center gap-1">
-                    <StatusBadge status={node.status} />
-
-                    {editable && detail ? (
-                      <>
-                        <PermissionGuard permission="packages.update">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditing(detail)}
-                            aria-label={t('orders.packages.edit')}
-                          >
-                            <Pencil className="size-4" aria-hidden />
-                          </Button>
-                        </PermissionGuard>
-
-                        <PermissionGuard permission="packages.delete">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleting(detail)}
-                            aria-label={t('orders.packages.remove')}
-                          >
-                            <Trash2 className="size-4" aria-hidden />
-                          </Button>
-                        </PermissionGuard>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-
-                {detail ? (
-                  <div className="mt-3">
-                    <OrderPackageFields
-                      pkg={detail}
-                      parentLabel={
-                        detail.parentPackageId
-                          ? parentName.get(detail.parentPackageId)
-                          : undefined
-                      }
-                    />
-                  </div>
-                ) : null}
-
-                {detail?.lines && detail.lines.length > 0 ? (
-                  <ul className="mt-2 flex flex-col gap-1">
-                    {detail.lines.map((link) => (
-                      <li key={link.id} className="flex justify-between gap-4 text-sm">
-                        <span>{lineName.get(link.orderLineId) ?? link.orderLineId}</span>
-                        <span className="text-muted-foreground">{String(link.quantity)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {t('orders.packages.noLines')}
-                  </p>
-                )}
-
-                <div className="mt-2 border-t pt-2">
-                  <EntityHistory entityType="package" entityId={node.id} />
-                </div>
-              </li>
+                orderId={orderId}
+                node={node}
+                depth={depth}
+                detail={detail}
+                parentLabel={
+                  detail?.parentPackageId ? parentName.get(detail.parentPackageId) : undefined
+                }
+                lines={lines}
+                usage={usage}
+                editable={editable}
+                onEdit={setEditing}
+                onDelete={setDeleting}
+              />
             )
           })}
         </ul>

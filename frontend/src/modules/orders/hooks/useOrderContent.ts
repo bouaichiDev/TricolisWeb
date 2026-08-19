@@ -146,6 +146,22 @@ export function useAssignPackageLine(orderId: string) {
   )
 }
 
+export function useUpdatePackageLine(orderId: string) {
+  return useContentMutation(
+    orderId,
+    ({
+      packageId,
+      orderLineId,
+      quantity,
+    }: {
+      packageId: string
+      orderLineId: string
+      quantity: number
+    }) => ordersApi.updatePackageLine(orderId, packageId, orderLineId, { orderLineId, quantity }),
+    'updated',
+  )
+}
+
 export function useDetachPackageLine(orderId: string) {
   return useContentMutation(
     orderId,

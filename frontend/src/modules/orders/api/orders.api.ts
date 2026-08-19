@@ -58,11 +58,18 @@ export const ordersApi = {
     payload: { orderLineId: string; quantity: number },
   ) => api.post<ApiResource<{ id: string }>>(`/orders/${orderId}/packages/${packageId}/lines`, payload),
 
+  /**
+   * Modifier une quantite affectee.
+   *
+   * `orderLineId` est exige en plus de l'identifiant dans l'URL :
+   * `StorePackageLineRequest` sert aussi bien a la creation qu'a la mise a
+   * jour, et le controleur relit la ligne depuis le corps.
+   */
   updatePackageLine: (
     orderId: string,
     packageId: string,
     lineId: string,
-    payload: { quantity: number },
+    payload: { orderLineId: string; quantity: number },
   ) =>
     api.patch<ApiResource<{ id: string }>>(
       `/orders/${orderId}/packages/${packageId}/lines/${lineId}`,

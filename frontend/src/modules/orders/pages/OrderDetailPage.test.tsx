@@ -64,29 +64,27 @@ describe('OrderDetailPage', () => {
   })
 
   /** L'arbre vient du serveur : le frontend ne recompose pas la hiérarchie. */
-  it('affiche la hiérarchie des colis et leurs lignes affectées', async () => {
+  it('affiche la hiérarchie des colis et l’essentiel de chacun', async () => {
     renderDetail(makeOrderDetail(), ['orders.view'])
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Colis' }))
 
     expect((await screen.findAllByText('PAL-1')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('CTN-1').length).toBeGreaterThan(0)
-    // Les champs du diagramme sont affichés, dimensions comprises.
-    expect(screen.getByText('120')).toBeInTheDocument()
+    // Le résumé porte le type, le poids et le volume, sans rien déplier.
     expect(screen.getByText('Palette')).toBeInTheDocument()
-    // La ligne affectée est nommée, pas montrée sous forme d'identifiant.
-    expect(screen.getAllByText('Carton renforcé').length).toBeGreaterThan(0)
+    expect(screen.getByText('12.5')).toBeInTheDocument()
   })
 
-  it('affiche l’adresse, les contacts et les colis de chaque service', async () => {
+  it('affiche l’adresse et l’essentiel de chaque service', async () => {
     renderDetail(makeOrderDetail(), ['orders.view'])
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Services' }))
 
     expect(await screen.findByText('1. Livraison standard')).toBeInTheDocument()
-    expect(screen.getByText(/Sophie Bernard/)).toBeInTheDocument()
-    expect(screen.getByText('+212600000000')).toBeInTheDocument()
-    expect(screen.getByText('PAL-1')).toBeInTheDocument()
+    expect(screen.getByText('SRV-1')).toBeInTheDocument()
+    // Quantité et unité tiennent sur la même valeur du résumé.
+    expect(screen.getByText('1 colis')).toBeInTheDocument()
   })
 
   /**

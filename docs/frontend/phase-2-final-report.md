@@ -124,6 +124,12 @@ lisible même si l'article évolue plus tard.
 
 ## 8. Affectation ligne ↔ colis
 
+La relation `PackageOrderLine` se gère **dans l'assistant et dans la fiche**.
+Elle manquait d'abord à la fiche : lignes et colis y vivaient côte à côte sans
+qu'on puisse les relier une fois la commande enregistrée. Elle vit sous le repli
+de chaque colis, avec les trois quantités.
+
+
 Chaque ligne affiche **commandé / affecté / reste**. `PackageLineAllocator`
 refuse le dépassement côté serveur, sous verrou ; l'écran le montre pendant la
 saisie plutôt qu'au retour du serveur. C'est le serveur qui tranche.
@@ -269,6 +275,18 @@ Consigné, jamais contourné :
 | Pas de `billingStatus` | absent |
 | Pas de `lines[].key` | d'où la position calculée à la sérialisation |
 | Pas de route de téléchargement de document | aucun lien de téléchargement |
+
+---
+
+## 20 bis. Lecture des fiches
+
+Chaque ligne, colis et service montre **une poignée de valeurs** — ce qui
+l'identifie et ce qui le mesure : code-barres, quantité, poids, volume, statut.
+Le reste, une quinzaine à une vingtaine de champs, s'ouvre sous « Plus de
+détails ».
+
+Le contenu replié n'est pas monté tant qu'il est fermé : sur une commande de
+vingt lignes, cela évite de construire vingt tableaux que personne ne regarde.
 
 ---
 

@@ -39,7 +39,8 @@
     "showingRange": "Affichage de {{from}} à {{to}} sur {{total}} résultats",
     "detail": "Détail",
     "createdAt": "Créé le",
-    "updatedAt": "Modifié le"
+    "updatedAt": "Modifié le",
+    "moreDetails": "Plus de détails"
   },
   "auth": {
     "login": "Connexion",

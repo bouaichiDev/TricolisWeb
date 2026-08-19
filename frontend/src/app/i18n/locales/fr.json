@@ -956,7 +956,19 @@
       "position": "Rang",
       "active": "Actif",
       "isToSend": "Envoi au client",
-      "flags": "Réglages"
+      "flags": "Réglages",
+      "allowsContentChanges": "Contenu ouvert",
+      "requiresReason": "Motif exigé"
+    },
+    "allowsContentChangesHint": "Tant que la commande est dans ce statut, ses lignes, colis et services restent modifiables.",
+    "requiresReasonHint": "Passer à ce statut exigera un motif.",
+    "transitions": {
+      "title": "Transitions",
+      "description": "Vers quels statuts peut-on aller depuis celui-ci ? C’est ce qui gouverne ce que l’écran d’une commande propose, et ce que l’API accepte.",
+      "manual": "Posable à la main",
+      "manualHint": "Décochée, la transition reste valide mais n’est plus proposée : elle est réservée à la planification ou à la facturation.",
+      "inactive": "Statut inactif : la transition existe mais n’est pas proposée.",
+      "noSibling": "Aucun autre statut pour cette entité."
     }
   }
 }

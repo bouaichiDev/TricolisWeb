@@ -96,6 +96,10 @@ export const api = {
     request<T>('POST', path, { ...options, body }),
   patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>('PATCH', path, { ...options, body }),
+  // `PUT` sert aux remplacements complets — le jeu de transitions d'un statut,
+  // par exemple. `PATCH` dirait une modification partielle, ce qui serait faux.
+  put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+    request<T>('PUT', path, { ...options, body }),
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>('DELETE', path, options),
   upload: <T>(path: string, formData: FormData, options?: RequestOptions) =>

@@ -56,6 +56,7 @@ use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
 use App\Http\Controllers\Api\V1\Statuses\StatusController;
+use App\Http\Controllers\Api\V1\Statuses\StatusTransitionController;
 use App\Http\Controllers\Api\V1\Stock\StockBalanceController;
 use App\Http\Controllers\Api\V1\Stock\StockItemController;
 use App\Http\Controllers\Api\V1\Stock\StockLocationController;
@@ -98,6 +99,10 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     // `organization`. Tout membre le lit, seule la plateforme l'ecrit — c'est
     // `StatusPolicy` qui tranche, pas la presence de l'en-tete.
     Route::get('statuses/sources', [StatusController::class, 'sources'])->name('statuses.sources');
+    // Le cycle de vie se dessine ici : les transitions sont remplacees d'un
+    // bloc, jamais arete par arete.
+    Route::get('statuses/{status}/transitions', [StatusTransitionController::class, 'index'])->name('statuses.transitions.index');
+    Route::put('statuses/{status}/transitions', [StatusTransitionController::class, 'sync'])->name('statuses.transitions.sync');
     Route::apiResource('statuses', StatusController::class)->except(['create', 'edit']);
 
     Route::middleware('organization')->group(static function (): void {

@@ -9,16 +9,19 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Transition de statut refusée par le workflow.
+ *
+ * Les statuts atteignables sont **passés par l'appelant**, pas relus sur
+ * l'énumération : le cycle de vie vit désormais dans le référentiel, et une
+ * liste calculée ici nommerait des transitions qu'un administrateur vient
+ * peut-être de retirer.
  */
 final class InvalidOrderTransition
 {
-    public static function between(OrderStatus $from, OrderStatus $to): ValidationException
+    /**
+     * @param  list<string>  $allowed  codes réellement atteignables
+     */
+    public static function between(OrderStatus $from, OrderStatus $to, array $allowed = []): ValidationException
     {
-        $allowed = array_map(
-            static fn (OrderStatus $status): string => $status->value,
-            $from->allowedTransitions(),
-        );
-
         $message = $allowed === []
             ? sprintf('Le statut « %s » est final : aucune transition n’est possible.', $from->label())
             : sprintf(

@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\CheckStatusMachine;
 use App\Console\Commands\GrantPlatformAdmin;
 use App\Console\Commands\RepairSiteAddressLinks;
 use App\Console\Commands\SyncOrganizationMenus;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         GrantPlatformAdmin::class,
         RepairSiteAddressLinks::class,
         SyncOrganizationMenus::class,
+        CheckStatusMachine::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

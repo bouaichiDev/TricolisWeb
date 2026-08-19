@@ -25,11 +25,10 @@ use Illuminate\Database\Seeder;
  * exacte. Les autres colonnes `status` sont des chaînes libres, et deviner leurs
  * valeurs produirait un référentiel faux dès la première commande.
  *
- * L'administrateur plateforme complète le reste depuis l'écran — c'est
- * précisément ce que ce référentiel lui donne.
- *
- * Rejouable : une ligne existante est mise à jour, jamais dupliquée, et
- * `active` comme `is_to_send` ne sont pas réécrits — ce sont des réglages.
+ * **Une ligne existante n'est jamais réécrite.** Libellé, icône, rang et
+ * comportement sont réglables depuis l'écran ; rejouer le seeder ne doit pas
+ * effacer ce qu'un administrateur a décidé. Seules les lignes manquantes sont
+ * créées.
  */
 class StatusSeeder extends Seeder
 {
@@ -41,6 +40,7 @@ class StatusSeeder extends Seeder
     private array $enums = [
         MorphMap::ORDER => OrderStatus::class,
         MorphMap::ORDER_SERVICE => OrderServiceStatus::class,
+        MorphMap::ORDER_COMMUNICATION => CommunicationStatus::class,
         MorphMap::CUSTOMER => CustomerStatus::class,
         MorphMap::USER => UserStatus::class,
         MorphMap::ORGANIZATION => OrganizationStatus::class,
@@ -54,10 +54,6 @@ class StatusSeeder extends Seeder
         foreach ($this->enums as $source => $enum) {
             $this->seedSource((string) $source, $enum);
         }
-
-        // Les communications n'ont pas d'alias morphique : leur statut vit sur
-        // `order_communications`, dont l'alias est déclaré.
-        $this->seedSource(MorphMap::ORDER_COMMUNICATION, CommunicationStatus::class);
     }
 
     /**
@@ -69,19 +65,27 @@ class StatusSeeder extends Seeder
             return;
         }
 
-        $position = 0;
+        $rank = 0;
 
         foreach ($enum::cases() as $case) {
-            $position += 10;
+            $rank++;
 
-            Status::updateOrCreate(
-                ['source' => $source, 'code' => $case->value],
-                [
-                    'status' => $position / 10,
-                    'label' => method_exists($case, 'label') ? $case->label() : $case->name,
-                    'position' => $position,
-                ],
-            );
+            $status = Status::firstOrNew(['source' => $source, 'code' => $case->value]);
+
+            if ($status->exists) {
+                continue;
+            }
+
+            $status->fill([
+                'status' => $rank,
+                'label' => method_exists($case, 'label') ? $case->label() : $case->name,
+                'position' => $rank * 10,
+                // Les deux comportements viennent de l'énumération quand elle
+                // les définit ; ailleurs ils restent au défaut de la colonne.
+                'allows_content_changes' => method_exists($case, 'allowsContentChanges')
+                    && $case->allowsContentChanges(),
+                'requires_reason' => method_exists($case, 'requiresReason') && $case->requiresReason(),
+            ])->save();
         }
     }
 }

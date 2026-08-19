@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             // Referentiel commun a la plateforme : seme a partir des
             // enumerations existantes, avant toute donnee de demonstration.
             StatusSeeder::class,
+            StatusTransitionSeeder::class,
             DevelopmentOrganizationSeeder::class,
             RoleSeeder::class,
             // Après RoleSeeder : le compte s'accroche au rôle plateforme que

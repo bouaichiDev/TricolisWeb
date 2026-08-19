@@ -11,6 +11,7 @@ import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 
 import { StatusDialog } from '../components/StatusDialog'
+import { StatusTransitionsDialog } from '../components/StatusTransitionsDialog'
 import { useDeleteStatus, useStatusList, useStatusSources } from '../hooks/useStatuses'
 import { statusColumns } from './statusColumns'
 import { STATUS_SORTABLE, type Status, type StatusFilters } from '../types/status'
@@ -33,12 +34,17 @@ export function StatusListPage() {
   const [editing, setEditing] = useState<Status | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<Status | null>(null)
+  const [transitioning, setTransitioning] = useState<Status | null>(null)
 
   const { data, isPending, error, refetch } = useStatusList(filters)
   const sources = useStatusSources()
   const remove = useDeleteStatus()
 
-  const columns = statusColumns(t, { onEdit: setEditing, onDelete: setDeleting })
+  const columns = statusColumns(t, {
+    onEdit: setEditing,
+    onDelete: setDeleting,
+    onTransitions: setTransitioning,
+  })
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,6 +127,13 @@ export function StatusListPage() {
             setCreating(false)
           }
         }}
+      />
+
+      <StatusTransitionsDialog
+        key={transitioning?.id ?? 'none'}
+        status={transitioning}
+        open={transitioning !== null}
+        onOpenChange={(open) => !open && setTransitioning(null)}
       />
 
       <ConfirmDialog

@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Share2, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -11,6 +11,7 @@ import type { Status } from '../types/status'
 interface Handlers {
   onEdit: (status: Status) => void
   onDelete: (status: Status) => void
+  onTransitions: (status: Status) => void
 }
 
 /**
@@ -20,7 +21,10 @@ interface Handlers {
  * technique. C'est l'alias qui est stocké et qui apparaît dans les échanges ;
  * le masquer obligerait à deviner la correspondance.
  */
-export function statusColumns(t: TFunction, { onEdit, onDelete }: Handlers): Column<Status>[] {
+export function statusColumns(
+  t: TFunction,
+  { onEdit, onDelete, onTransitions }: Handlers,
+): Column<Status>[] {
   return [
     {
       key: 'source',
@@ -61,6 +65,12 @@ export function statusColumns(t: TFunction, { onEdit, onDelete }: Handlers): Col
             {row.active ? t('common.enabled') : t('common.disabled')}
           </Badge>
           {row.isToSend ? <Badge variant="outline">{t('statuses.fields.isToSend')}</Badge> : null}
+          {row.allowsContentChanges ? (
+            <Badge variant="outline">{t('statuses.fields.allowsContentChanges')}</Badge>
+          ) : null}
+          {row.requiresReason ? (
+            <Badge variant="outline">{t('statuses.fields.requiresReason')}</Badge>
+          ) : null}
         </span>
       ),
     },
@@ -69,6 +79,16 @@ export function statusColumns(t: TFunction, { onEdit, onDelete }: Handlers): Col
       header: t('common.actions'),
       cell: (row) => (
         <span className="flex gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onTransitions(row)}
+            aria-label={t('statuses.transitions.title')}
+          >
+            <Share2 className="size-4" aria-hidden />
+          </Button>
+
           <PermissionGuard permission="statuses.update">
             <Button
               type="button"

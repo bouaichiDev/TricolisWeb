@@ -48,6 +48,8 @@ des rôles `admin` existants.
 | `icon` | `VARCHAR(64)` | nom d'icône Lucide, celui qu'utilise déjà le frontend |
 | `active` | `BOOLEAN` | un statut inactif reste lisible mais n'est plus proposé |
 | `is_to_send` | `BOOLEAN` | atteindre ce statut déclenche un envoi au client |
+| `allows_content_changes` | `BOOLEAN` | le contenu reste-t-il modifiable ? |
+| `requires_reason` | `BOOLEAN` | atteindre ce statut exige-t-il un motif ? |
 | `position` | `SMALLINT UNSIGNED` | ordre d'affichage |
 
 Deux unicités : `(source, code)` et `(source, status)`. Le même code existe pour
@@ -108,8 +110,9 @@ Soit 56 lignes. Les autres colonnes `status` sont des chaînes libres : deviner
 leurs valeurs produirait un référentiel faux. L'administrateur les complète
 depuis l'écran — c'est précisément ce que ce référentiel lui donne.
 
-Le seeder est rejouable : une ligne existante est mise à jour, jamais dupliquée,
-et `active` comme `is_to_send` ne sont pas réécrits — ce sont des réglages.
+Le seeder est rejouable, et **ne réécrit jamais une ligne existante** : libellé,
+icône, rang et comportement sont réglables depuis l'écran, et rejouer le semis
+ne doit pas effacer ce qu'un administrateur a décidé.
 
 ---
 
@@ -141,9 +144,63 @@ l'URL doit aussi être refusé.
 
 ---
 
-## 9. Ce qui reste ouvert
+## 9. Le cycle de vie
 
-`is_to_send` est stocké, réglable et documenté, mais **rien ne le consomme
+Table `status_transitions` : `from_status_id → to_status_id`, plus `is_manual`.
+
+Jusqu'à cette phase, la machine à états vivait dans
+`OrderStatus::allowedTransitions()`. Un référentiel géré par l'administrateur et
+des règles figées dans le code ne pouvaient pas coexister : un statut créé à
+l'écran n'était atteignable par aucune transition, donc inutile. La règle a
+rejoint la donnée.
+
+**`is_manual` est porté par la transition, pas par le statut.** Passer une
+commande en « planifiée » est une transition légitime — c'est la planification
+qui la pose — mais un opérateur ne doit pas pouvoir la déclarer. L'ancien
+`manuallyAssignable()`, défini par statut, interdisait la transition à tout le
+monde ou à personne.
+
+Deux colonnes de plus sur `statuses` portent le reste du comportement, qui
+vivait lui aussi dans l'énumération :
+
+| Colonne | Ce qu'elle remplace |
+| --- | --- |
+| `allows_content_changes` | `OrderStatus::allowsContentChanges()` |
+| `requires_reason` | `OrderStatus::requiresReason()` |
+
+`StatusMachine` lit l'ensemble en une requête par entité, mémorisée pour le
+processus. `OrderStatus` subsiste pour nommer les statuts que le code désigne
+explicitement — `DRAFT` à la création d'une commande — mais ne décide plus.
+
+**20 transitions semées** pour les commandes, dérivées une fois de
+l'énumération. Passé ce point, c'est la table qui fait foi. Aucune autre entité
+n'a de cycle de vie : leur en inventer produirait des règles que personne n'a
+décidées.
+
+| Route | Permission |
+| --- | --- |
+| `GET /statuses/{status}/transitions` | `statuses.view` |
+| `PUT /statuses/{status}/transitions` | `statuses.update` — plateforme |
+
+Le `PUT` remplace l'ensemble d'un bloc, dans une transaction : une mise à jour
+arête par arête laisserait, le temps de la séquence, un graphe que personne n'a
+voulu — et des commandes bloquées entre-temps.
+
+`tricolis:check-status-machine` signale les statuts sans issue ni entrée, et les
+codes portés en base mais absents du référentiel. Elle ne corrige rien : ce sont
+des décisions d'administration.
+
+---
+
+## 10. Ce qui reste ouvert
+
+**`is_to_send`** est stocké, réglable et documenté, mais **rien ne le consomme
 encore** : le déclenchement d'un envoi appartient au module Communications, dont
 les tables existent en base sans écran ni orchestration à ce stade. Le drapeau
 est prêt ; son effet viendra avec ce module.
+
+**Les autres entités n'ont pas de cycle de vie.** Trente des trente-neuf portent
+des valeurs de statut sans aucune entrée au référentiel — `agencies.status`
+vaut `active` sans que rien ne le déclare. `tricolis:check-status-machine` les
+liste. Les semer demanderait d'inventer leur signification ; c'est à
+l'administrateur de les déclarer, entité par entité.

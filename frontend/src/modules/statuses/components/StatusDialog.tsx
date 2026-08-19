@@ -20,6 +20,30 @@ import { useCreateStatus, useStatusSources, useUpdateStatus } from '../hooks/use
 import type { Status, StatusPayload } from '../types/status'
 import { STATUS_FIELDS, statusFormValues } from './statusForm'
 
+/**
+ * Les quatre comportements reglables d'un statut.
+ *
+ * Les deux derniers gouvernaient le code — `allowsContentChanges()` et
+ * `requiresReason()` sur l'enumeration — et sont passes au referentiel avec les
+ * transitions : laisser une moitie des regles dans le code aurait reconduit
+ * exactement l'incoherence qu'on corrige.
+ */
+const FLAGS = [
+  { name: 'active', hintKey: 'statuses.activeHint' },
+  { name: 'isToSend', hintKey: 'statuses.isToSendHint' },
+  { name: 'allowsContentChanges', hintKey: 'statuses.allowsContentChangesHint' },
+  { name: 'requiresReason', hintKey: 'statuses.requiresReasonHint' },
+] as const
+
+type FlagName = (typeof FLAGS)[number]['name']
+
+const DEFAULT_FLAGS: Record<FlagName, boolean> = {
+  active: true,
+  isToSend: false,
+  allowsContentChanges: false,
+  requiresReason: false,
+}
+
 interface StatusDialogProps {
   status: Status | null
   open: boolean
@@ -44,14 +68,13 @@ export function StatusDialog({ status, open, onOpenChange }: StatusDialogProps) 
   const update = useUpdateStatus()
 
   const [values, setValues] = useState<Record<string, string>>({})
-  const [flags, setFlags] = useState<{ active?: boolean; isToSend?: boolean }>({})
+  const [flags, setFlags] = useState<Partial<Record<FlagName, boolean>>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
 
   const current = { ...statusFormValues(status), ...values }
 
-  const active = flags.active ?? status?.active ?? true
-  const isToSend = flags.isToSend ?? status?.isToSend ?? false
+  const flag = (name: FlagName): boolean => flags[name] ?? status?.[name] ?? DEFAULT_FLAGS[name]
 
   const patch = (field: string, value: string) =>
     setValues((previous) => ({ ...previous, [field]: value }))
@@ -87,8 +110,10 @@ export function StatusDialog({ status, open, onOpenChange }: StatusDialogProps) 
       label: current.label.trim(),
       icon: current.icon.trim() === '' ? null : current.icon.trim(),
       position: current.position.trim() === '' ? null : Number(current.position),
-      active,
-      isToSend,
+      active: flag('active'),
+      isToSend: flag('isToSend'),
+      allowsContentChanges: flag('allowsContentChanges'),
+      requiresReason: flag('requiresReason'),
     }
 
     if (status) update.mutate({ id: status.id, ...payload }, { onSuccess: close, onError })
@@ -143,19 +168,15 @@ export function StatusDialog({ status, open, onOpenChange }: StatusDialogProps) 
         </div>
 
         <div className="grid gap-1 sm:grid-cols-2">
-          <ControlledCheckbox
-            label={t('statuses.fields.active')}
-            checked={active}
-            onChange={(checked) => setFlags((previous) => ({ ...previous, active: checked }))}
-            description={t('statuses.activeHint')}
-          />
-
-          <ControlledCheckbox
-            label={t('statuses.fields.isToSend')}
-            checked={isToSend}
-            onChange={(checked) => setFlags((previous) => ({ ...previous, isToSend: checked }))}
-            description={t('statuses.isToSendHint')}
-          />
+          {FLAGS.map(({ name, hintKey }) => (
+            <ControlledCheckbox
+              key={name}
+              label={t(`statuses.fields.${name}`)}
+              checked={flag(name)}
+              onChange={(checked) => setFlags((previous) => ({ ...previous, [name]: checked }))}
+              description={t(hintKey)}
+            />
+          ))}
         </div>
 
         <DialogFooter>

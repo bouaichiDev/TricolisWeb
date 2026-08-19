@@ -1,7 +1,13 @@
 import { api } from '@/shared/api/client'
 import type { ApiCollection, ApiResource } from '@/shared/api/types'
 
-import type { Status, StatusFilters, StatusPayload } from '../types/status'
+import type {
+  Status,
+  StatusFilters,
+  StatusPayload,
+  StatusTransition,
+  StatusTransitionInput,
+} from '../types/status'
 
 /**
  * Référentiel des statuts, commun à toute la plateforme.
@@ -25,4 +31,21 @@ export const statusesApi = {
     api.patch<ApiResource<Status>>(`/statuses/${id}`, payload).then((response) => response.data),
 
   remove: (id: string) => api.delete<void>(`/statuses/${id}`),
+
+  transitions: (id: string) =>
+    api
+      .get<ApiResource<StatusTransition[]>>(`/statuses/${id}/transitions`)
+      .then((response) => response.data),
+
+  /**
+   * Remplace l'ensemble des transitions au départ d'un statut.
+   *
+   * Un envoi complet plutôt qu'un ajout par arête : dessiner un cycle de vie se
+   * fait d'un bloc, et une mise à jour partielle laisserait, le temps de la
+   * séquence, un graphe que personne n'a voulu.
+   */
+  syncTransitions: (id: string, transitions: StatusTransitionInput[]) =>
+    api
+      .put<ApiResource<StatusTransition[]>>(`/statuses/${id}/transitions`, { transitions })
+      .then((response) => response.data),
 }

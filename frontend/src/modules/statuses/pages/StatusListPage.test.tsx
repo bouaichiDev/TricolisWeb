@@ -18,6 +18,8 @@ const status = {
   icon: 'FileText',
   active: true,
   isToSend: false,
+  allowsContentChanges: true,
+  requiresReason: false,
   position: 10,
   createdAt: '2026-08-01T09:00:00.000000Z',
   updatedAt: '2026-08-01T09:00:00.000000Z',

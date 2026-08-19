@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Un statut du référentiel commun.
@@ -30,6 +31,8 @@ use Illuminate\Database\Eloquent\Model;
     'icon',
     'active',
     'is_to_send',
+    'allows_content_changes',
+    'requires_reason',
     'position',
 ])]
 class Status extends Model
@@ -50,8 +53,26 @@ class Status extends Model
             'status' => 'integer',
             'active' => 'boolean',
             'is_to_send' => 'boolean',
+            'allows_content_changes' => 'boolean',
+            'requires_reason' => 'boolean',
             'position' => 'integer',
         ];
+    }
+
+    /**
+     * Transitions qui partent de ce statut.
+     *
+     * @return HasMany<StatusTransition, $this>
+     */
+    public function outgoing(): HasMany
+    {
+        return $this->hasMany(StatusTransition::class, 'from_status_id');
+    }
+
+    /** @return HasMany<StatusTransition, $this> */
+    public function incoming(): HasMany
+    {
+        return $this->hasMany(StatusTransition::class, 'to_status_id');
     }
 
     /** @param  Builder<self>  $query */

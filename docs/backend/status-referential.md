@@ -168,6 +168,16 @@ vivait lui aussi dans l'énumération :
 | `allows_content_changes` | `OrderStatus::allowsContentChanges()` |
 | `requires_reason` | `OrderStatus::requiresReason()` |
 
+Les deux méthodes de l'énumération subsistent, mais **ne servent plus qu'au
+semis d'une base neuve** : plus aucun code d'exécution ne les appelle.
+
+Le contenu d'une commande est ouvert sur quatre statuts — **Brouillon,
+Confirmée, Prête, En cours**. L'exploitation corrige jusqu'à l'exécution : un
+colis s'ajoute au dernier moment, un article se rectifie sur le terrain.
+`Planifiée` et au-delà restent fermés, une tournée construite sur la commande ne
+serait pas prévenue du changement. Ce découpage est un réglage, pas une règle du
+code : il se change depuis l'écran.
+
 `StatusMachine` lit l'ensemble en une requête par entité, mémorisée pour le
 processus. `OrderStatus` subsiste pour nommer les statuts que le code désigne
 explicitement — `DRAFT` à la création d'une commande — mais ne décide plus.

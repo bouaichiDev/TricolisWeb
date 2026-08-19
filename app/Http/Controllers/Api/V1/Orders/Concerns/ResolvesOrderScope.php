@@ -38,8 +38,9 @@ trait ResolvesOrderScope
     /**
      * Refuse la modification du contenu d'une commande verrouillée.
      *
-     * Au-delà de `READY`, lignes, colis et services sont engagés auprès de
-     * l'exploitation : les modifier fausserait la planification en cours.
+     * Quels statuts laissent le contenu ouvert est une décision du référentiel,
+     * pas une constante : `statuses.allows_content_changes` la porte, et
+     * l'administrateur plateforme la règle depuis son écran.
      */
     protected function assertOrderIsEditable(Order $order): void
     {

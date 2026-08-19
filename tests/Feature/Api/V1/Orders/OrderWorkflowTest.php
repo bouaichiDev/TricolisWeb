@@ -193,6 +193,22 @@ describe('order status', function (): void {
             ->postJson("/api/v1/orders/{$order->id}/lines", ['name' => 'Ajout tardif', 'quantity' => 1])
             ->assertStatus(409);
     });
+
+    /**
+     * L'exploitation corrige jusqu'a l'execution : un colis s'ajoute au dernier
+     * moment, un article se rectifie sur le terrain. La regle vient du
+     * referentiel, pas d'une constante.
+     */
+    it('keeps the content open while ready or in progress', function (): void {
+        foreach ([OrderStatus::READY, OrderStatus::IN_PROGRESS] as $status) {
+            $order = Order::factory()->forOrganization($this->organization)
+                ->withStatus($status)->create(['created_by' => $this->user->id]);
+
+            $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+                ->postJson("/api/v1/orders/{$order->id}/lines", ['name' => 'Ajout tardif', 'quantity' => 1])
+                ->assertCreated();
+        }
+    });
 });
 
 describe('order duplication', function (): void {

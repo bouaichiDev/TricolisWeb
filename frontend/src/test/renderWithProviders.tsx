@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import { makeMembership, makeUser } from './fixtures'
 import { AuthContext } from '@/app/providers/AuthProvider'
+import { Toaster } from '@/shared/components/ui/sonner'
 import type { AuthContextValue, AuthMembership } from '@/shared/types/auth'
 
 interface Options {
@@ -88,6 +89,10 @@ export function renderWithProviders(ui: ReactElement, options: Options = {}): Re
               </Routes>
             )}
           </MemoryRouter>
+          {/* Monté comme en production : sans lui, les messages de refus et de
+              confirmation ne s'afficheraient nulle part, et les tests qui les
+              vérifient passeraient à côté d'un écran muet. */}
+          <Toaster />
         </AuthContext.Provider>
       </QueryClientProvider>
     )

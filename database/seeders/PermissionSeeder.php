@@ -26,6 +26,11 @@ class PermissionSeeder extends Seeder
         ['code' => 'organizations.update', 'name' => 'Modifier une organisation', 'module' => 'organizations', 'action' => 'update'],
         ['code' => 'organizations.delete', 'name' => 'Supprimer une organisation', 'module' => 'organizations', 'action' => 'delete'],
 
+        ['code' => 'statuses.view', 'name' => 'Voir les statuts', 'module' => 'statuses', 'action' => 'view'],
+        ['code' => 'statuses.create', 'name' => 'Créer un statut', 'module' => 'statuses', 'action' => 'create'],
+        ['code' => 'statuses.update', 'name' => 'Modifier un statut', 'module' => 'statuses', 'action' => 'update'],
+        ['code' => 'statuses.delete', 'name' => 'Supprimer un statut', 'module' => 'statuses', 'action' => 'delete'],
+
         ['code' => 'subscriptions.view', 'name' => 'Voir l\'abonnement', 'module' => 'subscriptions', 'action' => 'view'],
         ['code' => 'subscriptions.create', 'name' => 'Souscrire un abonnement', 'module' => 'subscriptions', 'action' => 'create'],
         ['code' => 'subscriptions.update', 'name' => 'Modifier l\'abonnement', 'module' => 'subscriptions', 'action' => 'update'],

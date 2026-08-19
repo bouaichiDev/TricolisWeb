@@ -68,11 +68,15 @@ describe('OrganizationSwitcher', () => {
   })
 
   it('n’affiche rien tant qu’aucune appartenance n’est résolue', () => {
-    const { container } = renderWithProviders(<OrganizationSwitcher />, {
+    renderWithProviders(<OrganizationSwitcher />, {
       membership: null,
       memberships: [],
     })
 
-    expect(container).toBeEmptyDOMElement()
+    // Le sélecteur ne rend aucun élément propre. Le conteneur, lui, n'est pas
+    // vide : les fournisseurs y montent la zone de notifications, comme en
+    // production.
+    expect(screen.queryByRole('button', { name: /organisation/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument()
   })
 })

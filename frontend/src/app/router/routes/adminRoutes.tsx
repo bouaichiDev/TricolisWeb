@@ -7,6 +7,7 @@ import { OrganizationCreatePage } from '@/modules/organizations/pages/Organizati
 import { OrganizationDetailPage } from '@/modules/organizations/pages/OrganizationDetailPage'
 import { OrganizationEditPage } from '@/modules/organizations/pages/OrganizationEditPage'
 import { OrganizationListPage } from '@/modules/organizations/pages/OrganizationListPage'
+import { StatusListPage } from '@/modules/statuses/pages/StatusListPage'
 import { RoleCreatePage } from '@/modules/roles/pages/RoleCreatePage'
 import { RoleDetailPage } from '@/modules/roles/pages/RoleDetailPage'
 import { RoleEditPage } from '@/modules/roles/pages/RoleEditPage'
@@ -86,6 +87,14 @@ export const adminRoutes = [
     key="organization-edit"
     path="/organizations/:id/edit"
     element={guarded('organizations.update', <OrganizationEditPage />, { platformOnly: true })}
+  />,
+
+  // Référentiel des statuts : commun à toute la plateforme. Un organisme le
+  // lit à travers les écrans qui affichent un libellé, il ne le règle pas.
+  <Route
+    key="statuses"
+    path="/statuses"
+    element={guarded('statuses.view', <StatusListPage />, { platformOnly: true })}
   />,
 
   // Point d'entrée d'un administrateur d'organisme : sa propre organisation,

@@ -51,6 +51,7 @@ use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Statuses\Models\Status;
 use App\Modules\Stock\Models\StockBalance;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
@@ -73,6 +74,8 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  */
 final class MorphMap
 {
+    public const string STATUS = 'status';
+
     public const string ORGANIZATION = 'organization';
 
     public const string USER = 'user';
@@ -199,6 +202,7 @@ final class MorphMap
     public static function register(): void
     {
         Relation::morphMap([
+            self::STATUS => Status::class,
             self::ORGANIZATION => Organization::class,
             self::USER => User::class,
             self::ORGANIZATION_USER => OrganizationUser::class,

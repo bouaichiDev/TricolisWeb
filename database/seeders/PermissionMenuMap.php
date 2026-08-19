@@ -84,6 +84,7 @@ final class PermissionMenuMap
         'audit' => MenuSection::ADMINISTRATION,
         'subscriptions' => MenuSection::ADMINISTRATION,
         'organizations' => MenuSection::ADMINISTRATION,
+        'statuses' => MenuSection::PLATFORM,
     ];
 
     /**

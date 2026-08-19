@@ -217,6 +217,19 @@ final class MenuCatalogue
                 scope: RoleScope::PLATFORM,
                 alwaysVisible: true,
             ),
+            // Referentiel des statuts : commun a toute la plateforme, donc
+            // gere depuis le perimetre plateforme et non par organisation.
+            new MenuEntry(
+                code: 'statuses',
+                labelKey: 'nav.statuses',
+                icon: 'Tags',
+                section: MenuSection::PLATFORM,
+                position: 1,
+                route: '/statuses',
+                permission: 'statuses.view',
+                scope: RoleScope::PLATFORM,
+                alwaysVisible: true,
+            ),
         ];
     }
 

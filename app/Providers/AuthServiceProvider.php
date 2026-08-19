@@ -42,6 +42,7 @@ use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Statuses\Models\Status;
 use App\Modules\Stock\Models\StockBalance;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
@@ -86,6 +87,7 @@ use App\Policies\ProviderSettlementLinePolicy;
 use App\Policies\ProviderSettlementPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
+use App\Policies\StatusPolicy;
 use App\Policies\StockBalancePolicy;
 use App\Policies\StockItemPolicy;
 use App\Policies\StockLocationPolicy;
@@ -113,6 +115,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Organization::class => OrganizationPolicy::class,
+        Status::class => StatusPolicy::class,
         Subscription::class => SubscriptionPolicy::class,
         User::class => UserPolicy::class,
         Agency::class => AgencyPolicy::class,

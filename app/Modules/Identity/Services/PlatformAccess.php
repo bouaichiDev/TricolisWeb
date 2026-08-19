@@ -37,6 +37,12 @@ class PlatformAccess
     public const array PLATFORM_PERMISSIONS = [
         'organizations.create',
         'organizations.delete',
+        // Le referentiel des statuts decrit le cycle de vie du domaine, pas la
+        // preference d'un organisme : le laisser deleguer localement rendrait
+        // les commandes de deux organismes incomparables.
+        'statuses.create',
+        'statuses.update',
+        'statuses.delete',
     ];
 
     public function isPlatformAdmin(?User $user): bool

@@ -55,6 +55,7 @@ use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
+use App\Http\Controllers\Api\V1\Statuses\StatusController;
 use App\Http\Controllers\Api\V1\Stock\StockBalanceController;
 use App\Http\Controllers\Api\V1\Stock\StockItemController;
 use App\Http\Controllers\Api\V1\Stock\StockLocationController;
@@ -92,6 +93,12 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     // plateforme n'en a pas, et le resolveur choisit le catalogue d'apres la
     // portee du compte.
     Route::get('menu', [MenuController::class, 'index'])->name('menu.index');
+
+    // Referentiel des statuts : commun a la plateforme, donc hors du groupe
+    // `organization`. Tout membre le lit, seule la plateforme l'ecrit — c'est
+    // `StatusPolicy` qui tranche, pas la presence de l'en-tete.
+    Route::get('statuses/sources', [StatusController::class, 'sources'])->name('statuses.sources');
+    Route::apiResource('statuses', StatusController::class)->except(['create', 'edit']);
 
     Route::middleware('organization')->group(static function (): void {
         Route::get('menu/catalogue', [MenuController::class, 'catalogue'])->name('menu.catalogue');

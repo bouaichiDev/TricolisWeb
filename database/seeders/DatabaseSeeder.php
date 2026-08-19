@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
+            // Referentiel commun a la plateforme : seme a partir des
+            // enumerations existantes, avant toute donnee de demonstration.
+            StatusSeeder::class,
             DevelopmentOrganizationSeeder::class,
             RoleSeeder::class,
             // Après RoleSeeder : le compte s'accroche au rôle plateforme que

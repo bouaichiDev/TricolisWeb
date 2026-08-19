@@ -57,7 +57,9 @@ describe('OrderDetailPage', () => {
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Lignes' }))
 
-    expect(await screen.findByText('Carton renforcé')).toBeInTheDocument()
+    // Le libellé paraît deux fois : en titre de la ligne, puis dans le détail
+    // complet de ses champs.
+    expect((await screen.findAllByText('Carton renforcé')).length).toBeGreaterThan(0)
     expect(screen.getByText('Article du catalogue')).toBeInTheDocument()
   })
 
@@ -67,8 +69,11 @@ describe('OrderDetailPage', () => {
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Colis' }))
 
-    expect(await screen.findByText('PAL-1')).toBeInTheDocument()
-    expect(screen.getByText('CTN-1')).toBeInTheDocument()
+    expect((await screen.findAllByText('PAL-1')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('CTN-1').length).toBeGreaterThan(0)
+    // Les champs du diagramme sont affichés, dimensions comprises.
+    expect(screen.getByText('120')).toBeInTheDocument()
+    expect(screen.getByText('Palette')).toBeInTheDocument()
     // La ligne affectée est nommée, pas montrée sous forme d'identifiant.
     expect(screen.getAllByText('Carton renforcé').length).toBeGreaterThan(0)
   })

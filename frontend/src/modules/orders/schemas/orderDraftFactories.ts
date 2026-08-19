@@ -25,11 +25,17 @@ export function emptyLine(): LineDraft {
     catalogItemId: null,
     articleCode: '',
     barcode: '',
+    externalReference: '',
     name: '',
     description: '',
     quantity: '1',
     weight: '',
     volume: '',
+    length: '',
+    width: '',
+    height: '',
+    purchasePrice: '',
+    sellingPrice: '',
   }
 }
 

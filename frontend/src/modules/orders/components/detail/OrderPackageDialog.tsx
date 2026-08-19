@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useReferentialOptions } from '@/modules/packages/hooks/useReferentials'
+import { useReferentialSelectOptions } from '@/modules/packages/hooks/useReferentials'
 import { ApiError } from '@/shared/api/errors'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
@@ -20,10 +20,7 @@ import type { OrderPackageInput } from '../../api/orderContent.api'
 import { useCreateOrderPackage, useUpdateOrderPackage } from '../../hooks/useOrderContent'
 import type { OrderPackage } from '../../types/orderDetail'
 import { blank, fieldErrorsOf, num, optional, text } from './formValues'
-import { assignableParents, packageDisplayName } from './packageParents'
-
-/** Valeur désignant « aucun parent » ; Radix refuse une option vide. */
-const NO_PARENT = 'none'
+import { NO_PARENT, parentSelectOptions } from './packageParents'
 
 interface OrderPackageDialogProps {
   orderId: string
@@ -51,8 +48,8 @@ export function OrderPackageDialog({
   const { t } = useTranslation()
   const create = useCreateOrderPackage(orderId)
   const update = useUpdateOrderPackage(orderId)
-  const types = useReferentialOptions('package-types')
-  const groupings = useReferentialOptions('package-grouping-types')
+  const types = useReferentialSelectOptions('package-types')
+  const groupings = useReferentialSelectOptions('package-grouping-types')
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -68,6 +65,9 @@ export function OrderPackageDialog({
     quantity: pkg ? num(pkg.quantity) : '1',
     weight: num(pkg?.weight),
     volume: num(pkg?.volume),
+    length: num(pkg?.length),
+    width: num(pkg?.width),
+    height: num(pkg?.height),
     ...values,
   }
 
@@ -80,17 +80,6 @@ export function OrderPackageDialog({
     setFormError(null)
     onOpenChange(false)
   }
-
-  const parentOptions = [
-    { value: NO_PARENT, label: t('common.none') },
-    ...assignableParents(packages, pkg).map((item) => ({
-      value: item.id,
-      label: packageDisplayName(item),
-    })),
-  ]
-
-  const toOptions = (data?: { data: { id: string; code: string; name: string }[] }) =>
-    (data?.data ?? []).map((item) => ({ value: item.id, label: item.name, hint: item.code }))
 
   const onError = (cause: unknown) => {
     if (cause instanceof ApiError && cause.isValidation) {
@@ -116,6 +105,9 @@ export function OrderPackageDialog({
       quantity: optional(current.quantity),
       weight: optional(current.weight),
       volume: optional(current.volume),
+      length: optional(current.length) ?? null,
+      width: optional(current.width) ?? null,
+      height: optional(current.height) ?? null,
     }
 
     if (pkg) update.mutate({ id: pkg.id, ...payload }, { onSuccess: close, onError })
@@ -153,7 +145,7 @@ export function OrderPackageDialog({
             label={t('orders.packages.parent')}
             value={current.parentPackageId}
             onChange={(value) => patch('parentPackageId', value)}
-            options={parentOptions}
+            options={parentSelectOptions(packages, pkg, t('common.none'))}
             error={errors.parentPackageId}
           />
 
@@ -161,8 +153,8 @@ export function OrderPackageDialog({
             label={t('orders.packages.packageType')}
             value={current.packageTypeId}
             onChange={(value) => patch('packageTypeId', value)}
-            options={toOptions(types.data)}
-            isLoading={types.isPending}
+            options={types.options}
+            isLoading={types.isLoading}
             error={errors.packageTypeId}
           />
 
@@ -170,8 +162,8 @@ export function OrderPackageDialog({
             label={t('orders.packages.groupingType')}
             value={current.groupingTypeId}
             onChange={(value) => patch('groupingTypeId', value)}
-            options={toOptions(groupings.data)}
-            isLoading={groupings.isPending}
+            options={groupings.options}
+            isLoading={groupings.isLoading}
             error={errors.groupingTypeId}
           />
 
@@ -180,6 +172,9 @@ export function OrderPackageDialog({
           {field('quantity', t('orders.fields.quantity'), 'number')}
           {field('weight', t('orders.fields.weight'), 'number')}
           {field('volume', t('orders.fields.volume'), 'number')}
+          {field('length', t('orders.fields.length'), 'number')}
+          {field('width', t('orders.fields.width'), 'number')}
+          {field('height', t('orders.fields.height'), 'number')}
         </div>
 
         <DialogFooter>

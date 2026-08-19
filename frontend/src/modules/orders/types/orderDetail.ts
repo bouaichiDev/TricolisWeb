@@ -28,19 +28,29 @@ export interface OrderLine {
   fromCatalog: boolean
 }
 
-/** Colis — `PackageResource`. */
+/**
+ * Colis — `PackageResource`.
+ *
+ * `currentStockLocationId` figure au diagramme et en base ; l'emplacement lui
+ * même relève du module Stock, phase ultérieure, donc seul l'identifiant est
+ * connu ici.
+ */
 export interface OrderPackage {
   id: string
   orderId: string
   parentPackageId: string | null
   packageTypeId: string | null
   groupingTypeId: string | null
+  currentStockLocationId: string | null
   barcode: string | null
   reference: string | null
   description: string | null
   quantity: number | string | null
   weight: number | string | null
   volume: number | string | null
+  length: number | string | null
+  width: number | string | null
+  height: number | string | null
   status: string | null
   packageType?: { id: string; code: string; name: string } | null
   groupingType?: { id: string; code: string; name: string } | null

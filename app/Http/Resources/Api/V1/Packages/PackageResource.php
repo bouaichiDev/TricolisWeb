@@ -22,6 +22,10 @@ class PackageResource extends JsonResource
             'parentPackageId' => $this->parent_package_id,
             'packageTypeId' => $this->package_type_id,
             'groupingTypeId' => $this->grouping_type_id,
+            // Colonne du diagramme, presente en base des la creation de la
+            // table : l'omettre de la ressource la rendait invisible cote
+            // client alors qu'elle est renseignee par le module Stock.
+            'currentStockLocationId' => $this->current_stock_location_id,
             'barcode' => $this->barcode,
             'reference' => $this->reference,
             'description' => $this->description,

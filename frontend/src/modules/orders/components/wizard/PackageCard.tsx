@@ -1,7 +1,7 @@
 import { CornerDownRight, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { useReferentialOptions } from '@/modules/packages/hooks/useReferentials'
+import { useReferentialSelectOptions } from '@/modules/packages/hooks/useReferentials'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
 import { Button } from '@/shared/components/ui/button'
@@ -46,11 +46,8 @@ export function PackageCard({
   onDetach,
 }: PackageCardProps) {
   const { t } = useTranslation()
-  const types = useReferentialOptions('package-types')
-  const groupings = useReferentialOptions('package-grouping-types')
-
-  const toOptions = (data?: { data: { id: string; code: string; name: string }[] }) =>
-    (data?.data ?? []).map((item) => ({ value: item.id, label: item.name, hint: item.code }))
+  const types = useReferentialSelectOptions('package-types')
+  const groupings = useReferentialSelectOptions('package-grouping-types')
 
   return (
     <li style={{ marginLeft: `${depth * 1.5}rem` }} className="rounded-lg border p-4">
@@ -83,8 +80,8 @@ export function PackageCard({
           label={t('orders.packages.packageType')}
           value={pkg.packageTypeId ?? ''}
           onChange={(packageTypeId) => onChange({ packageTypeId: packageTypeId || null })}
-          options={toOptions(types.data)}
-          isLoading={types.isPending}
+          options={types.options}
+          isLoading={types.isLoading}
           error={fieldError(issues, 'packageTypeId')}
         />
 
@@ -92,8 +89,8 @@ export function PackageCard({
           label={t('orders.packages.groupingType')}
           value={pkg.groupingTypeId ?? ''}
           onChange={(groupingTypeId) => onChange({ groupingTypeId: groupingTypeId || null })}
-          options={toOptions(groupings.data)}
-          isLoading={groupings.isPending}
+          options={groupings.options}
+          isLoading={groupings.isLoading}
           error={fieldError(issues, 'groupingTypeId')}
         />
 
@@ -148,6 +145,10 @@ export function PackageCard({
           error={fieldError(issues, 'description')}
         />
       </div>
+
+      <p className="mt-2 text-xs text-muted-foreground">
+        {t('orders.packages.dimensionsCreateHint')}
+      </p>
 
       <div className="mt-4 border-t pt-4">
         <PackageLineAssignment

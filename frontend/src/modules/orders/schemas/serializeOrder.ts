@@ -74,10 +74,18 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
       name: line.catalogItemId === null ? line.name.trim() : blank(line.name),
       articleCode: blank(line.articleCode),
       barcode: blank(line.barcode),
+      externalReference: blank(line.externalReference),
       description: blank(line.description),
       quantity: number(line.quantity),
       weight: optional(line.weight),
       volume: optional(line.volume),
+      // `StoreOrderRequest` accepte ces cinq champs sur une ligne, mais pas sur
+      // un colis : la différence vient du serveur, pas d'un choix d'écran.
+      length: optional(line.length) ?? null,
+      width: optional(line.width) ?? null,
+      height: optional(line.height) ?? null,
+      purchasePrice: optional(line.purchasePrice) ?? null,
+      sellingPrice: optional(line.sellingPrice) ?? null,
     })),
 
     packages: packages.map(

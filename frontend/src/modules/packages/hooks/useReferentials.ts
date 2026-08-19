@@ -46,6 +46,25 @@ export function useReferentialOptions(kind: ReferentialKind) {
   })
 }
 
+/**
+ * Référentiel prêt pour une liste déroulante.
+ *
+ * Le code sert d'indication sous le libellé : deux types de colis peuvent
+ * porter un nom voisin, leur code les sépare.
+ */
+export function useReferentialSelectOptions(kind: ReferentialKind) {
+  const query = useReferentialOptions(kind)
+
+  return {
+    isLoading: query.isPending,
+    options: (query.data?.data ?? []).map((item) => ({
+      value: item.id,
+      label: item.name,
+      hint: item.code,
+    })),
+  }
+}
+
 export function useCreateReferential(kind: ReferentialKind) {
   const queryClient = useQueryClient()
   const { t } = useTranslation()

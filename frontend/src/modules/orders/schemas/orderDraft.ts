@@ -15,11 +15,17 @@ export interface LineDraft {
   catalogItemId: string | null
   articleCode: string
   barcode: string
+  externalReference: string
   name: string
   description: string
   quantity: string
   weight: string
   volume: string
+  length: string
+  width: string
+  height: string
+  purchasePrice: string
+  sellingPrice: string
 }
 
 export interface PackageLineDraft {

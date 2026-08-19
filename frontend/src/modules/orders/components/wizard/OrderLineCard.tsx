@@ -52,6 +52,9 @@ export function OrderLineCard({
       description: item.description ?? '',
       weight: item.weight === null ? '' : String(item.weight),
       volume: item.volume === null ? '' : String(item.volume),
+      length: item.length === null ? '' : String(item.length),
+      width: item.width === null ? '' : String(item.width),
+      height: item.height === null ? '' : String(item.height),
     })
   }
 
@@ -154,7 +157,40 @@ export function OrderLineCard({
           onChange={(volume) => onChange({ volume })}
           error={fieldError(issues, 'volume')}
         />
+
+        <ControlledField
+          label={t('orders.fields.externalReference')}
+          value={line.externalReference}
+          onChange={(externalReference) => onChange({ externalReference })}
+          error={fieldError(issues, 'externalReference')}
+        />
       </div>
+
+      <fieldset className="mt-4 border-t pt-4">
+        <legend className="mb-3 text-sm font-medium">{t('orders.lines.dimensions')}</legend>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(
+            [
+              ['length', 'orders.fields.length'],
+              ['width', 'orders.fields.width'],
+              ['height', 'orders.fields.height'],
+              ['purchasePrice', 'orders.fields.purchasePrice'],
+              ['sellingPrice', 'orders.fields.sellingPrice'],
+            ] as const
+          ).map(([name, labelKey]) => (
+            <ControlledField
+              key={name}
+              label={t(labelKey)}
+              type="number"
+              min="0"
+              step="0.001"
+              value={line[name]}
+              onChange={(value) => onChange({ [name]: value } as Partial<LineDraft>)}
+              error={fieldError(issues, name)}
+            />
+          ))}
+        </div>
+      </fieldset>
 
       <div className="mt-4">
         <ControlledField

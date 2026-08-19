@@ -50,9 +50,15 @@ export function OrderLineDialog({ orderId, line, open, onOpenChange }: OrderLine
     articleCode: text(line?.articleCode),
     barcode: text(line?.barcode),
     description: text(line?.description),
+    externalReference: text(line?.externalReference),
     quantity: line ? num(line.quantity) : '1',
     weight: num(line?.weight),
     volume: num(line?.volume),
+    length: num(line?.length),
+    width: num(line?.width),
+    height: num(line?.height),
+    purchasePrice: num(line?.purchasePrice),
+    sellingPrice: num(line?.sellingPrice),
     ...values,
   }
 
@@ -84,9 +90,15 @@ export function OrderLineDialog({ orderId, line, open, onOpenChange }: OrderLine
       articleCode: blank(current.articleCode),
       barcode: blank(current.barcode),
       description: blank(current.description),
+      externalReference: blank(current.externalReference),
       quantity: optional(current.quantity),
       weight: optional(current.weight),
       volume: optional(current.volume),
+      length: optional(current.length) ?? null,
+      width: optional(current.width) ?? null,
+      height: optional(current.height) ?? null,
+      purchasePrice: optional(current.purchasePrice) ?? null,
+      sellingPrice: optional(current.sellingPrice) ?? null,
     }
 
     if (line) update.mutate({ id: line.id, ...payload }, { onSuccess: close, onError })
@@ -125,10 +137,22 @@ export function OrderLineDialog({ orderId, line, open, onOpenChange }: OrderLine
           {field('name', t('orders.fields.name'))}
           {field('articleCode', t('orders.fields.articleCode'))}
           {field('barcode', t('orders.fields.barcode'))}
+          {field('externalReference', t('orders.fields.externalReference'))}
           {field('quantity', t('orders.fields.quantity'), 'number')}
           {field('weight', t('orders.fields.weight'), 'number')}
           {field('volume', t('orders.fields.volume'), 'number')}
         </div>
+
+        <fieldset className="border-t pt-4">
+          <legend className="mb-3 text-sm font-medium">{t('orders.lines.dimensions')}</legend>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {field('length', t('orders.fields.length'), 'number')}
+            {field('width', t('orders.fields.width'), 'number')}
+            {field('height', t('orders.fields.height'), 'number')}
+            {field('purchasePrice', t('orders.fields.purchasePrice'), 'number')}
+            {field('sellingPrice', t('orders.fields.sellingPrice'), 'number')}
+          </div>
+        </fieldset>
 
         <ControlledField
           label={t('orders.fields.description')}

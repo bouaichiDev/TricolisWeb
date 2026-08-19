@@ -33,3 +33,26 @@ export function assignableParents(
 
   return packages.filter((item) => !forbidden.has(item.id))
 }
+
+/**
+ * Valeur designant « aucun parent ».
+ *
+ * Radix refuse une option de valeur vide ; les colis portant un ULID, ce
+ * libelle ne peut entrer en collision avec aucun d'entre eux.
+ */
+export const NO_PARENT = 'none'
+
+/** Options du selecteur de parent, valeur « aucun » comprise. */
+export function parentSelectOptions(
+  packages: OrderPackage[],
+  pkg: OrderPackage | null,
+  noneLabel: string,
+): { value: string; label: string }[] {
+  return [
+    { value: NO_PARENT, label: noneLabel },
+    ...assignableParents(packages, pkg).map((item) => ({
+      value: item.id,
+      label: packageDisplayName(item),
+    })),
+  ]
+}

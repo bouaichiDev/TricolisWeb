@@ -13,8 +13,7 @@ import { useDeleteOrderLine } from '../../hooks/useOrderContent'
 import type { OrderLine } from '../../types/orderDetail'
 import { EntityHistory } from './EntityHistory'
 import { OrderLineDialog } from './OrderLineDialog'
-
-const show = (value: number | string | null): string => (value === null ? '—' : String(value))
+import { OrderLineFields } from './OrderLineFields'
 
 interface OrderLinesTabProps {
   orderId: string
@@ -63,24 +62,14 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
           {lines.map((line) => (
             <li key={line.id} className="rounded-md border p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2 font-medium">
-                    {line.name}
-                    {line.fromCatalog ? (
-                      <Badge variant="secondary">{t('orders.lines.catalogItem')}</Badge>
-                    ) : (
-                      <Badge variant="outline">{t('orders.lines.manualEntry')}</Badge>
-                    )}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {[line.articleCode, line.barcode].filter(Boolean).join(' · ') || '—'}
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {t('orders.fields.quantity')} {show(line.quantity)} ·{' '}
-                    {t('orders.fields.weight')} {show(line.weight)} ·{' '}
-                    {t('orders.fields.volume')} {show(line.volume)}
-                  </p>
-                </div>
+                <p className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
+                  {line.name}
+                  {line.fromCatalog ? (
+                    <Badge variant="secondary">{t('orders.lines.catalogItem')}</Badge>
+                  ) : (
+                    <Badge variant="outline">{t('orders.lines.manualEntry')}</Badge>
+                  )}
+                </p>
 
                 {editable ? (
                   <div className="flex gap-1">
@@ -110,6 +99,14 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
                   </div>
                 ) : null}
               </div>
+
+              <div className="mt-3">
+                <OrderLineFields line={line} />
+              </div>
+
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t('orders.lines.trackedHint')}
+              </p>
 
               <div className="mt-2 border-t pt-2">
                 <EntityHistory entityType="order_line" entityId={line.id} />

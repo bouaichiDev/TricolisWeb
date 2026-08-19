@@ -125,7 +125,7 @@ describe('modification du contenu d’une commande', () => {
     })
 
     await openTab('Lignes')
-    await screen.findByText('Carton renforcé')
+    await screen.findAllByText('Carton renforcé')
 
     expect(screen.queryByRole('button', { name: 'Modifier la ligne' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Ajouter une ligne/ })).not.toBeInTheDocument()
@@ -136,7 +136,7 @@ describe('modification du contenu d’une commande', () => {
     renderDetail(['orders.view'])
 
     await openTab('Lignes')
-    await screen.findByText('Carton renforcé')
+    await screen.findAllByText('Carton renforcé')
 
     expect(screen.queryByRole('button', { name: 'Modifier la ligne' })).not.toBeInTheDocument()
   })
@@ -159,7 +159,7 @@ describe('historique par élément', () => {
     )
 
     await openTab('Lignes')
-    await screen.findByText('Carton renforcé')
+    await screen.findAllByText('Carton renforcé')
 
     expect(queries).toHaveLength(0)
 

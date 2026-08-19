@@ -690,7 +690,19 @@
       "reference": "Référence",
       "totalAmount": "Montant total",
       "createdBy": "Créée par",
-      "createdAt": "Créée le"
+      "createdAt": "Créée le",
+      "length": "Longueur",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "purchasePrice": "Prix d’achat",
+      "sellingPrice": "Prix de vente",
+      "reservedQuantity": "Quantité réservée",
+      "preparedQuantity": "Quantité préparée",
+      "deliveredQuantity": "Quantité livrée",
+      "parentLine": "Ligne parente",
+      "catalogItem": "Article de catalogue",
+      "stockLocation": "Emplacement de stock",
+      "description": "Description"
     },
     "edit": "Modifier la commande",
     "detail": "Fiche commande",
@@ -736,7 +748,9 @@
       "origin": "Origine",
       "edit": "Modifier la ligne",
       "create": "Ajouter une ligne",
-      "deleteConfirm": "Retirer cette ligne de la commande ?"
+      "deleteConfirm": "Retirer cette ligne de la commande ?",
+      "trackedHint": "Quantités réservée, préparée et livrée : renseignées par les modules Stock et Exploitation, jamais saisies ici.",
+      "dimensions": "Dimensions et prix"
     },
     "packages": {
       "title": "Colis",
@@ -761,7 +775,9 @@
       "edit": "Modifier le colis",
       "create": "Ajouter un colis",
       "deleteConfirm": "Retirer ce colis de la commande ?",
-      "parent": "Colis parent"
+      "parent": "Colis parent",
+      "dimensions": "Dimensions",
+      "dimensionsCreateHint": "Les dimensions ne sont pas acceptées à la création complète d’une commande ; elles se renseignent depuis la fiche, une fois la commande créée."
     },
     "services": {
       "title": "Services",

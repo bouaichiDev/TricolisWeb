@@ -16,6 +16,8 @@ import { usePackageTree } from '../../hooks/useOrders'
 import type { OrderLine, OrderPackage, PackageTreeNode } from '../../types/orderDetail'
 import { EntityHistory } from './EntityHistory'
 import { OrderPackageDialog } from './OrderPackageDialog'
+import { OrderPackageFields } from './OrderPackageFields'
+import { packageDisplayName } from './packageParents'
 
 interface FlatNode {
   node: PackageTreeNode
@@ -54,6 +56,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
   const [deleting, setDeleting] = useState<OrderPackage | null>(null)
 
   const byId = new Map(packages.map((item) => [item.id, item]))
+  const parentName = new Map(packages.map((item) => [item.id, packageDisplayName(item)]))
   const lineName = new Map(lines.map((line) => [line.id, line.name]))
 
   const addAction = editable ? (
@@ -129,11 +132,18 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
                   </div>
                 </div>
 
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {detail?.packageType?.name ?? '—'}
-                  {detail?.groupingType?.name ? ` · ${detail.groupingType.name}` : ''}
-                  {node.quantity !== null ? ` · ${node.quantity}` : ''}
-                </p>
+                {detail ? (
+                  <div className="mt-3">
+                    <OrderPackageFields
+                      pkg={detail}
+                      parentLabel={
+                        detail.parentPackageId
+                          ? parentName.get(detail.parentPackageId)
+                          : undefined
+                      }
+                    />
+                  </div>
+                ) : null}
 
                 {detail?.lines && detail.lines.length > 0 ? (
                   <ul className="mt-2 flex flex-col gap-1">

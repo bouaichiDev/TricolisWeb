@@ -14,6 +14,12 @@ export interface OrderLineInput {
   quantity?: number
   weight?: number
   volume?: number
+  length?: number | null
+  width?: number | null
+  height?: number | null
+  purchasePrice?: number | null
+  sellingPrice?: number | null
+  status?: string
 }
 
 /** Charge utile relevée sur `StorePackageRequest` / `UpdatePackageRequest`. */
@@ -27,6 +33,10 @@ export interface OrderPackageInput {
   quantity?: number
   weight?: number
   volume?: number
+  length?: number | null
+  width?: number | null
+  height?: number | null
+  status?: string
 }
 
 /**

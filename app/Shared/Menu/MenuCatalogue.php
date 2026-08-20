@@ -141,6 +141,27 @@ final class MenuCatalogue
                 parent: 'operations',
             ),
 
+            // Stock client chez le transporteur. Une seule entrée : les soldes
+            // et les mouvements d'un article se consultent depuis son article
+            // de catalogue, où la question se pose.
+            new MenuEntry(
+                code: 'stock',
+                labelKey: 'nav.stock',
+                icon: 'Boxes',
+                section: MenuSection::STOCK,
+                position: 40,
+            ),
+            new MenuEntry(
+                code: 'stock-locations',
+                labelKey: 'nav.stockLocations',
+                icon: 'Warehouse',
+                section: MenuSection::STOCK,
+                position: 41,
+                route: '/stock-locations',
+                permission: 'stock_locations.view',
+                parent: 'stock',
+            ),
+
             // L'administration ne se masque pas : un organisme qui la
             // retirerait n'aurait plus d'écran pour revenir en arrière.
             new MenuEntry(

@@ -471,26 +471,69 @@ JOIN stock_items i ON i.id = b.stock_item_id
 WHERE i.catalog_item_id = ?
 ```
 
-### Ce qui est construit, et ce qui ne l'est pas
+### Les écrans, ajoutés après coup
 
-| Couche | État |
-| --- | --- |
-| Tables `stock_items`, `stock_locations`, `stock_balances`, `stock_movements`, `stock_reservations` | ✅ |
-| Contrôleurs, ressources, policies, routes `/stock-*` | ✅ |
-| `GET /customers/{customer}/stock-balances` | ✅ |
-| Module frontend `src/modules/stock/` | ❌ **inexistant** |
+Le module `src/modules/stock/` n'existait pas quand ce rapport a été écrit —
+la Phase 2 couvrait « catalogues, commandes, colis et services ». Il a été
+ajouté ensuite, sans toucher au backend : **aucune route, aucune ressource,
+aucune permission n'a été créée**, tout existait déjà.
 
-**Le stock n'a pas d'écran.** La Phase 2 couvre « catalogues, commandes, colis
-et services » ; le stock n'y figure pas, et rien n'a été construit en douce.
-`src/modules/` n'a pas de dossier `stock`.
+| Écran | Route consommée | Permission |
+| --- | --- | --- |
+| Emplacements (`/stock-locations`) | `GET/POST/PATCH/DELETE stock-locations` | `stock_locations.*` |
+| Tiroir Stock d'un article | `GET stock-items?catalogItemId=` | `stock_balances.view` |
+| Mise sous suivi | `POST customers/{c}/stock-items` | `stock_items.create` |
+| Quantités par emplacement | `GET stock-balances?stockItemId=` | `stock_balances.view` |
+| Historique | `GET stock-movements?stockItemId=` | `stock_movements.view` |
+| Enregistrer un mouvement | `POST stock-movements` | `stock_movements.create` |
 
-Le backend est prêt : une phase Stock consommerait les routes existantes sans
-en ajouter. Ce qui manque côté écran, et seulement côté écran :
+**Le stock s'atteint depuis l'article**, par une icône dans sa ligne, et non par
+une liste globale : la question qu'on se pose est « combien reste-t-il de cet
+article, et qui l'a bougé », pas « montre-moi tous les soldes ».
 
-- une liste des emplacements (`stock-locations/tree`),
-- un état par article, agrégé depuis `stock-balances`,
-- les mouvements (`stock-movements`) et les réservations,
-- et, sur l'article de catalogue, un renvoi vers son `StockItem` s'il en a un.
+Deux cas dans le tiroir. Sans `StockItem` — `catalogItemId` est `nullable`, un
+article catalogué n'est pas forcément suivi en dépôt — il propose de mettre
+l'article sous suivi. Avec, il montre les soldes puis l'historique.
+
+#### Aucune quantité ne se saisit
+
+Il n'existe **pas** de route qui écrive un solde, et l'écran n'en invente pas.
+`StockBalance` est dérivé : `CreateStockMovementAction` verrouille les soldes
+concernés dans un ordre déterministe, contrôle la disponibilité, écrit le
+mouvement puis recalcule — le tout en transaction. Une quantité corrigée à la
+main n'aurait aucune histoire, et deux corrections concurrentes s'écraseraient.
+
+Le **sens** d'un mouvement n'est pas un champ du modèle : il se déduit des
+emplacements, exactement comme le fait l'Action.
+
+| Sens | Source | Destination |
+| --- | --- | --- |
+| Entrée | — | requise |
+| Sortie | requise | — |
+| Transfert | requise | requise, **même dépôt** |
+
+`movementType` reste une chaîne libre. `StoreStockMovementRequest` le dit :
+« le diagramme n'en énumère aucune valeur ». En dresser une liste serait décider
+à la place du métier ; le champ est proposé, et le sens sert de valeur par
+défaut.
+
+#### La liste plate plutôt que l'arbre
+
+`stock-locations/tree` existe et n'est pas utilisé. L'arbre entier remonterait
+des milliers d'emplacements d'un coup, alors que ce dont on a besoin pour un
+mouvement est de retrouver un code. La liste paginée avec recherche le fait sans
+charger un dépôt complet.
+
+#### Ce qui reste hors écran
+
+`StockReservation` — routes `stock-reservations` et `release` comprises. Une
+réservation naît d'une ligne de commande (`orderLineId`), pas d'une saisie
+manuelle : lui donner un écran de création avant que la commande sache la
+demander produirait des réservations que rien ne libère. `reservedQuantity` est
+en revanche affichée dans les soldes, à côté du disponible.
+
+`stock-locations/tree` et `GET /customers/{customer}/stock-balances`, non
+consommées à ce jour.
 
 ---
 

@@ -1,7 +1,10 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CatalogItemStockSheet } from '@/modules/stock/components/CatalogItemStockSheet'
+
+import { CatalogItemActions } from './CatalogItemActions'
 import { CatalogItemDialog } from './CatalogItemDialog'
 import {
   useCatalogItemList,
@@ -35,6 +38,7 @@ export function CatalogItemTable({
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<CatalogItem | null>(null)
   const [deleting, setDeleting] = useState<CatalogItem | null>(null)
+  const [stockOf, setStockOf] = useState<CatalogItem | null>(null)
 
   const { data, isPending, error, refetch } = useCatalogItemList(customerId, catalogId, filters)
   const create = useCreateCatalogItem(customerId, catalogId)
@@ -92,28 +96,11 @@ export function CatalogItemTable({
       header: '',
       className: 'w-24',
       cell: (row) => (
-        <span className="flex justify-end gap-1">
-          <PermissionGuard permission="catalogs.update">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.edit')}
-              onClick={() => setEditing(row)}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-          <PermissionGuard permission="catalogs.delete">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.delete')}
-              onClick={() => setDeleting(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        </span>
+        <CatalogItemActions
+          onStock={() => setStockOf(row)}
+          onEdit={() => setEditing(row)}
+          onDelete={() => setDeleting(row)}
+        />
       ),
     },
   ]
@@ -167,6 +154,12 @@ export function CatalogItemTable({
           }
         />
       ) : null}
+
+      <CatalogItemStockSheet
+        customerId={customerId}
+        item={stockOf}
+        onOpenChange={(open) => !open && setStockOf(null)}
+      />
 
       <ConfirmDialog
         open={deleting !== null}

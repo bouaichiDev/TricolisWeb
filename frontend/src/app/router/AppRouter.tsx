@@ -4,6 +4,7 @@ import { adminRoutes } from './routes/adminRoutes'
 import { customerRoutes } from './routes/customerRoutes'
 import { guarded } from './routes/guarded'
 import { operationsRoutes } from './routes/operationsRoutes'
+import { stockRoutes } from './routes/stockRoutes'
 import { resourceRoutes } from './routes/resourceRoutes'
 import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
@@ -45,6 +46,7 @@ export function AppRouter() {
         {customerRoutes}
         {resourceRoutes}
         {operationsRoutes}
+        {stockRoutes}
         {adminRoutes}
 
         <Route path="*" element={<NotFoundPage />} />

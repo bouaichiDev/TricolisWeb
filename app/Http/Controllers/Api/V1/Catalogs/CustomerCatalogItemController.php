@@ -30,7 +30,8 @@ class CustomerCatalogItemController extends Controller
     /** @var array<string, string> */
     private const array MAPPING = [
         'article_code' => 'articleCode', 'barcode' => 'barcode', 'name' => 'name', 'description' => 'description',
-        'weight' => 'weight', 'volume' => 'volume', 'length' => 'length', 'width' => 'width', 'height' => 'height', 'status' => 'status',
+        'weight' => 'weight', 'volume' => 'volume', 'length' => 'length', 'width' => 'width', 'height' => 'height',
+        'assembly_time_minutes' => 'assemblyTimeMinutes', 'status' => 'status',
     ];
 
     /**

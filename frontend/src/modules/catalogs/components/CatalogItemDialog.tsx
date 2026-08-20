@@ -110,6 +110,16 @@ export function CatalogItemDialog({
             <TextField form={form} name="height" label={t('catalogItems.fields.height')} />
           </div>
 
+          {/* Le montage n'est pas une mesure de l'article : il est a part. */}
+          <div className="grid gap-5 sm:grid-cols-5">
+            <TextField
+              form={form}
+              name="assemblyTimeMinutes"
+              label={t('catalogItems.fields.assemblyTimeMinutes')}
+              description={t('catalogItems.assemblyTimeHint')}
+            />
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('common.cancel')}

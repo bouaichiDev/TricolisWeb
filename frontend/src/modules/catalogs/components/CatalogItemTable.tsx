@@ -70,6 +70,19 @@ export function CatalogItemTable({
       cell: (row) => number(row.volume),
     },
     {
+      key: 'assemblyTimeMinutes',
+      header: t('catalogItems.fields.assemblyTimeMinutes'),
+      hideOnMobile: true,
+      // « — » et non « 0 min » : un article sans montage renseigné n'est pas
+      // un article dont le montage prend zéro minute.
+      cell: (row) =>
+        row.assemblyTimeMinutes === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          t('catalogItems.minutes', { count: row.assemblyTimeMinutes })
+        ),
+    },
+    {
       key: 'status',
       header: t('catalogItems.fields.status'),
       cell: (row) => <StatusBadge status={row.status} />,

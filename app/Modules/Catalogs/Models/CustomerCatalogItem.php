@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'length',
     'width',
     'height',
+    'assembly_time_minutes',
     'status',
 ])]
 class CustomerCatalogItem extends Model
@@ -52,6 +53,7 @@ class CustomerCatalogItem extends Model
             'length' => 'decimal:3',
             'width' => 'decimal:3',
             'height' => 'decimal:3',
+            'assembly_time_minutes' => 'integer',
         ];
     }
 

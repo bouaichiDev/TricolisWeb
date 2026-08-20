@@ -108,6 +108,48 @@ describe('catalog items', function (): void {
             ->assertJsonValidationErrors('articleCode');
     });
 
+    /**
+     * Le temps de montage appartient a l'article : un canape modulaire coute un
+     * quart d'heure qu'un carton ne coute pas. Il fait l'aller-retour complet,
+     * sinon il serait accepte puis perdu sans erreur.
+     */
+    it('stores and returns the assembly time of an item', function (): void {
+        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson("/api/v1/customers/{$this->customer->id}/catalogs/{$this->catalog->id}/items", [
+                'articleCode' => 'ART-MONTAGE',
+                'name' => 'Canapé modulaire',
+                'assemblyTimeMinutes' => 45,
+            ]);
+
+        $response->assertCreated()->assertJsonPath('data.assemblyTimeMinutes', 45);
+        $this->assertDatabaseHas('customer_catalog_items', [
+            'id' => $response->json('data.id'),
+            'assembly_time_minutes' => 45,
+        ]);
+    });
+
+    /** Sans montage, la colonne reste nulle : ce n'est pas un zero. */
+    it('leaves the assembly time null when it is not given', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson("/api/v1/customers/{$this->customer->id}/catalogs/{$this->catalog->id}/items", [
+                'articleCode' => 'ART-SIMPLE',
+                'name' => 'Carton',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.assemblyTimeMinutes', null);
+    });
+
+    it('refuses a negative assembly time', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson("/api/v1/customers/{$this->customer->id}/catalogs/{$this->catalog->id}/items", [
+                'articleCode' => 'ART-3',
+                'name' => 'Montage négatif',
+                'assemblyTimeMinutes' => -5,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('assemblyTimeMinutes');
+    });
+
     it('refuses a negative weight', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson("/api/v1/customers/{$this->customer->id}/catalogs/{$this->catalog->id}/items", [

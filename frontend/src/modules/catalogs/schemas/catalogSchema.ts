@@ -47,6 +47,7 @@ export const catalogItemSchema = z.object({
   length: z.string(),
   width: z.string(),
   height: z.string(),
+  assemblyTimeMinutes: z.string(),
   status: z.string().min(1, 'validation.required'),
 })
 
@@ -62,6 +63,7 @@ export const CATALOG_ITEM_FORM_DEFAULTS: CatalogItemFormValues = {
   length: '',
   width: '',
   height: '',
+  assemblyTimeMinutes: '',
   status: 'active',
 }
 
@@ -86,6 +88,7 @@ export function toCatalogItemPayload(values: CatalogItemFormValues): CatalogItem
     length: optionalNumber(values.length) ?? null,
     width: optionalNumber(values.width) ?? null,
     height: optionalNumber(values.height) ?? null,
+    assemblyTimeMinutes: optionalNumber(values.assemblyTimeMinutes) ?? null,
     status: values.status,
   }
 }
@@ -100,6 +103,7 @@ export function toCatalogItemFormValues(item: {
   length: number | string | null
   width: number | string | null
   height: number | string | null
+  assemblyTimeMinutes: number | null
   status: string
 }): CatalogItemFormValues {
   const text = (value: number | string | null) => (value === null ? '' : String(value))
@@ -114,6 +118,7 @@ export function toCatalogItemFormValues(item: {
     length: text(item.length),
     width: text(item.width),
     height: text(item.height),
+    assemblyTimeMinutes: text(item.assemblyTimeMinutes),
     status: item.status,
   }
 }

@@ -21,6 +21,7 @@ export interface CatalogItemPayload {
   length?: number | null
   width?: number | null
   height?: number | null
+  assemblyTimeMinutes?: number | null
   status?: string
 }
 

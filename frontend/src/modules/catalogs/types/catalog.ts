@@ -38,6 +38,8 @@ export interface CatalogItem {
   length: number | string | null
   width: number | string | null
   height: number | string | null
+  /** Minutes de montage, `null` quand l'article n'en demande pas. */
+  assemblyTimeMinutes: number | null
   status: string
   createdAt: string
   updatedAt: string

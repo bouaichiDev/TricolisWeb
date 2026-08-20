@@ -417,6 +417,83 @@ crée aucune — les catalogues restant accessibles depuis la fiche client.
 
 ---
 
+## 25 bis. Temps de montage, et où vit la quantité en stock
+
+### Temps de montage
+
+`CustomerCatalogItem.assemblyTimeMinutes` — ce que le diagramme n'avait pas, et
+qui y est désormais. Certains articles se posent, d'autres se montent : un
+canapé modulaire coûte un quart d'heure qu'un carton ne coûte pas, et ce temps
+est une propriété du **produit**, connue avant qu'aucune commande n'existe.
+
+`nullable`, jamais `default(0)` : « pas de montage » et « montage non
+renseigné » ne sont pas la même chose, et le second ne doit pas se faire passer
+pour le premier dans une somme. Le tableau affiche « — », pas « 0 min ».
+
+`unsignedSmallInteger` — 65 535 minutes, quarante-cinq jours : tout montage réel
+sans réserver quatre octets par ligne.
+
+**Non recopié dans `OrderLine`.** `toOrderLineSnapshot()` recopie les mesures de
+l'article dans la ligne pour la rendre autonome ; `order_lines` n'a pas de
+colonne de montage, et en ajouter une sans savoir ce qui doit la consommer
+serait inventer. Le jour où le montage doit alimenter le
+`requiredTimeMinutes` d'un service, c'est une décision à prendre — pas un effet
+de bord de cette colonne.
+
+### La quantité en stock n'est pas sur l'article de catalogue
+
+Le diagramme est explicite, et c'est la bonne conception :
+
+```
+CustomerCatalogItem  →  StockItem  →  StockBalance
+   (description)        (référence      (quantité par
+                         physique)       emplacement)
+```
+
+Un `CustomerCatalogItem` **décrit** une référence : code, nom, poids, volume,
+dimensions, montage. Il ne porte aucune quantité, et ne doit pas en porter — la
+même référence peut être posée dans trois emplacements de deux dépôts, avec des
+quantités différentes et des réservations différentes dans chacun.
+
+La quantité vit dans `StockBalance(stockItemId, stockLocationId, quantity,
+reservedQuantity, availableQuantity)`, avec `unique(stock_item_id,
+stock_location_id)`. `StockItem(customerId, catalogItemId, articleCode)` est le
+pont : c'est la référence *physique* du client chez le transporteur, rattachée à
+l'article de catalogue par `catalog_item_id`, qui est `nullable` — un article
+peut arriver en dépôt sans figurer au catalogue.
+
+La quantité totale d'un article est donc une **somme**, pas une colonne :
+
+```sql
+SELECT SUM(b.quantity), SUM(b.available_quantity)
+FROM stock_balances b
+JOIN stock_items i ON i.id = b.stock_item_id
+WHERE i.catalog_item_id = ?
+```
+
+### Ce qui est construit, et ce qui ne l'est pas
+
+| Couche | État |
+| --- | --- |
+| Tables `stock_items`, `stock_locations`, `stock_balances`, `stock_movements`, `stock_reservations` | ✅ |
+| Contrôleurs, ressources, policies, routes `/stock-*` | ✅ |
+| `GET /customers/{customer}/stock-balances` | ✅ |
+| Module frontend `src/modules/stock/` | ❌ **inexistant** |
+
+**Le stock n'a pas d'écran.** La Phase 2 couvre « catalogues, commandes, colis
+et services » ; le stock n'y figure pas, et rien n'a été construit en douce.
+`src/modules/` n'a pas de dossier `stock`.
+
+Le backend est prêt : une phase Stock consommerait les routes existantes sans
+en ajouter. Ce qui manque côté écran, et seulement côté écran :
+
+- une liste des emplacements (`stock-locations/tree`),
+- un état par article, agrégé depuis `stock-balances`,
+- les mouvements (`stock-movements`) et les réservations,
+- et, sur l'article de catalogue, un renvoi vers son `StockItem` s'il en a un.
+
+---
+
 ## 26. Verdict
 
 **FRONTEND_PHASE_2_READY**

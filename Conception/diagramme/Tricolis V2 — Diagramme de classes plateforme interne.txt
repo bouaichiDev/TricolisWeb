@@ -154,6 +154,7 @@ package "Clients du transporteur" {
     +length: decimal
     +width: decimal
     +height: decimal
+    +assemblyTimeMinutes: int
     +status: string
   }
 

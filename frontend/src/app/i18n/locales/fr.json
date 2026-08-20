@@ -653,6 +653,9 @@
     "edit": "Modifier l’article",
     "empty": "Aucun article dans ce catalogue",
     "hint": "Le code article identifie la référence chez le client.",
+    "assemblyTimeHint": "Laisser vide si l’article ne se monte pas.",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
     "fields": {
       "articleCode": "Code article",
       "barcode": "Code-barres",
@@ -663,6 +666,7 @@
       "length": "Longueur",
       "width": "Largeur",
       "height": "Hauteur",
+      "assemblyTimeMinutes": "Temps de montage (min)",
       "status": "Statut"
     }
   },

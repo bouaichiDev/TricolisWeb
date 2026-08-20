@@ -1,7 +1,6 @@
-import { History, Pencil, Trash2 } from 'lucide-react'
+import { History, Pencil, RefreshCw, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import type { Column } from '@/shared/components/data/DataTable'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { Badge } from '@/shared/components/ui/badge'
@@ -9,10 +8,12 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 import type { OrderLine } from '../../types/orderDetail'
+import { RowActions } from './RowActions'
 
 interface Handlers {
   editable: boolean
   onHistory: (line: OrderLine) => void
+  onStatus: (line: OrderLine) => void
   onEdit: (line: OrderLine) => void
   onDelete: (line: OrderLine) => void
 }
@@ -32,7 +33,7 @@ const right = (value: string, muted = false) => (
  */
 export function lineColumns(
   t: TFunction,
-  { editable, onHistory, onEdit, onDelete }: Handlers,
+  { editable, onHistory, onStatus, onEdit, onDelete }: Handlers,
 ): Column<OrderLine>[] {
   return [
     {
@@ -99,37 +100,35 @@ export function lineColumns(
     {
       key: 'actions',
       header: t('common.actions'),
-      cell: (row) => (
-        <span className="flex justify-end gap-1">
-          {editable ? (
-            <>
-              <PermissionGuard permission="order_lines.update">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEdit(row)}
-                  aria-label={t('orders.lines.edit')}
-                >
-                  <Pencil className="size-4" aria-hidden />
-                </Button>
-              </PermissionGuard>
-
-              <PermissionGuard permission="order_lines.delete">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(row)}
-                  aria-label={t('orders.lines.remove')}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                </Button>
-              </PermissionGuard>
-            </>
-          ) : null}
-        </span>
-      ),
+      cell: (row) =>
+        editable ? (
+          <RowActions
+            actions={[
+              {
+                key: 'status',
+                label: t('orders.lines.changeStatus'),
+                icon: RefreshCw,
+                permission: 'order_lines.update',
+                onSelect: () => onStatus(row),
+              },
+              {
+                key: 'edit',
+                label: t('orders.lines.edit'),
+                icon: Pencil,
+                permission: 'order_lines.update',
+                onSelect: () => onEdit(row),
+              },
+              {
+                key: 'delete',
+                label: t('orders.lines.remove'),
+                icon: Trash2,
+                permission: 'order_lines.delete',
+                destructive: true,
+                onSelect: () => onDelete(row),
+              },
+            ]}
+          />
+        ) : null,
     },
   ]
 }

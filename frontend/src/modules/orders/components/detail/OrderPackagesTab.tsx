@@ -9,10 +9,11 @@ import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { ListSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
 
-import { useDeleteOrderPackage } from '../../hooks/useOrderContent'
+import { useDeleteOrderPackage, useUpdateOrderPackage } from '../../hooks/useOrderContent'
 import { usePackageTree } from '../../hooks/useOrders'
 import { orderLineUsage } from '../../schemas/orderAllocations'
 import type { OrderLine, OrderPackage, PackageTreeNode } from '../../types/orderDetail'
+import { ChangeEntityStatusDialog } from './ChangeEntityStatusDialog'
 import { OrderPackageDialog } from './OrderPackageDialog'
 import { packageColumns, type FlatNode } from './packageColumns'
 import { PackageContentSheet } from './PackageContentSheet'
@@ -52,6 +53,8 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
   const [deleting, setDeleting] = useState<OrderPackage | null>(null)
   const [content, setContent] = useState<OrderPackage | null>(null)
   const [history, setHistory] = useState<OrderPackage | null>(null)
+  const [changingStatus, setChangingStatus] = useState<OrderPackage | null>(null)
+  const update = useUpdateOrderPackage(orderId)
 
   const byId = new Map(packages.map((item) => [item.id, item]))
   const usage = orderLineUsage(lines, packages)
@@ -66,6 +69,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
     editable,
     onContent: setContent,
     onHistory: setHistory,
+    onStatus: setChangingStatus,
     onEdit: setEditing,
     onDelete: setDeleting,
   })
@@ -121,6 +125,21 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
         usage={usage}
         editable={editable}
         onClose={() => setContent(null)}
+      />
+
+      <ChangeEntityStatusDialog
+        source="package"
+        entityId={changingStatus?.id ?? null}
+        title={changingStatus ? packageDisplayName(changingStatus) : undefined}
+        currentStatus={changingStatus?.status}
+        isPending={update.isPending}
+        onSubmit={(status, onError) =>
+          update.mutate(
+            { id: changingStatus?.id ?? '', status },
+            { onSuccess: () => setChangingStatus(null), onError },
+          )
+        }
+        onClose={() => setChangingStatus(null)}
       />
 
       <StatusTimelineSheet

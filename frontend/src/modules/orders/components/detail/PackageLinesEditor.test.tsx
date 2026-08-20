@@ -51,7 +51,8 @@ function renderDetail(permissions: string[]) {
 async function openPackage(index = 0) {
   await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
   await screen.findByText('PAL-1')
-  await userEvent.click(screen.getAllByRole('button', { name: 'Contenu du colis' })[index])
+  await userEvent.click(screen.getAllByRole('button', { name: 'Actions' })[index])
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Contenu du colis' }))
 }
 
 const openFirstPackage = () => openPackage(0)

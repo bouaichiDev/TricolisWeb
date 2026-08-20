@@ -2,6 +2,7 @@
 
 use App\Console\Commands\CheckStatusMachine;
 use App\Console\Commands\GrantPlatformAdmin;
+use App\Console\Commands\ImportStatusCodes;
 use App\Console\Commands\RepairSiteAddressLinks;
 use App\Console\Commands\SyncOrganizationMenus;
 use App\Http\Middleware\EnsureOrganizationContext;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         RepairSiteAddressLinks::class,
         SyncOrganizationMenus::class,
         CheckStatusMachine::class,
+        ImportStatusCodes::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

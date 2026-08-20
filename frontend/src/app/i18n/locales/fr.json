@@ -779,7 +779,8 @@
       "create": "Ajouter une ligne",
       "deleteConfirm": "Retirer cette ligne de la commande ?",
       "trackedHint": "Quantités réservée, préparée et livrée : renseignées par les modules Stock et Exploitation, jamais saisies ici.",
-      "dimensions": "Dimensions et prix"
+      "dimensions": "Dimensions et prix",
+      "changeStatus": "Changer le statut"
     },
     "packages": {
       "title": "Colis",
@@ -807,7 +808,8 @@
       "parent": "Colis parent",
       "dimensions": "Dimensions",
       "dimensionsCreateHint": "Les dimensions ne sont pas acceptées à la création complète d’une commande ; elles se renseignent depuis la fiche, une fois la commande créée.",
-      "number": "N° colis"
+      "number": "N° colis",
+      "changeStatus": "Changer le statut"
     },
     "services": {
       "title": "Services",
@@ -883,7 +885,8 @@
       "hint": "Le cycle complet est affiché ; seules les transitions possibles depuis le statut actuel sont sélectionnables.",
       "current": "Statut actuel",
       "unreachable": "Pas atteignable depuis le statut actuel",
-      "systemManaged": "Posé par la planification ou la facturation, pas à la main"
+      "systemManaged": "Posé par la planification ou la facturation, pas à la main",
+      "noReferential": "Aucun statut n’est décrit pour ce type d’élément. Un administrateur plateforme peut les définir depuis l’écran Statuts."
     },
     "duplicate": {
       "title": "Dupliquer la commande",

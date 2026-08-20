@@ -1,6 +1,7 @@
-import { ArrowRight, History } from 'lucide-react'
+import { ArrowRight, History, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { Button } from '@/shared/components/ui/button'
 import { formatDate } from '@/shared/utils/format'
@@ -15,6 +16,7 @@ interface OrderServiceCardViewProps {
   position: number
   onOpen: () => void
   onHistory: () => void
+  onChangeStatus: () => void
 }
 
 /**
@@ -29,6 +31,7 @@ export function OrderServiceCardView({
   position,
   onOpen,
   onHistory,
+  onChangeStatus,
 }: OrderServiceCardViewProps) {
   const { t } = useTranslation()
 
@@ -69,7 +72,21 @@ export function OrderServiceCardView({
           </p>
           <p className="font-mono text-sm text-muted-foreground">{service.serviceNumber}</p>
         </div>
-        <StatusBadge status={service.status} />
+        <div className="flex shrink-0 items-center gap-1">
+          <StatusBadge status={service.status} />
+
+          <PermissionGuard permission="order_services.change_status">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onChangeStatus}
+              aria-label={t('orders.services.changeStatus')}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+            </Button>
+          </PermissionGuard>
+        </div>
       </div>
 
       <dl className="grid grid-cols-3 gap-2.5 border-t pt-2.5">

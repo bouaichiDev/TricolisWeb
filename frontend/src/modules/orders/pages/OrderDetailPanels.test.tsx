@@ -55,7 +55,8 @@ describe('panneaux de détail', () => {
     expect(screen.getByText('120 × 80 × 145')).toBeInTheDocument()
     expect(screen.queryByText('Carton renforcé')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Contenu du colis' })[0])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Actions' })[0])
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Contenu du colis' }))
 
     // Le contenu du colis — la relation colis ↔ ligne — est dans le tiroir.
     expect(await screen.findByText('Carton renforcé')).toBeInTheDocument()

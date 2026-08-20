@@ -1,13 +1,13 @@
-import { Boxes, CornerDownRight, History, Pencil, Trash2 } from 'lucide-react'
+import { Boxes, CornerDownRight, History, Pencil, RefreshCw, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import type { Column } from '@/shared/components/data/DataTable'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { Button } from '@/shared/components/ui/button'
 
 import type { OrderPackage, PackageTreeNode } from '../../types/orderDetail'
 import { packageDimensions } from './packageDimensions'
+import { RowActions } from './RowActions'
 
 export interface FlatNode {
   node: PackageTreeNode
@@ -19,6 +19,7 @@ interface Handlers {
   editable: boolean
   onContent: (pkg: OrderPackage) => void
   onHistory: (pkg: OrderPackage) => void
+  onStatus: (pkg: OrderPackage) => void
   onEdit: (pkg: OrderPackage) => void
   onDelete: (pkg: OrderPackage) => void
 }
@@ -37,7 +38,7 @@ const right = (value: string) => <span className="block text-right font-mono">{v
  */
 export function packageColumns(
   t: TFunction,
-  { byId, editable, onContent, onHistory, onEdit, onDelete }: Handlers,
+  { byId, editable, onContent, onHistory, onStatus, onEdit, onDelete }: Handlers,
 ): Column<FlatNode>[] {
   return [
     {
@@ -116,45 +117,42 @@ export function packageColumns(
         if (detail === undefined) return null
 
         return (
-          <span className="flex justify-end gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onContent(detail)}
-              aria-label={t('orders.packages.contents')}
-            >
-              <Boxes className="size-4" aria-hidden />
-            </Button>
-
-            {editable ? (
-              <>
-                <PermissionGuard permission="packages.update">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEdit(detail)}
-                    aria-label={t('orders.packages.edit')}
-                  >
-                    <Pencil className="size-4" aria-hidden />
-                  </Button>
-                </PermissionGuard>
-
-                <PermissionGuard permission="packages.delete">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(detail)}
-                    aria-label={t('orders.packages.remove')}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </PermissionGuard>
-              </>
-            ) : null}
-          </span>
+          <RowActions
+            actions={[
+              {
+                key: 'content',
+                label: t('orders.packages.contents'),
+                icon: Boxes,
+                onSelect: () => onContent(detail),
+              },
+              ...(editable
+                ? [
+                    {
+                      key: 'status',
+                      label: t('orders.packages.changeStatus'),
+                      icon: RefreshCw,
+                      permission: 'packages.update',
+                      onSelect: () => onStatus(detail),
+                    },
+                    {
+                      key: 'edit',
+                      label: t('orders.packages.edit'),
+                      icon: Pencil,
+                      permission: 'packages.update',
+                      onSelect: () => onEdit(detail),
+                    },
+                    {
+                      key: 'delete',
+                      label: t('orders.packages.remove'),
+                      icon: Trash2,
+                      permission: 'packages.delete',
+                      destructive: true,
+                      onSelect: () => onDelete(detail),
+                    },
+                  ]
+                : []),
+            ]}
+          />
         )
       },
     },

@@ -7,8 +7,9 @@ import { DataTable } from '@/shared/components/data/DataTable'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { Button } from '@/shared/components/ui/button'
 
-import { useDeleteOrderLine } from '../../hooks/useOrderContent'
+import { useDeleteOrderLine, useUpdateOrderLine } from '../../hooks/useOrderContent'
 import type { OrderLine } from '../../types/orderDetail'
+import { ChangeEntityStatusDialog } from './ChangeEntityStatusDialog'
 import { lineColumns } from './lineColumns'
 import { OrderLineDialog } from './OrderLineDialog'
 import { StatusTimelineSheet } from './StatusTimelineSheet'
@@ -35,11 +36,16 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<OrderLine | null>(null)
   const [history, setHistory] = useState<OrderLine | null>(null)
+  const [changingStatus, setChangingStatus] = useState<OrderLine | null>(null)
   const remove = useDeleteOrderLine(orderId)
+  // Le statut d'une ligne est une chaine libre : il passe par la modification
+  // ordinaire, sans route ni permission dediee — contrairement au service.
+  const update = useUpdateOrderLine(orderId)
 
   const columns = lineColumns(t, {
     editable,
     onHistory: setHistory,
+    onStatus: setChangingStatus,
     onEdit: setEditing,
     onDelete: setDeleting,
   })
@@ -79,6 +85,21 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
             setCreating(false)
           }
         }}
+      />
+
+      <ChangeEntityStatusDialog
+        source="order_line"
+        entityId={changingStatus?.id ?? null}
+        title={changingStatus?.name}
+        currentStatus={changingStatus?.status}
+        isPending={update.isPending}
+        onSubmit={(status, onError) =>
+          update.mutate(
+            { id: changingStatus?.id ?? '', status },
+            { onSuccess: () => setChangingStatus(null), onError },
+          )
+        }
+        onClose={() => setChangingStatus(null)}
       />
 
       <StatusTimelineSheet

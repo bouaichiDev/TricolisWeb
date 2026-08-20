@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { AddressFields } from '@/modules/addresses/components/AddressFields'
 import { useCreateEntityAddress } from '@/modules/addresses/hooks/useEntityAddressMutations'
 import { addressSchema, ADDRESS_FORM_DEFAULTS } from '@/modules/addresses/schemas/addressSchema'
-import { ADDRESS_TYPES, CONTACT_ROLES, type AddressEntityType } from '@/modules/addresses/types/address'
+import { ADDRESS_TYPES, CONTACT_ROLES } from '@/modules/addresses/types/address'
 import { contactsApi } from '@/modules/contacts/api/contacts.api'
 import { addressesApi } from '@/modules/addresses/api/addresses.api'
 import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
@@ -22,6 +22,10 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
+import { useAuth } from '@/shared/hooks/useAuth'
+
+import { newKey } from '../../schemas/orderDraftFactories'
+import type { ServiceContactDraft } from '../../schemas/orderDraft'
 
 /**
  * Adresse et contact saisis d'un seul tenant.
@@ -51,12 +55,13 @@ const DEFAULTS: FormValues = {
 }
 
 interface NewServiceAddressDialogProps {
-  entityType: AddressEntityType
-  entityId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Reçoit l'identifiant de l'adresse créée, pour la sélectionner aussitôt. */
-  onCreated: (addressId: string) => void
+  /**
+   * Reçoit l'adresse créée et, le cas échéant, le contact saisi — prêt à être
+   * versé dans le service, pour ne pas être demandé une seconde fois.
+   */
+  onCreated: (addressId: string, contact: ServiceContactDraft | null) => void
 }
 
 /**
@@ -66,25 +71,31 @@ interface NewServiceAddressDialogProps {
  * voyager dans la charge utile de la commande. Elle est donc créée d'abord, par
  * sa propre route, puis désignée par le service.
  *
+ * **Elle n'est pas rattachée au donneur d'ordre.** Une livraison ponctuelle chez
+ * un tiers n'a pas à entrer dans le carnet du client qui a passé la commande.
+ * Le modèle ne permet pas de rattacher une adresse à une commande —
+ * `StoreAddressRequest` n'accepte que organisation, client, site, agence et
+ * dépôt — elle est donc portée par l'**organisation**, hors carnet client, et la
+ * commande la désigne par son identifiant.
+ *
  * **Le contact est saisi dans la foulée** : sur un point de livraison, l'adresse
  * sans le nom de qui reçoit ne sert à rien, et les demander en deux temps fait
- * perdre le second. Il est rattaché à l'adresse, où le sélecteur de contacts du
- * service ira le chercher.
- *
- * L'adresse reste si la commande est abandonnée : c'est une adresse du client,
- * réutilisable, pas un brouillon.
+ * perdre le second. Il est rattaché à l'adresse *et* renvoyé au service, qui
+ * l'inscrit aussitôt dans ses contacts.
  */
 export function NewServiceAddressDialog({
-  entityType,
-  entityId,
   open,
   onOpenChange,
   onCreated,
 }: NewServiceAddressDialogProps) {
   const { t } = useTranslation()
+  const { organizationId } = useAuth()
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: DEFAULTS })
   const { formError, handleError, clearError } = useApiFormError(form)
-  const createAddress = useCreateEntityAddress({ entityType, entityId })
+  const createAddress = useCreateEntityAddress({
+    entityType: 'organization',
+    entityId: organizationId ?? '',
+  })
 
   const submit = form.handleSubmit(async (values) => {
     clearError()
@@ -106,26 +117,7 @@ export function NewServiceAddressDialog({
         isDefault: false,
       })
 
-      if (values.contactFirstName.trim() !== '') {
-        const contact = await contactsApi.create({
-          firstName: values.contactFirstName,
-          lastName: values.contactLastName,
-          phone: values.contactPhone || null,
-          email: values.contactEmail || null,
-          entityType,
-          entityId,
-          contactRole: values.contactRole,
-          isPrimary: true,
-        })
-
-        await addressesApi.attachContact(address.id, {
-          contactId: contact.id,
-          contactRole: values.contactRole,
-          isPrimary: true,
-        })
-      }
-
-      onCreated(address.id)
+      onCreated(address.id, await attachContact(address.id, values, organizationId))
       form.reset(DEFAULTS)
       onOpenChange(false)
     } catch (error) {
@@ -192,4 +184,47 @@ export function NewServiceAddressDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+/**
+ * Crée le contact et le rattache à l'adresse, puis le rend au service.
+ *
+ * Comme l'adresse, il est porté par l'organisation : le destinataire d'une
+ * livraison ponctuelle n'appartient pas au carnet du donneur d'ordre.
+ */
+async function attachContact(
+  addressId: string,
+  values: FormValues,
+  organizationId: string | null,
+): Promise<ServiceContactDraft | null> {
+  if (values.contactFirstName.trim() === '') return null
+
+  const contact = await contactsApi.create({
+    firstName: values.contactFirstName,
+    lastName: values.contactLastName,
+    phone: values.contactPhone || null,
+    email: values.contactEmail || null,
+    entityType: 'organization',
+    entityId: organizationId ?? '',
+    contactRole: values.contactRole,
+    isPrimary: true,
+  })
+
+  await addressesApi.attachContact(addressId, {
+    contactId: contact.id,
+    contactRole: values.contactRole,
+    isPrimary: true,
+  })
+
+  return {
+    key: newKey(),
+    contactId: contact.id,
+    contactRole: values.contactRole,
+    isPrimary: true,
+    firstName: values.contactFirstName,
+    lastName: values.contactLastName,
+    phone: values.contactPhone,
+    mobile: '',
+    email: values.contactEmail,
+  }
 }

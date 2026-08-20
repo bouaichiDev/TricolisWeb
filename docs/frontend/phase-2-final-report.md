@@ -144,24 +144,51 @@ produirait un 422 sur un chemin devenu invisible.
 
 **Le client n'est pas redemandé au service** : c'est celui de la commande,
 choisi à l'étape Général. Une même commande porte souvent un chargement chez le
-donneur d'ordre et une livraison chez son destinataire — ce sont **deux adresses
-du même carnet**, pas deux clients. Le destinataire s'exprime par l'adresse.
+donneur d'ordre et une livraison chez son destinataire. Le destinataire
+s'exprime par l'adresse, pas par un second client.
+
+L'API expose les adresses **par entité** : celles du client et celles de chacun
+de ses sites sont des listes distinctes. L'écran fait donc choisir la source
+avant l'adresse. Trois sources :
+
+| Source | Entité interrogée | Contenu |
+| --- | --- | --- |
+| Adresses du client | `customer` | le carnet du donneur d'ordre |
+| *nom du site* | `customer_site` | le carnet de ce site |
+| Autres adresses (hors carnet client) | `organization` | les adresses libres de l'organisation |
 
 **Une adresse absente se crée sans quitter la commande.** `StoreOrderRequest`
 exige un `addressId` existant — une adresse ne peut pas voyager dans la charge
 utile — elle est donc créée par sa propre route, puis désignée par le service.
-Le contact est saisi dans la même fenêtre : sur un point de livraison, l'adresse
-sans le nom de qui reçoit ne sert à rien, et les demander en deux temps fait
-perdre le second.
+
+**Elle n'est pas rattachée au donneur d'ordre.** Une livraison ponctuelle chez
+un tiers n'a pas à entrer dans le carnet du client qui a passé la commande. Le
+modèle ne permet pas de rattacher une adresse à une *commande* :
+`StoreAddressRequest::allowedEntityTypes()` n'accepte que `organization`,
+`customer`, `customer_site`, `agency` et `depot`. L'adresse est donc portée par
+l'**organisation** — hors carnet client — et la commande la désigne par son
+identifiant. C'est le plus proche de « liée à la seule commande » que le modèle
+autorise ; un rattachement réel demanderait un `entityType` `order`, donc une
+migration et un changement de contrat.
+
+Après création, la source bascule sur *Autres adresses* : c'est la seule liste
+qui contient la nouvelle adresse. Sans cela le sélecteur afficherait un
+identifiant sans libellé.
+
+**Le contact est saisi dans la même fenêtre**, et versé aussitôt dans les
+contacts du service. Sur un point de livraison, l'adresse sans le nom de qui
+reçoit ne sert à rien ; et le demander en deux temps obligerait à le taper deux
+fois — une fois dans la fenêtre, une fois dans la section Contacts juste en
+dessous. Il est rattaché à l'adresse *et* inscrit dans le brouillon, en un seul
+appel à `onChange` : deux appels successifs feraient écraser le premier par un
+service périmé. Comme l'adresse, le contact appartient à l'organisation.
+
+La section Contacts du service n'est pas masquée pour autant : `services[].contacts`
+est recopié dans la commande à la création, et la masquer ferait partir la
+commande sans contact. Elle est simplement **déjà remplie**.
 
 L'adresse subsiste si la commande est abandonnée. C'est voulu : c'est une
-adresse du client, réutilisable, pas un brouillon.
-
-
-L'API expose les adresses **par entité** : celles du client et celles de chacun
-de ses sites sont des listes distinctes. L'écran fait donc choisir la source —
-le client, ou l'un de ses sites — puis l'adresse. Tout charger d'un coup
-demanderait une requête par site.
+adresse de l'organisation, réutilisable, pas un brouillon.
 
 Les contacts sont portés par l'adresse, pas par le client : le destinataire
 dépend du lieu. Un contact enregistré ou un contact ponctuel sont tous deux

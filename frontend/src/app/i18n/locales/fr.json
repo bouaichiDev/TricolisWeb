@@ -847,6 +847,7 @@
       "pickCustomerFirst": "Choisissez d’abord un client à l’étape Général.",
       "pickSiteFirst": "Choisissez un site pour voir ses adresses.",
       "sourceCustomer": "Adresses du client",
+      "sourceFree": "Autres adresses (hors carnet client)",
       "sourceSite": "Site du client",
       "notBillable": "Ce service n’est pas facturable au client.",
       "notPayable": "Ce service n’est pas payable à un prestataire.",
@@ -857,8 +858,8 @@
       "openDetail": "Détail",
       "detachPackage": "Retirer ce colis du service",
       "newAddress": "Nouvelle adresse",
-      "newAddressHint": "L’adresse est ajoutée au carnet du client et reste disponible pour ses prochaines commandes.",
-      "newContactHint": "Facultatif. Renseigné, le contact est rattaché à l’adresse et proposé ci-dessous pour ce service.",
+      "newAddressHint": "L’adresse n’est pas ajoutée au carnet du donneur d’ordre : elle est enregistrée hors carnet client, pour cette commande, et reste disponible sous « Autres adresses ».",
+      "newContactHint": "Facultatif. Renseigné, il est ajouté aux contacts du service : inutile de le ressaisir plus bas.",
       "addressHint": "Lieu d’exécution : chez le client pour un chargement, chez son destinataire pour une livraison."
     },
     "review": {

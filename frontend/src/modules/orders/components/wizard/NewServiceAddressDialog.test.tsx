@@ -3,13 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { withPermissions } from '@/test/fixtures'
+import { ORGANIZATION_ID, paginated, withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
 import { OrderCreatePage } from '../../pages/OrderCreatePage'
 import { goTo, pick } from '../../pages/wizardActions'
-import { CUSTOMER_ID, serveWizardScope } from '../../pages/wizardScope'
+import { serveWizardScope } from '../../pages/wizardScope'
 
 const NEW_ADDRESS_ID = '01JQZ00000000000000ADDR9'
 const NEW_CONTACT_ID = '01JQZ0000000000000CONT99'
@@ -47,7 +47,13 @@ async function openDialog() {
 }
 
 describe('nouvelle adresse d’un service', () => {
-  it('crée l’adresse pour le client choisi et la sélectionne', async () => {
+  /**
+   * L'adresse ne rejoint **pas** le carnet du donneur d'ordre : une livraison
+   * ponctuelle chez un tiers n'a pas à y entrer. Le modèle ne permet pas de la
+   * rattacher à la commande — `StoreAddressRequest` n'accepte que organisation,
+   * client, site, agence et dépôt — elle est donc portée par l'organisation.
+   */
+  it('crée l’adresse hors carnet client et la sélectionne', async () => {
     serveWizardScope({ catalogEnabled: false })
 
     let body: unknown = null
@@ -71,17 +77,43 @@ describe('nouvelle adresse d’un service', () => {
 
     const payload = body as { addressLine1: string; entityType: string; entityId: string }
 
-    // L'adresse est rattachée au client du service, pas à l'organisation.
     expect(payload.addressLine1).toBe('9 rue du Port')
-    expect(payload.entityType).toBe('customer')
-    expect(payload.entityId).toBe(CUSTOMER_ID)
+    expect(payload.entityType).toBe('organization')
+    expect(payload.entityId).toBe(ORGANIZATION_ID)
+  })
+
+  /** La source bascule sur la liste hors carnet, seule à contenir l'adresse. */
+  it('bascule la source pour montrer l’adresse créée', async () => {
+    serveWizardScope({ catalogEnabled: false })
+
+    const created = { id: NEW_ADDRESS_ID, name: 'Chantier Nord', city: 'Lille' }
+    server.use(
+      http.post(`${API}/addresses`, () =>
+        HttpResponse.json({ data: created, meta: [] }, { status: 201 }),
+      ),
+      http.get(`${API}/addresses`, ({ request }) => {
+        const entityType = new URL(request.url).searchParams.get('entityType')
+
+        return HttpResponse.json(paginated(entityType === 'organization' ? [created] : []))
+      }),
+    )
+
+    render()
+    const dialog = await openDialog()
+
+    await userEvent.type(dialog.getByLabelText('Adresse *'), '9 rue du Port')
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByText('Autres adresses (hors carnet client)')).toBeInTheDocument()
+    expect(await screen.findByText('Chantier Nord')).toBeInTheDocument()
   })
 
   /**
    * Sur un point de livraison, l'adresse sans le nom de qui reçoit ne sert à
-   * rien : les deux se saisissent d'un seul tenant.
+   * rien : les deux se saisissent d'un seul tenant. Le contact est alors versé
+   * dans le service, faute de quoi il faudrait le retaper juste en dessous.
    */
-  it('crée le contact dans la foulée et le rattache à l’adresse', async () => {
+  it('verse le contact saisi dans le service, sans le redemander', async () => {
     serveWizardScope({ catalogEnabled: false })
 
     let contact: unknown = null
@@ -97,7 +129,10 @@ describe('nouvelle adresse d’un service', () => {
       }),
       http.post(`${API}/addresses/${NEW_ADDRESS_ID}/contacts`, async ({ request }) => {
         attached = await request.json()
-        return HttpResponse.json({ data: { id: '01JQZ0000000000000LINK01' }, meta: [] }, { status: 201 })
+        return HttpResponse.json(
+          { data: { id: '01JQZ0000000000000LINK01' }, meta: [] },
+          { status: 201 },
+        )
       }),
     )
 
@@ -111,8 +146,18 @@ describe('nouvelle adresse d’un service', () => {
 
     await waitFor(() => expect(attached).not.toBeNull())
 
-    expect(contact).toMatchObject({ firstName: 'Sophie', phone: '0600000000' })
+    // Le contact appartient à l'organisation, pas au carnet du donneur d'ordre.
+    expect(contact).toMatchObject({
+      firstName: 'Sophie',
+      phone: '0600000000',
+      entityType: 'organization',
+      entityId: ORGANIZATION_ID,
+    })
     expect(attached).toMatchObject({ contactId: NEW_CONTACT_ID, isPrimary: true })
+
+    // Et il figure déjà dans les contacts du service : rien à ressaisir.
+    await waitFor(() => expect(screen.getByLabelText(/^Prénom/)).toHaveValue('Sophie'))
+    expect(screen.getByLabelText('Téléphone')).toHaveValue('0600000000')
   })
 
   /** Sans contact saisi, l'adresse se crée seule. */

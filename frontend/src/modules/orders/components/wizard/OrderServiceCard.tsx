@@ -124,6 +124,15 @@ export function OrderServiceCard({
           customerId={customerId}
           value={service.addressId}
           onChange={(addressId) => onChange({ addressId })}
+          // Le contact saisi avec l'adresse rejoint aussitôt le service : le
+          // redemander plus bas obligerait a le taper deux fois. Un seul appel,
+          // sinon le second ecraserait le premier avec un service perime.
+          onCreated={(addressId, contact) =>
+            onChange({
+              addressId,
+              contacts: contact === null ? service.contacts : [...service.contacts, contact],
+            })
+          }
           required
           error={fieldError(issues, 'addressId')}
         />

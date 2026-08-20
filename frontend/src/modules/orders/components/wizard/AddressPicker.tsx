@@ -2,25 +2,36 @@ import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { AddressEntityType } from '@/modules/addresses/types/address'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { Button } from '@/shared/components/ui/button'
+import { useAuth } from '@/shared/hooks/useAuth'
 
 import { useAddressOptions, useSiteOptions } from '../../hooks/useServiceScope'
+import type { ServiceContactDraft } from '../../schemas/orderDraft'
 import { NewServiceAddressDialog } from './NewServiceAddressDialog'
 
 /**
- * Valeur désignant le client lui-même, par opposition à l'un de ses sites.
+ * Sources d'adresses, par opposition aux sites du client.
  *
- * Radix refuse une option de valeur vide ; les sites portant un ULID, ce
- * libellé ne peut entrer en collision avec aucun d'entre eux.
+ * Radix refuse une option de valeur vide ; les sites portant un ULID, ces
+ * libellés ne peuvent entrer en collision avec aucun d'entre eux.
  */
 const CUSTOMER_SOURCE = 'customer'
+const FREE_SOURCE = 'free'
 
 interface AddressPickerProps {
   /** Client de la commande — le donneur d'ordre, choisi à l'étape Général. */
   customerId: string
   value: string
   onChange: (addressId: string) => void
+  /**
+   * Adresse créée sur place, avec le contact saisi dans la foulée.
+   *
+   * Sans ce rappel, l'écran retomberait sur `onChange` et le contact serait
+   * perdu — donc à ressaisir dans la section Contacts.
+   */
+  onCreated?: (addressId: string, contact: ServiceContactDraft | null) => void
   error?: string
   required?: boolean
 }
@@ -38,25 +49,27 @@ interface AddressPickerProps {
  * avant celui de l'adresse. Tout charger d'un coup demanderait une requête par
  * site.
  *
- * Une adresse absente du carnet se crée sur place, avec son contact.
+ * Une adresse absente du carnet se crée sur place. Elle n'est **pas** rattachée
+ * au donneur d'ordre : une livraison ponctuelle chez un tiers n'a pas à entrer
+ * dans son carnet. Elle est portée par l'organisation, d'où la troisième
+ * source — hors carnet client.
  */
 export function AddressPicker({
   customerId,
   value,
   onChange,
+  onCreated,
   error,
   required = false,
 }: AddressPickerProps) {
   const { t } = useTranslation()
+  const { organizationId } = useAuth()
   const [source, setSource] = useState(CUSTOMER_SOURCE)
   const [creating, setCreating] = useState(false)
 
   const sites = useSiteOptions(customerId)
-  const isSite = source !== CUSTOMER_SOURCE
-  const addresses = useAddressOptions(
-    isSite ? 'customer_site' : 'customer',
-    isSite ? source : customerId,
-  )
+  const [entityType, entityId] = resolveEntity(source, customerId, organizationId)
+  const addresses = useAddressOptions(entityType, entityId)
 
   const noCustomer = customerId === ''
 
@@ -74,6 +87,7 @@ export function AddressPicker({
         options={[
           { value: CUSTOMER_SOURCE, label: t('orders.services.sourceCustomer') },
           ...sites.options,
+          { value: FREE_SOURCE, label: t('orders.services.sourceFree') },
         ]}
         isLoading={sites.isLoading}
         disabled={noCustomer}
@@ -114,13 +128,29 @@ export function AddressPicker({
 
       {creating ? (
         <NewServiceAddressDialog
-          entityType={isSite ? 'customer_site' : 'customer'}
-          entityId={isSite ? source : customerId}
           open
           onOpenChange={setCreating}
-          onCreated={onChange}
+          onCreated={(addressId, contact) => {
+            // L'adresse créée est hors carnet client : la source bascule, sinon
+            // la liste affichée ne la contiendrait pas.
+            setSource(FREE_SOURCE)
+            if (onCreated) onCreated(addressId, contact)
+            else onChange(addressId)
+          }}
         />
       ) : null}
     </>
   )
+}
+
+/** Entité dont les adresses sont listées, selon la source choisie. */
+function resolveEntity(
+  source: string,
+  customerId: string,
+  organizationId: string | null,
+): [AddressEntityType, string] {
+  if (source === CUSTOMER_SOURCE) return ['customer', customerId]
+  if (source === FREE_SOURCE) return ['organization', organizationId ?? '']
+
+  return ['customer_site', source]
 }

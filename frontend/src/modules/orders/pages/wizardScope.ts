@@ -117,7 +117,13 @@ export function serveWizardScope({ catalogEnabled = true } = {}) {
     http.get(`${API}/agencies/${AGENCY_ID}/depots`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/services`, () => HttpResponse.json(paginated([service]))),
     http.get(`${API}/customers/${CUSTOMER_ID}/sites`, () => HttpResponse.json(paginated([]))),
-    http.get(`${API}/addresses`, () => HttpResponse.json(paginated([address]))),
+    // Le carnet du client, et la liste hors carnet portee par l'organisation :
+    // deux entites distinctes pour `GET /addresses?entityType=`.
+    http.get(`${API}/addresses`, ({ request }) => {
+      const entityType = new URL(request.url).searchParams.get('entityType')
+
+      return HttpResponse.json(paginated(entityType === 'organization' ? [] : [address]))
+    }),
     http.get(`${API}/addresses/:addressId/contacts`, () =>
       HttpResponse.json({ data: [], meta: [] }),
     ),

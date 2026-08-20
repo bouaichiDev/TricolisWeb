@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
 import { useEntityAddresses, useAddressContacts } from '@/modules/addresses/hooks/useEntityAddresses'
-import type { Address } from '@/modules/addresses/types/address'
+import type { Address, AddressEntityType } from '@/modules/addresses/types/address'
 import { useCustomerSiteList } from '@/modules/customerSites/hooks/useCustomerSites'
 import { useActiveServices } from '@/modules/services/hooks/useServices'
 import type { Service } from '@/modules/services/types/service'
@@ -59,7 +59,7 @@ export function addressHint(address: Address): string | undefined {
   return parts.length > 0 ? parts.join(' ') : undefined
 }
 
-export function useAddressOptions(entityType: 'customer' | 'customer_site', entityId: string) {
+export function useAddressOptions(entityType: AddressEntityType, entityId: string) {
   const query = useEntityAddresses(entityType, entityId)
   const addresses = query.data?.data ?? []
 

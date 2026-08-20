@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowRightLeft, History } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft, History, MapPin, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -6,6 +6,7 @@ import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { Button } from '@/shared/components/ui/button'
 import { formatDate } from '@/shared/utils/format'
 
+import { addressHint, addressLabel } from '../../hooks/useServiceScope'
 import type { OrderService } from '../../types/orderDetail'
 
 const show = (value: number | string | null | undefined): string =>
@@ -14,7 +15,10 @@ const show = (value: number | string | null | undefined): string =>
 interface OrderServiceCardViewProps {
   service: OrderService
   position: number
+  /** Faux quand le statut de la commande ferme son contenu : pas de crayon. */
+  editable: boolean
   onOpen: () => void
+  onEdit: () => void
   onHistory: () => void
   onChangeStatus: () => void
 }
@@ -22,9 +26,11 @@ interface OrderServiceCardViewProps {
 /**
  * Un service, en vignette.
  *
- * Trois mesures en pied — créneau, durée, total client — et le contact : de
- * quoi décider si c'est bien ce service qu'on cherchait. Le reste s'ouvre dans
- * le panneau latéral, où les quatorze champs tiennent sans écraser la grille.
+ * L'adresse d'abord : c'est elle qui distingue deux services, un chargement et
+ * une livraison portant souvent le même nom. Puis trois mesures — créneau,
+ * durée, total client — et le contact : de quoi décider si c'est bien ce
+ * service qu'on cherchait. Le reste s'ouvre dans le panneau latéral, où les
+ * quatorze champs tiennent sans écraser la grille.
  *
  * Les actions sont des icônes, comme dans les tableaux de lignes et de colis :
  * leurs libellés viennent au survol par `title`, et au lecteur d'écran par
@@ -34,7 +40,9 @@ interface OrderServiceCardViewProps {
 export function OrderServiceCardView({
   service,
   position,
+  editable,
   onOpen,
+  onEdit,
   onHistory,
   onChangeStatus,
 }: OrderServiceCardViewProps) {
@@ -95,6 +103,24 @@ export function OrderServiceCardView({
         </div>
       </div>
 
+      <p className="flex items-start gap-1.5 border-t pt-2.5 text-sm">
+        <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0">
+          {service.address === undefined ? (
+            <span className="text-muted-foreground">{t('orders.services.noAddress')}</span>
+          ) : (
+            <>
+              <span className="block truncate">{addressLabel(service.address)}</span>
+              {addressHint(service.address) === undefined ? null : (
+                <span className="block truncate text-xs text-muted-foreground">
+                  {addressHint(service.address)}
+                </span>
+              )}
+            </>
+          )}
+        </span>
+      </p>
+
       <dl className="grid grid-cols-3 gap-2.5 border-t pt-2.5">
         {measures.map((measure) => (
           <div key={measure.labelKey} className="min-w-0">
@@ -112,6 +138,21 @@ export function OrderServiceCardView({
         </span>
 
         <div className="flex shrink-0 items-center gap-1">
+          {editable ? (
+            <PermissionGuard permission="order_services.update">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onEdit}
+                title={t('orders.services.edit')}
+                aria-label={t('orders.services.edit')}
+              >
+                <Pencil className="size-4" aria-hidden />
+              </Button>
+            </PermissionGuard>
+          ) : null}
+
           <Button
             type="button"
             variant="ghost"

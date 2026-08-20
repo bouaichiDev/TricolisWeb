@@ -79,3 +79,25 @@ it('lists only orders from the active organization', function (): void {
         ->getJson('/api/v1/orders')->assertOk();
     expect(Order::where('organization_id', $this->organization->id)->count())->toBeGreaterThanOrEqual(0);
 });
+
+/**
+ * La vignette d'un service montre son adresse : deux services d'une même
+ * commande portent souvent le même nom, et seule l'adresse les distingue.
+ * Sans le chargement de la relation, l'écran n'aurait qu'un identifiant.
+ */
+it('exposes the address of every service in the order detail', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 2]],
+            'services' => [$this->orderService],
+        ])->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/orders/'.$created)
+        ->assertOk()
+        ->assertJsonPath('data.services.0.address.id', $this->address->id)
+        ->assertJsonPath('data.services.0.address.addressLine1', $this->address->address_line_1);
+});

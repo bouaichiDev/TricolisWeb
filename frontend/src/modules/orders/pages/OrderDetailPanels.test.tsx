@@ -78,6 +78,32 @@ describe('panneaux de détail', () => {
     expect(await screen.findByText('Carton renforcé')).toBeInTheDocument()
   })
 
+  /**
+   * Deux services d'une même commande portent souvent le même nom — un
+   * chargement et une livraison « Montage ». L'adresse est ce qui les
+   * distingue : elle est sur la vignette, pas seulement dans le panneau. Le
+   * crayon aussi, pour corriger sans passer par le détail.
+   */
+  it('montre l’adresse et le crayon sur la vignette d’un service', async () => {
+    renderDetail(['orders.view', 'order_services.update'])
+
+    await userEvent.click(await screen.findByRole('tab', { name: /^Services/ }))
+
+    expect(await screen.findByText('Entrepôt Casablanca')).toBeInTheDocument()
+    expect(screen.getByText('20000 Casablanca')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Modifier le service' })).toBeInTheDocument()
+  })
+
+  /** Sans la permission, le crayon disparaît — il n'est pas grisé. */
+  it('masque le crayon sans order_services.update', async () => {
+    renderDetail(['orders.view'])
+
+    await userEvent.click(await screen.findByRole('tab', { name: /^Services/ }))
+    await screen.findByText('Entrepôt Casablanca')
+
+    expect(screen.queryByRole('button', { name: 'Modifier le service' })).not.toBeInTheDocument()
+  })
+
   it('ouvre la fiche complète d’un service', async () => {
     renderDetail(['orders.view'])
 

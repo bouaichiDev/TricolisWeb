@@ -80,7 +80,9 @@ export function OrderServicesTab({
               key={service.id}
               service={service}
               position={index + 1}
+              editable={editable}
               onOpen={() => setOpenId(service.id)}
+              onEdit={() => setEditing(service)}
               onHistory={() => setHistory(service)}
               onChangeStatus={() => setChangingStatus(service)}
             />

@@ -72,9 +72,7 @@ describe('modification du contenu d’une commande', () => {
     )
 
     await openTab('Lignes')
-    // Les actions d'une ligne vivent dans son menu, nommees.
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Actions' }))[0])
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Modifier la ligne' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier la ligne' }))
 
     const quantity = await screen.findByLabelText('Quantité')
     await userEvent.clear(quantity)
@@ -117,8 +115,7 @@ describe('modification du contenu d’une commande', () => {
     )
 
     await openTab('Colis')
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Actions' }))[0])
-    await userEvent.click(await screen.findByRole('menuitem', { name: 'Retirer le colis' }))
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Retirer le colis' }))[0])
     await userEvent.click(await screen.findByRole('button', { name: 'Supprimer' }))
 
     await waitFor(() => expect(called).toBe(true))
@@ -134,8 +131,8 @@ describe('modification du contenu d’une commande', () => {
     await openTab('Lignes')
     await screen.findByText('Carton renforcé')
 
-    // Sans contenu ouvert, le menu d'actions n'a plus rien a proposer.
-    expect(screen.queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument()
+    // Sans contenu ouvert, seul l'historique subsiste.
+    expect(screen.queryByRole('button', { name: 'Modifier la ligne' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Ajouter une ligne/ })).not.toBeInTheDocument()
   })
 
@@ -146,7 +143,7 @@ describe('modification du contenu d’une commande', () => {
     await openTab('Lignes')
     await screen.findByText('Carton renforcé')
 
-    expect(screen.queryByRole('button', { name: 'Actions' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Modifier la ligne' })).not.toBeInTheDocument()
   })
 })
 

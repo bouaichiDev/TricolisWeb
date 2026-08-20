@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { useStatusList } from '@/modules/statuses/hooks/useStatuses'
 import { ApiError } from '@/shared/api/errors'
+import { usePermissions } from '@/shared/hooks/usePermission'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
@@ -50,6 +51,7 @@ export function ChangeEntityStatusDialog({
   onClose,
 }: ChangeEntityStatusDialogProps) {
   const { t } = useTranslation()
+  const { isPlatformAdmin } = usePermissions()
   const open = entityId !== null
   const [status, setStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -98,12 +100,17 @@ export function ChangeEntityStatusDialog({
         {!referential.isPending && options.length === 0 ? (
           <Alert>
             <AlertDescription className="flex flex-col items-start gap-2">
-              {t('orders.statusDialog.noReferential')}
-              <Button asChild variant="outline" size="sm">
-                <Link to="/statuses" onClick={close}>
-                  {t('nav.statuses')}
-                </Link>
-              </Button>
+              {isPlatformAdmin
+                ? t('orders.statusDialog.noReferential')
+                : t('orders.statusDialog.noReferentialMember')}
+
+              {isPlatformAdmin ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/statuses" onClick={close}>
+                    {t('nav.statuses')}
+                  </Link>
+                </Button>
+              ) : null}
             </AlertDescription>
           </Alert>
         ) : (

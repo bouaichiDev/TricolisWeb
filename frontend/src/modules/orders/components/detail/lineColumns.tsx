@@ -4,7 +4,6 @@ import type { TFunction } from 'i18next'
 import type { Column } from '@/shared/components/data/DataTable'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { Badge } from '@/shared/components/ui/badge'
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/utils/cn'
 
 import type { OrderLine } from '../../types/orderDetail'
@@ -82,53 +81,48 @@ export function lineColumns(
       cell: (row) => <StatusBadge status={row.status} />,
     },
     {
-      key: 'history',
-      header: '',
-      cell: (row) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="whitespace-nowrap"
-          onClick={() => onHistory(row)}
-        >
-          <History className="size-4" aria-hidden />
-          {t('orders.entityHistory.title')}
-        </Button>
-      ),
-    },
-    {
       key: 'actions',
       header: t('common.actions'),
-      cell: (row) =>
-        editable ? (
-          <RowActions
-            actions={[
-              {
-                key: 'status',
-                label: t('orders.lines.changeStatus'),
-                icon: RefreshCw,
-                permission: 'order_lines.update',
-                onSelect: () => onStatus(row),
-              },
-              {
-                key: 'edit',
-                label: t('orders.lines.edit'),
-                icon: Pencil,
-                permission: 'order_lines.update',
-                onSelect: () => onEdit(row),
-              },
-              {
-                key: 'delete',
-                label: t('orders.lines.remove'),
-                icon: Trash2,
-                permission: 'order_lines.delete',
-                destructive: true,
-                onSelect: () => onDelete(row),
-              },
-            ]}
-          />
-        ) : null,
+      cell: (row) => (
+        <RowActions
+          actions={[
+            {
+              key: 'history',
+              label: t('orders.entityHistory.title'),
+              icon: History,
+              onSelect: () => onHistory(row),
+            },
+            // Statut, modification et suppression disparaissent avec le contenu
+            // figé : le serveur les refuserait.
+            ...(editable
+              ? [
+                  {
+                    key: 'status',
+                    label: t('orders.lines.changeStatus'),
+                    icon: RefreshCw,
+                    permission: 'order_lines.update',
+                    onSelect: () => onStatus(row),
+                  },
+                  {
+                    key: 'edit',
+                    label: t('orders.lines.edit'),
+                    icon: Pencil,
+                    permission: 'order_lines.update',
+                    onSelect: () => onEdit(row),
+                  },
+                  {
+                    key: 'delete',
+                    label: t('orders.lines.remove'),
+                    icon: Trash2,
+                    permission: 'order_lines.delete',
+                    destructive: true,
+                    onSelect: () => onDelete(row),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      ),
     },
   ]
 }

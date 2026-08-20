@@ -3,7 +3,6 @@ import type { TFunction } from 'i18next'
 
 import type { Column } from '@/shared/components/data/DataTable'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
-import { Button } from '@/shared/components/ui/button'
 
 import type { OrderPackage, PackageTreeNode } from '../../types/orderDetail'
 import { packageDimensions } from './packageDimensions'
@@ -87,28 +86,6 @@ export function packageColumns(
       cell: ({ node }) => <StatusBadge status={node.status} />,
     },
     {
-      key: 'history',
-      header: '',
-      cell: ({ node }) => {
-        const detail = byId.get(node.id)
-
-        if (detail === undefined) return null
-
-        return (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="whitespace-nowrap"
-            onClick={() => onHistory(detail)}
-          >
-            <History className="size-4" aria-hidden />
-            {t('orders.entityHistory.title')}
-          </Button>
-        )
-      },
-    },
-    {
       key: 'actions',
       header: t('common.actions'),
       cell: ({ node }) => {
@@ -124,6 +101,12 @@ export function packageColumns(
                 label: t('orders.packages.contents'),
                 icon: Boxes,
                 onSelect: () => onContent(detail),
+              },
+              {
+                key: 'history',
+                label: t('orders.entityHistory.title'),
+                icon: History,
+                onSelect: () => onHistory(detail),
               },
               ...(editable
                 ? [

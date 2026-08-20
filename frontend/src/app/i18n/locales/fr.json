@@ -886,7 +886,8 @@
       "current": "Statut actuel",
       "unreachable": "Pas atteignable depuis le statut actuel",
       "systemManaged": "Posé par la planification ou la facturation, pas à la main",
-      "noReferential": "Aucun statut n’est décrit pour ce type d’élément. Un administrateur plateforme peut les définir depuis l’écran Statuts."
+      "noReferential": "Aucun statut n’est décrit pour ce type d’élément. Un administrateur plateforme peut les définir depuis l’écran Statuts.",
+      "noReferentialMember": "Aucun statut n’est décrit pour ce type d’élément. Demandez à un administrateur plateforme de les définir."
     },
     "duplicate": {
       "title": "Dupliquer la commande",

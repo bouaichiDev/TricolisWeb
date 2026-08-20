@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { paginated, withPermissions } from '@/test/fixtures'
+import { paginated, platformMembership, withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
@@ -39,7 +39,11 @@ const status = (code: string, label: string, position: number) => ({
   updatedAt: '2026-08-01T09:00:00.000000Z',
 })
 
-function renderDetail(permissions: string[], statuses = [status('active', 'Active', 1), status('closed', 'Clôturée', 2)]) {
+function renderDetail(
+  permissions: string[],
+  statuses = [status('active', 'Active', 1), status('closed', 'Clôturée', 2)],
+  platform = false,
+) {
   server.use(
     http.get(`${API}/orders/${ORDER_ID}`, () =>
       HttpResponse.json({ data: makeOrderDetail(), meta: [] }),
@@ -54,7 +58,9 @@ function renderDetail(permissions: string[], statuses = [status('active', 'Activ
   )
 
   return renderWithProviders(<OrderDetailPage />, {
-    membership: withPermissions(permissions),
+    membership: platform
+      ? platformMembership({ permissions: permissions.map((code, i) => ({ id: `p-${i}`, code })) })
+      : withPermissions(permissions),
     route: `/orders/${ORDER_ID}`,
     routePath: '/orders/:id',
   })
@@ -62,8 +68,7 @@ function renderDetail(permissions: string[], statuses = [status('active', 'Activ
 
 async function openStatusDialog(tab: string) {
   await userEvent.click(await screen.findByRole('tab', { name: new RegExp(`^${tab}`) }))
-  await userEvent.click((await screen.findAllByRole('button', { name: 'Actions' }))[0])
-  await userEvent.click(await screen.findByRole('menuitem', { name: 'Changer le statut' }))
+  await userEvent.click((await screen.findAllByRole('button', { name: 'Changer le statut' }))[0])
 }
 
 describe('statut d’une ligne', () => {
@@ -95,14 +100,26 @@ describe('statut d’une ligne', () => {
     expect(body).toEqual({ status: 'closed' })
   })
 
-  /** Rien n'est décrit pour cette entité : l'écran le dit et renvoie au bon endroit. */
-  it('renvoie au référentiel quand aucun statut n’est décrit', async () => {
-    renderDetail(['orders.view', 'order_lines.update'], [])
+  /**
+   * L'écran Statuts est réservé à la plateforme : le renvoi n'est proposé qu'à
+   * qui peut s'y rendre. Un membre lit la même explication, sans le lien.
+   */
+  it('renvoie au référentiel quand la plateforme le consulte', async () => {
+    renderDetail(['orders.view', 'order_lines.update'], [], true)
 
     await openStatusDialog('Lignes')
 
     expect(await screen.findByText(/Aucun statut n’est décrit/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Statuts' })).toBeInTheDocument()
+  })
+
+  it('explique sans renvoyer quand le compte n’est pas plateforme', async () => {
+    renderDetail(['orders.view', 'order_lines.update'], [])
+
+    await openStatusDialog('Lignes')
+
+    expect(await screen.findByText(/Demandez à un administrateur plateforme/)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Statuts' })).not.toBeInTheDocument()
   })
 })
 
@@ -132,10 +149,10 @@ describe('statut d’un colis', () => {
     renderDetail(['orders.view'])
 
     await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Actions' }))[0])
+    await screen.findByText('PAL-1')
 
     expect(
-      screen.queryByRole('menuitem', { name: 'Changer le statut' }),
+      screen.queryByRole('button', { name: 'Changer le statut' }),
     ).not.toBeInTheDocument()
   })
 })

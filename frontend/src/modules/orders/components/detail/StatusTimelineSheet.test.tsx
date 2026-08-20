@@ -80,7 +80,7 @@ describe('historique par élément', () => {
     expect(queries).toHaveLength(0)
 
     // L'historique s'ouvre en tiroir depuis l'action de la ligne.
-    await userEvent.click((await screen.findAllByRole('button', { name: /Voir l’historique/ }))[0])
+    await userEvent.click((await screen.findAllByRole('button', { name: /^Historique/ }))[0])
 
     await waitFor(() => expect(queries.length).toBeGreaterThan(0))
     expect(queries[0].get('entityType')).toBe('order_line')
@@ -160,7 +160,7 @@ describe('historique par élément', () => {
 
     await openTab('Lignes')
     await screen.findByText('Carton renforcé')
-    await userEvent.click((await screen.findAllByRole('button', { name: /Voir l’historique/ }))[0])
+    await userEvent.click((await screen.findAllByRole('button', { name: /^Historique/ }))[0])
 
     // Atteint : daté. À venir : sans date, et annoncé comme tel.
     expect(await screen.findByText('Élément créé')).toBeInTheDocument()
@@ -173,7 +173,7 @@ describe('historique par élément', () => {
 
     await openTab('Lignes')
     await screen.findByText('Carton renforcé')
-    await userEvent.click((await screen.findAllByRole('button', { name: /Voir l’historique/ }))[0])
+    await userEvent.click((await screen.findAllByRole('button', { name: /^Historique/ }))[0])
 
     expect(await screen.findByText(/demande la permission/i)).toBeInTheDocument()
   })

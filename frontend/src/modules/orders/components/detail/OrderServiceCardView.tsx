@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, History } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
@@ -14,6 +14,7 @@ interface OrderServiceCardViewProps {
   service: OrderService
   position: number
   onOpen: () => void
+  onHistory: () => void
 }
 
 /**
@@ -23,7 +24,12 @@ interface OrderServiceCardViewProps {
  * quoi décider si c'est bien ce service qu'on cherchait. Le reste s'ouvre dans
  * le panneau latéral, où les quatorze champs tiennent sans écraser la grille.
  */
-export function OrderServiceCardView({ service, position, onOpen }: OrderServiceCardViewProps) {
+export function OrderServiceCardView({
+  service,
+  position,
+  onOpen,
+  onHistory,
+}: OrderServiceCardViewProps) {
   const { t } = useTranslation()
 
   const from = service.operational.requestedFrom ?? service.operational.requestedDate
@@ -77,12 +83,22 @@ export function OrderServiceCardView({ service, position, onOpen }: OrderService
         ))}
       </dl>
 
-      <div className="flex items-center justify-between gap-2 border-t pt-2.5">
-        <span className="min-w-0 truncate text-sm text-muted-foreground">{contactLabel}</span>
-        <Button type="button" variant="ghost" size="sm" onClick={onOpen}>
-          {t('orders.services.openDetail')}
-          <ArrowRight className="size-4" aria-hidden />
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
+        <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+          {contactLabel}
+        </span>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <Button type="button" variant="ghost" size="sm" onClick={onHistory}>
+            <History className="size-4" aria-hidden />
+            {t('orders.entityHistory.title')}
+          </Button>
+
+          <Button type="button" variant="ghost" size="sm" onClick={onOpen}>
+            {t('orders.services.openDetail')}
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        </div>
       </div>
     </div>
   )

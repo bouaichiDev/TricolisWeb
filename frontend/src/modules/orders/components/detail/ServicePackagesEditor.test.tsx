@@ -50,7 +50,7 @@ function renderDetail(permissions: string[], links: unknown[] = []) {
 
 const openService = async () => {
   await userEvent.click(await screen.findByRole('tab', { name: /^Services/ }))
-  await userEvent.click(await screen.findByRole('button', { name: /Ouvrir le détail/ }))
+  await userEvent.click(await screen.findByRole('button', { name: /^Détail/ }))
 }
 
 const link = {

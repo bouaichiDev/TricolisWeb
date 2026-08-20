@@ -89,7 +89,7 @@ describe('OrderDetailPage', () => {
     expect(await screen.findByText('Livraison standard')).toBeInTheDocument()
     expect(screen.getByText('SRV-1')).toBeInTheDocument()
     expect(screen.getByText('Service 1')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Ouvrir le détail/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Détail/ })).toBeInTheDocument()
   })
 
   /**

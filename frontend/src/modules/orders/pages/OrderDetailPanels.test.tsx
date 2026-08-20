@@ -71,7 +71,7 @@ describe('panneaux de détail', () => {
     // charge n'apparaissent qu'une fois le panneau ouvert.
     expect(screen.queryByText('PU fournisseur')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: /Ouvrir le détail/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Détail/ }))
 
     expect(await screen.findByText('PU fournisseur')).toBeInTheDocument()
     expect(screen.getAllByText('+212600000000').length).toBeGreaterThan(0)

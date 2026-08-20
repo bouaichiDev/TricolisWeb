@@ -81,6 +81,7 @@ export function OrderServicesTab({
               service={service}
               position={index + 1}
               onOpen={() => setOpenId(service.id)}
+              onHistory={() => setHistory(service)}
             />
           ))}
         </div>

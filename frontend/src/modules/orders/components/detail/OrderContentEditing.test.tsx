@@ -153,7 +153,7 @@ describe('statut d’un service', () => {
 
     await openTab('Services')
     // Le statut se change depuis le panneau du service, pas depuis la vignette.
-    await userEvent.click(await screen.findByRole('button', { name: /Ouvrir le détail/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /^Détail/ }))
     await userEvent.click(
       await screen.findByRole('button', { name: 'Changer le statut du service' }),
     )

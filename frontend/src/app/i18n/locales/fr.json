@@ -39,8 +39,7 @@
     "showingRange": "Affichage de {{from}} à {{to}} sur {{total}} résultats",
     "detail": "Détail",
     "createdAt": "Créé le",
-    "updatedAt": "Modifié le",
-    "moreDetails": "Plus de détails"
+    "updatedAt": "Modifié le"
   },
   "auth": {
     "login": "Connexion",
@@ -853,7 +852,7 @@
       "created": "Service ajouté.",
       "deleteConfirm": "Retirer ce service de la commande ?",
       "changeStatus": "Changer le statut du service",
-      "openDetail": "Ouvrir le détail",
+      "openDetail": "Détail",
       "detachPackage": "Retirer ce colis du service"
     },
     "review": {
@@ -898,7 +897,6 @@
     },
     "entityHistory": {
       "title": "Historique",
-      "show": "Voir l’historique",
       "empty": "Aucun évènement enregistré pour cet élément.",
       "needsPermission": "La consultation du journal demande la permission « audit.view »."
     },

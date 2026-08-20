@@ -86,6 +86,28 @@ export function packageColumns(
       cell: ({ node }) => <StatusBadge status={node.status} />,
     },
     {
+      key: 'history',
+      header: '',
+      cell: ({ node }) => {
+        const detail = byId.get(node.id)
+
+        if (detail === undefined) return null
+
+        return (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="whitespace-nowrap"
+            onClick={() => onHistory(detail)}
+          >
+            <History className="size-4" aria-hidden />
+            {t('orders.entityHistory.title')}
+          </Button>
+        )
+      },
+    },
+    {
       key: 'actions',
       header: t('common.actions'),
       cell: ({ node }) => {
@@ -103,16 +125,6 @@ export function packageColumns(
               aria-label={t('orders.packages.contents')}
             >
               <Boxes className="size-4" aria-hidden />
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onHistory(detail)}
-              aria-label={t('orders.entityHistory.show')}
-            >
-              <History className="size-4" aria-hidden />
             </Button>
 
             {editable ? (

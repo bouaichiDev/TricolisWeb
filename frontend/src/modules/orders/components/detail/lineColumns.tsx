@@ -81,20 +81,26 @@ export function lineColumns(
       cell: (row) => <StatusBadge status={row.status} />,
     },
     {
+      key: 'history',
+      header: '',
+      cell: (row) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="whitespace-nowrap"
+          onClick={() => onHistory(row)}
+        >
+          <History className="size-4" aria-hidden />
+          {t('orders.entityHistory.title')}
+        </Button>
+      ),
+    },
+    {
       key: 'actions',
       header: t('common.actions'),
       cell: (row) => (
         <span className="flex justify-end gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onHistory(row)}
-            aria-label={t('orders.entityHistory.show')}
-          >
-            <History className="size-4" aria-hidden />
-          </Button>
-
           {editable ? (
             <>
               <PermissionGuard permission="order_lines.update">

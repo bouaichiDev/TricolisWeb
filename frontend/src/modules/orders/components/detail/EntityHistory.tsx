@@ -13,6 +13,8 @@ interface EntityHistoryProps {
   /** Alias métier de `MorphMap` : `order_line`, `package`, `order_service`. */
   entityType: string
   entityId: string
+  /** Déjà ouvert — dans un tiroir dédié, le repli n'aurait pas de sens. */
+  defaultOpen?: boolean
 }
 
 /**
@@ -29,9 +31,13 @@ interface EntityHistoryProps {
  * Replié par défaut, et **chargé seulement une fois ouvert** : une commande de
  * vingt lignes déclencherait autrement vingt requêtes à l'affichage de l'onglet.
  */
-export function EntityHistory({ entityType, entityId }: EntityHistoryProps) {
+export function EntityHistory({
+  entityType,
+  entityId,
+  defaultOpen = false,
+}: EntityHistoryProps) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const canRead = usePermission('audit.view')
 
   const history = useAuditLogs({ page: 1, perPage: 25, entityType, entityId }, open && canRead)
@@ -43,17 +49,19 @@ export function EntityHistory({ entityType, entityId }: EntityHistoryProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="w-fit px-0"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <History className="size-4" aria-hidden />
-        {t('orders.entityHistory.show')}
-      </Button>
+      {defaultOpen ? null : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-fit px-0"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <History className="size-4" aria-hidden />
+          {t('orders.entityHistory.show')}
+        </Button>
+      )}
 
       {open ? (
         history.isPending ? (

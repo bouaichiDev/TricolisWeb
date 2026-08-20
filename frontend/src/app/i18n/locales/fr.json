@@ -807,7 +807,8 @@
       "deleteConfirm": "Retirer ce colis de la commande ?",
       "parent": "Colis parent",
       "dimensions": "Dimensions",
-      "dimensionsCreateHint": "Les dimensions ne sont pas acceptées à la création complète d’une commande ; elles se renseignent depuis la fiche, une fois la commande créée."
+      "dimensionsCreateHint": "Les dimensions ne sont pas acceptées à la création complète d’une commande ; elles se renseignent depuis la fiche, une fois la commande créée.",
+      "number": "N° colis"
     },
     "services": {
       "title": "Services",
@@ -851,7 +852,8 @@
       "edit": "Modifier le service",
       "created": "Service ajouté.",
       "deleteConfirm": "Retirer ce service de la commande ?",
-      "changeStatus": "Changer le statut du service"
+      "changeStatus": "Changer le statut du service",
+      "openDetail": "Ouvrir le détail"
     },
     "review": {
       "title": "Récapitulatif",
@@ -899,7 +901,34 @@
       "empty": "Aucun évènement enregistré pour cet élément.",
       "needsPermission": "La consultation du journal demande la permission « audit.view »."
     },
-    "contentLocked": "Le contenu de cette commande est figé : lignes, colis et services ne sont plus modifiables."
+    "contentLocked": "Le contenu de cette commande est figé : lignes, colis et services ne sont plus modifiables.",
+    "deliveryDate": "Date de livraison",
+    "deliveryWindow": "Créneau {{from}} → {{to}}",
+    "createdOn": "Créée le {{date}}",
+    "primaryContact": "Contact principal",
+    "amountsFromServices": "Somme des services",
+    "kpi": {
+      "weight": "Poids",
+      "volume": "Volume",
+      "packages": "Colis",
+      "lines": "Lignes",
+      "services": "Services",
+      "customerTotal": "Total client",
+      "kg": "kg",
+      "m3": "m³",
+      "unit": "unité",
+      "lineUnit": "ligne de commande",
+      "serviceUnit": "service"
+    },
+    "statusTimeline": {
+      "title": "Historique des statuts",
+      "created": "Élément créé",
+      "reached": "Statut atteint",
+      "from": "Depuis « {{status}} »",
+      "upcoming": "Pas encore atteint",
+      "noReferential": "Aucun cycle de vie n’est décrit pour ce type d’élément : seul le passé est affiché. Un administrateur plateforme peut le définir depuis l’écran Statuts.",
+      "changes": "Modifications"
+    }
   },
   "orderStatuses": {
     "draft": "Brouillon",

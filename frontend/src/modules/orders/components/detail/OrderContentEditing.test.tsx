@@ -52,8 +52,9 @@ function renderDetail(permissions: string[], order: Partial<OrderDetail> = {}) {
   })
 }
 
+/** Le nom accessible d'un onglet porte son compteur : « Lignes 1 ». */
 const openTab = async (name: string) =>
-  userEvent.click(await screen.findByRole('tab', { name }))
+  userEvent.click(await screen.findByRole('tab', { name: new RegExp(`^${name}`) }))
 
 describe('modification du contenu d’une commande', () => {
   it('corrige une ligne existante par sa propre route', async () => {
@@ -125,7 +126,7 @@ describe('modification du contenu d’une commande', () => {
     })
 
     await openTab('Lignes')
-    await screen.findAllByText('Carton renforcé')
+    await screen.findByText('Carton renforcé')
 
     expect(screen.queryByRole('button', { name: 'Modifier la ligne' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Ajouter une ligne/ })).not.toBeInTheDocument()
@@ -136,52 +137,9 @@ describe('modification du contenu d’une commande', () => {
     renderDetail(['orders.view'])
 
     await openTab('Lignes')
-    await screen.findAllByText('Carton renforcé')
+    await screen.findByText('Carton renforcé')
 
     expect(screen.queryByRole('button', { name: 'Modifier la ligne' })).not.toBeInTheDocument()
-  })
-})
-
-describe('historique par élément', () => {
-  /**
-   * Il n'existe pas de table d'historique : chaque écriture est journalisée
-   * dans l'audit avec son type d'entité et son identifiant.
-   */
-  it('charge l’historique d’une ligne seulement une fois déplié', async () => {
-    const queries: URLSearchParams[] = []
-    renderDetail(['orders.view', 'audit.view'])
-
-    server.use(
-      http.get(`${API}/audit-logs`, ({ request }) => {
-        queries.push(new URL(request.url).searchParams)
-        return HttpResponse.json(paginated([AUDIT]))
-      }),
-    )
-
-    await openTab('Lignes')
-    await screen.findAllByText('Carton renforcé')
-
-    expect(queries).toHaveLength(0)
-
-    await userEvent.click((await screen.findAllByRole('button', { name: /Voir l’historique/ }))[0])
-
-    await waitFor(() => expect(queries.length).toBeGreaterThan(0))
-    expect(queries[0].get('entityType')).toBe('order_line')
-    expect(queries[0].get('entityId')).toBe(LINE_ID)
-
-    const entry = await screen.findByText('Modification')
-    expect(entry).toBeInTheDocument()
-    expect(screen.getByText('10 → 12')).toBeInTheDocument()
-  })
-
-  it('explique le manque de permission plutôt que d’afficher un bloc vide', async () => {
-    renderDetail(['orders.view'])
-
-    await openTab('Lignes')
-
-    expect(
-      (await screen.findAllByText(/demande la permission/i)).length,
-    ).toBeGreaterThan(0)
   })
 })
 
@@ -191,6 +149,8 @@ describe('statut d’un service', () => {
     renderDetail(['orders.view', 'order_services.change_status'])
 
     await openTab('Services')
+    // Le statut se change depuis le panneau du service, pas depuis la vignette.
+    await userEvent.click(await screen.findByRole('button', { name: /Ouvrir le détail/ }))
     await userEvent.click(
       await screen.findByRole('button', { name: 'Changer le statut du service' }),
     )

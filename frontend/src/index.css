@@ -14,7 +14,9 @@
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(1 0 0);
+  /* Fond de page legerement grise : sans lui, les cartes blanches se
+     confondent avec la page et la hierarchie des maquettes disparait. */
+  --background: oklch(0.981 0.002 260);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);

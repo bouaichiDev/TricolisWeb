@@ -44,11 +44,11 @@ function renderDetail(permissions: string[]) {
   })
 }
 
-/** Ouvre l'onglet Colis et déplie l'un des colis de l'arbre. */
+/** Ouvre l'onglet Colis puis la fiche de l'un des colis du tableau. */
 async function openPackage(index = 0) {
-  await userEvent.click(await screen.findByRole('tab', { name: 'Colis' }))
-  await screen.findAllByText('PAL-1')
-  await userEvent.click(screen.getAllByRole('button', { name: /Plus de détails/ })[index])
+  await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
+  await screen.findByText('PAL-1')
+  await userEvent.click(screen.getAllByRole('button', { name: 'Contenu du colis' })[index])
 }
 
 const openFirstPackage = () => openPackage(0)

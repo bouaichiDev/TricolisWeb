@@ -1,21 +1,20 @@
-import { Copy, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
-import { EntityHeader } from '@/shared/components/layout/EntityHeader'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
-import { Button } from '@/shared/components/ui/button'
+import { Badge } from '@/shared/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
 import { ChangeOrderStatusDialog } from '../components/ChangeOrderStatusDialog'
 import { DuplicateOrderDialog } from '../components/DuplicateOrderDialog'
+import { OrderDetailHeader } from '../components/detail/OrderDetailHeader'
 import { OrderDocumentsTab } from '../components/detail/OrderDocumentsTab'
 import { OrderHistoryTimeline } from '../components/detail/OrderHistoryTimeline'
+import { OrderKpiStrip } from '../components/detail/OrderKpiStrip'
 import { OrderLinesTab } from '../components/detail/OrderLinesTab'
 import { OrderPackagesTab } from '../components/detail/OrderPackagesTab'
 import { OrderServicesTab } from '../components/detail/OrderServicesTab'
@@ -49,33 +48,26 @@ export function OrderDetailPage() {
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />
   if (!order) return null
 
-  return (
-    <div className="flex flex-col gap-6">
-      <EntityHeader
-        title={order.orderNumber}
-        subtitle={order.customer?.name}
-        editTo={order.allowsContentChanges ? `/orders/${order.id}/edit` : undefined}
-        editPermission={order.allowsContentChanges ? 'orders.update' : undefined}
-        onDelete={order.allowsContentChanges ? () => setConfirmDelete(true) : undefined}
-        deletePermission={order.allowsContentChanges ? 'orders.delete' : undefined}
-        actions={
-          <>
-            <PermissionGuard permission="orders.change_status">
-              <Button variant="outline" onClick={() => setStatusOpen(true)}>
-                <RefreshCw className="size-4" aria-hidden />
-                {t('orders.statusDialog.title')}
-              </Button>
-            </PermissionGuard>
+  // Les compteurs viennent du contenu déjà chargé : aucun appel de plus.
+  const tabs = [
+    { value: 'summary', count: null },
+    { value: 'lines', count: order.lines?.length ?? 0 },
+    { value: 'packages', count: order.packages?.length ?? 0 },
+    { value: 'services', count: order.services?.length ?? 0 },
+    { value: 'documents', count: null },
+    { value: 'history', count: null },
+  ]
 
-            <PermissionGuard permission="orders.duplicate">
-              <Button variant="outline" onClick={() => setDuplicateOpen(true)}>
-                <Copy className="size-4" aria-hidden />
-                {t('orders.duplicate.title')}
-              </Button>
-            </PermissionGuard>
-          </>
-        }
+  return (
+    <div className="flex flex-col gap-4">
+      <OrderDetailHeader
+        order={order}
+        onChangeStatus={() => setStatusOpen(true)}
+        onDuplicate={() => setDuplicateOpen(true)}
+        onDelete={() => setConfirmDelete(true)}
       />
+
+      <OrderKpiStrip order={order} />
 
       {!order.allowsContentChanges ? (
         <Alert>
@@ -85,19 +77,23 @@ export function OrderDetailPage() {
 
       <Tabs defaultValue="summary">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="summary">{t('orders.tabs.summary')}</TabsTrigger>
-          <TabsTrigger value="lines">{t('orders.tabs.lines')}</TabsTrigger>
-          <TabsTrigger value="packages">{t('orders.tabs.packages')}</TabsTrigger>
-          <TabsTrigger value="services">{t('orders.tabs.services')}</TabsTrigger>
-          <TabsTrigger value="documents">{t('orders.tabs.documents')}</TabsTrigger>
-          <TabsTrigger value="history">{t('orders.tabs.history')}</TabsTrigger>
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5">
+              {t(`orders.tabs.${tab.value}`)}
+              {tab.count === null ? null : (
+                <Badge variant="secondary" className="px-1.5 font-mono text-[11px]">
+                  {tab.count}
+                </Badge>
+              )}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="summary" className="mt-6">
+        <TabsContent value="summary" className="mt-4">
           <OrderSummaryTab order={order} />
         </TabsContent>
 
-        <TabsContent value="lines" className="mt-6">
+        <TabsContent value="lines" className="mt-4">
           <OrderLinesTab
             orderId={order.id}
             lines={order.lines ?? []}
@@ -105,7 +101,7 @@ export function OrderDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="packages" className="mt-6">
+        <TabsContent value="packages" className="mt-4">
           <OrderPackagesTab
             orderId={order.id}
             packages={order.packages ?? []}
@@ -114,7 +110,7 @@ export function OrderDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="services" className="mt-6">
+        <TabsContent value="services" className="mt-4">
           <OrderServicesTab
             orderId={order.id}
             customerId={order.customerId}
@@ -124,11 +120,11 @@ export function OrderDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="documents" className="mt-6">
+        <TabsContent value="documents" className="mt-4">
           <OrderDocumentsTab orderId={order.id} />
         </TabsContent>
 
-        <TabsContent value="history" className="mt-6">
+        <TabsContent value="history" className="mt-4">
           <OrderHistoryTimeline orderId={order.id} />
         </TabsContent>
       </Tabs>
@@ -152,6 +148,7 @@ export function OrderDetailPage() {
         onOpenChange={setConfirmDelete}
         title={t('common.delete')}
         description={t('orders.deleteConfirm')}
+        confirmLabel={t('common.delete')}
         onConfirm={() => deleteOrder.mutate(order.id, { onSuccess: () => navigate('/orders') })}
       />
     </div>

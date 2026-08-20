@@ -60,7 +60,9 @@ export function makeOrderDetail(overrides: Partial<OrderDetail> = {}): OrderDeta
         height: null,
         purchasePrice: null,
         sellingPrice: null,
-        status: null,
+        // `order_lines.status` porte une valeur par défaut en base : une ligne
+        // sans statut n'existe pas.
+        status: 'active',
         fromCatalog: true,
       },
     ],

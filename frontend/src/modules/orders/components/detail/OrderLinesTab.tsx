@@ -1,21 +1,18 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
+import { DataTable } from '@/shared/components/data/DataTable'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
-import { EmptyState } from '@/shared/components/feedback/EmptyState'
-import { Disclosure } from '@/shared/components/layout/Disclosure'
-import { SectionCard } from '@/shared/components/layout/SectionCard'
-import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 
 import { useDeleteOrderLine } from '../../hooks/useOrderContent'
 import type { OrderLine } from '../../types/orderDetail'
-import { EntityHistory } from './EntityHistory'
+import { lineColumns } from './lineColumns'
 import { OrderLineDialog } from './OrderLineDialog'
-import { OrderLineFields } from './OrderLineFields'
-import { SummaryRow } from './SummaryRow'
+import { StatusTimelineSheet } from './StatusTimelineSheet'
+import { TableToolbar } from './TableToolbar'
 
 interface OrderLinesTabProps {
   orderId: string
@@ -25,113 +22,51 @@ interface OrderLinesTabProps {
 }
 
 /**
- * Lignes de la commande.
+ * Lignes de la commande, en tableau.
  *
- * Cinq valeurs en clair — code-barres, quantité, poids, volume, statut — et le
- * reste sous le repli. Une ligne porte une vingtaine de champs ; les afficher
- * tous noyait les trois qu'on lit vraiment.
- *
- * `fromCatalog` est calculé par la ressource : il dit si la ligne provient d'un
- * article de catalogue ou d'une saisie libre. Les deux coexistent dans une même
- * commande.
- *
- * Les actions disparaissent quand la commande n'accepte plus de changement de
- * contenu : au-delà de `CONFIRMED`, lignes, colis et services sont engagés
- * auprès de l'exploitation.
+ * Les trois quantités suivies — réservée, préparée, livrée — sont en retrait :
+ * elles viennent des modules Stock et Exploitation et ne se saisissent pas ici.
+ * La note en pied de tableau le dit plutôt que de laisser deviner pourquoi
+ * elles restent à zéro.
  */
 export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<OrderLine | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<OrderLine | null>(null)
+  const [history, setHistory] = useState<OrderLine | null>(null)
   const remove = useDeleteOrderLine(orderId)
 
+  const columns = lineColumns(t, {
+    editable,
+    onHistory: setHistory,
+    onEdit: setEditing,
+    onDelete: setDeleting,
+  })
+
   return (
-    <SectionCard
-      title={t('orders.lines.title')}
-      description={t('orders.lines.description')}
-      actions={
-        editable ? (
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <TableToolbar title={t('orders.lines.title')} description={t('orders.lines.description')}>
+        {editable ? (
           <PermissionGuard permission="order_lines.create">
             <Button type="button" variant="outline" size="sm" onClick={() => setCreating(true)}>
               <Plus className="size-4" aria-hidden />
               {t('orders.lines.add')}
             </Button>
           </PermissionGuard>
-        ) : null
-      }
-    >
-      {lines.length === 0 ? (
-        <EmptyState title={t('orders.lines.title')} />
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {lines.map((line) => (
-            <li key={line.id} className="rounded-md border p-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <p className="flex min-w-0 flex-wrap items-center gap-2 font-medium">
-                  {line.name}
-                  {line.fromCatalog ? (
-                    <Badge variant="secondary">{t('orders.lines.catalogItem')}</Badge>
-                  ) : (
-                    <Badge variant="outline">{t('orders.lines.manualEntry')}</Badge>
-                  )}
-                </p>
+        ) : null}
+      </TableToolbar>
 
-                {editable ? (
-                  <div className="flex gap-1">
-                    <PermissionGuard permission="order_lines.update">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditing(line)}
-                        aria-label={t('orders.lines.edit')}
-                      >
-                        <Pencil className="size-4" aria-hidden />
-                      </Button>
-                    </PermissionGuard>
+      <DataTable
+        columns={columns}
+        rows={lines}
+        rowKey={(row) => row.id}
+        emptyMessage={t('orders.lines.title')}
+      />
 
-                    <PermissionGuard permission="order_lines.delete">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleting(line)}
-                        aria-label={t('orders.lines.remove')}
-                      >
-                        <Trash2 className="size-4" aria-hidden />
-                      </Button>
-                    </PermissionGuard>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-2">
-                <SummaryRow
-                  items={[
-                    { labelKey: 'orders.fields.barcode', value: line.barcode },
-                    { labelKey: 'orders.fields.quantity', value: line.quantity },
-                    { labelKey: 'orders.fields.weight', value: line.weight },
-                    { labelKey: 'orders.fields.volume', value: line.volume },
-                    { labelKey: 'orders.fields.status', value: line.status },
-                  ]}
-                />
-              </div>
-
-              <div className="mt-2 border-t pt-2">
-                <Disclosure>
-                  <OrderLineFields line={line} />
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {t('orders.lines.trackedHint')}
-                  </p>
-                </Disclosure>
-
-                <EntityHistory entityType="order_line" entityId={line.id} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <p className="border-t px-3.5 py-2.5 text-sm text-muted-foreground">
+        {t('orders.lines.trackedHint')}
+      </p>
 
       <OrderLineDialog
         key={editing?.id ?? 'new'}
@@ -146,6 +81,15 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
         }}
       />
 
+      <StatusTimelineSheet
+        entityType="order_line"
+        entityId={history?.id ?? null}
+        title={history?.name}
+        subtitle={history?.articleCode ?? undefined}
+        currentStatus={history?.status}
+        onClose={() => setHistory(null)}
+      />
+
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
@@ -158,6 +102,6 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
           remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })
         }}
       />
-    </SectionCard>
+    </div>
   )
 }

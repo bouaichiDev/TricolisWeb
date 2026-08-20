@@ -39,7 +39,8 @@ describe('OrderDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'CMD-2026-000001' })).toBeInTheDocument()
 
     for (const tab of ['Résumé', 'Lignes', 'Colis', 'Services', 'Documents', 'Historique']) {
-      expect(screen.getByRole('tab', { name: tab })).toBeInTheDocument()
+      // Le nom accessible porte le compteur : « Lignes 1 ».
+      expect(screen.getByRole('tab', { name: new RegExp(`^${tab}`) })).toBeInTheDocument()
     }
   })
 
@@ -55,7 +56,7 @@ describe('OrderDetailPage', () => {
   it('distingue une ligne issue du catalogue d’une saisie libre', async () => {
     renderDetail(makeOrderDetail(), ['orders.view'])
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Lignes' }))
+    await userEvent.click(await screen.findByRole('tab', { name: /^Lignes/ }))
 
     // Le libellé paraît deux fois : en titre de la ligne, puis dans le détail
     // complet de ses champs.
@@ -67,7 +68,7 @@ describe('OrderDetailPage', () => {
   it('affiche la hiérarchie des colis et l’essentiel de chacun', async () => {
     renderDetail(makeOrderDetail(), ['orders.view'])
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Colis' }))
+    await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
 
     expect((await screen.findAllByText('PAL-1')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('CTN-1').length).toBeGreaterThan(0)
@@ -76,15 +77,16 @@ describe('OrderDetailPage', () => {
     expect(screen.getByText('12.5')).toBeInTheDocument()
   })
 
-  it('affiche l’adresse et l’essentiel de chaque service', async () => {
+  /** Une vignette par service : de quoi reconnaître celui qu'on cherche. */
+  it('affiche une vignette par service', async () => {
     renderDetail(makeOrderDetail(), ['orders.view'])
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Services' }))
+    await userEvent.click(await screen.findByRole('tab', { name: /^Services/ }))
 
-    expect(await screen.findByText('1. Livraison standard')).toBeInTheDocument()
+    expect(await screen.findByText('Livraison standard')).toBeInTheDocument()
     expect(screen.getByText('SRV-1')).toBeInTheDocument()
-    // Quantité et unité tiennent sur la même valeur du résumé.
-    expect(screen.getByText('1 colis')).toBeInTheDocument()
+    expect(screen.getByText('Service 1')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Ouvrir le détail/ })).toBeInTheDocument()
   })
 
   /**

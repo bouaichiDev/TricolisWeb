@@ -15,10 +15,18 @@ export const statusKeys = {
   transitions: (id: string) => [...statusKeys.all, 'transitions', id] as const,
 }
 
-export function useStatusList(filters: StatusFilters) {
+/**
+ * Statuts du référentiel.
+ *
+ * `enabled` permet de ne rien demander tant que le panneau qui s'en sert est
+ * fermé : la fiche d'une commande n'a pas à charger un référentiel que personne
+ * n'a ouvert.
+ */
+export function useStatusList(filters: StatusFilters, enabled = true) {
   return useQuery({
     queryKey: statusKeys.list(filters),
     queryFn: () => statusesApi.list(filters),
+    enabled,
     placeholderData: (previous) => previous,
   })
 }

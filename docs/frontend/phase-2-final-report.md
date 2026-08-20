@@ -142,14 +142,10 @@ produirait un 422 sur un chemin devenu invisible.
 
 ## 9. Adresse d'un service
 
-**L'adresse d'un service n'est pas celle du client de la commande.** Une même
-commande porte souvent un chargement chez le donneur d'ordre et une livraison
-chez le destinataire : deux services, deux clients, deux adresses. Le client est
-donc choisi service par service, celui de la commande servant de valeur de
-départ et portant la mention « Donneur d'ordre ».
-
-`OrderScopeGuard::address` acceptait déjà toute adresse rattachée à
-l'organisation : la contrainte n'existait que dans l'écran.
+**Le client n'est pas redemandé au service** : c'est celui de la commande,
+choisi à l'étape Général. Une même commande porte souvent un chargement chez le
+donneur d'ordre et une livraison chez son destinataire — ce sont **deux adresses
+du même carnet**, pas deux clients. Le destinataire s'exprime par l'adresse.
 
 **Une adresse absente se crée sans quitter la commande.** `StoreOrderRequest`
 exige un `addressId` existant — une adresse ne peut pas voyager dans la charge

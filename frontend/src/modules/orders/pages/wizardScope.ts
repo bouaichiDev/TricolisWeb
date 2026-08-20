@@ -4,34 +4,11 @@ import { paginated } from '@/test/fixtures'
 import { API, server } from '@/test/server'
 
 export const CUSTOMER_ID = '01JQZ000000000000000CUST'
-/** Second client : le destinataire, distinct du donneur d'ordre. */
-export const OTHER_CUSTOMER_ID = '01JQZ00000000000000CUST2'
-export const OTHER_ADDRESS_ID = '01JQZ00000000000000ADDR2'
 export const AGENCY_ID = '01JQZ0000000000000000AGY1'
 export const SERVICE_ID = '01JQZ00000000000000SERV1'
 export const ADDRESS_ID = '01JQZ00000000000000ADDR1'
 export const CATALOG_ID = '01JQZ0000000000000CATA01'
 export const ITEM_ID = '01JQZ00000000000000ITEM1'
-
-const otherCustomer = {
-  id: OTHER_CUSTOMER_ID,
-  organizationId: '01JQZ0000000000000000ORG1',
-  code: 'CLI002',
-  name: 'Destinataire Beta',
-  legalName: null,
-  email: null,
-  phone: null,
-  paymentMode: null,
-  communicationMode: null,
-  catalogEnabled: false,
-  stockEnabled: false,
-  packageEnabled: false,
-  appointmentEnabled: false,
-  trackingEnabled: false,
-  status: 'active',
-  createdAt: '2026-02-01T10:00:00.000000Z',
-  updatedAt: '2026-02-01T10:00:00.000000Z',
-}
 
 const customer = (catalogEnabled: boolean) => ({
   id: CUSTOMER_ID,
@@ -93,14 +70,6 @@ const address = {
   updatedAt: '2026-02-01T10:00:00.000000Z',
 }
 
-const otherAddress = {
-  ...address,
-  id: OTHER_ADDRESS_ID,
-  name: 'Chantier Marrakech',
-  addressLine1: '5 avenue des Palmiers',
-  city: 'Marrakech',
-}
-
 export const catalogItem = {
   id: ITEM_ID,
   catalogId: CATALOG_ID,
@@ -126,9 +95,7 @@ export const catalogItem = {
  */
 export function serveWizardScope({ catalogEnabled = true } = {}) {
   server.use(
-    http.get(`${API}/customers`, () =>
-      HttpResponse.json(paginated([customer(catalogEnabled), otherCustomer])),
-    ),
+    http.get(`${API}/customers`, () => HttpResponse.json(paginated([customer(catalogEnabled)]))),
     http.get(`${API}/customers/${CUSTOMER_ID}`, () =>
       HttpResponse.json({ data: customer(catalogEnabled), meta: [] }),
     ),
@@ -150,15 +117,7 @@ export function serveWizardScope({ catalogEnabled = true } = {}) {
     http.get(`${API}/agencies/${AGENCY_ID}/depots`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/services`, () => HttpResponse.json(paginated([service]))),
     http.get(`${API}/customers/${CUSTOMER_ID}/sites`, () => HttpResponse.json(paginated([]))),
-    http.get(`${API}/customers/${OTHER_CUSTOMER_ID}/sites`, () => HttpResponse.json(paginated([]))),
-    // Les adresses sont servies par entité : chaque client a les siennes.
-    http.get(`${API}/addresses`, ({ request }) => {
-      const entityId = new URL(request.url).searchParams.get('entityId')
-
-      return HttpResponse.json(
-        paginated(entityId === OTHER_CUSTOMER_ID ? [otherAddress] : [address]),
-      )
-    }),
+    http.get(`${API}/addresses`, () => HttpResponse.json(paginated([address]))),
     http.get(`${API}/addresses/:addressId/contacts`, () =>
       HttpResponse.json({ data: [], meta: [] }),
     ),

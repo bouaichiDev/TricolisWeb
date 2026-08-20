@@ -856,12 +856,10 @@
       "changeStatus": "Changer le statut du service",
       "openDetail": "Détail",
       "detachPackage": "Retirer ce colis du service",
-      "customer": "Client de ce service",
-      "customerHint": "Le chargement se fait chez le donneur d’ordre, la livraison chez le destinataire : chaque service porte son propre client.",
-      "orderCustomer": "Donneur d’ordre",
       "newAddress": "Nouvelle adresse",
-      "newAddressHint": "L’adresse est créée pour le client choisi et reste disponible pour ses prochaines commandes.",
-      "newContactHint": "Facultatif. Renseigné, le contact est rattaché à l’adresse et proposé ci-dessous pour ce service."
+      "newAddressHint": "L’adresse est ajoutée au carnet du client et reste disponible pour ses prochaines commandes.",
+      "newContactHint": "Facultatif. Renseigné, le contact est rattaché à l’adresse et proposé ci-dessous pour ce service.",
+      "addressHint": "Lieu d’exécution : chez le client pour un chargement, chez son destinataire pour une livraison."
     },
     "review": {
       "title": "Récapitulatif",

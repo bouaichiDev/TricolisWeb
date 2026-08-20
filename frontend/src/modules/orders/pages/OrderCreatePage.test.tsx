@@ -9,14 +9,7 @@ import { API, server } from '@/test/server'
 
 import { OrderCreatePage } from './OrderCreatePage'
 import { fillOrder, goTo, pick } from './wizardActions'
-import {
-  ADDRESS_ID,
-  CUSTOMER_ID,
-  OTHER_ADDRESS_ID,
-  OTHER_CUSTOMER_ID,
-  SERVICE_ID,
-  serveWizardScope,
-} from './wizardScope'
+import { ADDRESS_ID, CUSTOMER_ID, SERVICE_ID, serveWizardScope } from './wizardScope'
 
 const render = () =>
   renderWithProviders(<OrderCreatePage />, {
@@ -157,45 +150,6 @@ describe('OrderCreatePage', () => {
 
     expect(payload.lines[0].catalogItemId).toBe('01JQZ00000000000000ITEM1')
     expect(payload.lines[0].articleCode).toBe('ART-9')
-  })
-
-  /**
-   * Une commande porte souvent un chargement chez le donneur d'ordre et une
-   * livraison chez le destinataire : deux services, deux clients. L'adresse
-   * n'est donc pas bornée au client de la commande.
-   */
-  it('accepte l’adresse d’un autre client que le donneur d’ordre', async () => {
-    serveWizardScope({ catalogEnabled: false })
-
-    let body: unknown = null
-    server.use(
-      http.post(`${API}/orders`, async ({ request }) => {
-        body = await request.json()
-        return HttpResponse.json(
-          { data: { id: '01JQZ00000000000000ORD01' }, meta: [] },
-          { status: 201 },
-        )
-      }),
-    )
-
-    render()
-    await fillOrder()
-
-    // Le client de la commande est marqué comme donneur d'ordre.
-    await pick(/^Client de ce service/, /Destinataire Beta/)
-    await pick(/^Adresse \*/, /Chantier Marrakech/)
-
-    await goTo('Récapitulatif')
-    await userEvent.click(screen.getByRole('button', { name: 'Créer la commande' }))
-
-    await waitFor(() => expect(body).not.toBeNull())
-
-    const payload = body as { customerId: string; services: { addressId: string }[] }
-
-    // La commande reste au donneur d'ordre ; le service part chez l'autre.
-    expect(payload.customerId).toBe(CUSTOMER_ID)
-    expect(payload.services[0].addressId).toBe(OTHER_ADDRESS_ID)
-    expect(OTHER_CUSTOMER_ID).not.toBe(CUSTOMER_ID)
   })
 
   /**

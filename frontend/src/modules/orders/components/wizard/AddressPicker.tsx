@@ -1,10 +1,13 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
+import { Button } from '@/shared/components/ui/button'
 
 import { useCustomerOptions } from '../../hooks/useOrderScope'
 import { useAddressOptions, useSiteOptions } from '../../hooks/useServiceScope'
+import { NewServiceAddressDialog } from './NewServiceAddressDialog'
 
 /**
  * Valeur désignant le client lui-même, par opposition à l'un de ses sites.
@@ -49,6 +52,7 @@ export function AddressPicker({
   const { t } = useTranslation()
   const [holder, setHolder] = useState('')
   const [source, setSource] = useState(CUSTOMER_SOURCE)
+  const [creating, setCreating] = useState(false)
 
   const customers = useCustomerOptions('')
   const selectedCustomer = holder === '' ? customerId : holder
@@ -105,23 +109,47 @@ export function AddressPicker({
         description={noCustomer ? t('orders.services.pickCustomerFirst') : undefined}
       />
 
-      <AsyncSelect
-        label={t('orders.services.address')}
-        value={value}
-        onChange={onChange}
-        options={addresses.options}
-        isLoading={addresses.isLoading}
-        disabled={noCustomer}
-        required={required}
-        description={
-          noCustomer
-            ? t('orders.services.pickCustomerFirst')
-            : addresses.options.length === 0 && !addresses.isLoading
-              ? t('orders.services.noAddress')
-              : undefined
-        }
-        error={error}
-      />
+      <div className="flex flex-col gap-2">
+        <AsyncSelect
+          label={t('orders.services.address')}
+          value={value}
+          onChange={onChange}
+          options={addresses.options}
+          isLoading={addresses.isLoading}
+          disabled={noCustomer}
+          required={required}
+          description={
+            noCustomer
+              ? t('orders.services.pickCustomerFirst')
+              : addresses.options.length === 0 && !addresses.isLoading
+                ? t('orders.services.noAddress')
+                : undefined
+          }
+          error={error}
+        />
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-fit"
+          disabled={noCustomer}
+          onClick={() => setCreating(true)}
+        >
+          <Plus className="size-4" aria-hidden />
+          {t('orders.services.newAddress')}
+        </Button>
+      </div>
+
+      {creating ? (
+        <NewServiceAddressDialog
+          entityType={isSite ? 'customer_site' : 'customer'}
+          entityId={isSite ? source : selectedCustomer}
+          open
+          onOpenChange={setCreating}
+          onCreated={onChange}
+        />
+      ) : null}
     </>
   )
 }

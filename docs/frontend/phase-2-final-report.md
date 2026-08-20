@@ -151,6 +151,16 @@ départ et portant la mention « Donneur d'ordre ».
 `OrderScopeGuard::address` acceptait déjà toute adresse rattachée à
 l'organisation : la contrainte n'existait que dans l'écran.
 
+**Une adresse absente se crée sans quitter la commande.** `StoreOrderRequest`
+exige un `addressId` existant — une adresse ne peut pas voyager dans la charge
+utile — elle est donc créée par sa propre route, puis désignée par le service.
+Le contact est saisi dans la même fenêtre : sur un point de livraison, l'adresse
+sans le nom de qui reçoit ne sert à rien, et les demander en deux temps fait
+perdre le second.
+
+L'adresse subsiste si la commande est abandonnée. C'est voulu : c'est une
+adresse du client, réutilisable, pas un brouillon.
+
 
 L'API expose les adresses **par entité** : celles du client et celles de chacun
 de ses sites sont des listes distinctes. L'écran fait donc choisir la source —

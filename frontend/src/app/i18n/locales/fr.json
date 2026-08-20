@@ -846,7 +846,7 @@
       "pickAddressFirst": "Choisissez une adresse pour voir ses contacts.",
       "pickCustomerFirst": "Choisissez d’abord un client à l’étape Général.",
       "pickSiteFirst": "Choisissez un site pour voir ses adresses.",
-      "sourceCustomer": "Client",
+      "sourceCustomer": "Adresses du client",
       "sourceSite": "Site du client",
       "notBillable": "Ce service n’est pas facturable au client.",
       "notPayable": "Ce service n’est pas payable à un prestataire.",
@@ -855,7 +855,10 @@
       "deleteConfirm": "Retirer ce service de la commande ?",
       "changeStatus": "Changer le statut du service",
       "openDetail": "Détail",
-      "detachPackage": "Retirer ce colis du service"
+      "detachPackage": "Retirer ce colis du service",
+      "customer": "Client de ce service",
+      "customerHint": "Le chargement se fait chez le donneur d’ordre, la livraison chez le destinataire : chaque service porte son propre client.",
+      "orderCustomer": "Donneur d’ordre"
     },
     "review": {
       "title": "Récapitulatif",

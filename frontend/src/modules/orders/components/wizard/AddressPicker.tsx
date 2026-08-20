@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next'
 
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 
+import { useCustomerOptions } from '../../hooks/useOrderScope'
 import { useAddressOptions, useSiteOptions } from '../../hooks/useServiceScope'
 
 /**
- * Valeur désignant le client lui-même comme source.
+ * Valeur désignant le client lui-même, par opposition à l'un de ses sites.
  *
  * Radix refuse une option de valeur vide ; les sites portant un ULID, ce
  * libellé ne peut entrer en collision avec aucun d'entre eux.
@@ -14,6 +15,7 @@ import { useAddressOptions, useSiteOptions } from '../../hooks/useServiceScope'
 const CUSTOMER_SOURCE = 'customer'
 
 interface AddressPickerProps {
+  /** Client de la commande — le donneur d'ordre. Sert de valeur par défaut. */
   customerId: string
   value: string
   onChange: (addressId: string) => void
@@ -24,15 +26,18 @@ interface AddressPickerProps {
 /**
  * Choix de l'adresse d'exécution d'un service.
  *
- * L'API expose les adresses **par entité** : celles du client et celles de
- * chacun de ses sites sont des listes distinctes. La source est donc choisie
- * d'abord — le client, ou l'un de ses sites — puis l'adresse. Tout charger d'un
- * coup demanderait une requête par site, pour un résultat que personne ne lit
- * en entier.
+ * **L'adresse n'est pas forcément celle du client de la commande.** Une même
+ * commande porte souvent un chargement chez le donneur d'ordre et une livraison
+ * chez le destinataire : deux services, deux clients, deux adresses. Le client
+ * est donc choisi service par service, avec celui de la commande en valeur de
+ * départ.
  *
  * `OrderScopeGuard` accepte toute adresse rattachée à l'organisation active :
- * ces deux sources ne restreignent rien côté serveur, elles rendent le choix
- * praticable.
+ * cette liberté existe déjà côté serveur, l'écran ne faisait que la brider.
+ *
+ * L'API expose les adresses **par entité** — celles d'un client et celles de
+ * chacun de ses sites sont des listes distinctes — d'où le choix en trois temps
+ * plutôt qu'une liste unique qui demanderait une requête par site.
  */
 export function AddressPicker({
   customerId,
@@ -42,35 +47,62 @@ export function AddressPicker({
   required = false,
 }: AddressPickerProps) {
   const { t } = useTranslation()
+  const [holder, setHolder] = useState('')
   const [source, setSource] = useState(CUSTOMER_SOURCE)
 
-  const sites = useSiteOptions(customerId)
+  const customers = useCustomerOptions('')
+  const selectedCustomer = holder === '' ? customerId : holder
+
+  const sites = useSiteOptions(selectedCustomer)
   const isSite = source !== CUSTOMER_SOURCE
   const addresses = useAddressOptions(
     isSite ? 'customer_site' : 'customer',
-    isSite ? source : customerId,
+    isSite ? source : selectedCustomer,
   )
 
-  const sourceOptions = [
-    { value: CUSTOMER_SOURCE, label: t('orders.services.sourceCustomer') },
-    ...sites.options,
-  ]
+  const reset = () => {
+    setSource(CUSTOMER_SOURCE)
+    // L'adresse retenue appartenait à l'autre entité : la garder afficherait un
+    // identifiant sans libellé.
+    onChange('')
+  }
+
+  const customerOptions = customers.options.map((option) => ({
+    ...option,
+    hint: option.value === customerId ? t('orders.services.orderCustomer') : option.hint,
+  }))
+
+  const noCustomer = selectedCustomer === ''
 
   return (
     <>
+      <AsyncSelect
+        label={t('orders.services.customer')}
+        value={selectedCustomer}
+        onChange={(next) => {
+          setHolder(next)
+          reset()
+        }}
+        options={customerOptions}
+        isLoading={customers.isLoading}
+        required={required}
+        description={t('orders.services.customerHint')}
+      />
+
       <AsyncSelect
         label={t('orders.services.addressSource')}
         value={source}
         onChange={(next) => {
           setSource(next)
-          // L'adresse retenue appartenait à l'autre source : la garder
-          // afficherait un identifiant sans libellé.
           onChange('')
         }}
-        options={sourceOptions}
+        options={[
+          { value: CUSTOMER_SOURCE, label: t('orders.services.sourceCustomer') },
+          ...sites.options,
+        ]}
         isLoading={sites.isLoading}
-        disabled={customerId === ''}
-        description={customerId === '' ? t('orders.services.pickCustomerFirst') : undefined}
+        disabled={noCustomer}
+        description={noCustomer ? t('orders.services.pickCustomerFirst') : undefined}
       />
 
       <AsyncSelect
@@ -79,10 +111,10 @@ export function AddressPicker({
         onChange={onChange}
         options={addresses.options}
         isLoading={addresses.isLoading}
-        disabled={customerId === ''}
+        disabled={noCustomer}
         required={required}
         description={
-          customerId === ''
+          noCustomer
             ? t('orders.services.pickCustomerFirst')
             : addresses.options.length === 0 && !addresses.isLoading
               ? t('orders.services.noAddress')

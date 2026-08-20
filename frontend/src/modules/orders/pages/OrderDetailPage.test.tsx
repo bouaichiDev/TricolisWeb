@@ -22,6 +22,9 @@ function renderDetail(order: OrderDetail, permissions: string[]) {
       HttpResponse.json({ data: PACKAGE_TREE, meta: [] }),
     ),
     http.get(`${API}/orders/${ORDER_ID}/history`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/orders/${ORDER_ID}/services/:serviceId/packages`, () =>
+      HttpResponse.json({ data: [], meta: [] }),
+    ),
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
   )
 

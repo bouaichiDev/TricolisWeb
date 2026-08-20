@@ -50,10 +50,6 @@ export function OrderServicesTab({
   const [changingStatus, setChangingStatus] = useState<OrderService | null>(null)
   const [history, setHistory] = useState<OrderService | null>(null)
 
-  const packageLabel = new Map(
-    packages.map((item) => [item.id, item.reference ?? item.barcode ?? item.id]),
-  )
-
   const ordered = [...services].sort((a, b) => a.sequence - b.sequence)
   const open = ordered.find((service) => service.id === openId) ?? null
 
@@ -91,8 +87,9 @@ export function OrderServicesTab({
       )}
 
       <OrderServicePanel
+        orderId={orderId}
         service={open}
-        packageLabel={packageLabel}
+        packages={packages}
         editable={editable}
         onClose={() => setOpenId(null)}
         onEdit={() => {

@@ -47,6 +47,8 @@ class UpdateStatusRequest extends FormRequest
             'icon' => ['sometimes', 'nullable', 'string', 'max:64'],
             'active' => ['sometimes', 'boolean'],
             'isToSend' => ['sometimes', 'boolean'],
+            'allowsContentChanges' => ['sometimes', 'boolean'],
+            'requiresReason' => ['sometimes', 'boolean'],
             'position' => ['sometimes', 'nullable', 'integer', 'min:0'],
         ];
     }

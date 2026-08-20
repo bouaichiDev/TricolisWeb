@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\V1\Orders\OrderHistoryController;
 use App\Http\Controllers\Api\V1\Orders\OrderLineController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceContactController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceController;
+use App\Http\Controllers\Api\V1\Orders\OrderServicePackageController;
 use App\Http\Controllers\Api\V1\Orders\ServiceController;
 use App\Http\Controllers\Api\V1\Organizations\MenuController;
 use App\Http\Controllers\Api\V1\Organizations\OrganizationController;
@@ -165,6 +166,12 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::post('orders/{order}/services/{orderService}/contacts', [OrderServiceContactController::class, 'store'])->name('orders.services.contacts.store');
         Route::patch('orders/{order}/services/{orderService}/contacts/{contact}', [OrderServiceContactController::class, 'update'])->name('orders.services.contacts.update');
         Route::delete('orders/{order}/services/{orderService}/contacts/{contact}', [OrderServiceContactController::class, 'destroy'])->name('orders.services.contacts.destroy');
+        // Colis pris en charge par un service : la relation OrderServicePackage
+        // du diagramme, jusqu'ici creee a la seule creation de la commande.
+        Route::get('orders/{order}/services/{orderService}/packages', [OrderServicePackageController::class, 'index'])->name('orders.services.packages.index');
+        Route::post('orders/{order}/services/{orderService}/packages', [OrderServicePackageController::class, 'store'])->name('orders.services.packages.store');
+        Route::patch('orders/{order}/services/{orderService}/packages/{servicePackage}', [OrderServicePackageController::class, 'update'])->name('orders.services.packages.update');
+        Route::delete('orders/{order}/services/{orderService}/packages/{servicePackage}', [OrderServicePackageController::class, 'destroy'])->name('orders.services.packages.destroy');
         Route::apiResource('orders.services', OrderServiceController::class)
             ->parameters(['services' => 'orderService'])
             ->except(['create', 'edit']);

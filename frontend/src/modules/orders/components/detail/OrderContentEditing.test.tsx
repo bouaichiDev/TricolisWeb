@@ -39,6 +39,9 @@ function renderDetail(permissions: string[], order: Partial<OrderDetail> = {}) {
       HttpResponse.json({ data: PACKAGE_TREE, meta: [] }),
     ),
     http.get(`${API}/orders/${ORDER_ID}/history`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/orders/${ORDER_ID}/services/:serviceId/packages`, () =>
+      HttpResponse.json({ data: [], meta: [] }),
+    ),
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([AUDIT]))),
     http.get(`${API}/package-types`, () => HttpResponse.json(paginated([]))),

@@ -13,16 +13,16 @@ import {
 } from '@/shared/components/ui/sheet'
 
 import { addressLabel } from '../../hooks/useServiceScope'
-import type { OrderService } from '../../types/orderDetail'
+import type { OrderPackage, OrderService } from '../../types/orderDetail'
 import { FieldGrid } from './FieldGrid'
 import { serviceFields } from './serviceFields'
-
-const show = (value: number | string | null | undefined): string | null =>
-  value === null || value === undefined ? null : String(value)
+import { ServicePackagesEditor } from './ServicePackagesEditor'
 
 interface OrderServicePanelProps {
+  orderId: string
   service: OrderService | null
-  packageLabel: Map<string, string>
+  /** Colis de la commande, proposés à la prise en charge. */
+  packages: OrderPackage[]
   editable: boolean
   onClose: () => void
   onEdit: () => void
@@ -39,8 +39,9 @@ interface OrderServicePanelProps {
  * quatorze champs tiennent ici sans écraser la grille de vignettes.
  */
 export function OrderServicePanel({
+  orderId,
   service,
-  packageLabel,
+  packages,
   editable,
   onClose,
   onEdit,
@@ -106,21 +107,14 @@ export function OrderServicePanel({
               )}
             </div>
 
-            {(service.packages ?? []).length > 0 ? (
-              <div className="border-t pt-4">
-                <p className="mb-2 text-sm font-medium">{t('orders.services.packages')}</p>
-                <ul className="flex flex-col gap-1 text-sm">
-                  {(service.packages ?? []).map((link) => (
-                    <li key={link.id} className="flex justify-between gap-2">
-                      <span>{packageLabel.get(link.packageId) ?? link.packageId}</span>
-                      <span className="font-mono text-muted-foreground">
-                        {show(link.quantity) ?? '—'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            <div className="border-t pt-4">
+              <ServicePackagesEditor
+                orderId={orderId}
+                serviceId={service.id}
+                packages={packages}
+                editable={editable}
+              />
+            </div>
 
             <div className="flex flex-wrap gap-2 border-t pt-4">
               {editable ? (

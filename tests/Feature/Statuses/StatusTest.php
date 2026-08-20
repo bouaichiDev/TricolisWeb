@@ -221,3 +221,47 @@ it('classe les écritures parmi les permissions plateforme', function (): void {
         ->toContain('statuses.delete')
         ->not->toContain('statuses.view');
 });
+
+/**
+ * Les quatre comportements se règlent depuis l'écran.
+ *
+ * Trois portent un nom différent en base et dans l'API ; une table de
+ * correspondance prise à l'envers les faisait disparaître à l'enregistrement,
+ * sans erreur — l'écran affichait la case cochée, la base restait à `false`.
+ */
+it('enregistre les quatre drapeaux d’un statut', function (): void {
+    makePlatformAdmin($this->user);
+    $admin = $this->user->fresh();
+
+    $response = $this->actingAs($admin, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/statuses', [
+            'source' => MorphMap::ORDER,
+            'status' => 42,
+            'code' => 'archived',
+            'label' => 'Archivée',
+            'active' => false,
+            'isToSend' => true,
+            'allowsContentChanges' => true,
+            'requiresReason' => true,
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.isToSend', true)
+        ->assertJsonPath('data.allowsContentChanges', true)
+        ->assertJsonPath('data.requiresReason', true)
+        ->assertJsonPath('data.active', false);
+
+    $this->assertDatabaseHas('statuses', [
+        'code' => 'archived',
+        'is_to_send' => true,
+        'allows_content_changes' => true,
+        'requires_reason' => true,
+        'active' => false,
+    ]);
+
+    $id = $response->json('data.id');
+
+    $this->actingAs($admin, 'sanctum')->withHeaders($this->headers)
+        ->patchJson("/api/v1/statuses/{$id}", ['allowsContentChanges' => false])
+        ->assertOk()
+        ->assertJsonPath('data.allowsContentChanges', false);
+});

@@ -853,7 +853,8 @@
       "created": "Service ajouté.",
       "deleteConfirm": "Retirer ce service de la commande ?",
       "changeStatus": "Changer le statut du service",
-      "openDetail": "Ouvrir le détail"
+      "openDetail": "Ouvrir le détail",
+      "detachPackage": "Retirer ce colis du service"
     },
     "review": {
       "title": "Récapitulatif",

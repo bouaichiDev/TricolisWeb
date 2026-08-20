@@ -26,6 +26,9 @@ function renderDetail(permissions: string[]) {
       HttpResponse.json({ data: PACKAGE_TREE, meta: [] }),
     ),
     http.get(`${API}/orders/${ORDER_ID}/history`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/orders/${ORDER_ID}/services/:serviceId/packages`, () =>
+      HttpResponse.json({ data: [], meta: [] }),
+    ),
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
   )
@@ -66,13 +69,16 @@ describe('panneaux de détail', () => {
 
     // La vignette annonce le contact ; les montants et les colis pris en
     // charge n'apparaissent qu'une fois le panneau ouvert.
-    expect(screen.queryByText('PAL-1')).not.toBeInTheDocument()
+    expect(screen.queryByText('PU fournisseur')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /Ouvrir le détail/ }))
 
-    expect(await screen.findByText('PAL-1')).toBeInTheDocument()
-    expect(screen.getByText('PU fournisseur')).toBeInTheDocument()
+    expect(await screen.findByText('PU fournisseur')).toBeInTheDocument()
     expect(screen.getAllByText('+212600000000').length).toBeGreaterThan(0)
+    // Les colis de la commande sont listés ; sans `order_services.update`, la
+    // prise en charge se lit mais ne se coche pas.
+    expect(screen.getByText('PAL-1')).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox', { name: 'PAL-1' })).not.toBeInTheDocument()
   })
 
   /** Les six chiffres clés sont visibles sans ouvrir quoi que ce soit. */

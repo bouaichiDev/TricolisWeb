@@ -25,6 +25,11 @@ class StatusResource extends JsonResource
             'icon' => $this->icon,
             'active' => $this->active,
             'isToSend' => $this->is_to_send,
+            // Les deux comportements que le referentiel a repris a
+            // l'enumeration : jusqu'ou le contenu reste ouvert, et quels
+            // statuts exigent un motif.
+            'allowsContentChanges' => $this->allows_content_changes,
+            'requiresReason' => $this->requires_reason,
             'position' => $this->position,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,

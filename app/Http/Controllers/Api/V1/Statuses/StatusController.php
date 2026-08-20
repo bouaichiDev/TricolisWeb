@@ -39,6 +39,10 @@ class StatusController extends Controller
         'icon' => 'icon',
         'active' => 'active',
         'is_to_send' => 'isToSend',
+        // Les deux comportements que le referentiel a repris a l'enumeration :
+        // jusqu'ou le contenu reste ouvert, et quels statuts exigent un motif.
+        'allows_content_changes' => 'allowsContentChanges',
+        'requires_reason' => 'requiresReason',
         'position' => 'position',
     ];
 

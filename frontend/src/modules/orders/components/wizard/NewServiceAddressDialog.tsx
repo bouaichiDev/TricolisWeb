@@ -71,12 +71,12 @@ interface NewServiceAddressDialogProps {
  * voyager dans la charge utile de la commande. Elle est donc créée d'abord, par
  * sa propre route, puis désignée par le service.
  *
- * **Elle n'est pas rattachée au donneur d'ordre.** Une livraison ponctuelle chez
- * un tiers n'a pas à entrer dans le carnet du client qui a passé la commande.
- * Le modèle ne permet pas de rattacher une adresse à une commande —
- * `StoreAddressRequest` n'accepte que organisation, client, site, agence et
- * dépôt — elle est donc portée par l'**organisation**, hors carnet client, et la
- * commande la désigne par son identifiant.
+ * **Elle n'est pas rattachée au donneur d'ordre.** Le lien avec la commande est
+ * déjà au diagramme : `Address 1 → 0..* OrderService`, porté par
+ * `order_services.address_id`. Rattacher en plus l'adresse d'un client final au
+ * carnet du donneur y ajouterait une ligne par livraison — des milliers
+ * d'adresses qui ne sont pas les siennes. `Address` étant une entité
+ * `«shared»`, son carnet est celui de l'**organisation**.
  *
  * **Le contact est saisi dans la foulée** : sur un point de livraison, l'adresse
  * sans le nom de qui reçoit ne sert à rien, et les demander en deux temps fait

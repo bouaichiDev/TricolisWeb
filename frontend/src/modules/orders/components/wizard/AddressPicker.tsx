@@ -50,9 +50,10 @@ interface AddressPickerProps {
  * site.
  *
  * Une adresse absente du carnet se crée sur place. Elle n'est **pas** rattachée
- * au donneur d'ordre : une livraison ponctuelle chez un tiers n'a pas à entrer
- * dans son carnet. Elle est portée par l'organisation, d'où la troisième
- * source — hors carnet client.
+ * au donneur d'ordre : son carnet grossirait d'une ligne par livraison chez un
+ * client final. Le lien avec la commande est ailleurs, et existe déjà au
+ * diagramme — `order_services.address_id`. L'adresse est portée par
+ * l'organisation, d'où la troisième source, hors carnet client.
  */
 export function AddressPicker({
   customerId,

@@ -161,15 +161,21 @@ avant l'adresse. Trois sources :
 exige un `addressId` existant — une adresse ne peut pas voyager dans la charge
 utile — elle est donc créée par sa propre route, puis désignée par le service.
 
-**Elle n'est pas rattachée au donneur d'ordre.** Une livraison ponctuelle chez
-un tiers n'a pas à entrer dans le carnet du client qui a passé la commande. Le
-modèle ne permet pas de rattacher une adresse à une *commande* :
-`StoreAddressRequest::allowedEntityTypes()` n'accepte que `organization`,
-`customer`, `customer_site`, `agency` et `depot`. L'adresse est donc portée par
-l'**organisation** — hors carnet client — et la commande la désigne par son
-identifiant. C'est le plus proche de « liée à la seule commande » que le modèle
-autorise ; un rattachement réel demanderait un `entityType` `order`, donc une
-migration et un changement de contrat.
+**Elle n'est pas rattachée au donneur d'ordre.** Le lien avec la commande est
+déjà dans le diagramme de classes : `Address 1 → 0..* OrderService`, porté par
+`order_services.address_id`, clé étrangère directe vers `addresses`. Il n'y a
+rien à ajouter — et surtout rien à faire passer par `entity_addresses`.
+
+Rattacher l'adresse d'un client final au donneur d'ordre ferait grossir son
+carnet d'une ligne par livraison : des milliers d'adresses qui ne sont pas les
+siennes, dans le sélecteur de toutes ses commandes suivantes.
+
+`AddressController::store()` crée toujours **une** ligne `entity_addresses` —
+`EntityLinkResolver` retombe sur l'organisation quand `entityType` est absent.
+Une adresse a donc toujours exactement un carnet. Pour une adresse de
+destination ce carnet est celui de l'**organisation** : `Address` est une entité
+`«shared»` au diagramme, elle appartient à l'organisation, et c'est
+`OrderService.address_id` qui la rattache à la commande.
 
 Après création, la source bascule sur *Autres adresses* : c'est la seule liste
 qui contient la nouvelle adresse. Sans cela le sélecteur afficherait un

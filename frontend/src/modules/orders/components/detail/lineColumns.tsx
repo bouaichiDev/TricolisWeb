@@ -1,4 +1,4 @@
-import { History, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowRightLeft, History, Pencil, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
 import type { Column } from '@/shared/components/data/DataTable'
@@ -99,7 +99,7 @@ export function lineColumns(
                   {
                     key: 'status',
                     label: t('orders.lines.changeStatus'),
-                    icon: RefreshCw,
+                    icon: ArrowRightLeft,
                     permission: 'order_lines.update',
                     onSelect: () => onStatus(row),
                   },

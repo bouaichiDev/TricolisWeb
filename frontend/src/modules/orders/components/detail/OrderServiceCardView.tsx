@@ -1,4 +1,4 @@
-import { ArrowRight, History, RefreshCw } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft, History } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -25,6 +25,11 @@ interface OrderServiceCardViewProps {
  * Trois mesures en pied — créneau, durée, total client — et le contact : de
  * quoi décider si c'est bien ce service qu'on cherchait. Le reste s'ouvre dans
  * le panneau latéral, où les quatorze champs tiennent sans écraser la grille.
+ *
+ * Les actions sont des icônes, comme dans les tableaux de lignes et de colis :
+ * leurs libellés viennent au survol par `title`, et au lecteur d'écran par
+ * `aria-label`. Le panneau latéral, lui, les nomme en toutes lettres — c'est là
+ * qu'on apprend ce qu'elles font.
  */
 export function OrderServiceCardView({
   service,
@@ -79,11 +84,12 @@ export function OrderServiceCardView({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={onChangeStatus}
+              title={t('orders.services.changeStatus')}
               aria-label={t('orders.services.changeStatus')}
             >
-              <RefreshCw className="size-4" aria-hidden />
+              <ArrowRightLeft className="size-4" aria-hidden />
             </Button>
           </PermissionGuard>
         </div>
@@ -106,13 +112,25 @@ export function OrderServiceCardView({
         </span>
 
         <div className="flex shrink-0 items-center gap-1">
-          <Button type="button" variant="ghost" size="sm" onClick={onHistory}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onHistory}
+            title={t('orders.entityHistory.title')}
+            aria-label={t('orders.entityHistory.title')}
+          >
             <History className="size-4" aria-hidden />
-            {t('orders.entityHistory.title')}
           </Button>
 
-          <Button type="button" variant="ghost" size="sm" onClick={onOpen}>
-            {t('orders.services.openDetail')}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onOpen}
+            title={t('orders.services.openDetail')}
+            aria-label={t('orders.services.openDetail')}
+          >
             <ArrowRight className="size-4" aria-hidden />
           </Button>
         </div>

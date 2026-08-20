@@ -15,15 +15,16 @@ export interface RowAction {
 }
 
 /**
- * Actions d'une ligne de tableau, en boutons nommés.
+ * Actions d'une ligne de tableau, en icônes.
  *
- * Chaque action est visible et porte son libellé. Des icônes muettes obligeaient
- * à survoler chacune pour savoir laquelle modifie et laquelle change le statut ;
- * un menu déroulant, lui, cachait l'existence même des actions derrière trois
- * points.
+ * Toutes sont visibles côte à côte : un menu déroulant cacherait leur existence
+ * même derrière trois points. Mais cinq libellés par ligne poussaient le reste
+ * du tableau hors de l'écran, alors que ce sont les colonnes de données qu'on
+ * vient lire.
  *
- * La colonne s'élargit d'autant, et c'est assumé : le tableau défile
- * horizontalement, l'utilisateur non.
+ * Le libellé n'est pas perdu pour autant : `title` l'affiche au survol,
+ * `aria-label` le donne au lecteur d'écran. Une icône seule et muette, elle,
+ * obligerait à cliquer pour savoir.
  *
  * Une action dont la permission manque n'est pas grisée : elle disparaît.
  */
@@ -43,12 +44,13 @@ export function RowActions({ actions }: { actions: RowAction[] }) {
           key={action.key}
           type="button"
           variant="ghost"
-          size="sm"
-          className={`whitespace-nowrap ${action.destructive ? 'text-destructive hover:text-destructive' : ''}`}
+          size="icon"
+          className={action.destructive ? 'text-destructive hover:text-destructive' : undefined}
           onClick={action.onSelect}
+          title={action.label}
+          aria-label={action.label}
         >
           <action.icon className="size-4" aria-hidden />
-          {action.label}
         </Button>
       ))}
     </span>

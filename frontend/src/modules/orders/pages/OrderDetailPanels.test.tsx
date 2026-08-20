@@ -42,6 +42,23 @@ function renderDetail(permissions: string[]) {
 
 describe('panneaux de détail', () => {
   /**
+   * Cinq libellés par ligne poussaient les colonnes de données hors de l'écran.
+   * Le libellé survit dans `title` et `aria-label` : l'action reste trouvable
+   * au survol et nommée au lecteur d'écran, sans occuper la largeur.
+   */
+  it('n’affiche que les icônes dans la colonne Actions, libellées au survol', async () => {
+    renderDetail(['orders.view'])
+
+    await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
+    await screen.findByText('PAL-1')
+
+    const action = screen.getAllByRole('button', { name: 'Contenu du colis' })[0]
+
+    expect(action).toHaveAttribute('title', 'Contenu du colis')
+    expect(action).toHaveTextContent('')
+  })
+
+  /**
    * Le tableau des colis montre six colonnes ; les dimensions détaillées et le
    * contenu du colis vivent dans le tiroir.
    */

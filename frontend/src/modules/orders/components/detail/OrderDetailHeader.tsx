@@ -1,4 +1,4 @@
-import { Copy, Pencil, RefreshCw, Trash2, Truck } from 'lucide-react'
+import { ArrowRightLeft, Copy, Pencil, Trash2, Truck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -100,7 +100,7 @@ export function OrderDetailHeader({
 
         <PermissionGuard permission="orders.change_status">
           <Button variant="outline" onClick={onChangeStatus}>
-            <RefreshCw className="size-4" aria-hidden />
+            <ArrowRightLeft className="size-4" aria-hidden />
             {t('orders.statusDialog.title')}
           </Button>
         </PermissionGuard>

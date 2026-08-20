@@ -1,4 +1,4 @@
-import { History, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowRightLeft, History, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -128,7 +128,7 @@ export function OrderServicePanel({
 
               <PermissionGuard permission="order_services.change_status">
                 <Button type="button" variant="outline" onClick={onChangeStatus}>
-                  <RefreshCw className="size-4" aria-hidden />
+                  <ArrowRightLeft className="size-4" aria-hidden />
                   {t('orders.services.changeStatus')}
                 </Button>
               </PermissionGuard>

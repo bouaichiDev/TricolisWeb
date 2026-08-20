@@ -1,4 +1,4 @@
-import { Boxes, CornerDownRight, History, Pencil, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowRightLeft, Boxes, CornerDownRight, History, Pencil, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
 import type { Column } from '@/shared/components/data/DataTable'
@@ -113,7 +113,7 @@ export function packageColumns(
                     {
                       key: 'status',
                       label: t('orders.packages.changeStatus'),
-                      icon: RefreshCw,
+                      icon: ArrowRightLeft,
                       permission: 'packages.update',
                       onSelect: () => onStatus(detail),
                     },

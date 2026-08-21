@@ -573,6 +573,25 @@ consommées à ce jour.
 
 ---
 
+## 25 ter. Pourquoi le contenu d'un colis ne se lie pas tout seul
+
+`PackageOrderLine` porte une **quantité**. Ce n'est pas une simple appartenance :
+une ligne de dix chaises peut se répartir sur trois palettes, et `packages[].lines`
+est facultatif à la création — un colis peut légitimement ne rien contenir
+encore. Lier d'office écrirait une répartition que personne n'a décidée, et
+qu'il faudrait ensuite défaire.
+
+Reste que le cas courant — une ligne, un colis, tout dedans — n'a aucune raison
+de se saisir à la main. Il a désormais un bouton **« Tout affecter à ce colis »**,
+dans l'assistant comme dans la fiche, qui verse le reste en un clic.
+
+**Un préremplissage aurait été pire.** Première tentative : proposer le reste
+dans le champ. Un test existant l'a rattrapée — sur un champ affichant « 6 »,
+cliquer puis taper « 3 » donne « 63 », et `select()` au focus n'est pas fiable
+sur un `input type="number"`. Le bouton explicite ne tend pas ce piège.
+
+---
+
 ## 26. Verdict
 
 **FRONTEND_PHASE_2_READY**

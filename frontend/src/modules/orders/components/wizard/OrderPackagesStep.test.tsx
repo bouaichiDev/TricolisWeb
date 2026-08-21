@@ -55,6 +55,32 @@ describe('OrderPackagesStep', () => {
     })
   })
 
+  /**
+   * Rien ne se lie d'office : `PackageOrderLine` porte une quantité, et dix
+   * chaises peuvent tenir sur trois palettes. « Tout affecter » couvre le cas
+   * courant sans décider à la place de qui répartit.
+   */
+  it('affecte tout le reste au colis en un clic', async () => {
+    serveWizardScope()
+    render()
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Ajouter un colis' })[0])
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Tout affecter à ce colis' }),
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Commandé 10 · Affecté 10 · Reste à affecter 0/),
+      ).toBeInTheDocument()
+    })
+
+    // Plus rien à affecter : le bouton disparaît plutôt que de rester inerte.
+    expect(
+      screen.queryByRole('button', { name: 'Tout affecter à ce colis' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('signale un dépassement de la quantité commandée', async () => {
     serveWizardScope()
     render()

@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react'
+import { Check, ListChecks, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -36,6 +36,18 @@ interface PackageLinesEditorProps {
  * Les trois nombres — commandé, affecté, reste — sont ceux que
  * `PackageLineAllocator` fait respecter côté serveur, sous verrou. L'écran les
  * montre pendant la saisie ; c'est le serveur qui tranche.
+ *
+ * **Pourquoi rien ne se lie tout seul.** `PackageOrderLine` porte une
+ * *quantité* : une ligne de dix chaises peut se répartir sur trois palettes, et
+ * `packages[].lines` est facultatif à la création — un colis peut légitimement
+ * ne rien contenir. Lier d'office écrirait une répartition que personne n'a
+ * décidée, et qu'il faudrait défaire.
+ *
+ * Le cas courant — tout le reste dans ce colis — a donc un bouton dédié,
+ * « Tout affecter », le même que dans l'assistant. Préremplir le champ aurait
+ * paru plus direct et tendait un piège : sur un champ affichant « 6 », cliquer
+ * puis taper « 3 » donne « 63 », et `select()` n'est pas fiable sur un
+ * `input type="number"`.
  */
 export function PackageLinesEditor({
   orderId,
@@ -87,6 +99,7 @@ export function PackageLinesEditor({
         {lines.map((line) => {
           const link = attached.get(line.id)
           const stats = usage.get(line.id)
+          const remaining = stats?.remaining ?? 0
           const draft = drafts[line.id] ?? (link ? String(link.quantity) : '')
 
           return (
@@ -136,6 +149,26 @@ export function PackageLinesEditor({
                     >
                       <Check className="size-4" aria-hidden />
                     </Button>
+
+                    {link === undefined && remaining > 0 ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => {
+                          setError(null)
+                          assign.mutate(
+                            { packageId: pkg.id, orderLineId: line.id, quantity: remaining },
+                            { onError },
+                          )
+                        }}
+                        title={t('orders.packages.assignAll')}
+                        aria-label={t('orders.packages.assignAll')}
+                      >
+                        <ListChecks className="size-4" aria-hidden />
+                      </Button>
+                    ) : null}
 
                     {link ? (
                       <Button

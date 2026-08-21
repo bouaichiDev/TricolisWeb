@@ -872,6 +872,7 @@
       "overAssigned": "La quantité affectée dépasse la quantité commandée.",
       "noLines": "Aucune ligne affectée à ce colis.",
       "detach": "Retirer cette ligne du colis",
+      "assignAll": "Tout affecter à ce colis",
       "assignedQuantity": "Quantité affectée",
       "edit": "Modifier le colis",
       "create": "Ajouter un colis",

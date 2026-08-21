@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ListChecks, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/shared/components/ui/button'
@@ -24,6 +24,11 @@ interface PackageLineAssignmentProps {
  * les colis et ce qu'il reste : sans ces trois nombres, répartir une ligne entre
  * plusieurs colis se fait à l'aveugle et le dépassement n'apparaît qu'au retour
  * du serveur.
+ *
+ * L'affectation n'est pas automatique parce que `PackageOrderLine` porte une
+ * *quantité* : dix chaises peuvent tenir sur trois palettes. « Tout affecter »
+ * couvre le cas courant — tout le reste dans ce colis — en un clic, sans
+ * décider à la place de qui répartit.
  */
 export function PackageLineAssignment({
   pkg,
@@ -96,6 +101,19 @@ export function PackageLineAssignment({
                     }}
                   />
                 </div>
+
+                {!attached && allocation !== undefined && allocation.remaining > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onAssign(line.key, formatQuantity(allocation.remaining))}
+                    title={t('orders.packages.assignAll')}
+                    aria-label={t('orders.packages.assignAll')}
+                  >
+                    <ListChecks className="size-4" aria-hidden />
+                  </Button>
+                ) : null}
 
                 {attached ? (
                   <Button

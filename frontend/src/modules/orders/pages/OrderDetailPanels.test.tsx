@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -8,7 +8,7 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
 import { OrderDetailPage } from './OrderDetailPage'
-import { makeOrderDetail, ORDER_ID, PACKAGE_TREE } from './orderDetailFixtures'
+import { CHILD_PACKAGE_ID, LINE_ID, makeOrderDetail, ORDER_ID, PACKAGE_TREE } from './orderDetailFixtures'
 
 /**
  * Ce qui vit dans les panneaux latéraux.
@@ -102,6 +102,50 @@ describe('panneaux de détail', () => {
     await screen.findByText('Entrepôt Casablanca')
 
     expect(screen.queryByRole('button', { name: 'Modifier le service' })).not.toBeInTheDocument()
+  })
+
+  /**
+   * `PackageOrderLine` porte une quantité : dix chaises peuvent tenir sur trois
+   * palettes, et rien ne peut donc se lier d'office. Le cas courant — tout le
+   * reste dans ce colis — a un bouton, plutôt que de faire recopier à la main
+   * le nombre affiché juste au-dessus.
+   */
+  it('affecte tout le reste au colis en un clic', async () => {
+    let body: unknown = null
+    renderDetail(['orders.view', 'packages.update'])
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/packages/${CHILD_PACKAGE_ID}/lines`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: {}, meta: [] }, { status: 201 })
+      }),
+    )
+
+    await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
+    // Le second colis ne porte aucune ligne : 10 commandés, 4 déjà sur PAL-1.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Contenu du colis' })[1])
+
+    const sheet = within(await screen.findByRole('dialog'))
+    expect(sheet.getByText(/Reste à affecter 6/)).toBeInTheDocument()
+
+    await userEvent.click(sheet.getByRole('button', { name: 'Tout affecter à ce colis' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toEqual({ orderLineId: LINE_ID, quantity: 6 })
+  })
+
+  /** Le colis qui porte déjà la ligne n'a plus rien à y verser. */
+  it('n’offre pas « tout affecter » sur une ligne déjà rattachée', async () => {
+    renderDetail(['orders.view', 'packages.update'])
+
+    await userEvent.click(await screen.findByRole('tab', { name: /^Colis/ }))
+    await userEvent.click(screen.getAllByRole('button', { name: 'Contenu du colis' })[0])
+
+    const sheet = within(await screen.findByRole('dialog'))
+    expect(sheet.getByLabelText('Quantité affectée')).toHaveValue(4)
+    expect(
+      sheet.queryByRole('button', { name: 'Tout affecter à ce colis' }),
+    ).not.toBeInTheDocument()
   })
 
   it('ouvre la fiche complète d’un service', async () => {

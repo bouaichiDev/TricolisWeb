@@ -27,12 +27,30 @@ interface RequestOptions {
   signal?: AbortSignal
 }
 
+/**
+ * Un booléen tel que la règle `boolean` de Laravel l'accepte.
+ *
+ * Elle admet `1`, `0`, `"1"` et `"0"` — **pas** `"true"` ni `"false"`, qui sont
+ * pourtant ce que `String(true)` produit. Un filtre `active=true` repartait
+ * donc en 422, et l'écran affichait une liste vide sans dire pourquoi.
+ *
+ * La conversion est faite ici, une fois : la laisser à chaque appelant
+ * garantissait qu'un seul l'oublie.
+ */
+function queryValue(value: string | number | boolean): string {
+  if (typeof value === 'boolean') return value ? '1' : '0'
+
+  return String(value)
+}
+
 function buildUrl(path: string, query?: Query): string {
   const url = new URL(`${BASE_URL}${path}`)
 
   for (const [key, value] of Object.entries(query ?? {})) {
+    // `false` est un filtre en soi — « les inactifs » — et doit passer ; seuls
+    // l'absence et la chaîne vide sont omises.
     if (value === null || value === undefined || value === '') continue
-    url.searchParams.set(key, String(value))
+    url.searchParams.set(key, queryValue(value))
   }
 
   return url.toString()

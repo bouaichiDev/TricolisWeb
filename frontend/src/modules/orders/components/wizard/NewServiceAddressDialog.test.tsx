@@ -104,8 +104,16 @@ describe('nouvelle adresse d’un service', () => {
     await userEvent.type(dialog.getByLabelText('Adresse *'), '9 rue du Port')
     await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(await screen.findByText('Autres adresses (hors carnet client)')).toBeInTheDocument()
-    expect(await screen.findByText('Chantier Nord')).toBeInTheDocument()
+    // POST, invalidation, refetch : trois allers-retours avant que le libelle
+    // apparaisse. Le delai par defaut d'une seconde suffit sur une machine au
+    // repos et pas sur une machine chargee — d'ou l'attente allongee, qui ne
+    // relache aucune assertion.
+    const wait = { timeout: 5000 }
+
+    expect(
+      await screen.findByText('Autres adresses (hors carnet client)', undefined, wait),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Chantier Nord', undefined, wait)).toBeInTheDocument()
   })
 
   /**

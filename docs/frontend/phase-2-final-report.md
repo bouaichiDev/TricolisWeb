@@ -535,6 +535,24 @@ Corrigé, et deux garde-fous plutôt qu'un :
   plus de cent ; laisser croire que la liste est complète serait pire que la
   tronquer.
 
+#### Les booléens en paramètre d'URL
+
+La règle `boolean` de Laravel accepte `1`, `0`, `"1"` et `"0"` — **pas**
+`"true"` ni `"false"`. Or `buildUrl` sérialisait avec `String(value)`, qui
+produit exactement `"true"`. Tout filtre booléen en query repartait donc en 422.
+
+Visible sur `GET /statuses?active=true`, appelé par `ChangeEntityStatusDialog` :
+le dialogue affichait « Aucun statut n'est décrit pour ce type d'élément.
+Demandez à un administrateur plateforme de les définir. » Un message faux — les
+statuts existaient, la requête était refusée.
+
+Corrigé **dans le client**, `src/shared/api/client.ts`, et pas chez l'appelant :
+la conversion faite une fois ne peut pas être oubliée par le suivant. `false`
+continue de partir — « les inactifs » est un filtre, pas une absence.
+
+Trois tests sur `buildUrl` (`true` → `1`, `false` → `0`, vide omis) et un test
+backend qui fige la forme acceptée des deux côtés à la fois.
+
 #### La liste plate plutôt que l'arbre
 
 `stock-locations/tree` existe et n'est pas utilisé. L'arbre entier remonterait

@@ -265,3 +265,21 @@ it('enregistre les quatre drapeaux d’un statut', function (): void {
         ->assertOk()
         ->assertJsonPath('data.allowsContentChanges', false);
 });
+
+/**
+ * Le frontend filtre les statuts proposables par `active`.
+ *
+ * La regle `boolean` de Laravel refuse la chaine "true" : le client la
+ * serialise donc en "1". Ce test fige la forme acceptee, pour qu'un changement
+ * de serialisation cote client ne repasse pas inapercu.
+ */
+it('accepte le filtre booleen sous la forme que le client envoie', function (): void {
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/statuses?source=package&active=1&sort=position&direction=asc')
+        ->assertOk();
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/statuses?source=package&active=true')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('active');
+});

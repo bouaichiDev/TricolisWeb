@@ -517,6 +517,24 @@ emplacements, exactement comme le fait l'Action.
 à la place du métier ; le champ est proposé, et le sens sert de valeur par
 défaut.
 
+#### Cent emplacements au plus, et l'écran le dit
+
+`ListRequest` plafonne `perPage` à 100. Le sélecteur en demandait 200 : le
+serveur répondait 422, la liste restait vide, et le dialogue proposait
+« Sélectionner » sans un seul emplacement — sans rien dire. Une valeur devinée
+au lieu d'être lue dans `app/Shared/Http/Requests/ListRequest.php`.
+
+Corrigé, et deux garde-fous plutôt qu'un :
+
+- un test vérifie que **toute** requête d'emplacements reste sous le plafond ;
+- un champ **Filtrer les emplacements** délègue la recherche au serveur —
+  `StockLocationListQuery` couvre zone, allée, travée, niveau, code et
+  code-barres ;
+- et quand le plafond cache des lignes, l'écran l'annonce : « 100 emplacements
+  affichés sur 340 — filtrez pour atteindre les autres. » Un entrepôt en compte
+  plus de cent ; laisser croire que la liste est complète serait pire que la
+  tronquer.
+
 #### La liste plate plutôt que l'arbre
 
 `stock-locations/tree` existe et n'est pas utilisé. L'arbre entier remonterait

@@ -46,7 +46,17 @@ const location = {
 
 /** Les emplacements alimentent les libellés des soldes et des mouvements. */
 function serveLocations() {
-  server.use(http.get(`${API}/stock-locations`, () => HttpResponse.json(paginated([location]))))
+  const calls: URL[] = []
+
+  server.use(
+    http.get(`${API}/stock-locations`, ({ request }) => {
+      calls.push(new URL(request.url))
+
+      return HttpResponse.json(paginated([location]))
+    }),
+  )
+
+  return calls
 }
 
 const PERMISSIONS = [
@@ -169,6 +179,48 @@ describe('stock d’un article de catalogue', () => {
 })
 
 describe('enregistrement d’un mouvement', () => {
+  /**
+   * `ListRequest` plafonne `perPage` à 100. Au-delà, le serveur répond 422 et la
+   * liste reste vide — l'écran proposait alors « Sélectionner » sans un seul
+   * emplacement, sans rien dire. La valeur est donc vérifiée, pas devinée.
+   */
+  it('ne demande jamais plus d’emplacements que le serveur n’en accepte', async () => {
+    const calls = serveLocations()
+    server.use(
+      http.get(`${API}/stock-items`, () => HttpResponse.json(paginated([stockItem]))),
+      http.get(`${API}/stock-balances`, () => HttpResponse.json(paginated([]))),
+      http.get(`${API}/stock-movements`, () => HttpResponse.json(paginated([]))),
+    )
+
+    render()
+    await screen.findByText('Quantités par emplacement')
+
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0))
+    for (const call of calls) {
+      expect(Number(call.searchParams.get('perPage'))).toBeLessThanOrEqual(100)
+    }
+  })
+
+  /** La recherche est déléguée au serveur : filtrer 100 lignes en donnerait 100. */
+  it('délègue le filtre des emplacements au serveur', async () => {
+    const calls = serveLocations()
+    server.use(
+      http.get(`${API}/stock-items`, () => HttpResponse.json(paginated([stockItem]))),
+      http.get(`${API}/stock-balances`, () => HttpResponse.json(paginated([]))),
+      http.get(`${API}/stock-movements`, () => HttpResponse.json(paginated([]))),
+    )
+
+    render()
+    await userEvent.click(await screen.findByRole('button', { name: 'Nouveau mouvement' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.type(dialog.getByLabelText(/^Filtrer les emplacements/), 'A-01')
+
+    await waitFor(() =>
+      expect(calls.some((call) => call.searchParams.get('search') === 'A-01')).toBe(true),
+    )
+  })
+
   /**
    * Le sens détermine ce qui part : une entrée n'a pas de source, une sortie
    * pas de destination. `CreateStockMovementAction` refuse un mouvement sans

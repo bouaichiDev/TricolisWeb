@@ -700,6 +700,9 @@
       "exit": "Marchandise qui quitte le dépôt",
       "transfer": "D’un emplacement à un autre"
     },
+    "filterLocations": "Filtrer les emplacements",
+    "filterLocationsHint": "Zone, allée, travée, niveau, code ou code-barres.",
+    "locationsTruncated": "{{shown}} emplacements affichés sur {{total}} — filtrez pour atteindre les autres.",
     "sourceLocation": "Emplacement d’origine",
     "destinationLocation": "Emplacement de destination",
     "sameDepotHint": "Un transfert ne traverse pas deux dépôts : enregistrez une sortie puis une entrée.",

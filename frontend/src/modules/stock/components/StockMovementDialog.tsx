@@ -51,7 +51,8 @@ export function StockMovementDialog({
 }: StockMovementDialogProps) {
   const { t } = useTranslation()
   const create = useCreateStockMovement()
-  const locations = useStockLocationOptions()
+  const [locationSearch, setLocationSearch] = useState('')
+  const locations = useStockLocationOptions(locationSearch)
 
   const [direction, setDirection] = useState<MovementDirection>('entry')
   const [source, setSource] = useState('')
@@ -117,6 +118,17 @@ export function StockMovementDialog({
               hint: t(`stock.directionHints.${value}`),
             }))}
             required
+          />
+
+          <ControlledField
+            label={t('stock.filterLocations')}
+            value={locationSearch}
+            onChange={setLocationSearch}
+            description={
+              locations.isTruncated
+                ? t('stock.locationsTruncated', { shown: locations.options.length, total: locations.total })
+                : t('stock.filterLocationsHint')
+            }
           />
 
           {needsSource ? (

@@ -105,6 +105,7 @@ export function OrderDetailPage() {
           <OrderPackagesTab
             orderId={order.id}
             packages={order.packages ?? []}
+            services={order.services ?? []}
             lines={order.lines ?? []}
             editable={order.allowsContentChanges}
           />

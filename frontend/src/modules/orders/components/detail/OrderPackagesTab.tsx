@@ -12,7 +12,12 @@ import { Button } from '@/shared/components/ui/button'
 import { useDeleteOrderPackage, useUpdateOrderPackage } from '../../hooks/useOrderContent'
 import { usePackageTree } from '../../hooks/useOrders'
 import { orderLineUsage } from '../../schemas/orderAllocations'
-import type { OrderLine, OrderPackage, PackageTreeNode } from '../../types/orderDetail'
+import type {
+  OrderLine,
+  OrderPackage,
+  OrderService,
+  PackageTreeNode,
+} from '../../types/orderDetail'
 import { ChangeEntityStatusDialog } from './ChangeEntityStatusDialog'
 import { OrderPackageDialog } from './OrderPackageDialog'
 import { packageColumns, type FlatNode } from './packageColumns'
@@ -29,6 +34,8 @@ function flatten(nodes: PackageTreeNode[], depth = 0): FlatNode[] {
 interface OrderPackagesTabProps {
   orderId: string
   packages: OrderPackage[]
+  /** Services de la commande : la fiche d'un colis dit lesquels le prennent. */
+  services: OrderService[]
   lines: OrderLine[]
   editable: boolean
 }
@@ -43,7 +50,13 @@ interface OrderPackagesTabProps {
  * Le contenu du colis — la relation `PackageOrderLine` — s'ouvre en tiroir : il
  * demande trois nombres par ligne, ce qu'aucune colonne ne peut porter.
  */
-export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPackagesTabProps) {
+export function OrderPackagesTab({
+  orderId,
+  packages,
+  services,
+  lines,
+  editable,
+}: OrderPackagesTabProps) {
   const { t } = useTranslation()
   const tree = usePackageTree(orderId)
   const remove = useDeleteOrderPackage(orderId)
@@ -130,6 +143,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
         usage={usage}
         editable={editable}
         packageCount={packages.length}
+        services={services}
         onClose={() => setContentId(null)}
       />
 

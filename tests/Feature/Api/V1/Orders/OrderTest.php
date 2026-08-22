@@ -126,3 +126,27 @@ it('exposes the content of every package in the order detail', function (): void
         ->assertJsonCount(1, 'data.packages.0.lines')
         ->assertJsonPath('data.packages.0.lines.0.quantity', '3.000');
 });
+
+/**
+ * Meme piege que ci-dessus, sur une autre relation.
+ *
+ * `OrderServiceResource` n'expose `packages` que `whenLoaded('servicePackages')`.
+ * La fiche d'un colis doit pouvoir dire quels services le prennent en charge :
+ * sans ce chargement, elle n'en trouve aucun.
+ */
+it('exposes the packages taken by every service in the order detail', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 4]],
+            'packages' => [['key' => 'p1', 'barcode' => 'PKG-A']],
+            'services' => [$this->orderService + ['packages' => [['packageKey' => 'p1', 'quantity' => 1]]]],
+        ])->assertCreated()->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/orders/'.$created)
+        ->assertOk()
+        ->assertJsonCount(1, 'data.services.0.packages');
+});

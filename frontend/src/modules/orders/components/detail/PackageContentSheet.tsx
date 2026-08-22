@@ -9,9 +9,10 @@ import {
 } from '@/shared/components/ui/sheet'
 
 import type { LineUsage } from '../../schemas/orderAllocations'
-import type { OrderLine, OrderPackage } from '../../types/orderDetail'
+import type { OrderLine, OrderPackage, OrderService } from '../../types/orderDetail'
 import { OrderPackageFields } from './OrderPackageFields'
 import { PackageLinesEditor } from './PackageLinesEditor'
+import { PackageServicesEditor } from './PackageServicesEditor'
 import { packageDisplayName } from './packageParents'
 
 interface PackageContentSheetProps {
@@ -23,6 +24,8 @@ interface PackageContentSheetProps {
   editable: boolean
   /** Nombre de colis de la commande : un seul rend l'affectation sans ambiguïté. */
   packageCount: number
+  /** Services de la commande, pour dire lesquels prennent ce colis en charge. */
+  services: OrderService[]
   onClose: () => void
 }
 
@@ -42,6 +45,7 @@ export function PackageContentSheet({
   usage,
   editable,
   packageCount,
+  services,
   onClose,
 }: PackageContentSheetProps) {
   const { t } = useTranslation()
@@ -57,6 +61,17 @@ export function PackageContentSheet({
         {pkg ? (
           <div className="flex flex-col gap-4 px-4 pb-6">
             <OrderPackageFields pkg={pkg} parentLabel={parentLabel} />
+
+            {/* Par quels services il passe, avant ce qu'il contient : c'est
+                l'acheminement qu'on vient verifier en premier. */}
+            <div className="border-t pt-4">
+              <PackageServicesEditor
+                orderId={orderId}
+                packageId={pkg.id}
+                services={services}
+                editable={editable}
+              />
+            </div>
 
             <div className="border-t pt-4">
               <PackageLinesEditor

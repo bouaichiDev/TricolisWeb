@@ -72,3 +72,50 @@ export function useDetachServicePackage(orderId: string, serviceId: string) {
     'deleted',
   )
 }
+
+/**
+ * Liaisons vues **depuis le colis**, où le service est une variable.
+ *
+ * Les hooks ci-dessus figent le service à la construction : c'est juste depuis
+ * la fiche d'un service, qui n'en connaît qu'un. Depuis la fiche d'un colis, le
+ * service change à chaque ligne et se choisit à l'écran — un hook par service
+ * violerait les règles des hooks.
+ *
+ * Toutes les listes de liaisons sont invalidées, plus la commande : le colis ne
+ * sait pas laquelle des listes par service il vient de modifier.
+ */
+function usePackageLinkMutation<TVariables>(
+  orderId: string,
+  mutationFn: (variables: TVariables) => Promise<unknown>,
+  message: 'created' | 'deleted',
+) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: servicePackageKeys.all })
+      void queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
+      toast.success(t(`toast.${message}`))
+    },
+  })
+}
+
+export function useAttachPackageToService(orderId: string) {
+  return usePackageLinkMutation(
+    orderId,
+    ({ serviceId, ...payload }: ServicePackageInput & { serviceId: string }) =>
+      servicePackagesApi.create(orderId, serviceId, payload),
+    'created',
+  )
+}
+
+export function useDetachPackageFromService(orderId: string) {
+  return usePackageLinkMutation(
+    orderId,
+    ({ serviceId, linkId }: { serviceId: string; linkId: string }) =>
+      servicePackagesApi.remove(orderId, serviceId, linkId),
+    'deleted',
+  )
+}

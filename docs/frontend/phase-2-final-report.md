@@ -638,6 +638,27 @@ Pas de panachage entre emplacements : `StockMovement` porte **une** source, et
 rien au diagramme ne décrit un prélèvement réparti. Un emplacement doit couvrir
 la ligne à lui seul.
 
+### Par quels services un colis passe
+
+`OrderServicePackage` se lisait dans un seul sens : la fiche d'un service disait
+quels colis il transporte, et rien ne disait l'inverse. Or un même colis est
+souvent **chargé par un service et livré par un autre**, et c'est cet
+acheminement qu'on vient vérifier en ouvrant un colis.
+
+La fiche d'un colis porte donc maintenant, **avant** son contenu, la liste des
+services qui le prennent en charge, avec l'ajout et le retrait.
+
+Aucune route n'expose les liaisons d'un colis — elles sont imbriquées sous le
+service. La liste est **dérivée** de `services[].packages[]`, que le détail de
+la commande porte déjà : inventer une route pour retrouver ce qui est là serait
+un appel de plus pour la même donnée. Le retrait passe en revanche par le
+service propriétaire du lien, seul chemin que l'API accepte.
+
+Les hooks existants figent le service à la construction — juste depuis la fiche
+d'un service, qui n'en connaît qu'un. Depuis un colis, le service se choisit à
+l'écran : `useAttachPackageToService` et `useDetachPackageFromService` le
+prennent en variable de mutation, sans quoi il faudrait un hook par service.
+
 ### Le contenu d'un colis ne voyageait pas avec la commande
 
 `GET /orders/{order}` chargeait `'packages'`, mais pas
@@ -651,7 +672,15 @@ disparaissait jamais — la ligne était pourtant bien en base. Même classe de 
 que `orderServices.address`, et invisible aux tests parce que les fixtures du
 frontend étaient plus généreuses que l'API réelle.
 
-Un test backend fige désormais la présence de `data.packages.0.lines`.
+**Et une troisième fois, au même endroit.** `orderServices.servicePackages`
+n'était pas chargé non plus : `OrderServiceResource` n'expose `packages` que
+`whenLoaded`, donc aucun service ne semblait transporter quoi que ce soit — ce
+qui aurait vidé la nouvelle liste avant même qu'elle serve.
+
+Deux tests backend figent désormais la présence de `data.packages.0.lines` et de
+`data.services.0.packages`. La leçon vaut au-delà : **toute relation exposée
+`whenLoaded` doit avoir un test qui la voit dans la réponse**, sinon elle
+disparaît sans bruit et les fixtures du frontend masquent le trou.
 
 **Second défaut, au même endroit.** Le colis ouvert dans le tiroir était gardé
 en état local, figé au clic. La commande était bien rechargée après une

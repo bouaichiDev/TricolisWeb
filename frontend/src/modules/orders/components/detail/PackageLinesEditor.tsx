@@ -64,6 +64,9 @@ export function PackageLinesEditor({
   const [error, setError] = useState<string | null>(null)
 
   const assign = useAssignPackageLine(orderId)
+  // Le rattachement automatique ne s'annonce pas : l'utilisateur n'a rien
+  // demande, et le toast revenait a chaque ouverture du panneau.
+  const autoAssign = useAssignPackageLine(orderId, true)
   const update = useUpdatePackageLine(orderId)
   const detach = useDetachPackageLine(orderId)
 
@@ -83,17 +86,25 @@ export function PackageLinesEditor({
     onlyUsage.remaining > 0 &&
     !attached.has(only.id)
 
+  const onError = (cause: unknown) =>
+    setError(cause instanceof ApiError ? cause.message : t('errors.unexpected'))
+
   const autoLinked = useRef(false)
 
   useEffect(() => {
     if (!autoLinkable || autoLinked.current || !canUpdate) return
 
     autoLinked.current = true
-    assign.mutate({ packageId: pkg.id, orderLineId: only.id, quantity: onlyUsage.remaining })
-  }, [autoLinkable, assign, canUpdate, pkg.id, only, onlyUsage])
-
-  const onError = (cause: unknown) =>
-    setError(cause instanceof ApiError ? cause.message : t('errors.unexpected'))
+    autoAssign.mutate(
+      { packageId: pkg.id, orderLineId: only.id, quantity: onlyUsage.remaining },
+      // Silencieux en cas de succes, mais jamais en cas d'echec : un
+      // rattachement refuse laisserait le colis vide sans rien dire.
+      { onError },
+    )
+    // `onError` est recree a chaque rendu ; l'ajouter aux dependances relancerait
+    // l'effet sans fin. La garde `autoLinked` le protege deja.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLinkable, autoAssign, canUpdate, pkg.id, only, onlyUsage])
 
   const save = (orderLineId: string) => {
     const raw = (drafts[orderLineId] ?? '').trim()
@@ -109,7 +120,8 @@ export function PackageLinesEditor({
     else assign.mutate(payload, { onSuccess: done, onError })
   }
 
-  const pending = assign.isPending || update.isPending || detach.isPending
+  const pending =
+    assign.isPending || autoAssign.isPending || update.isPending || detach.isPending
 
   return (
     <div className="flex flex-col gap-3">

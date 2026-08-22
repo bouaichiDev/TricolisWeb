@@ -200,6 +200,45 @@ describe('affectation sans ambiguïté', () => {
     packages: [{ ...firstPackage, lines: [] }],
   })
 
+  /**
+   * Ouvrir un panneau est un geste de lecture. Lui faire annoncer « Création
+   * effectuée » lui prête le vocabulaire d'une écriture demandée, et la
+   * notification revenait à chaque ouverture. Le changement se lit dans les
+   * chiffres de la ligne, pas dans une alerte.
+   */
+  it('ne notifie rien : l’utilisateur n’a rien demandé', async () => {
+    renderDetail(['orders.view', 'packages.update'], soleDetail())
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, () =>
+        HttpResponse.json({ data: {}, meta: [] }, { status: 201 }),
+      ),
+    )
+
+    await openPackage()
+    await screen.findByText(/Commandé 10/)
+
+    expect(screen.queryByText('Création effectuée.')).not.toBeInTheDocument()
+  })
+
+  /** Un rattachement refusé laisserait le colis vide : il doit se voir. */
+  it('affiche l’erreur quand le rattachement automatique est refusé', async () => {
+    renderDetail(['orders.view', 'packages.update'], soleDetail())
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, () =>
+        HttpResponse.json(
+          { message: 'La quantité dépasse ce qui reste à affecter.' },
+          { status: 422 },
+        ),
+      ),
+    )
+
+    await openPackage()
+
+    expect(await screen.findByText(/dépasse ce qui reste à affecter/)).toBeInTheDocument()
+  })
+
   it('lie la ligne au colis à l’ouverture du contenu', async () => {
     let body: unknown = null
     renderDetail(['orders.view', 'packages.update'], soleDetail())

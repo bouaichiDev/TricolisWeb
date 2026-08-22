@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, configure } from '@testing-library/react'
+import { toast } from 'sonner'
 import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 
 import { server } from './server'
@@ -26,6 +27,10 @@ beforeAll(() => {
 afterEach(() => {
   cleanup()
   server.resetHandlers()
+  // `sonner` garde ses notifications dans un magasin de module, que `cleanup`
+  // ne touche pas : sans cela, un toast d'un test survit au suivant et un
+  // « je ne notifie rien » passe au rouge a cause du voisin.
+  toast.dismiss()
 })
 
 afterAll(() => {

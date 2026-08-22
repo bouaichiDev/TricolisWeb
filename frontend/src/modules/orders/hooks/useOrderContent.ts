@@ -19,10 +19,18 @@ import { orderKeys } from './useOrders'
  * colis change `packageCount`, et le serveur recalcule poids et volume. Ne
  * rafraîchir que la collection touchée laisserait le reste faux à l'écran.
  */
+/**
+ * @param message Libellé du toast, ou `null` pour ne rien annoncer.
+ *
+ * `null` sert aux écritures que **l'utilisateur n'a pas demandées** : annoncer
+ * « Création effectuée » à l'ouverture d'un panneau fait porter à un geste de
+ * lecture le vocabulaire d'un geste d'écriture, et la notification revient à
+ * chaque ouverture. Le changement se voit dans les chiffres de la ligne.
+ */
 function useContentMutation<TVariables>(
   orderId: string,
   mutationFn: (variables: TVariables) => Promise<unknown>,
-  message: 'created' | 'updated' | 'deleted',
+  message: 'created' | 'updated' | 'deleted' | null,
 ) {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
@@ -33,7 +41,7 @@ function useContentMutation<TVariables>(
       void queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
       void queryClient.invalidateQueries({ queryKey: orderKeys.packageTree(orderId) })
       void queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
-      toast.success(t(`toast.${message}`))
+      if (message !== null) toast.success(t(`toast.${message}`))
     },
   })
 }
@@ -130,7 +138,10 @@ export function useChangeOrderServiceStatus(orderId: string) {
 }
 
 /** Affectation d'une ligne à un colis, sur une commande déjà créée. */
-export function useAssignPackageLine(orderId: string) {
+/**
+ * @param silent Vrai pour le rattachement automatique, qui ne s'annonce pas.
+ */
+export function useAssignPackageLine(orderId: string, silent = false) {
   return useContentMutation(
     orderId,
     ({
@@ -142,7 +153,7 @@ export function useAssignPackageLine(orderId: string) {
       orderLineId: string
       quantity: number
     }) => ordersApi.assignPackageLine(orderId, packageId, { orderLineId, quantity }),
-    'created',
+    silent ? null : 'created',
   )
 }
 

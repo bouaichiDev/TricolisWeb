@@ -645,6 +645,14 @@ qu'un lien possible. Il est écrit à l'ouverture du contenu. Dès qu'il y a
 plusieurs colis ou plusieurs lignes, l'écran redemande — c'est exactement là que
 « tout dans le premier » serait faux. Sans `packages.update`, rien n'est écrit.
 
+**Le rattachement automatique ne s'annonce pas.** Il passait par la mutation
+partagée, qui affiche « Création effectuée » — donc une notification à *chaque*
+ouverture du panneau, pour une écriture que personne n'avait demandée. Ouvrir un
+panneau est un geste de lecture ; lui prêter le vocabulaire d'une écriture était
+faux. `useContentMutation` accepte désormais `message: null`, et le changement
+se lit dans les chiffres de la ligne. **L'échec, lui, reste visible** : un
+rattachement refusé laisserait le colis vide sans rien dire.
+
 **Et le champ « Quantité affectée » disparaît quand elle ne peut pas varier.**
 Avec un seul colis, une ligne y va tout entière ou n'y va pas : le champ posait
 une question dont la seule réponse était « tout », et il n'était pas compris.

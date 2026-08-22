@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { usePermission } from '@/shared/hooks/usePermission'
@@ -35,20 +35,24 @@ interface PackageLinesEditorProps {
  * `PackageLineAllocator` fait respecter côté serveur, sous verrou. L'écran les
  * montre pendant la saisie ; c'est le serveur qui tranche.
  *
- * **Le cas sans ambiguïté se lie tout seul.** `PackageOrderLine` porte une
- * *quantité* : une ligne de dix chaises peut se répartir sur trois palettes, et
- * une répartition ne s'invente pas. Mais quand la commande n'a **qu'une** ligne,
- * **qu'un** colis et rien d'affecté, il n'existe qu'une réponse possible —
- * la demander ne fait que faire recopier un nombre déjà affiché. Le lien est
- * alors écrit à l'ouverture du contenu.
+ * **Cet écran ne crée pas le contenu, il le corrige.** Le lien naît avec la
+ * commande — `CreateOrderPackages` lit `packages[].lines[]` — ou, plus tard, du
+ * terrain, quand le dépôt constate ce qui est réellement dans le carton. Le web
+ * sert à *voir* ce contenu et à l'amender : ajouter un article que le dépôt
+ * avait oublié, corriger une quantité, détacher une ligne.
  *
- * Dès qu'il y a plusieurs colis ou plusieurs lignes, l'écran redemande : c'est
- * exactement là que « tout mettre dans le premier » serait faux.
+ * Il ne l'invente donc pas. Une version précédente écrivait le lien à
+ * l'ouverture du panneau, quand il n'y avait qu'une réponse possible : c'était
+ * transformer un geste de lecture en écriture, et affirmer depuis un bureau ce
+ * qui se constate dans un entrepôt.
  *
- * Au-delà, le bouton « Tout affecter » couvre le cas courant. Préremplir le
- * champ aurait paru plus direct et tendait un piège : sur un champ affichant
- * « 6 », cliquer puis taper « 3 » donne « 63 », et `select()` n'est pas fiable
- * sur un `input type="number"`.
+ * L'automatisme est resté, mais à sa place : l'assistant met la ligne dans le
+ * colis dès sa création, là où l'utilisateur déclare justement le contenu.
+ *
+ * Le bouton « Tout affecter » couvre le cas courant. Préremplir le champ aurait
+ * paru plus direct et tendait un piège : sur un champ affichant « 6 », cliquer
+ * puis taper « 3 » donne « 63 », et `select()` n'est pas fiable sur un
+ * `input type="number"`.
  */
 export function PackageLinesEditor({
   orderId,
@@ -64,47 +68,13 @@ export function PackageLinesEditor({
   const [error, setError] = useState<string | null>(null)
 
   const assign = useAssignPackageLine(orderId)
-  // Le rattachement automatique ne s'annonce pas : l'utilisateur n'a rien
-  // demande, et le toast revenait a chaque ouverture du panneau.
-  const autoAssign = useAssignPackageLine(orderId, true)
   const update = useUpdatePackageLine(orderId)
   const detach = useDetachPackageLine(orderId)
 
   const attached = new Map((pkg.lines ?? []).map((link) => [link.orderLineId, link]))
 
-  // Une seule reponse possible : une ligne, un colis, rien d'affecte. La ref
-  // garde l'ecriture unique -- l'invalidation qui suit relance ce rendu, et
-  // sans elle la mutation repartirait en boucle.
-  const only = lines.length === 1 ? lines[0] : undefined
-  const onlyUsage = only ? usage.get(only.id) : undefined
-  const autoLinkable =
-    editable &&
-    isSolePackage &&
-    only !== undefined &&
-    onlyUsage !== undefined &&
-    onlyUsage.assigned === 0 &&
-    onlyUsage.remaining > 0 &&
-    !attached.has(only.id)
-
   const onError = (cause: unknown) =>
     setError(cause instanceof ApiError ? cause.message : t('errors.unexpected'))
-
-  const autoLinked = useRef(false)
-
-  useEffect(() => {
-    if (!autoLinkable || autoLinked.current || !canUpdate) return
-
-    autoLinked.current = true
-    autoAssign.mutate(
-      { packageId: pkg.id, orderLineId: only.id, quantity: onlyUsage.remaining },
-      // Silencieux en cas de succes, mais jamais en cas d'echec : un
-      // rattachement refuse laisserait le colis vide sans rien dire.
-      { onError },
-    )
-    // `onError` est recree a chaque rendu ; l'ajouter aux dependances relancerait
-    // l'effet sans fin. La garde `autoLinked` le protege deja.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoLinkable, autoAssign, canUpdate, pkg.id, only, onlyUsage])
 
   const save = (orderLineId: string) => {
     const raw = (drafts[orderLineId] ?? '').trim()
@@ -120,8 +90,7 @@ export function PackageLinesEditor({
     else assign.mutate(payload, { onSuccess: done, onError })
   }
 
-  const pending =
-    assign.isPending || autoAssign.isPending || update.isPending || detach.isPending
+  const pending = assign.isPending || update.isPending || detach.isPending
 
   return (
     <div className="flex flex-col gap-3">

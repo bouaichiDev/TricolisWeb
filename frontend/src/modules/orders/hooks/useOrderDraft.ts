@@ -53,11 +53,32 @@ export function useOrderDraft(initial?: OrderDraft) {
 
   /* ------------------------------------------------------------ colis -- */
 
+  /**
+   * Ajoute un colis, et y met la ligne quand il n'y en a qu'une.
+   *
+   * Le contenu d'un colis naît **ici**, avec la commande : `CreateOrderPackages`
+   * lit `packages[].lines[]` et rien d'autre ne le renseigne avant l'exécution.
+   * Avec une seule ligne de commande, tout y va — proposer autre chose serait
+   * faire recopier un nombre déjà à l'écran.
+   *
+   * C'est une valeur de **brouillon**, modifiable et détachable avant l'envoi :
+   * rien n'est écrit tant que la commande n'est pas créée.
+   */
   const addPackage = useCallback((parentKey: string | null = null) => {
-    setDraft((current) => ({
-      ...current,
-      packages: [...current.packages, { ...emptyPackage(), parentKey }],
-    }))
+    setDraft((current) => {
+      const sole = current.lines.length === 1 ? current.lines[0] : undefined
+      const alreadyAssigned = current.packages.some((item) => item.lines.length > 0)
+
+      const lines =
+        sole !== undefined && !alreadyAssigned && current.packages.length === 0
+          ? [{ lineKey: sole.key, quantity: sole.quantity }]
+          : []
+
+      return {
+        ...current,
+        packages: [...current.packages, { ...emptyPackage(), parentKey, lines }],
+      }
+    })
   }, [])
 
   const patchPackage = useCallback((key: string, values: Partial<PackageDraft>) => {

@@ -638,20 +638,33 @@ Pas de panachage entre emplacements : `StockMovement` porte **une** source, et
 rien au diagramme ne décrit un prélèvement réparti. Un emplacement doit couvrir
 la ligne à lui seul.
 
-### Le contenu d'un colis se lie tout seul quand il n'y a qu'une réponse
+### Où naît le contenu d'un colis, et où il se corrige
 
-Une ligne, un colis, rien d'affecté : la répartition n'existe pas, il n'y a
-qu'un lien possible. Il est écrit à l'ouverture du contenu. Dès qu'il y a
-plusieurs colis ou plusieurs lignes, l'écran redemande — c'est exactement là que
-« tout dans le premier » serait faux. Sans `packages.update`, rien n'est écrit.
+Vérification faite dans le code, le lien `PackageOrderLine` a **deux** sources
+légitimes, et la fiche web n'en est pas une :
 
-**Le rattachement automatique ne s'annonce pas.** Il passait par la mutation
-partagée, qui affiche « Création effectuée » — donc une notification à *chaque*
-ouverture du panneau, pour une écriture que personne n'avait demandée. Ouvrir un
-panneau est un geste de lecture ; lui prêter le vocabulaire d'une écriture était
-faux. `useContentMutation` accepte désormais `message: null`, et le changement
-se lit dans les chiffres de la ligne. **L'échec, lui, reste visible** : un
-rattachement refusé laisserait le colis vide sans rien dire.
+| Moment | Ce qui écrit | Existe |
+| --- | --- | --- |
+| Création de la commande | `CreateOrderPackages::attachLines()`, depuis `packages[].lines[]` | ✅ |
+| Constat au dépôt | `POST/PATCH/DELETE /orders/{order}/packages/{package}/lines` | ✅ routes prêtes |
+| Duplication | `DuplicateOrder` recopie les liens | ✅ |
+| Application mobile | — | ❌ **n'existe pas** : aucune route dédiée, aucune mention dans les phases 1 à 10 |
+
+La fiche web sert donc à **voir** ce contenu et à l'**amender** — ajouter un
+article que le dépôt avait oublié, corriger une quantité, détacher une ligne.
+Elle ne l'invente pas.
+
+**Un rattachement automatique à l'ouverture du panneau a été retiré.** Il
+écrivait le lien dès qu'une seule réponse était possible : c'était transformer
+un geste de lecture en écriture, et affirmer depuis un bureau ce qui se constate
+dans un entrepôt. Symptôme visible : une notification « Création effectuée » à
+chaque ouverture.
+
+**L'automatisme est resté, à sa place.** L'assistant met la ligne dans le colis
+**dès sa création**, là où l'utilisateur déclare justement le contenu — et
+seulement quand la commande n'a qu'une ligne et que c'est le premier colis. Le
+second n'hérite de rien : la répartition est un choix. C'est une valeur de
+brouillon, modifiable et détachable avant l'envoi.
 
 **Et le champ « Quantité affectée » disparaît quand elle ne peut pas varier.**
 Avec un seul colis, une ligne y va tout entière ou n'y va pas : le champ posait

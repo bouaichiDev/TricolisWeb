@@ -46,8 +46,12 @@ describe('OrderPackagesStep', () => {
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Ajouter un colis' })[0])
 
-    expect(await screen.findByText(/Commandé 10 · Affecté 0 · Reste à affecter 10/)).toBeInTheDocument()
+    // Une seule ligne : le premier colis la reçoit entière (voir ci-dessous).
+    expect(
+      await screen.findByText(/Commandé 10 · Affecté 10 · Reste à affecter 0/),
+    ).toBeInTheDocument()
 
+    await userEvent.clear(screen.getByLabelText('Quantité affectée'))
     await userEvent.type(screen.getByLabelText('Quantité affectée'), '4')
 
     await waitFor(() => {
@@ -56,15 +60,46 @@ describe('OrderPackagesStep', () => {
   })
 
   /**
-   * Rien ne se lie d'office : `PackageOrderLine` porte une quantité, et dix
-   * chaises peuvent tenir sur trois palettes. « Tout affecter » couvre le cas
-   * courant sans décider à la place de qui répartit.
+   * Le contenu d'un colis naît avec la commande : `CreateOrderPackages` lit
+   * `packages[].lines[]` et rien d'autre ne le renseigne avant l'exécution.
+   * Avec une seule ligne, tout y va — et cela se décide **ici**, au moment où
+   * l'utilisateur déclare le contenu, pas plus tard en consultant la fiche.
+   */
+  it('met la ligne unique dans le premier colis ajouté', async () => {
+    serveWizardScope()
+    render()
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Ajouter un colis' })[0])
+
+    expect(await screen.findByLabelText('Quantité affectée')).toHaveValue(10)
+  })
+
+  /** Le second colis n'hérite de rien : la répartition, elle, est un choix. */
+  it('laisse le second colis vide', async () => {
+    serveWizardScope()
+    render()
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Ajouter un colis' })[0])
+    await userEvent.click(screen.getAllByRole('button', { name: 'Ajouter un colis' })[0])
+
+    const fields = await screen.findAllByLabelText('Quantité affectée')
+
+    expect(fields).toHaveLength(2)
+    expect(fields[1]).toHaveValue(null)
+  })
+
+  /**
+   * Au-delà du premier colis, la répartition est un choix : dix chaises peuvent
+   * tenir sur trois palettes. « Tout affecter » évite de recopier le reste à la
+   * main sans décider à la place de qui répartit.
    */
   it('affecte tout le reste au colis en un clic', async () => {
     serveWizardScope()
     render()
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Ajouter un colis' })[0])
+    await userEvent.clear(await screen.findByLabelText('Quantité affectée'))
+
     await userEvent.click(
       await screen.findByRole('button', { name: 'Tout affecter à ce colis' }),
     )

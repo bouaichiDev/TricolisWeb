@@ -180,13 +180,14 @@ describe('contenu d’un colis', () => {
 })
 
 /**
- * Une seule ligne, un seul colis, rien d'affecté : il n'existe qu'une réponse.
+ * La fiche ne crée pas le contenu d'un colis, elle le corrige.
  *
- * `PackageOrderLine` porte une quantité, et une répartition ne s'invente pas —
- * mais quand il n'y a rien à répartir, la demander ne fait que faire recopier
- * un nombre déjà affiché à l'écran.
+ * Le lien naît avec la commande — `CreateOrderPackages` lit
+ * `packages[].lines[]` — ou, plus tard, du terrain. Ouvrir un panneau ne doit
+ * donc **rien** écrire : ce serait affirmer depuis un bureau ce qui se constate
+ * dans un entrepôt.
  */
-describe('affectation sans ambiguïté', () => {
+describe('la fiche n’invente pas le contenu', () => {
   // `lines` et `packages` sont optionnels sur `OrderDetail` : la fixture les
   // porte toujours, mais le type ne le sait pas. Les extraire une fois evite
   // d'assener un `!` a chaque usage.
@@ -200,61 +201,23 @@ describe('affectation sans ambiguïté', () => {
     packages: [{ ...firstPackage, lines: [] }],
   })
 
-  /**
-   * Ouvrir un panneau est un geste de lecture. Lui faire annoncer « Création
-   * effectuée » lui prête le vocabulaire d'une écriture demandée, et la
-   * notification revenait à chaque ouverture. Le changement se lit dans les
-   * chiffres de la ligne, pas dans une alerte.
-   */
-  it('ne notifie rien : l’utilisateur n’a rien demandé', async () => {
+  it('n’écrit rien à l’ouverture, même quand une seule réponse est possible', async () => {
+    let called = false
     renderDetail(['orders.view', 'packages.update'], soleDetail())
 
     server.use(
-      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, () =>
-        HttpResponse.json({ data: {}, meta: [] }, { status: 201 }),
-      ),
-    )
-
-    await openPackage()
-    await screen.findByText(/Commandé 10/)
-
-    expect(screen.queryByText('Création effectuée.')).not.toBeInTheDocument()
-  })
-
-  /** Un rattachement refusé laisserait le colis vide : il doit se voir. */
-  it('affiche l’erreur quand le rattachement automatique est refusé', async () => {
-    renderDetail(['orders.view', 'packages.update'], soleDetail())
-
-    server.use(
-      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, () =>
-        HttpResponse.json(
-          { message: 'La quantité dépasse ce qui reste à affecter.' },
-          { status: 422 },
-        ),
-      ),
-    )
-
-    await openPackage()
-
-    expect(await screen.findByText(/dépasse ce qui reste à affecter/)).toBeInTheDocument()
-  })
-
-  it('lie la ligne au colis à l’ouverture du contenu', async () => {
-    let body: unknown = null
-    renderDetail(['orders.view', 'packages.update'], soleDetail())
-
-    server.use(
-      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, async ({ request }) => {
-        body = await request.json()
+      http.post(`${API}/orders/${ORDER_ID}/packages/:packageId/lines`, () => {
+        called = true
         return HttpResponse.json({ data: {}, meta: [] }, { status: 201 })
       }),
     )
 
     await openPackage()
+    await screen.findByText(/Reste à affecter 10/)
 
-    await waitFor(() => expect(body).not.toBeNull())
-    // La ligne porte 10 unités et rien n'était affecté : tout y passe.
-    expect(body).toEqual({ orderLineId: LINE_ID, quantity: 10 })
+    expect(called).toBe(false)
+    // Le rattachement reste offert, mais il se demande.
+    expect(screen.getByRole('button', { name: /Mettre dans ce colis/ })).toBeInTheDocument()
   })
 
   /** Deux colis : « tout dans le premier » serait un choix, pas une évidence. */

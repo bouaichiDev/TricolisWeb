@@ -1,13 +1,19 @@
 import { api } from '@/shared/api/client'
 import type { ApiCollection, ApiResource } from '@/shared/api/types'
 import type { AuditLog } from '@/modules/audit/types/auditLog'
-import type { OrderDetail, PackageTreeNode } from '../types/orderDetail'
+import type { OrderDetail, OrderStockPlanLine, PackageTreeNode } from '../types/orderDetail'
 import type { OrderFilters, OrderListItem } from '../types/order'
 import type {
   CreateOrderPayload,
   DuplicateOrderPayload,
   UpdateOrderPayload,
 } from '../types/orderPayload'
+
+/** Emplacement retenu pour une ligne, quand plusieurs en portent l'article. */
+export interface StockLocationChoice {
+  orderLineId: string
+  stockLocationId: string
+}
 
 export const ordersApi = {
   list: (filters: OrderFilters) =>
@@ -32,10 +38,25 @@ export const ordersApi = {
 
   remove: (id: string) => api.delete<void>(`/orders/${id}`),
 
-  /** Le statut visé doit figurer dans `allowedTransitions` de la commande. */
-  changeStatus: (id: string, status: string) =>
+  /**
+   * Le statut visé doit figurer dans `allowedTransitions` de la commande.
+   *
+   * `stockLocations` n'est utile qu'à la confirmation, et seulement pour les
+   * lignes dont l'article dort dans plusieurs emplacements : le serveur trouve
+   * seul les autres.
+   */
+  changeStatus: (id: string, status: string, stockLocations: StockLocationChoice[] = []) =>
     api
-      .patch<ApiResource<OrderDetail>>(`/orders/${id}/status`, { status })
+      .patch<ApiResource<OrderDetail>>(`/orders/${id}/status`, {
+        status,
+        ...(stockLocations.length > 0 ? { stockLocations } : {}),
+      })
+      .then((response) => response.data),
+
+  /** Aperçu de la sortie de stock. Ne modifie rien. */
+  stockPlan: (id: string) =>
+    api
+      .get<ApiResource<OrderStockPlanLine[]>>(`/orders/${id}/stock-plan`)
       .then((response) => response.data),
 
   duplicate: (id: string, payload: DuplicateOrderPayload) =>

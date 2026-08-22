@@ -10,7 +10,9 @@ use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Exceptions\InvalidOrderTransition;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Statuses\Services\StatusMachine;
+use App\Modules\Stock\Actions\ConsumeOrderStock;
 use App\Shared\Database\MorphMap;
+use App\Shared\Support\AuditContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,12 +30,19 @@ use Illuminate\Support\Facades\DB;
  * L'historique n'est pas stocké dans une table dédiée — le diagramme n'en
  * prévoit pas. Il est reconstitué depuis le journal d'audit, qui enregistre
  * chaque transition avec son ancien et son nouveau statut.
+ *
+ * **La confirmation sort la marchandise du stock.** C'est le seul effet de bord
+ * d'un changement de statut, et il est dans la même transaction : une commande
+ * confirmée dont le stock n'aurait pas bougé — ou l'inverse — laisserait un
+ * dépôt qui ment. Les lignes hors catalogue et les articles non entreposés sont
+ * ignorés ; il ne s'agit pas d'une erreur.
  */
 final readonly class ChangeOrderStatus
 {
     public function __construct(
         private WriteAuditLog $audit,
         private StatusMachine $machine,
+        private ConsumeOrderStock $stock,
     ) {}
 
     public function execute(
@@ -43,6 +52,8 @@ final readonly class ChangeOrderStatus
         ?string $reasonCode = null,
         ?string $reasonText = null,
         ?Request $request = null,
+        /** @var array<string, string> orderLineId => stockLocationId */
+        array $stockLocations = [],
     ): Order {
         $current = $order->status;
 
@@ -62,7 +73,16 @@ final readonly class ChangeOrderStatus
             throw InvalidOrderTransition::reasonRequired($target);
         }
 
-        return DB::transaction(function () use ($order, $current, $target, $user, $reasonCode, $reasonText, $request): Order {
+        return DB::transaction(function () use ($order, $current, $target, $user, $reasonCode, $reasonText, $request, $stockLocations): Order {
+            if ($target === OrderStatus::CONFIRMED) {
+                $this->stock->execute(
+                    $order,
+                    $stockLocations,
+                    new AuditContext($order->organization_id, $user, $request?->ip()),
+                    now()->toDateTimeString(),
+                );
+            }
+
             $order->forceFill([
                 'status' => $target,
                 'updated_by' => $user?->id,

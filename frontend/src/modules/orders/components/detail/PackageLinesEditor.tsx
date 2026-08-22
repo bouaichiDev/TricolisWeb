@@ -1,8 +1,9 @@
 import { Check, ListChecks, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
+import { usePermission } from '@/shared/hooks/usePermission'
 import { ApiError } from '@/shared/api/errors'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -23,6 +24,8 @@ interface PackageLinesEditorProps {
   lines: OrderLine[]
   usage: Map<string, LineUsage>
   editable: boolean
+  /** Vrai quand la commande ne porte que ce colis : un colis ne le sait pas seul. */
+  isSolePackage: boolean
 }
 
 /**
@@ -37,17 +40,20 @@ interface PackageLinesEditorProps {
  * `PackageLineAllocator` fait respecter côté serveur, sous verrou. L'écran les
  * montre pendant la saisie ; c'est le serveur qui tranche.
  *
- * **Pourquoi rien ne se lie tout seul.** `PackageOrderLine` porte une
+ * **Le cas sans ambiguïté se lie tout seul.** `PackageOrderLine` porte une
  * *quantité* : une ligne de dix chaises peut se répartir sur trois palettes, et
- * `packages[].lines` est facultatif à la création — un colis peut légitimement
- * ne rien contenir. Lier d'office écrirait une répartition que personne n'a
- * décidée, et qu'il faudrait défaire.
+ * une répartition ne s'invente pas. Mais quand la commande n'a **qu'une** ligne,
+ * **qu'un** colis et rien d'affecté, il n'existe qu'une réponse possible —
+ * la demander ne fait que faire recopier un nombre déjà affiché. Le lien est
+ * alors écrit à l'ouverture du contenu.
  *
- * Le cas courant — tout le reste dans ce colis — a donc un bouton dédié,
- * « Tout affecter », le même que dans l'assistant. Préremplir le champ aurait
- * paru plus direct et tendait un piège : sur un champ affichant « 6 », cliquer
- * puis taper « 3 » donne « 63 », et `select()` n'est pas fiable sur un
- * `input type="number"`.
+ * Dès qu'il y a plusieurs colis ou plusieurs lignes, l'écran redemande : c'est
+ * exactement là que « tout mettre dans le premier » serait faux.
+ *
+ * Au-delà, le bouton « Tout affecter » couvre le cas courant. Préremplir le
+ * champ aurait paru plus direct et tendait un piège : sur un champ affichant
+ * « 6 », cliquer puis taper « 3 » donne « 63 », et `select()` n'est pas fiable
+ * sur un `input type="number"`.
  */
 export function PackageLinesEditor({
   orderId,
@@ -55,8 +61,10 @@ export function PackageLinesEditor({
   lines,
   usage,
   editable,
+  isSolePackage,
 }: PackageLinesEditorProps) {
   const { t } = useTranslation()
+  const canUpdate = usePermission('packages.update')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -65,6 +73,29 @@ export function PackageLinesEditor({
   const detach = useDetachPackageLine(orderId)
 
   const attached = new Map((pkg.lines ?? []).map((link) => [link.orderLineId, link]))
+
+  // Une seule reponse possible : une ligne, un colis, rien d'affecte. La ref
+  // garde l'ecriture unique -- l'invalidation qui suit relance ce rendu, et
+  // sans elle la mutation repartirait en boucle.
+  const only = lines.length === 1 ? lines[0] : undefined
+  const onlyUsage = only ? usage.get(only.id) : undefined
+  const autoLinkable =
+    editable &&
+    isSolePackage &&
+    only !== undefined &&
+    onlyUsage !== undefined &&
+    onlyUsage.assigned === 0 &&
+    onlyUsage.remaining > 0 &&
+    !attached.has(only.id)
+
+  const autoLinked = useRef(false)
+
+  useEffect(() => {
+    if (!autoLinkable || autoLinked.current || !canUpdate) return
+
+    autoLinked.current = true
+    assign.mutate({ packageId: pkg.id, orderLineId: only.id, quantity: onlyUsage.remaining })
+  }, [autoLinkable, assign, canUpdate, pkg.id, only, onlyUsage])
 
   const onError = (cause: unknown) =>
     setError(cause instanceof ApiError ? cause.message : t('errors.unexpected'))

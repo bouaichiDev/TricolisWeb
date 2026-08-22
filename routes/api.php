@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\V1\Orders\OrderLineController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceContactController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceController;
 use App\Http\Controllers\Api\V1\Orders\OrderServicePackageController;
+use App\Http\Controllers\Api\V1\Orders\OrderStockPlanController;
 use App\Http\Controllers\Api\V1\Orders\ServiceController;
 use App\Http\Controllers\Api\V1\Organizations\MenuController;
 use App\Http\Controllers\Api\V1\Organizations\OrganizationController;
@@ -183,6 +184,9 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::post('orders/{order}/duplicate', [OrderController::class, 'duplicate'])->name('orders.duplicate');
         Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
         Route::get('orders/{order}/history', [OrderHistoryController::class, 'index'])->name('orders.history');
+        // Apercu de la sortie de stock : consulte avant de confirmer, pour
+        // faire choisir un emplacement quand la ligne en a plusieurs.
+        Route::get('orders/{order}/stock-plan', OrderStockPlanController::class)->name('orders.stock-plan');
         Route::get('orders/{order}/documents', [OrderDocumentController::class, 'index'])->name('orders.documents.index');
         Route::post('orders/{order}/documents', [OrderDocumentController::class, 'store'])->name('orders.documents.store');
         Route::apiResource('orders.lines', OrderLineController::class)

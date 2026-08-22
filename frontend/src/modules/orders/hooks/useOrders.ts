@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { ordersApi } from '../api/orders.api'
+import { ordersApi, type StockLocationChoice } from '../api/orders.api'
 import type { OrderFilters } from '../types/order'
 import type {
   CreateOrderPayload,
@@ -17,6 +17,7 @@ export const orderKeys = {
   detail: (id: string) => [...orderKeys.all, 'detail', id] as const,
   history: (id: string, page: number) => [...orderKeys.all, 'history', id, page] as const,
   packageTree: (id: string) => [...orderKeys.all, 'package-tree', id] as const,
+  stockPlan: (id: string) => [...orderKeys.all, 'stock-plan', id] as const,
 }
 
 export function useOrderList(filters: OrderFilters) {
@@ -74,6 +75,10 @@ export function useUpdateOrder(id: string) {
     onSuccess: (order) => {
       queryClient.setQueryData(orderKeys.detail(id), order)
       void queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      // La confirmation sort la marchandise du stock : soldes et mouvements
+      // affiches ailleurs sont perimes des cet instant.
+      void queryClient.invalidateQueries({ queryKey: ['stock'] })
+      void queryClient.invalidateQueries({ queryKey: orderKeys.stockPlan(id) })
       toast.success(t('toast.updated'))
     },
   })
@@ -91,7 +96,8 @@ export function useChangeOrderStatus(id: string) {
   const { t } = useTranslation()
 
   return useMutation({
-    mutationFn: (status: string) => ordersApi.changeStatus(id, status),
+    mutationFn: (input: { status: string; stockLocations?: StockLocationChoice[] }) =>
+      ordersApi.changeStatus(id, input.status, input.stockLocations ?? []),
     onSuccess: (order) => {
       queryClient.setQueryData(orderKeys.detail(id), order)
       void queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
@@ -123,5 +129,19 @@ export function useDeleteOrder() {
       void queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
       toast.success(t('toast.deleted'))
     },
+  })
+}
+
+/**
+ * Ce que la confirmation sortirait du stock.
+ *
+ * Interrogé seulement quand la confirmation est visée : sur une commande déjà
+ * terminée, la question ne se pose pas et la requête serait perdue.
+ */
+export function useOrderStockPlan(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: orderKeys.stockPlan(id),
+    queryFn: () => ordersApi.stockPlan(id),
+    enabled: enabled && id !== '',
   })
 }

@@ -14,7 +14,8 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 
-import { useChangeOrderStatus } from '../hooks/useOrders'
+import { useChangeOrderStatus, useOrderStockPlan } from '../hooks/useOrders'
+import { OrderStockPlanFields } from './OrderStockPlanFields'
 import { ORDER_MANUALLY_ASSIGNABLE, ORDER_STATUSES } from '../types/order'
 
 interface ChangeOrderStatusDialogProps {
@@ -46,6 +47,11 @@ interface ChangeOrderStatusDialogProps {
  *
  * Un 409 signifie que l'état a changé entre l'affichage et l'envoi. Son message
  * est rédigé pour être lu tel quel, il n'est pas réécrit.
+ *
+ * **Confirmer sort la marchandise du stock.** L'aperçu est donc chargé dès que
+ * « Confirmée » est visé, et l'écran demande l'emplacement des seules lignes
+ * dont l'article dort dans plusieurs endroits — le serveur trouve les autres
+ * tout seul. Sans cela, la confirmation partirait pour revenir en 422.
  */
 export function ChangeOrderStatusDialog({
   orderId,
@@ -57,7 +63,18 @@ export function ChangeOrderStatusDialog({
   const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [locations, setLocations] = useState<Record<string, string>>({})
   const changeStatus = useChangeOrderStatus(orderId)
+
+  const confirming = status === 'confirmed'
+  const plan = useOrderStockPlan(orderId, open && confirming)
+  const planLines = plan.data ?? []
+
+  const ambiguous = planLines.filter((line) => line.state === 'ambiguous')
+  const blocked =
+    confirming &&
+    (planLines.some((line) => line.state === 'insufficient') ||
+      ambiguous.some((line) => (locations[line.orderLineId] ?? '') === ''))
 
   const options = ORDER_STATUSES.map((value) => {
     const allowed = allowedTransitions.includes(value)
@@ -80,15 +97,25 @@ export function ChangeOrderStatusDialog({
     if (status === '') return
 
     setError(null)
-    changeStatus.mutate(status, {
+    changeStatus.mutate(
+      {
+        status,
+        stockLocations: Object.entries(locations).map(([orderLineId, stockLocationId]) => ({
+          orderLineId,
+          stockLocationId,
+        })),
+      },
+      {
       onSuccess: () => {
         setStatus('')
+        setLocations({})
         onOpenChange(false)
       },
       onError: (cause) => {
         setError(cause instanceof ApiError ? cause.message : t('errors.unexpected'))
       },
-    })
+      },
+    )
   }
 
   return (
@@ -120,6 +147,17 @@ export function ChangeOrderStatusDialog({
           description={t('orders.statusDialog.hint')}
         />
 
+        {confirming ? (
+          <OrderStockPlanFields
+            lines={planLines}
+            isLoading={plan.isPending}
+            choices={locations}
+            onChange={(orderLineId, stockLocationId) =>
+              setLocations((current) => ({ ...current, [orderLineId]: stockLocationId }))
+            }
+          />
+        ) : null}
+
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
@@ -127,7 +165,7 @@ export function ChangeOrderStatusDialog({
           <Button
             type="button"
             onClick={submit}
-            disabled={status === '' || changeStatus.isPending}
+            disabled={status === '' || changeStatus.isPending || blocked}
           >
             {t('orders.statusDialog.submit')}
           </Button>

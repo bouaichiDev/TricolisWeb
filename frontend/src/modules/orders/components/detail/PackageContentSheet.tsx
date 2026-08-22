@@ -21,6 +21,8 @@ interface PackageContentSheetProps {
   lines: OrderLine[]
   usage: Map<string, LineUsage>
   editable: boolean
+  /** Nombre de colis de la commande : un seul rend l'affectation sans ambiguïté. */
+  packageCount: number
   onClose: () => void
 }
 
@@ -39,6 +41,7 @@ export function PackageContentSheet({
   lines,
   usage,
   editable,
+  packageCount,
   onClose,
 }: PackageContentSheetProps) {
   const { t } = useTranslation()
@@ -62,6 +65,7 @@ export function PackageContentSheet({
                 lines={lines}
                 usage={usage}
                 editable={editable}
+                isSolePackage={packageCount === 1}
               />
             </div>
           </div>

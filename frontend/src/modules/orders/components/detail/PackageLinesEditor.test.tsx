@@ -24,10 +24,10 @@ import {
  * proposait, mais la fiche affichait lignes et colis côte à côte sans permettre
  * de les relier. C'est ce que ces tests couvrent.
  */
-function renderDetail(permissions: string[]) {
+function renderDetail(permissions: string[], detail = makeOrderDetail()) {
   server.use(
     http.get(`${API}/orders/${ORDER_ID}`, () =>
-      HttpResponse.json({ data: makeOrderDetail(), meta: [] }),
+      HttpResponse.json({ data: detail, meta: [] }),
     ),
     http.get(`${API}/orders/${ORDER_ID}/packages/tree`, () =>
       HttpResponse.json({ data: PACKAGE_TREE, meta: [] }),
@@ -176,5 +176,88 @@ describe('contenu d’un colis', () => {
     expect(
       screen.queryByRole('button', { name: 'Retirer cette ligne du colis' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Une seule ligne, un seul colis, rien d'affecté : il n'existe qu'une réponse.
+ *
+ * `PackageOrderLine` porte une quantité, et une répartition ne s'invente pas —
+ * mais quand il n'y a rien à répartir, la demander ne fait que faire recopier
+ * un nombre déjà affiché à l'écran.
+ */
+describe('affectation sans ambiguïté', () => {
+  // `lines` et `packages` sont optionnels sur `OrderDetail` : la fixture les
+  // porte toujours, mais le type ne le sait pas. Les extraire une fois evite
+  // d'assener un `!` a chaque usage.
+  const base = makeOrderDetail()
+  const [firstLine] = base.lines ?? []
+  const [firstPackage, secondPackage] = base.packages ?? []
+
+  const soleDetail = () => ({
+    ...base,
+    lines: [firstLine],
+    packages: [{ ...firstPackage, lines: [] }],
+  })
+
+  it('lie la ligne au colis à l’ouverture du contenu', async () => {
+    let body: unknown = null
+    renderDetail(['orders.view', 'packages.update'], soleDetail())
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: {}, meta: [] }, { status: 201 })
+      }),
+    )
+
+    await openPackage()
+
+    await waitFor(() => expect(body).not.toBeNull())
+    // La ligne porte 10 unités et rien n'était affecté : tout y passe.
+    expect(body).toEqual({ orderLineId: LINE_ID, quantity: 10 })
+  })
+
+  /** Deux colis : « tout dans le premier » serait un choix, pas une évidence. */
+  it('ne lie rien quand la commande porte plusieurs colis', async () => {
+    let called = false
+    renderDetail(['orders.view', 'packages.update'], {
+      ...base,
+      lines: [firstLine],
+      packages: [
+        { ...firstPackage, lines: [] },
+        { ...secondPackage, lines: [] },
+      ],
+    })
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/packages/:packageId/lines`, () => {
+        called = true
+        return HttpResponse.json({ data: {}, meta: [] }, { status: 201 })
+      }),
+    )
+
+    await openPackage()
+    await screen.findByText(/Reste à affecter 10/)
+
+    expect(called).toBe(false)
+  })
+
+  /** Sans la permission d'écrire, rien ne part — pas même le lien évident. */
+  it('ne lie rien sans packages.update', async () => {
+    let called = false
+    renderDetail(['orders.view'], soleDetail())
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/packages/:packageId/lines`, () => {
+        called = true
+        return HttpResponse.json({ data: {}, meta: [] }, { status: 201 })
+      }),
+    )
+
+    await openPackage()
+    await screen.findByText(/Reste à affecter 10/)
+
+    expect(called).toBe(false)
   })
 })

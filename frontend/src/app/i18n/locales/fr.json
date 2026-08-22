@@ -953,6 +953,14 @@
       "empty": "Aucun évènement.",
       "by": "par {{name}}"
     },
+    "stockPlan": {
+      "title": "Sortie de stock",
+      "hint": "Confirmer sort la marchandise du dépôt. Ces articles sont rangés dans plusieurs emplacements : précisez lequel vider.",
+      "insufficient": "Le stock disponible ne couvre pas la quantité commandée pour {{articles}}.",
+      "available": "{{quantity}} disponible",
+      "willConsume_one": "{{count}} ligne sera sortie du stock.",
+      "willConsume_other": "{{count}} lignes seront sorties du stock."
+    },
     "statusDialog": {
       "title": "Changer le statut",
       "description": "Seules les transitions autorisées par le statut actuel sont proposées.",

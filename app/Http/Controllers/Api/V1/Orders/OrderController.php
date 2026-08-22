@@ -147,7 +147,7 @@ class OrderController extends Controller
             $this->authorize('cancel', $order);
         }
 
-        $action->execute($order, $target, $request->user(), $data['reasonCode'] ?? null, $data['reasonText'] ?? null, $request);
+        $action->execute($order, $target, $request->user(), $data['reasonCode'] ?? null, $data['reasonText'] ?? null, $request, $request->stockLocations());
 
         return ApiResponse::ok(new OrderDetailResource($order->fresh()));
     }

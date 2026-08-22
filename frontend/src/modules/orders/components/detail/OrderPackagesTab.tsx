@@ -124,6 +124,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
         lines={lines}
         usage={usage}
         editable={editable}
+        packageCount={packages.length}
         onClose={() => setContent(null)}
       />
 

@@ -592,6 +592,61 @@ sur un `input type="number"`. Le bouton explicite ne tend pas ce piège.
 
 ---
 
+## 25 quater. La confirmation sort la marchandise du stock
+
+Jusqu'ici, **rien ne reliait les commandes au stock** : `grep -rn "Stock"
+app/Modules/Orders/` ne renvoyait rien, et il n'existait ni `Events`, ni
+`Listeners`, ni `Observers`. `StockReservation` acceptait bien un `orderLineId`,
+mais n'était créée que par un `POST` explicite. Confirmer une commande ne
+touchait donc à aucun solde.
+
+### Ce qui déclenche, et ce qui est ignoré
+
+Le passage à **`confirmed`** écrit un `StockMovement` de sortie par ligne
+suivie. C'est le seul effet de bord d'un changement de statut, et il vit **dans
+la transaction de `ChangeOrderStatus`** : une commande confirmée dont le stock
+n'aurait pas bougé — ou l'inverse — laisserait un dépôt qui ment.
+
+| État de la ligne | Effet |
+| --- | --- |
+| `resolved` | un mouvement de sortie |
+| `ambiguous` | **refus** : plusieurs emplacements, il faut choisir |
+| `insufficient` | **refus** : le disponible ne couvre pas la quantité |
+| `untracked` | ignorée — ligne hors catalogue ou article non entreposé |
+| `consumed` | ignorée — déjà sortie |
+
+`untracked` n'est pas une erreur : une commande peut porter des lignes saisies à
+la main, et un article catalogué n'est pas forcément entreposé.
+
+### L'idempotence sans colonne nouvelle
+
+Le mouvement porte `sourceEntityType = order_line` et `sourceEntityId =
+orderLine.id`. Cela suffit à reconnaître une ligne déjà sortie : un aller-retour
+brouillon → confirmée ne prélève pas deux fois, et **aucune colonne n'a été
+ajoutée** pour cela.
+
+### Demander avant, plutôt que refuser après
+
+Une ligne de commande ne dit pas où sa marchandise se trouve. `GET
+/orders/{order}/stock-plan` — nouvelle route, en lecture seule — annonce ce que
+la confirmation sortirait, ligne par ligne. Le dialogue de statut l'interroge
+dès que « Confirmée » est visé et ne demande l'emplacement **que** des lignes
+ambiguës ; il bloque l'envoi tant qu'il en manque un, ou si le stock ne suffit
+pas. Sans cela, la confirmation partirait pour revenir en 422.
+
+Pas de panachage entre emplacements : `StockMovement` porte **une** source, et
+rien au diagramme ne décrit un prélèvement réparti. Un emplacement doit couvrir
+la ligne à lui seul.
+
+### Le contenu d'un colis se lie tout seul quand il n'y a qu'une réponse
+
+Une ligne, un colis, rien d'affecté : la répartition n'existe pas, il n'y a
+qu'un lien possible. Il est écrit à l'ouverture du contenu. Dès qu'il y a
+plusieurs colis ou plusieurs lignes, l'écran redemande — c'est exactement là que
+« tout dans le premier » serait faux. Sans `packages.update`, rien n'est écrit.
+
+---
+
 ## 26. Verdict
 
 **FRONTEND_PHASE_2_READY**

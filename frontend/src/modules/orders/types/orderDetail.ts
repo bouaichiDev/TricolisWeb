@@ -179,3 +179,31 @@ export interface OrderDetail {
   createdAt: string
   updatedAt: string
 }
+
+/**
+ * Ce que la confirmation d'une commande sortirait du stock, ligne par ligne.
+ *
+ * Une ligne de commande ne dit pas où sa marchandise se trouve : quand un
+ * article dort dans plusieurs emplacements, il faut demander lequel vider. Cet
+ * aperçu est consulté **avant** la confirmation, plutôt que de la refuser après.
+ */
+export interface OrderStockPlanLine {
+  orderLineId: string
+  name: string
+  articleCode: string | null
+  quantity: string
+  stockItemId: string | null
+  stockLocationId: string | null
+  /**
+   * `resolved` — rien à demander. `ambiguous` — faire choisir dans `locations`.
+   * `insufficient` — aucun emplacement ne couvre la quantité. `untracked` —
+   * ligne hors catalogue ou article non entreposé. `consumed` — déjà sortie.
+   */
+  state: 'resolved' | 'ambiguous' | 'insufficient' | 'untracked' | 'consumed'
+  locations: {
+    id: string
+    locationCode: string | null
+    zoneCode: string | null
+    availableQuantity: string
+  }[]
+}

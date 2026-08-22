@@ -645,6 +645,14 @@ qu'un lien possible. Il est écrit à l'ouverture du contenu. Dès qu'il y a
 plusieurs colis ou plusieurs lignes, l'écran redemande — c'est exactement là que
 « tout dans le premier » serait faux. Sans `packages.update`, rien n'est écrit.
 
+**Et le champ « Quantité affectée » disparaît quand elle ne peut pas varier.**
+Avec un seul colis, une ligne y va tout entière ou n'y va pas : le champ posait
+une question dont la seule réponse était « tout », et il n'était pas compris.
+Il ne reste alors que la quantité, en clair. Le champ revient dès qu'il y a
+plusieurs colis, où dix chaises peuvent réellement se répartir sur trois
+palettes — et une phrase sous le titre dit laquelle des deux situations
+s'applique.
+
 ---
 
 ## 26. Verdict

@@ -1,21 +1,16 @@
-import { Check, ListChecks, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { usePermission } from '@/shared/hooks/usePermission'
 import { ApiError } from '@/shared/api/errors'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
-import { cn } from '@/shared/utils/cn'
 
 import {
   useAssignPackageLine,
   useDetachPackageLine,
   useUpdatePackageLine,
 } from '../../hooks/useOrderContent'
-import { formatAmount, type LineUsage } from '../../schemas/orderAllocations'
+import type { LineUsage } from '../../schemas/orderAllocations'
+import { PackageLineRow } from './PackageLineRow'
 import type { OrderLine, OrderPackage } from '../../types/orderDetail'
 
 interface PackageLinesEditorProps {
@@ -118,7 +113,14 @@ export function PackageLinesEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-medium">{t('orders.packages.contents')}</p>
+      <div>
+        <p className="text-sm font-medium">{t('orders.packages.contents')}</p>
+        <p className="text-xs text-muted-foreground">
+          {isSolePackage
+            ? t('orders.packages.contentsHint')
+            : t('orders.packages.contentsSplitHint')}
+        </p>
+      </div>
 
       {error !== null ? <p className="text-sm text-destructive">{error}</p> : null}
 
@@ -127,105 +129,31 @@ export function PackageLinesEditor({
       ) : null}
 
       <ul className="flex flex-col gap-2">
-        {lines.map((line) => {
-          const link = attached.get(line.id)
-          const stats = usage.get(line.id)
-          const remaining = stats?.remaining ?? 0
-          const draft = drafts[line.id] ?? (link ? String(link.quantity) : '')
-
-          return (
-            <li key={line.id} className="flex flex-wrap items-end gap-3 rounded-md border px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm">{line.name}</p>
-                {stats ? (
-                  <p
-                    className={cn('text-xs text-muted-foreground', stats.over && 'text-destructive')}
-                  >
-                    {t('orders.packages.ordered')} {formatAmount(stats.ordered)} ·{' '}
-                    {t('orders.packages.assigned')} {formatAmount(stats.assigned)} ·{' '}
-                    {t('orders.packages.remaining')} {formatAmount(stats.remaining)}
-                  </p>
-                ) : null}
-              </div>
-
-              {editable ? (
-                <PermissionGuard permission="packages.update">
-                  <div className="flex items-end gap-2">
-                    <div className="flex flex-col gap-1">
-                      <Label htmlFor={`${pkg.id}-${line.id}`} className="text-xs">
-                        {t('orders.packages.assignedQuantity')}
-                      </Label>
-                      <Input
-                        id={`${pkg.id}-${line.id}`}
-                        type="number"
-                        min="0"
-                        step="0.001"
-                        className="w-28"
-                        value={draft}
-                        aria-invalid={stats?.over === true}
-                        placeholder={t('orders.packages.assign')}
-                        onChange={(event) =>
-                          setDrafts((previous) => ({ ...previous, [line.id]: event.target.value }))
-                        }
-                      />
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={pending || draft.trim() === ''}
-                      onClick={() => save(line.id)}
-                      aria-label={t('common.save')}
-                    >
-                      <Check className="size-4" aria-hidden />
-                    </Button>
-
-                    {link === undefined && remaining > 0 ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={pending}
-                        onClick={() => {
-                          setError(null)
-                          assign.mutate(
-                            { packageId: pkg.id, orderLineId: line.id, quantity: remaining },
-                            { onError },
-                          )
-                        }}
-                        title={t('orders.packages.assignAll')}
-                        aria-label={t('orders.packages.assignAll')}
-                      >
-                        <ListChecks className="size-4" aria-hidden />
-                      </Button>
-                    ) : null}
-
-                    {link ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={pending}
-                        onClick={() => {
-                          setError(null)
-                          detach.mutate({ packageId: pkg.id, lineId: line.id }, { onError })
-                        }}
-                        aria-label={t('orders.packages.detach')}
-                      >
-                        <X className="size-4" aria-hidden />
-                      </Button>
-                    ) : null}
-                  </div>
-                </PermissionGuard>
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  {link ? String(link.quantity) : '—'}
-                </span>
-              )}
-            </li>
-          )
-        })}
+        {lines.map((line) => (
+          <PackageLineRow
+            key={line.id}
+            packageId={pkg.id}
+            line={line}
+            link={attached.get(line.id)}
+            stats={usage.get(line.id)}
+            canSplit={!isSolePackage}
+            editable={editable && canUpdate}
+            pending={pending}
+            draft={drafts[line.id] ?? (attached.get(line.id) ? String(attached.get(line.id)?.quantity) : '')}
+            onDraftChange={(value) =>
+              setDrafts((previous) => ({ ...previous, [line.id]: value }))
+            }
+            onSave={() => save(line.id)}
+            onAssignAll={(quantity) => {
+              setError(null)
+              assign.mutate({ packageId: pkg.id, orderLineId: line.id, quantity }, { onError })
+            }}
+            onDetach={() => {
+              setError(null)
+              detach.mutate({ packageId: pkg.id, lineId: line.id }, { onError })
+            }}
+          />
+        ))}
       </ul>
     </div>
   )

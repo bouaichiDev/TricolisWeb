@@ -1,6 +1,13 @@
 import type { Address } from '@/modules/addresses/types/address'
 import type { Service } from '@/modules/services/types/service'
 
+/** Une ligne dans un colis, et combien de sa quantité y est rangé. */
+export interface PackageLineLink {
+  id: string
+  orderLineId: string
+  quantity: number | string
+}
+
 /** Ligne de commande — `OrderLineResource`. */
 export interface OrderLine {
   id: string
@@ -54,7 +61,7 @@ export interface OrderPackage {
   status: string | null
   packageType?: { id: string; code: string; name: string } | null
   groupingType?: { id: string; code: string; name: string } | null
-  lines?: { id: string; orderLineId: string; quantity: number | string }[]
+  lines?: PackageLineLink[]
 }
 
 /** Nœud de `GET /orders/{order}/packages/tree`. */

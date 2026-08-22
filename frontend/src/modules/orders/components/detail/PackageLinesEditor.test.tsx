@@ -261,3 +261,40 @@ describe('affectation sans ambiguïté', () => {
     expect(called).toBe(false)
   })
 })
+
+/**
+ * « Quantité affectée » ne se demande que si elle peut varier.
+ *
+ * Avec un seul colis, une ligne y va tout entière ou n'y va pas : le champ
+ * posait une question sans autre réponse que « tout », et personne ne
+ * comprenait ce qu'il fallait y mettre.
+ */
+describe('champ de quantité', () => {
+  it('n’est pas montré quand la commande n’a qu’un colis', async () => {
+    const base = makeOrderDetail()
+    const [firstLine] = base.lines ?? []
+    const [firstPackage] = base.packages ?? []
+
+    renderDetail(['orders.view', 'packages.update'], {
+      ...base,
+      lines: [firstLine],
+      packages: [{ ...firstPackage, lines: [{ id: 'l1', orderLineId: LINE_ID, quantity: 10 }] }],
+    })
+
+    await openPackage()
+    await screen.findByText(/Commandé 10/)
+
+    expect(screen.queryByLabelText('Quantité affectée')).not.toBeInTheDocument()
+    expect(screen.getByText(/une ligne y va entièrement, ou pas/)).toBeInTheDocument()
+  })
+
+  /** Plusieurs colis : la répartition est réelle, le champ revient. */
+  it('revient dès que la commande porte plusieurs colis', async () => {
+    renderDetail(['orders.view', 'packages.update'])
+
+    await openPackage()
+
+    expect(await screen.findByLabelText('Quantité affectée')).toBeInTheDocument()
+    expect(screen.getByText(/répartie sur plusieurs colis/)).toBeInTheDocument()
+  })
+})

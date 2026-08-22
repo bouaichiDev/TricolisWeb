@@ -87,8 +87,12 @@ class OrderController extends Controller
      *
      * Permission requise : `orders.view`. Le détail inclut client, agence,
      * dépôt, lignes, colis et services — chaque service avec son adresse et ses
-     * contacts, sans quoi la liste des services n'aurait que des identifiants à
-     * montrer.
+     * contacts, chaque colis avec son contenu, sans quoi la fiche n'aurait que
+     * des identifiants à montrer.
+     *
+     * `packages.packageOrderLines` porte la relation `PackageOrderLine`.
+     * `PackageResource` ne l'expose que `whenLoaded` : sans ce chargement, tout
+     * colis paraît vide et les quantités affectées restent à zéro.
      */
     public function show(Request $request, Order $order): JsonResponse
     {
@@ -96,7 +100,7 @@ class OrderController extends Controller
         $this->authorize('view', $order);
 
         return ApiResponse::ok(new OrderDetailResource(
-            $order->load(['customer', 'agency', 'depot', 'lines', 'packages', 'orderServices.service', 'orderServices.address', 'orderServices.contacts']),
+            $order->load(['customer', 'agency', 'depot', 'lines', 'packages.packageOrderLines', 'orderServices.service', 'orderServices.address', 'orderServices.contacts']),
         ));
     }
 

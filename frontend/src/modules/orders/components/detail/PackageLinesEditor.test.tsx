@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -298,5 +298,77 @@ describe('champ de quantité', () => {
 
     expect(await screen.findByLabelText('Quantité affectée')).toBeInTheDocument()
     expect(screen.getByText(/répartie sur plusieurs colis/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * Après un rattachement, la fiche doit montrer le nouveau contenu.
+ *
+ * Le colis ouvert était gardé en état local, figé au clic : la commande était
+ * bien rechargée, mais le tiroir continuait d'afficher l'instantané d'avant —
+ * « Affecté 0 » alors que la ligne venait d'y être mise.
+ */
+describe('rafraîchissement après affectation', () => {
+  it('montre la quantité affectée sans rouvrir le tiroir', async () => {
+    const base = makeOrderDetail()
+    const [firstLine] = base.lines ?? []
+    const [firstPackage] = base.packages ?? []
+
+    let linked = false
+    // Les autres routes de la fiche, que `renderDetail` pose d'habitude :
+    // `onUnhandledRequest: 'error'` impose de toutes les declarer.
+    server.use(
+      http.get(`${API}/orders/${ORDER_ID}/packages/tree`, () =>
+        HttpResponse.json({ data: PACKAGE_TREE, meta: [] }),
+      ),
+      http.get(`${API}/orders/${ORDER_ID}/history`, () => HttpResponse.json(paginated([]))),
+      http.get(`${API}/orders/${ORDER_ID}/services/:serviceId/packages`, () =>
+        HttpResponse.json({ data: [], meta: [] }),
+      ),
+      http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
+      http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
+    )
+
+    server.use(
+      http.get(`${API}/orders/${ORDER_ID}`, () =>
+        HttpResponse.json({
+          data: {
+            ...base,
+            lines: [firstLine],
+            packages: [
+              {
+                ...firstPackage,
+                lines: linked ? [{ id: 'l1', orderLineId: LINE_ID, quantity: 10 }] : [],
+              },
+            ],
+          },
+          meta: [],
+        }),
+      ),
+      http.post(`${API}/orders/${ORDER_ID}/packages/${PACKAGE_ID}/lines`, () => {
+        linked = true
+        return HttpResponse.json({ data: {}, meta: [] }, { status: 201 })
+      }),
+    )
+
+    renderWithProviders(<OrderDetailPage />, {
+      membership: withPermissions(['orders.view', 'packages.update']),
+      route: `/orders/${ORDER_ID}`,
+      routePath: '/orders/:id',
+    })
+
+    await openPackage()
+    await userEvent.click(await screen.findByRole('button', { name: /Mettre dans ce colis/ }))
+
+    expect(await screen.findByText(/Affecté 10 · Reste à affecter 0/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Mettre dans ce colis/ }),
+    ).not.toBeInTheDocument()
+
+    // Cette quantité-là vient de `pkg.lines`, pas des totaux : elle ne
+    // s'affiche que si le tiroir relit le colis dans la liste rafraîchie.
+    const sheet = within(screen.getByRole('dialog'))
+    expect(sheet.getByText('10')).toBeInTheDocument()
+    expect(sheet.getByRole('button', { name: 'Retirer cette ligne du colis' })).toBeInTheDocument()
   })
 })

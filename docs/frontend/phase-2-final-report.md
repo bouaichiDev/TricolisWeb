@@ -638,6 +638,26 @@ Pas de panachage entre emplacements : `StockMovement` porte **une** source, et
 rien au diagramme ne décrit un prélèvement réparti. Un emplacement doit couvrir
 la ligne à lui seul.
 
+### Le contenu d'un colis ne voyageait pas avec la commande
+
+`GET /orders/{order}` chargeait `'packages'`, mais pas
+`'packages.packageOrderLines'`. Or `PackageResource` n'expose `lines` que
+`whenLoaded('packageOrderLines')` : le tableau était **toujours absent** de la
+réponse.
+
+Conséquence : tout colis paraissait vide. « Commandé 2 · Affecté 0 · Reste à
+affecter 2 » restait affiché après un rattachement réussi, et le bouton ne
+disparaissait jamais — la ligne était pourtant bien en base. Même classe de bug
+que `orderServices.address`, et invisible aux tests parce que les fixtures du
+frontend étaient plus généreuses que l'API réelle.
+
+Un test backend fige désormais la présence de `data.packages.0.lines`.
+
+**Second défaut, au même endroit.** Le colis ouvert dans le tiroir était gardé
+en état local, figé au clic. La commande était bien rechargée après une
+affectation, mais le tiroir continuait d'afficher l'instantané d'avant. Il est
+maintenant **relu dans la liste fraîche** par son identifiant.
+
 ### Où naît le contenu d'un colis, et où il se corrige
 
 Vérification faite dans le code, le lien `PackageOrderLine` a **deux** sources

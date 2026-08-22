@@ -51,12 +51,17 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
   const [editing, setEditing] = useState<OrderPackage | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<OrderPackage | null>(null)
-  const [content, setContent] = useState<OrderPackage | null>(null)
+  const [contentId, setContentId] = useState<string | null>(null)
   const [history, setHistory] = useState<OrderPackage | null>(null)
   const [changingStatus, setChangingStatus] = useState<OrderPackage | null>(null)
   const update = useUpdateOrderPackage(orderId)
 
   const byId = new Map(packages.map((item) => [item.id, item]))
+
+  // Le colis ouvert est **relu** dans la liste fraîche, jamais figé au clic :
+  // affecter une ligne invalide la commande, et un instantané pris à
+  // l'ouverture continuerait d'afficher le contenu d'avant.
+  const content = contentId === null ? null : (byId.get(contentId) ?? null)
   const usage = orderLineUsage(lines, packages)
 
   if (tree.isPending) return <ListSkeleton />
@@ -67,7 +72,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
   const columns = packageColumns(t, {
     byId,
     editable,
-    onContent: setContent,
+    onContent: (pkg: OrderPackage) => setContentId(pkg.id),
     onHistory: setHistory,
     onStatus: setChangingStatus,
     onEdit: setEditing,
@@ -125,7 +130,7 @@ export function OrderPackagesTab({ orderId, packages, lines, editable }: OrderPa
         usage={usage}
         editable={editable}
         packageCount={packages.length}
-        onClose={() => setContent(null)}
+        onClose={() => setContentId(null)}
       />
 
       <ChangeEntityStatusDialog

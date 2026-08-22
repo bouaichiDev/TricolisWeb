@@ -101,3 +101,28 @@ it('exposes the address of every service in the order detail', function (): void
         ->assertJsonPath('data.services.0.address.id', $this->address->id)
         ->assertJsonPath('data.services.0.address.addressLine1', $this->address->address_line_1);
 });
+
+/**
+ * Le contenu d'un colis doit voyager avec la commande.
+ *
+ * `PackageResource` n'expose `lines` que `whenLoaded('packageOrderLines')` :
+ * sans le chargement, tout colis paraissait vide et « Affecte 0 » restait
+ * affiche alors que la ligne y etait bien rattachee.
+ */
+it('exposes the content of every package in the order detail', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 4]],
+            'packages' => [['key' => 'p1', 'barcode' => 'PKG-A', 'lines' => [['lineKey' => '0', 'quantity' => 3]]]],
+            'services' => [$this->orderService],
+        ])->assertCreated()->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/orders/'.$created)
+        ->assertOk()
+        ->assertJsonCount(1, 'data.packages.0.lines')
+        ->assertJsonPath('data.packages.0.lines.0.quantity', '3.000');
+});

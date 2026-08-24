@@ -878,6 +878,7 @@
       "servicesHint": "Un même colis est souvent chargé par un service et livré par un autre.",
       "noService": "Aucun service ne prend ce colis en charge.",
       "attachService": "Ajouter un service",
+      "allServicesLinked": "Tous les services de la commande prennent déjà ce colis. Ajoutez un service depuis l’onglet Services pour l’y relier.",
       "attach": "Lier",
       "detachService": "Retirer ce colis du service",
       "contentsHint": "Ce que ce colis transporte. La commande n’a qu’un colis : une ligne y va entièrement, ou pas.",

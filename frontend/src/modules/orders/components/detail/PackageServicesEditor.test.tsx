@@ -116,6 +116,48 @@ describe('services d’un colis', () => {
     await waitFor(() => expect(deleted).toBe(LINK_ID))
   })
 
+  /**
+   * Un colis peut passer par plusieurs services : le sélecteur les propose tous,
+   * sauf ceux qui le prennent déjà.
+   */
+  it('ne propose que les services qui ne prennent pas encore le colis', async () => {
+    const base = makeOrderDetail()
+    const [service] = base.services ?? []
+
+    renderDetail(['orders.view', 'order_services.update'], {
+      ...base,
+      services: [
+        service,
+        {
+          ...service,
+          id: '01JQZ0000000000000SRVC02',
+          serviceNumber: 'SRV-2',
+          sequence: 2,
+          packages: [],
+        },
+      ],
+    })
+
+    const sheet = await openPackage()
+
+    // SRV-1 prend deja le colis ; SRV-2 reste a lier.
+    await userEvent.click(sheet.getByLabelText('Ajouter un service'))
+
+    const listbox = within(await screen.findByRole('listbox'))
+    expect(listbox.getAllByRole('option')).toHaveLength(1)
+    expect(listbox.getByRole('option', { name: /SRV-2/ })).toBeInTheDocument()
+  })
+
+  /** Tous liés : dire pourquoi, plutôt que retirer le sélecteur en silence. */
+  it('explique quand tous les services prennent déjà le colis', async () => {
+    renderDetail(['orders.view', 'order_services.update'])
+
+    const sheet = await openPackage()
+
+    expect(sheet.queryByLabelText('Ajouter un service')).not.toBeInTheDocument()
+    expect(sheet.getByText(/Tous les services de la commande prennent déjà/)).toBeInTheDocument()
+  })
+
   /** Sans la permission, la liste se lit mais ne se modifie pas. */
   it('masque l’ajout et le retrait sans order_services.update', async () => {
     renderDetail(['orders.view'])

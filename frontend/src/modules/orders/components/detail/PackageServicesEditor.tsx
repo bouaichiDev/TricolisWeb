@@ -35,6 +35,12 @@ interface PackageServicesEditorProps {
  *
  * Le détacher passe en revanche par le service propriétaire du lien, seul
  * chemin que l'API accepte.
+ *
+ * On ne peut y relier que des services **déjà dans la commande** : un
+ * `OrderService` exige une adresse, une séquence, une durée et des montants, et
+ * les demander depuis la fiche d'un colis dupliquerait le formulaire de
+ * l'onglet Services. Quand ils sont tous liés, l'écran le dit plutôt que de
+ * retirer le sélecteur en silence.
  */
 export function PackageServicesEditor({
   orderId,
@@ -120,6 +126,12 @@ export function PackageServicesEditor({
           ))}
         </ul>
       )}
+
+      {canEdit && available.length === 0 ? (
+        // Le selecteur disparaissait sans rien dire : on ne savait pas si lier
+        // un service etait impossible, ou seulement introuvable.
+        <p className="text-xs text-muted-foreground">{t('orders.packages.allServicesLinked')}</p>
+      ) : null}
 
       {canEdit && available.length > 0 ? (
         <div className="flex items-end gap-2">

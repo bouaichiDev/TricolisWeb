@@ -646,7 +646,15 @@ souvent **chargé par un service et livré par un autre**, et c'est cet
 acheminement qu'on vient vérifier en ouvrant un colis.
 
 La fiche d'un colis porte donc maintenant, **avant** son contenu, la liste des
-services qui le prennent en charge, avec l'ajout et le retrait.
+services qui le prennent en charge, avec l'ajout et le retrait. Un colis peut
+être relié à plusieurs services — le sélecteur propose tous ceux de la commande
+qui ne le prennent pas déjà.
+
+On ne peut y relier que des services **déjà dans la commande** : un
+`OrderService` exige une adresse, une séquence, une durée et des montants, et
+les demander depuis la fiche d'un colis dupliquerait le formulaire de l'onglet
+Services. Quand ils sont tous liés, l'écran le dit — il retirait le sélecteur
+en silence, ce qui laissait croire que la liaison était impossible.
 
 Aucune route n'expose les liaisons d'un colis — elles sont imbriquées sous le
 service. La liste est **dérivée** de `services[].packages[]`, que le détail de
@@ -658,6 +666,27 @@ Les hooks existants figent le service à la construction — juste depuis la fic
 d'un service, qui n'en connaît qu'un. Depuis un colis, le service se choisit à
 l'écran : `useAttachPackageToService` et `useDetachPackageFromService` le
 prennent en variable de mutation, sans quoi il faudrait un hook par service.
+
+### La suite de tests s'étranglait toute seule
+
+Deux tests du parcours de commande ont commencé à dépasser les 20 secondes,
+alors qu'ils tiennent en trois isolés. Ce n'était pas leur code : Vitest lance
+un processus par cœur, et sur vingt cœurs, vingt environnements jsdom se
+disputaient mémoire et temps CPU.
+
+| Processus | Durée | Temps CPU des tests | Échecs |
+| --- | --- | --- | --- |
+| 20 (sans plafond) | 91 s | **832 s** | 2 |
+| 8 | 34 s | 116 s | 0 |
+| 6 | 42 s | 109 s | 0 |
+| 4 | 56 s | 99 s | 0 |
+
+`maxWorkers: Math.min(8, availableParallelism())`. Au-delà de huit, le
+parallélisme coûte plus qu'il ne rapporte. Le plafond est relatif, pour ne pas
+imposer huit processus à une machine qui en a deux.
+
+Relever encore `testTimeout` aurait masqué le problème en laissant la suite
+lente et au bord de l'échec.
 
 ### Le contenu d'un colis ne voyageait pas avec la commande
 

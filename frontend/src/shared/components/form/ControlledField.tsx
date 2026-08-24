@@ -9,7 +9,7 @@ interface ControlledFieldProps {
   label: string
   value: string
   onChange: (value: string) => void
-  type?: 'text' | 'number' | 'date' | 'time' | 'email' | 'tel'
+  type?: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'email' | 'tel'
   multiline?: boolean
   required?: boolean
   disabled?: boolean

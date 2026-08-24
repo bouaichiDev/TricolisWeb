@@ -737,6 +737,32 @@
       "status": "Statut"
     }
   },
+  "tracking": {
+    "title": "Suivi d’exécution",
+    "description": "Journal chronologique des événements. Un événement ne se modifie ni ne s’efface : on en ajoute un qui corrige.",
+    "empty": "Aucun événement de suivi",
+    "emptyHint": "Les événements apparaissent au fil de l’exécution de la commande.",
+    "add": "Ajouter un événement",
+    "addHint": "Le type et le statut sont libres : ils suivent le vocabulaire de votre exploitation.",
+    "created": "Événement enregistré.",
+    "openDetail": "Détail",
+    "references": "Références",
+    "freeTextHint": "Texte libre, par exemple « départ entrepôt ».",
+    "coordinatesHint": "Facultatif, en degrés décimaux.",
+    "fields": {
+      "eventType": "Type d’événement",
+      "status": "Statut",
+      "description": "Description",
+      "occurredAt": "Survenu le",
+      "coordinates": "Coordonnées",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "createdBy": "Enregistré par",
+      "orderService": "Service",
+      "tour": "Tournée",
+      "tourStop": "Arrêt"
+    }
+  },
   "orders": {
     "title": "Commandes",
     "subtitle": "Demandes de transport et de manutention",
@@ -955,6 +981,7 @@
       "lines": "Lignes",
       "packages": "Colis",
       "services": "Services",
+      "tracking": "Suivi",
       "documents": "Documents",
       "history": "Historique"
     },

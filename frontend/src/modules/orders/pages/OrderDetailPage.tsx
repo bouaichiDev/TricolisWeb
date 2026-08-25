@@ -17,6 +17,7 @@ import { OrderHistoryTimeline } from '../components/detail/OrderHistoryTimeline'
 import { OrderKpiStrip } from '../components/detail/OrderKpiStrip'
 import { OrderLinesTab } from '../components/detail/OrderLinesTab'
 import { OrderClaimsTab } from '@/modules/claims/components/OrderClaimsTab'
+import { OrderCommunicationsTab } from '@/modules/communications/components/OrderCommunicationsTab'
 import { OrderPodTab } from '@/modules/pod/components/OrderPodTab'
 import { OrderTrackingTab } from '@/modules/tracking/components/OrderTrackingTab'
 
@@ -62,6 +63,7 @@ export function OrderDetailPage() {
     { value: 'tracking', count: null },
     { value: 'pod', count: null },
     { value: 'claims', count: null },
+    { value: 'communications', count: null },
     { value: 'documents', count: null },
     { value: 'history', count: null },
   ]
@@ -150,6 +152,10 @@ export function OrderDetailPage() {
             services={order.services ?? []}
             active={tab === 'claims'}
           />
+        </TabsContent>
+
+        <TabsContent value="communications" className="mt-4">
+          <OrderCommunicationsTab orderId={order.id} active={tab === 'communications'} />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-4">

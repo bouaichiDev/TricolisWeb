@@ -43,6 +43,9 @@ class StoreCommunicationTemplateRequest extends FormRequest
                 fn (): bool => $this->input('channel') === CommunicationChannel::EMAIL->value,
             )],
             'bodyTemplate' => ['required', 'string'],
+            // Un e-mail se redige souvent en HTML ; un SMS ne peut etre que
+            // du texte. Le serveur doit savoir s'il echappe le corps.
+            'bodyFormat' => ['sometimes', 'string', Rule::in(['text', 'html'])],
             'language' => ['required', 'string', 'max:10'],
             'availableVariables' => ['sometimes', 'nullable', 'array'],
             'isDefault' => ['sometimes', 'boolean'],

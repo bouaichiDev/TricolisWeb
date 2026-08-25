@@ -34,6 +34,7 @@ class CommunicationTemplateDetailResource extends JsonResource
             'templateType' => $this->template_type?->value,
             'subjectTemplate' => $this->subject_template,
             'bodyTemplate' => $this->body_template,
+            'bodyFormat' => $this->body_format,
             'language' => $this->language,
             'availableVariables' => $this->available_variables,
             'isDefault' => $this->is_default,

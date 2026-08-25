@@ -218,3 +218,49 @@ describe('template crud, scope and deletion', function (): void {
         }
     });
 });
+
+/**
+ * Un e-mail se redige souvent en HTML, un SMS jamais.
+ *
+ * Sans `bodyFormat`, le serveur ne savait pas s'il devait echapper le corps :
+ * le destinataire recevait des balises en clair ou un texte sans mise en forme,
+ * selon le hasard de l'implementation d'envoi.
+ */
+it('stores and returns the body format of a template', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/communication-templates', [
+            'code' => 'HTML_TEMPLATE', 'name' => 'Modèle riche',
+            'channel' => 'email', 'templateType' => 'custom', 'language' => 'fr',
+            'subjectTemplate' => 'Sujet', 'bodyTemplate' => '<p>Bonjour</p>',
+            'bodyFormat' => 'html',
+        ]);
+
+    $created->assertCreated()->assertJsonPath('data.bodyFormat', 'html');
+    $this->assertDatabaseHas('communication_templates', [
+        'id' => $created->json('data.id'), 'body_format' => 'html',
+    ]);
+});
+
+/** Sans precision, le corps reste du texte : une migration ne change rien. */
+it('defaults the body format to text', function (): void {
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/communication-templates', [
+            'code' => 'TEXT_TEMPLATE', 'name' => 'Modèle simple',
+            'channel' => 'sms', 'templateType' => 'custom', 'language' => 'fr',
+            'bodyTemplate' => 'Passage demain.',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.bodyFormat', 'text');
+});
+
+it('refuses an unknown body format', function (): void {
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/communication-templates', [
+            'code' => 'BAD_FORMAT', 'name' => 'Format inconnu',
+            'channel' => 'email', 'templateType' => 'custom', 'language' => 'fr',
+            'subjectTemplate' => 'Sujet', 'bodyTemplate' => 'Corps',
+            'bodyFormat' => 'markdown',
+        ])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('bodyFormat');
+});

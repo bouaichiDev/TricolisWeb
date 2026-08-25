@@ -809,8 +809,10 @@
       "bodyTemplate": "Message",
       "availableVariables": "Variables disponibles",
       "isActive": "Actif",
-      "isDefault": "Par défaut"
-    }
+      "isDefault": "Par défaut",
+      "bodyFormat": "Format du message"
+    },
+    "bodyFormatHint": "HTML pour une mise en forme, texte brut sinon. Le SMS ne connaît que le texte."
   },
   "communications": {
     "title": "Communications",
@@ -1318,5 +1320,9 @@
       "inactive": "Statut inactif : la transition existe mais n’est pas proposée.",
       "noSibling": "Aucun autre statut pour cette entité."
     }
+  },
+  "bodyFormats": {
+    "text": "Texte brut",
+    "html": "HTML"
   }
 }

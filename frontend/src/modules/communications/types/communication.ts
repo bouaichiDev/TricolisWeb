@@ -51,6 +51,10 @@ export const RECIPIENT_ROLES = [
   'custom',
 ] as const
 
+/** Format du corps : `html` pour un e-mail mis en forme, `text` sinon. */
+export const BODY_FORMATS = ['text', 'html'] as const
+
+export type BodyFormat = (typeof BODY_FORMATS)[number]
 export type CommunicationChannel = (typeof COMMUNICATION_CHANNELS)[number]
 export type CommunicationTemplateType = (typeof COMMUNICATION_TEMPLATE_TYPES)[number]
 export type CommunicationStatus = (typeof COMMUNICATION_STATUSES)[number]
@@ -85,6 +89,7 @@ export interface CommunicationTemplate {
   templateType: CommunicationTemplateType
   subjectTemplate: string | null
   bodyTemplate: string
+  bodyFormat: BodyFormat
   language: string
   availableVariables: string[] | null
   isDefault: boolean

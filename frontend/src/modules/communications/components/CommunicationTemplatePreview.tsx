@@ -57,13 +57,30 @@ export function CommunicationTemplatePreview({ values }: { values: TemplateFormV
           </p>
         ) : null}
 
-        <p className="whitespace-pre-wrap text-sm">
-          {values.bodyTemplate === '' ? (
-            <span className="text-muted-foreground">{t('communicationTemplates.emptyBody')}</span>
-          ) : (
-            values.bodyTemplate
-          )}
-        </p>
+        {values.bodyTemplate === '' ? (
+          <p className="text-sm text-muted-foreground">
+            {t('communicationTemplates.emptyBody')}
+          </p>
+        ) : values.bodyFormat === 'html' ? (
+          /**
+           * Un modèle HTML se lit mis en forme, sinon il faut l'enregistrer et
+           * l'envoyer pour savoir ce qu'il donne.
+           *
+           * Le rendu passe par une **iframe cloisonnée** et non par
+           * `dangerouslySetInnerHTML` : un `<script>` glissé dans un modèle
+           * s'exécuterait sinon chez tous ceux qui l'ouvrent, avec leur session.
+           * `sandbox` vide coupe scripts, formulaires et accès au parent ;
+           * `srcDoc` évite toute requête réseau.
+           */
+          <iframe
+            title={t('communicationTemplates.preview')}
+            sandbox=""
+            srcDoc={values.bodyTemplate}
+            className="h-48 w-full rounded border bg-background"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm">{values.bodyTemplate}</p>
+        )}
       </div>
     </section>
   )

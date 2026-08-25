@@ -23,6 +23,7 @@ final readonly class UpdateCommunicationTemplateData
         'template_type' => 'templateType',
         'subject_template' => 'subjectTemplate',
         'body_template' => 'bodyTemplate',
+        'body_format' => 'bodyFormat',
         'language' => 'language',
         'available_variables' => 'availableVariables',
         'is_default' => 'isDefault',

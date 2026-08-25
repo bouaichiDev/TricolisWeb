@@ -31,6 +31,9 @@ class UpdateCommunicationTemplateRequest extends FormRequest
             'templateType' => ['sometimes', Rule::in(CommunicationTemplateType::values())],
             'subjectTemplate' => ['sometimes', 'nullable', 'string', 'max:65535'],
             'bodyTemplate' => ['sometimes', 'string'],
+            // Un e-mail se redige souvent en HTML ; un SMS ne peut etre que
+            // du texte. Le serveur doit savoir s'il echappe le corps.
+            'bodyFormat' => ['sometimes', 'string', Rule::in(['text', 'html'])],
             'language' => ['sometimes', 'string', 'max:10'],
             'availableVariables' => ['sometimes', 'nullable', 'array'],
             'isDefault' => ['sometimes', 'boolean'],

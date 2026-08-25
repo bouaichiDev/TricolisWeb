@@ -10,6 +10,7 @@ export interface TemplateFormValues {
   language: string
   subjectTemplate: string
   bodyTemplate: string
+  bodyFormat: string
   availableVariables: string[]
   isActive: boolean
   isDefault: boolean
@@ -23,6 +24,7 @@ export const TEMPLATE_FORM_DEFAULTS: TemplateFormValues = {
   language: 'fr',
   subjectTemplate: '',
   bodyTemplate: '',
+  bodyFormat: 'text',
   availableVariables: [],
   isActive: true,
   isDefault: false,
@@ -56,6 +58,7 @@ export function toTemplatePayload(values: TemplateFormValues): CommunicationTemp
     // enverrait un sujet que le message n'utilisera pas.
     subjectTemplate: hasSubject(values.channel) ? values.subjectTemplate.trim() : null,
     bodyTemplate: values.bodyTemplate,
+    bodyFormat: values.bodyFormat,
     availableVariables: values.availableVariables,
     isActive: values.isActive,
     isDefault: values.isDefault,
@@ -71,6 +74,7 @@ export function toTemplateFormValues(template: CommunicationTemplate): TemplateF
     language: template.language,
     subjectTemplate: template.subjectTemplate ?? '',
     bodyTemplate: template.bodyTemplate,
+    bodyFormat: template.bodyFormat ?? 'text',
     availableVariables: template.availableVariables ?? [],
     isActive: template.isActive,
     isDefault: template.isDefault,

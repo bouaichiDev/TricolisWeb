@@ -7,6 +7,7 @@ import { Label } from '@/shared/components/ui/label'
 
 import { TemplateVariablePicker } from './TemplateVariablePicker'
 import {
+  BODY_FORMATS,
   COMMUNICATION_CHANNELS,
   COMMUNICATION_TEMPLATE_TYPES,
   hasSubject,
@@ -102,6 +103,20 @@ export function CommunicationTemplateForm({
           value={values.subjectTemplate}
           onChange={(subjectTemplate) => onChange({ subjectTemplate })}
           required
+        />
+      ) : null}
+
+      {/* Le SMS ne connait que le texte : proposer HTML y serait un piege. */}
+      {subjectRequired ? (
+        <AsyncSelect
+          label={t('communicationTemplates.fields.bodyFormat')}
+          value={values.bodyFormat}
+          onChange={(bodyFormat) => onChange({ bodyFormat })}
+          options={BODY_FORMATS.map((format) => ({
+            value: format,
+            label: t(`bodyFormats.${format}`),
+          }))}
+          description={t('communicationTemplates.bodyFormatHint')}
         />
       ) : null}
 

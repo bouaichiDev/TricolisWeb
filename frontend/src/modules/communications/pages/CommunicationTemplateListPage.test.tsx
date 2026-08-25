@@ -22,6 +22,7 @@ const template = (overrides: Record<string, unknown> = {}) => ({
   subjectTemplate: 'Absence lors de notre passage - {{orderNumber}}',
   bodyTemplate: 'Bonjour, nous sommes passés le {{deliveryDate}}.',
   language: 'fr',
+  bodyFormat: 'text',
   availableVariables: ['orderNumber'],
   isDefault: false,
   isActive: true,
@@ -148,5 +149,68 @@ describe('modèles de communication', () => {
     expect(screen.queryByRole('button', { name: /Nouveau modèle/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Modifier' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Un e-mail se rédige souvent en HTML, un SMS jamais.
+ *
+ * Sans `bodyFormat`, le serveur ne savait pas s'il devait échapper le corps.
+ */
+describe('format du message', () => {
+  it('propose le format sur un e-mail, jamais sur un SMS', async () => {
+    render(['communication_templates.view', 'communication_templates.create'])
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByLabelText(/^Format du message/)).toBeInTheDocument()
+
+    await userEvent.click(dialog.getByLabelText(/^Canal/))
+    await userEvent.click(await screen.findByRole('option', { name: 'SMS' }))
+
+    expect(dialog.queryByLabelText(/^Format du message/)).not.toBeInTheDocument()
+  })
+
+  it('envoie le format retenu', async () => {
+    let body: unknown = null
+    render(['communication_templates.view', 'communication_templates.create'])
+
+    server.use(
+      http.post(`${API}/communication-templates`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: template(), meta: [] }, { status: 201 })
+      }),
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByLabelText(/^Format du message/))
+    await userEvent.click(await screen.findByRole('option', { name: 'HTML' }))
+
+    await userEvent.type(dialog.getByLabelText(/^Code/), 'RICHE')
+    await userEvent.type(dialog.getByLabelText(/^Nom/), 'Modèle riche')
+    await userEvent.type(dialog.getByLabelText(/^Sujet/), 'Sujet')
+    await userEvent.type(dialog.getByLabelText(/^Message/), '<p>Bonjour</p>')
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({ bodyFormat: 'html' })
+  })
+
+  /**
+   * Le HTML se rend dans une iframe cloisonnée : un `<script>` glissé dans un
+   * modèle s'exécuterait sinon chez tous ceux qui l'ouvrent.
+   */
+  it('rend l’aperçu HTML dans une iframe sans script', async () => {
+    render(['communication_templates.view', 'communication_templates.update'],
+      [template({ bodyFormat: 'html', bodyTemplate: '<p>Bonjour</p>' })])
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const frame = await screen.findByTitle('Aperçu')
+    expect(frame).toHaveAttribute('sandbox', '')
+    expect(frame).toHaveAttribute('srcdoc', '<p>Bonjour</p>')
   })
 })

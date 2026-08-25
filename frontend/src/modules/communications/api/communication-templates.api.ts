@@ -11,6 +11,7 @@ export interface CommunicationTemplatePayload {
   templateType: string
   subjectTemplate?: string | null
   bodyTemplate: string
+  bodyFormat?: string
   language: string
   availableVariables?: string[] | null
   isDefault?: boolean

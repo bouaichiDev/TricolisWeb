@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'template_type',
     'subject_template',
     'body_template',
+    'body_format',
     'language',
     'available_variables',
     'is_default',

@@ -17,6 +17,7 @@ import {
 import { Label } from '@/shared/components/ui/label'
 import { Switch } from '@/shared/components/ui/switch'
 
+import { ApiCallFields } from './ApiCallFields'
 import { useCreateApiConfiguration, useUpdateApiConfiguration } from '../hooks/useApiConfigurations'
 import { AUTH_TYPES, type ApiConfiguration } from '../types/apiConfiguration'
 
@@ -51,6 +52,11 @@ export function ApiConfigurationDialog({
   const [baseUrl, setBaseUrl] = useState(configuration?.baseUrl ?? 'https://')
   const [authType, setAuthType] = useState(configuration?.authType ?? 'none')
   const [credentials, setCredentials] = useState('')
+  const [call, setCall] = useState({
+    path: configuration?.settings?.path ?? '',
+    queryKey: configuration?.settings?.queryKey ?? '',
+    queryTemplate: configuration?.settings?.queryTemplate ?? '',
+  })
   const [isActive, setIsActive] = useState(configuration?.isActive ?? true)
   const [error, setError] = useState<string | null>(null)
 
@@ -73,6 +79,13 @@ export function ApiConfigurationDialog({
         baseUrl: baseUrl.trim(),
         authType,
         isActive,
+        // Un champ vide part a null : garder une chaine vide ferait construire
+        // une adresse tronquee au lieu de renoncer a l'appel.
+        settings: {
+          path: call.path.trim() === '' ? null : call.path.trim(),
+          queryKey: call.queryKey.trim() === '' ? null : call.queryKey.trim(),
+          queryTemplate: call.queryTemplate.trim() === '' ? null : call.queryTemplate.trim(),
+        },
         ...(secret === undefined ? {} : { credentials: secret }),
       }
 
@@ -146,6 +159,11 @@ export function ApiConfigurationDialog({
               description={t('apiConfigurations.secretHint')}
             />
           )}
+
+          <ApiCallFields
+            value={call}
+            onChange={(patch) => setCall((current) => ({ ...current, ...patch }))}
+          />
 
           <span className="flex items-center gap-2">
             <Switch id="api-active" checked={isActive} onCheckedChange={setIsActive} />

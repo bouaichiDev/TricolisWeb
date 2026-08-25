@@ -34,6 +34,13 @@ beforeEach(function (): void {
             'auth_type' => 'api_key',
             'timeout_seconds' => 5,
             'is_active' => true,
+            // L'appel se decrit ici : le canal de l'organisme est fixe, la
+            // reference de la course varie. Les confondre ne remonterait rien.
+            'settings' => [
+                'path' => '/gw/channels/1234371/messages',
+                'queryKey' => 'data',
+                'queryTemplate' => '{"filter":"Planid={reference}","count":{limit}}',
+            ],
         ]);
         $configuration->setCredentials('jeton-tres-secret');
         $configuration->save();
@@ -105,7 +112,14 @@ it('sends the secret to the provider and never to the client', function (): void
     // Le secret n'apparait nulle part dans la reponse.
     expect($response->getContent())->not->toContain('jeton-tres-secret');
 
-    Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'FlespiToken jeton-tres-secret'));
+    Http::assertSent(function ($request) {
+        // Le canal vient de la configuration, la reference de la tournee : ce
+        // sont deux valeurs distinctes, et les melanger n'interrogeait rien.
+        expect($request->url())->toContain('/gw/channels/1234371/messages')
+            ->and(urldecode($request->url()))->toContain('Planid=PLAN-42');
+
+        return $request->hasHeader('Authorization', 'FlespiToken jeton-tres-secret');
+    });
 
     expect($configuration->fresh()->last_used_at)->not->toBeNull();
 });
@@ -116,4 +130,40 @@ it('degrades quietly when the provider fails', function (): void {
     Http::fake(['flespi.io/*' => Http::response([], 500)]);
 
     ($this->positions)()->assertOk()->assertJsonPath('data.points', []);
+});
+
+/** Sans chemin configure, aucun appel n'est tente : deviner une adresse
+    reviendrait a interroger n'importe quoi. */
+it('calls nothing when the configuration describes no path', function (): void {
+    $configuration = new OrganizationApiConfiguration([
+        'organization_id' => $this->organization->id,
+        'code' => 'driver_position',
+        'name' => 'Sans chemin',
+        'base_url' => 'https://flespi.io',
+        'auth_type' => 'api_key',
+        'timeout_seconds' => 5,
+        'is_active' => true,
+    ]);
+    $configuration->setCredentials('jeton');
+    $configuration->save();
+
+    Http::fake();
+
+    $tour = Tour::factory()->create([
+        'organization_id' => $this->organization->id,
+        'telematics_reference' => 'PLAN-7',
+    ]);
+    $stop = TourStop::factory()->create(['tour_id' => $tour->id]);
+    $service = OrderService::factory()->create(['order_id' => $this->order->id]);
+    DB::table('tour_stop_services')->insert([
+        'id' => (string) Str::ulid(),
+        'tour_stop_id' => $stop->id,
+        'order_service_id' => $service->id,
+        'sequence_within_stop' => 1,
+        'status' => 'pending',
+    ]);
+
+    ($this->positions)()->assertOk()->assertJsonPath('data.points', []);
+
+    Http::assertNothingSent();
 });

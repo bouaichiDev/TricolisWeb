@@ -35,6 +35,7 @@ class OrganizationApiConfigurationController extends Controller
         'base_url' => 'baseUrl',
         'auth_type' => 'authType',
         'headers' => 'headers',
+        'settings' => 'settings',
         'timeout_seconds' => 'timeoutSeconds',
         'is_active' => 'isActive',
     ];

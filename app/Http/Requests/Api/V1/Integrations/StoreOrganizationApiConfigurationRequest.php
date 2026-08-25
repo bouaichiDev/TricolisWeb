@@ -37,6 +37,12 @@ class StoreOrganizationApiConfigurationRequest extends FormRequest
             // Le secret n'est jamais relu : il ne peut qu'etre pose ou remplace.
             'credentials' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'headers' => ['sometimes', 'nullable', 'array'],
+            // L'appel se decrit ici : chemin et gabarit de requete, avec les
+            // jetons {reference} et {limit} que le serveur remplace.
+            'settings' => ['sometimes', 'nullable', 'array'],
+            'settings.path' => ['sometimes', 'nullable', 'string', 'max:512'],
+            'settings.queryKey' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'settings.queryTemplate' => ['sometimes', 'nullable', 'string', 'max:1024'],
             'timeoutSeconds' => ['sometimes', 'integer', 'min:1', 'max:120'],
             'isActive' => ['sometimes', 'boolean'],
         ];

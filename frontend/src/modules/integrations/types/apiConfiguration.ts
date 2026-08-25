@@ -18,11 +18,25 @@ export interface ApiConfiguration {
   authType: AuthType
   hasCredentials: boolean
   headers: Record<string, string> | null
+  settings: ApiCallSettings | null
   timeoutSeconds: number
   isActive: boolean
   lastUsedAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * La forme de l'appel, décrite en base plutôt qu'en code.
+ *
+ * Deux jetons sont remplacés par le serveur : `{reference}` — la référence de
+ * la course chez le fournisseur — et `{limit}`. Le canal de l'organisme, lui,
+ * est fixe et fait partie du chemin.
+ */
+export interface ApiCallSettings {
+  path?: string | null
+  queryKey?: string | null
+  queryTemplate?: string | null
 }
 
 export const AUTH_TYPES = ['none', 'bearer', 'api_key', 'basic'] as const
@@ -47,6 +61,7 @@ export interface ApiConfigurationPayload {
   baseUrl: string
   authType: string
   credentials?: string | null
+  settings?: ApiCallSettings | null
   timeoutSeconds?: number
   isActive?: boolean
 }

@@ -1370,8 +1370,15 @@
       "authType": "Authentification",
       "credentials": "Secret",
       "isActive": "Active",
-      "lastUsedAt": "Dernier appel"
-    }
+      "lastUsedAt": "Dernier appel",
+      "path": "Chemin",
+      "queryKey": "Paramètre de requête",
+      "queryTemplate": "Gabarit du filtre"
+    },
+    "callSection": "L’appel",
+    "callHint": "Le chemin et les paramètres de la requête. {reference} est remplacé par la référence de la tournée, {limit} par le nombre de points voulus.",
+    "pathPlaceholder": "/gw/channels/1234371/messages",
+    "queryTemplatePlaceholder": "{\"filter\":\"Planid={reference}\",\"count\":{limit}}"
   },
   "journey": {
     "title": "Parcours client",

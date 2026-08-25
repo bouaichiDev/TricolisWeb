@@ -34,6 +34,8 @@ class OrganizationApiConfigurationResource extends JsonResource
             'authType' => $this->auth_type,
             'hasCredentials' => $this->hasCredentials(),
             'headers' => $this->headers,
+            // Aucun secret : seulement la forme de l'appel.
+            'settings' => $this->settings,
             'timeoutSeconds' => $this->timeout_seconds,
             'isActive' => $this->is_active,
             'lastUsedAt' => $this->last_used_at?->toIso8601String(),

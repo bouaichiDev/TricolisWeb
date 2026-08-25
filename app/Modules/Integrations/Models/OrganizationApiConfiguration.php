@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Crypt;
     'base_url',
     'auth_type',
     'headers',
+    'settings',
     'timeout_seconds',
     'is_active',
 ])]
@@ -53,6 +54,7 @@ class OrganizationApiConfiguration extends Model
     {
         return [
             'headers' => 'array',
+            'settings' => 'array',
             'timeout_seconds' => 'integer',
             'is_active' => 'boolean',
             'last_used_at' => 'datetime',

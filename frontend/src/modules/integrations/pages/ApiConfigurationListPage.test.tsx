@@ -21,6 +21,7 @@ const configuration = (overrides: Record<string, unknown> = {}) => ({
   hasCredentials: true,
   headers: null,
   timeoutSeconds: 10,
+  settings: null,
   isActive: true,
   lastUsedAt: null,
   createdAt: '2026-08-01T09:00:00+00:00',
@@ -112,6 +113,64 @@ describe('API externes', () => {
 
     const dialog = within(await screen.findByRole('dialog'))
     expect(dialog.queryByLabelText(/^Secret/)).not.toBeInTheDocument()
+  })
+
+  /**
+   * Le chemin porte le canal de l'organisme, fixe ; le gabarit porte la
+   * reference de la course, variable. Les confondre n'interroge rien : le test
+   * verifie que les deux partent bien distincts.
+   */
+  it('enregistre la description de l’appel', async () => {
+    let body: unknown = null
+    render(['api_configurations.view', 'api_configurations.update'])
+
+    server.use(
+      http.patch(`${API}/api-configurations/${CONFIG_ID}`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: configuration(), meta: [] })
+      }),
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.type(dialog.getByLabelText(/^Chemin/), '/gw/channels/1234371/messages')
+    await userEvent.type(dialog.getByLabelText(/^Paramètre de requête/), 'data')
+    // `{{` tape une accolade litterale : userEvent lirait sinon `{reference}`
+    // comme une touche a presser.
+    await userEvent.type(
+      dialog.getByLabelText(/^Gabarit du filtre/),
+      '{{"filter":"Planid={{reference}"}',
+    )
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect((body as { settings: unknown }).settings).toEqual({
+      path: '/gw/channels/1234371/messages',
+      queryKey: 'data',
+      queryTemplate: '{"filter":"Planid={reference}"}',
+    })
+  })
+
+  /** Champs laisses vides : rien a construire, donc `null` plutot qu'une adresse tronquee. */
+  it('envoie null quand l’appel n’est pas décrit', async () => {
+    let body: unknown = null
+    render(['api_configurations.view', 'api_configurations.update'])
+
+    server.use(
+      http.patch(`${API}/api-configurations/${CONFIG_ID}`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: configuration(), meta: [] })
+      }),
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+    await userEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Enregistrer' }),
+    )
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect((body as { settings: unknown }).settings).toEqual({ path: null, queryKey: null, queryTemplate: null })
   })
 
   it('masque création, modification et suppression sans les permissions', async () => {

@@ -43,7 +43,29 @@ const event = (overrides: Record<string, unknown> = {}) => ({
  * Le journal est en lecture, sauf l'ajout : `tracking-events` n'expose ni
  * `update` ni `destroy`, et le module n'a que `view` et `create`.
  */
-function renderDetail(permissions: string[], events: unknown[] = [event()]) {
+const definition = (overrides: Record<string, unknown> = {}) => ({
+  id: '01JQZ0000000000000TDEF01',
+  organizationId: '01JQZ0000000000000000ORG1',
+  sourceType: 'order_service',
+  statusCode: 'in_progress',
+  code: 'depart_entrepot',
+  title: 'Votre commande est partie',
+  description: null,
+  icon: null,
+  position: 20,
+  apiConfigurationId: null,
+  isLive: false,
+  active: true,
+  createdAt: '2026-08-01T09:00:00+00:00',
+  updatedAt: '2026-08-01T09:00:00+00:00',
+  ...overrides,
+})
+
+function renderDetail(
+  permissions: string[],
+  events: unknown[] = [event()],
+  definitions: unknown[] = [],
+) {
   const calls: URL[] = []
 
   server.use(
@@ -59,6 +81,7 @@ function renderDetail(permissions: string[], events: unknown[] = [event()]) {
     ),
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/tracking-event-definitions`, () => HttpResponse.json(paginated(definitions))),
     http.get(`${API}/orders/${ORDER_ID}/tracking-events`, ({ request }) => {
       calls.push(new URL(request.url))
 
@@ -79,18 +102,19 @@ const openTracking = () =>
   screen.findByRole('tab', { name: /^Suivi/ }).then((tab) => userEvent.click(tab))
 
 describe('suivi d’une commande', () => {
-  it('montre le journal, du plus récent au plus ancien', async () => {
+  /** Sans parcours configure, l'ecran retombe sur le journal brut. */
+  it('montre le journal brut quand aucun parcours n’est configuré', async () => {
     const calls = renderDetail(['orders.view', 'tracking_events.view'])
 
     await openTracking()
 
     expect(await screen.findByText('depart_entrepot')).toBeInTheDocument()
+    expect(screen.getByText('Journal des événements')).toBeInTheDocument()
 
-    // Le tri est demande au serveur : trier une page localement donnerait un
-    // ordre faux des la seconde page.
+    // Un parcours se lit dans l'ordre ou il se deroule : ascendant.
     await waitFor(() => expect(calls.length).toBeGreaterThan(0))
     expect(calls[0].searchParams.get('sort')).toBe('occurred_at')
-    expect(calls[0].searchParams.get('direction')).toBe('desc')
+    expect(calls[0].searchParams.get('direction')).toBe('asc')
   })
 
   /** §51 : l'onglet ne charge rien tant qu'il n'est pas ouvert. */
@@ -167,5 +191,64 @@ describe('suivi d’une commande', () => {
     expect(
       screen.queryByRole('button', { name: /Ajouter un événement/ }),
     ).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Le parcours plutôt que le journal.
+ *
+ * Toutes les étapes configurées sont montrées dès le début, franchies ou non :
+ * une liste qui s'allonge dit où on en est sans jamais dire ce qui reste.
+ */
+describe('parcours d’une commande', () => {
+  it('montre les étapes à venir, pas seulement celles franchies', async () => {
+    renderDetail(
+      ['orders.view', 'tracking_events.view'],
+      [event({ eventType: 'depart_entrepot' })],
+      [
+        definition({ code: 'depart_entrepot', title: 'Votre commande est partie', position: 10 }),
+        definition({
+          id: '01JQZ0000000000000TDEF02',
+          code: 'livree',
+          title: 'Votre commande est livrée',
+          position: 30,
+        }),
+      ],
+    )
+
+    await openTracking()
+
+    // Franchie : elle porte sa date. A venir : elle est annoncee quand meme.
+    expect(await screen.findByText('Votre commande est partie')).toBeInTheDocument()
+    expect(screen.getByText('Votre commande est livrée')).toBeInTheDocument()
+    expect(screen.getByText('En attente')).toBeInTheDocument()
+  })
+
+  /** L'étape renseignée par une API se signale, sans dire d'où vient la position. */
+  it('signale une étape suivie en direct', async () => {
+    renderDetail(
+      ['orders.view', 'tracking_events.view'],
+      [],
+      [definition({ code: 'en_route', title: 'En route', isLive: true })],
+    )
+
+    await openTracking()
+
+    expect(await screen.findByText('En route')).toBeInTheDocument()
+    expect(screen.getByText('Suivi en direct')).toBeInTheDocument()
+  })
+
+  /** Un événement sans étape ne disparaît pas : il est survenu. */
+  it('montre à part un événement hors parcours', async () => {
+    renderDetail(
+      ['orders.view', 'tracking_events.view'],
+      [event({ eventType: 'incident_route' })],
+      [definition({ code: 'livree', title: 'Livrée' })],
+    )
+
+    await openTracking()
+
+    expect(await screen.findByText('Autres événements')).toBeInTheDocument()
+    expect(screen.getByText('incident_route')).toBeInTheDocument()
   })
 })

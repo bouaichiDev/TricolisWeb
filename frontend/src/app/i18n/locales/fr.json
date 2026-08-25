@@ -953,7 +953,14 @@
       "orderService": "Service",
       "tour": "Tournée",
       "tourStop": "Arrêt"
-    }
+    },
+    "journeyHint": "Le parcours de la commande. Les étapes apparaissent quand le statut correspondant est posé.",
+    "noJourney": "Aucun parcours n’est configuré et aucun événement n’a été enregistré.",
+    "pending": "En attente",
+    "upcoming": "À venir",
+    "liveStep": "Suivi en direct",
+    "otherEvents": "Autres événements",
+    "rawJournal": "Journal des événements"
   },
   "orders": {
     "title": "Commandes",

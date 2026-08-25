@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { trackingApi } from '../api/tracking.api'
+import { trackingDefinitionsApi } from '../api/trackingDefinitions.api'
 import type { TrackingEventFilters, TrackingEventPayload } from '../types/trackingEvent'
 
 export const trackingKeys = {
@@ -49,5 +50,20 @@ export function useCreateTrackingEvent(orderId: string) {
       void queryClient.invalidateQueries({ queryKey: trackingKeys.byOrder(orderId) })
       toast.success(t('tracking.created'))
     },
+  })
+}
+
+/**
+ * Étapes du parcours configurées par l'organisation.
+ *
+ * Actives seulement, triées par `position` : c'est l'ordre du parcours, pas
+ * celui de la création.
+ */
+export function useTrackingDefinitions(enabled = true) {
+  return useQuery({
+    queryKey: [...trackingKeys.all, 'definitions'] as const,
+    queryFn: () => trackingDefinitionsApi.list({ page: 1, perPage: 100 }),
+    enabled,
+    staleTime: 5 * 60 * 1000,
   })
 }

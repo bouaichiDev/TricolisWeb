@@ -3,55 +3,65 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
-import { DataTablePagination } from '@/shared/components/data/DataTablePagination'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { Button } from '@/shared/components/ui/button'
 
+import { JourneyTimeline } from './JourneyTimeline'
 import { NewTrackingEventDialog } from './NewTrackingEventDialog'
 import { TrackingEventCard } from './TrackingEventCard'
 import { TrackingEventDetailDrawer } from './TrackingEventDetailDrawer'
-import { useOrderTracking } from '../hooks/useTracking'
+import { useOrderTracking, useTrackingDefinitions } from '../hooks/useTracking'
+import { buildJourney, looseEvents } from '../schemas/journey'
 import type { TrackingEvent } from '../types/trackingEvent'
 
 interface OrderTrackingTabProps {
   orderId: string
-  /** Faux tant que l'onglet n'a pas été ouvert : la requête attend. */
+  /** Faux tant que l'onglet n'a pas été ouvert : les requêtes attendent. */
   active: boolean
 }
 
 /**
- * Suivi d'exécution d'une commande, en journal chronologique.
+ * Suivi d'une commande, en parcours plutôt qu'en journal.
  *
- * Le tri est **demandé au serveur** — `occurred_at` décroissant, le plus récent
- * en tête. Trier une page de vingt-cinq événements dans le navigateur donnerait
- * un ordre faux dès la seconde page.
+ * Le chauffeur pose un statut, l'étape apparaît : les événements ne se saisissent
+ * pas, ils sont publiés par les changements de statut que l'organisation a
+ * décrits dans son parcours.
  *
- * Rien ne se modifie ni ne s'efface ici : `tracking-events` n'expose ni `update`
- * ni `destroy`, et le module n'a que les permissions `view` et `create`. Un
- * journal se complète, il ne se corrige pas.
+ * **Toutes les étapes sont montrées dès le début**, franchies ou non. Une liste
+ * qui s'allonge dit où on en est sans jamais dire ce qui reste — et c'est
+ * précisément ce que le client demande.
+ *
+ * Sans parcours configuré, l'écran retombe sur le journal brut et le dit :
+ * mieux vaut des événements sans mise en scène qu'un écran vide.
+ *
+ * Rien ne se modifie ni ne s'efface : `tracking-events` n'expose ni `update` ni
+ * `destroy`. Un journal se complète, il ne se corrige pas.
  */
 export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
   const { t } = useTranslation()
-  const [page, setPage] = useState(1)
   const [opened, setOpened] = useState<TrackingEvent | null>(null)
   const [creating, setCreating] = useState(false)
 
+  const definitions = useTrackingDefinitions(active)
   const { data, isPending, error, refetch } = useOrderTracking(
     orderId,
-    { page, perPage: 25, sort: 'occurred_at', direction: 'desc' },
+    { page: 1, perPage: 100, sort: 'occurred_at', direction: 'asc' },
     active,
   )
 
   const events = data?.data ?? []
-  const meta = data?.meta
+  const steps = buildJourney(definitions.data?.data ?? [], events)
+  const loose = looseEvents(definitions.data?.data ?? [], events)
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-semibold">{t('tracking.title')}</p>
-          <p className="text-sm text-muted-foreground">{t('tracking.description')}</p>
+          <p className="text-sm text-muted-foreground">
+            {steps.length > 0 ? t('tracking.journeyHint') : t('tracking.description')}
+          </p>
         </div>
 
         <PermissionGuard permission="tracking_events.create">
@@ -64,19 +74,32 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
 
       {error ? (
         <ErrorState error={error} onRetry={() => void refetch()} />
-      ) : isPending ? (
+      ) : isPending || definitions.isPending ? (
         <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-      ) : events.length === 0 ? (
-        <EmptyState title={t('tracking.empty')} description={t('tracking.emptyHint')} />
+      ) : steps.length === 0 && events.length === 0 ? (
+        <EmptyState title={t('tracking.empty')} description={t('tracking.noJourney')} />
       ) : (
-        <ol className="flex flex-col">
-          {events.map((event) => (
-            <TrackingEventCard key={event.id} event={event} onOpen={() => setOpened(event)} />
-          ))}
-        </ol>
-      )}
+        <>
+          {steps.length > 0 ? <JourneyTimeline steps={steps} /> : null}
 
-      {meta ? <DataTablePagination meta={meta} onPageChange={setPage} /> : null}
+          {loose.length > 0 ? (
+            <section className="flex flex-col gap-2 border-t pt-4">
+              <p className="text-sm font-medium">
+                {steps.length > 0 ? t('tracking.otherEvents') : t('tracking.rawJournal')}
+              </p>
+              <ol className="flex flex-col">
+                {loose.map((event) => (
+                  <TrackingEventCard
+                    key={event.id}
+                    event={event}
+                    onOpen={() => setOpened(event)}
+                  />
+                ))}
+              </ol>
+            </section>
+          ) : null}
+        </>
+      )}
 
       <TrackingEventDetailDrawer event={opened} onClose={() => setOpened(null)} />
 

@@ -1,6 +1,7 @@
 import { MapPin, Navigation } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { LazyPositionMap } from '@/shared/components/map/LazyPositionMap'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import { formatDateTime } from '@/shared/utils/format'
@@ -20,11 +21,9 @@ interface VehiclePositionPanelProps {
  * Tricolis, qui interroge la télématique. Appeler Flespi depuis le navigateur
  * exposerait un jeton donnant accès à l'historique de tous les véhicules.
  *
- * **Il n'y a pas de carte**, et c'en est une : le projet n'embarque aucune
- * bibliothèque cartographique, et en ajouter une engage un fond de plan, ses
- * conditions d'usage et son coût. Les coordonnées sont donc affichées, avec un
- * lien vers une carte externe — utile tout de suite, sans rien décider à votre
- * place.
+ * La carte trace le chemin parcouru et marque la dernière position. Les
+ * coordonnées restent affichées dessous : elles se copient, se dictent au
+ * téléphone, et survivent à un fond de plan qui ne charge pas.
  */
 export function VehiclePositionPanel({ orderId, enabled }: VehiclePositionPanelProps) {
   const { t } = useTranslation()
@@ -33,7 +32,8 @@ export function VehiclePositionPanel({ orderId, enabled }: VehiclePositionPanelP
   if (!enabled) return null
 
   const data = positions.data
-  const last = data?.points.at(-1)
+  const points = data?.points ?? []
+  const last = points.at(-1)
 
   return (
     <section className="flex flex-col gap-2 rounded-lg border bg-card p-3">
@@ -56,6 +56,15 @@ export function VehiclePositionPanel({ orderId, enabled }: VehiclePositionPanelP
         <p className="text-sm text-muted-foreground">{t('tracking.positionNone')}</p>
       ) : (
         <>
+          <LazyPositionMap
+            points={points.map((point) => ({
+              latitude: point.latitude,
+              longitude: point.longitude,
+              label:
+                point.occurredAt === null ? undefined : formatDateTime(point.occurredAt),
+            }))}
+          />
+
           <p className="font-mono text-sm">
             {last.latitude}, {last.longitude}
           </p>
@@ -64,12 +73,12 @@ export function VehiclePositionPanel({ orderId, enabled }: VehiclePositionPanelP
               ? t('tracking.positionUndated')
               : t('tracking.positionAt', { at: formatDateTime(last.occurredAt) })}
             {' · '}
-            {t('tracking.positionCount', { count: data?.points.length ?? 0 })}
+            {t('tracking.positionCount', { count: points.length })}
           </p>
 
           <Button variant="outline" size="sm" className="w-fit" asChild>
-            {/* Fond de plan externe : le projet n'embarque aucune carte, et en
-                choisir une engage ses conditions d'usage. */}
+            {/* La carte integree suffit a situer ; l'ouvrir ailleurs donne
+                l'itineraire, la vue satellite et le partage. */}
             <a
               href={`https://www.openstreetmap.org/?mlat=${last.latitude}&mlon=${last.longitude}#map=15/${last.latitude}/${last.longitude}`}
               target="_blank"

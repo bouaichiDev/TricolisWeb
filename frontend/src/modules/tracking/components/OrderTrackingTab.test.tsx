@@ -292,6 +292,11 @@ describe('position du véhicule', () => {
     await openTracking()
 
     expect(await screen.findByText('33.5731, -7.5898')).toBeInTheDocument()
+
+    // La carte accompagne les coordonnees : elle situe, elles se copient. Elle
+    // est chargee a la demande, d'ou l'attente.
+    await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
+
     await waitFor(() => expect(calls.length).toBeGreaterThan(0))
     expect(calls[0]).toContain('/orders/')
     // Rien ne part vers le fournisseur depuis le navigateur.

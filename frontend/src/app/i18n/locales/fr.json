@@ -896,7 +896,13 @@
       "cost": "Coût",
       "createdAt": "Créée le",
       "closedAt": "Fermée le"
-    }
+    },
+    "history": "Historique",
+    "attachments": "Pièces jointes",
+    "attachmentsHint": "Photos, vocaux ou PDF. Le vocal décrit un dommage en trente secondes.",
+    "noAttachment": "Aucune pièce jointe.",
+    "addAttachment": "Ajouter une pièce",
+    "mineOnly": "Mes réclamations"
   },
   "pod": {
     "title": "Preuves de livraison",

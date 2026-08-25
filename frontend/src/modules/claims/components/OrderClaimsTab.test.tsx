@@ -66,6 +66,25 @@ function renderDetail(permissions: string[], statuses = [status('open', 'Ouverte
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated(statuses))),
     http.get(`${API}/organization-users`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/documents`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/audit-logs`, () =>
+      HttpResponse.json(
+        paginated([
+          {
+            id: '01JQZ0000000000000AUDI01',
+            organizationId: '01JQZ0000000000000000ORG1',
+            userId: null,
+            action: 'updated',
+            entityType: 'claim',
+            entityId: CLAIM_ID,
+            oldValues: { status: 'open' },
+            newValues: { status: 'closed' },
+            ipAddress: null,
+            createdAt: '2026-08-07T10:00:00+00:00',
+          },
+        ]),
+      ),
+    ),
     // `ClaimListResource` n'expose ni description, ni cause, ni traitement :
     // seul le detail les porte.
     http.get(`${API}/claims/${CLAIM_ID}`, () =>
@@ -245,5 +264,39 @@ describe('réclamations d’une commande', () => {
     expect(screen.queryByRole('button', { name: /Nouvelle réclamation/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Modifier' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * La fiche d'une réclamation : ce qu'elle dit, ce qu'on en a fait, et par où
+ * elle est passée.
+ */
+describe('fiche d’une réclamation', () => {
+  it('montre la description, le traitement et l’historique', async () => {
+    renderDetail(['orders.view', 'claims.view'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Canapé livré rayé' }))
+
+    const drawer = within(await screen.findByRole('dialog'))
+
+    // Ces champs n'existent que sur le detail : la liste ne les porte pas.
+    expect(await drawer.findByText(/revêtement est griffé/)).toBeInTheDocument()
+    expect(drawer.getByText('Remplacement accepté')).toBeInTheDocument()
+
+    // L'historique vient du journal d'audit : aucune table dediee n'existe.
+    expect(drawer.getByText('Historique')).toBeInTheDocument()
+  })
+
+  /** Photos et vocaux sont des documents liés à la réclamation. */
+  it('offre d’ajouter une pièce jointe', async () => {
+    renderDetail(['orders.view', 'claims.view', 'documents.upload'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Canapé livré rayé' }))
+
+    const drawer = within(await screen.findByRole('dialog'))
+    expect(await drawer.findByRole('button', { name: /Ajouter une pièce/ })).toBeInTheDocument()
+    expect(drawer.getByText(/Aucune pièce jointe/)).toBeInTheDocument()
   })
 })

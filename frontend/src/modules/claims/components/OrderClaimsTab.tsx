@@ -8,6 +8,7 @@ import { DataTable } from '@/shared/components/data/DataTable'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { Button } from '@/shared/components/ui/button'
 
+import { ClaimDetailDrawer } from './ClaimDetailDrawer'
 import { ClaimDialog } from './ClaimDialog'
 import { claimColumns } from './claimColumns'
 import { useDeleteClaim, useOrderClaims } from '../hooks/useClaims'
@@ -30,6 +31,7 @@ interface OrderClaimsTabProps {
 export function OrderClaimsTab({ orderId, customerId, services, active }: OrderClaimsTabProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
+  const [opened, setOpened] = useState<Claim | null>(null)
   const [editing, setEditing] = useState<Claim | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<Claim | null>(null)
@@ -58,7 +60,7 @@ export function OrderClaimsTab({ orderId, customerId, services, active }: OrderC
       </div>
 
       <DataTable
-        columns={claimColumns({ t, onEdit: setEditing, onDelete: setDeleting })}
+        columns={claimColumns({ t, onOpen: setOpened, onEdit: setEditing, onDelete: setDeleting })}
         rows={data?.data ?? []}
         rowKey={(row) => row.id}
         meta={data?.meta}
@@ -68,6 +70,8 @@ export function OrderClaimsTab({ orderId, customerId, services, active }: OrderC
         onRetry={() => void refetch()}
         emptyMessage={t('claims.empty')}
       />
+
+      <ClaimDetailDrawer claim={opened} onClose={() => setOpened(null)} />
 
       {creating || editing !== null ? (
         <ClaimDialog

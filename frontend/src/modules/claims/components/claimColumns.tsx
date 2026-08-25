@@ -11,6 +11,7 @@ import type { Claim } from '../types/claim'
 
 interface Handlers {
   t: TFunction
+  onOpen: (claim: Claim) => void
   onEdit: (claim: Claim) => void
   onDelete: (claim: Claim) => void
 }
@@ -24,12 +25,20 @@ const dash = <span className="text-muted-foreground">—</span>
  * montrent la même chose, seule la colonne Client n'a de sens que sur la
  * seconde — dans une commande, le client est déjà en en-tête.
  */
-export function claimColumns({ t, onEdit, onDelete }: Handlers, withCustomer = false) {
+export function claimColumns({ t, onOpen, onEdit, onDelete }: Handlers, withCustomer = false) {
   const columns: Column<Claim>[] = [
     {
       key: 'title',
       header: t('claims.fields.title'),
-      cell: (row) => <span className="font-medium">{row.title}</span>,
+      cell: (row) => (
+        <button
+          type="button"
+          className="text-left font-medium underline-offset-2 hover:underline"
+          onClick={() => onOpen(row)}
+        >
+          {row.title}
+        </button>
+      ),
     },
     { key: 'claimType', header: t('claims.fields.claimType'), cell: (row) => row.claimType },
     {

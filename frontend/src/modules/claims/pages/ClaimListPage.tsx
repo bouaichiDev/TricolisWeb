@@ -5,7 +5,11 @@ import { DataTable } from '@/shared/components/data/DataTable'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { Label } from '@/shared/components/ui/label'
+import { Switch } from '@/shared/components/ui/switch'
+import { useAuth } from '@/shared/hooks/useAuth'
 
+import { ClaimDetailDrawer } from '../components/ClaimDetailDrawer'
 import { ClaimDialog } from '../components/ClaimDialog'
 import { claimColumns } from '../components/claimColumns'
 import { useClaimList, useDeleteClaim } from '../hooks/useClaims'
@@ -29,9 +33,11 @@ export function ClaimListPage() {
   const { t } = useTranslation()
 
   const [filters, setFilters] = useState<ClaimFilters>({ page: 1, perPage: 25 })
+  const [opened, setOpened] = useState<Claim | null>(null)
   const [editing, setEditing] = useState<Claim | null>(null)
   const [deleting, setDeleting] = useState<Claim | null>(null)
 
+  const { user } = useAuth()
   const { data, isPending, error, refetch } = useClaimList(filters)
   const remove = useDeleteClaim()
 
@@ -39,15 +45,34 @@ export function ClaimListPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('claims.title')} description={t('claims.description')} />
 
-      <SearchInput
-        value={filters.search ?? ''}
-        onChange={(search) =>
-          setFilters((current) => ({ ...current, page: 1, search: search || undefined }))
-        }
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchInput
+          value={filters.search ?? ''}
+          onChange={(search) =>
+            setFilters((current) => ({ ...current, page: 1, search: search || undefined }))
+          }
+        />
+
+        {/* `responsibleUserId` est un filtre accepte par ListClaimRequest :
+            celui qui instruit retrouve ses dossiers sans lire toute la liste. */}
+        <span className="flex items-center gap-2">
+          <Switch
+            id="claims-mine"
+            checked={filters.responsibleUserId !== undefined}
+            onCheckedChange={(mine) =>
+              setFilters((current) => ({
+                ...current,
+                page: 1,
+                responsibleUserId: mine && user ? user.id : undefined,
+              }))
+            }
+          />
+          <Label htmlFor="claims-mine">{t('claims.mineOnly')}</Label>
+        </span>
+      </div>
 
       <DataTable
-        columns={claimColumns({ t, onEdit: setEditing, onDelete: setDeleting }, true)}
+        columns={claimColumns({ t, onOpen: setOpened, onEdit: setEditing, onDelete: setDeleting }, true)}
         rows={data?.data ?? []}
         rowKey={(row) => row.id}
         meta={data?.meta}
@@ -57,6 +82,8 @@ export function ClaimListPage() {
         onRetry={() => void refetch()}
         emptyMessage={t('claims.empty')}
       />
+
+      <ClaimDetailDrawer claim={opened} onClose={() => setOpened(null)} />
 
       {editing !== null ? (
         <ClaimEditDialog claim={editing} onClose={() => setEditing(null)} />

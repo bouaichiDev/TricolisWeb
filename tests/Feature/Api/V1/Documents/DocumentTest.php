@@ -89,3 +89,35 @@ it('accepts an audio file as a document', function (): void {
         'entityType' => 'organization', 'entityId' => $this->organization->id,
     ])->assertCreated()->assertJsonPath('data.fileName', 'temoignage.mp3');
 });
+
+/**
+ * Les pieces d'une entite doivent etre listables.
+ *
+ * Seule la commande avait une route imbriquee : les photos et vocaux d'une
+ * reclamation n'etaient interrogeables nulle part, alors que le lien existait.
+ */
+it('lists the documents attached to a given entity', function (): void {
+    $mine = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->post('/api/v1/documents', [
+        'file' => UploadedFile::fake()->create('degat.jpg', 60, 'image/jpeg'),
+        'documentType' => 'claim_evidence', 'status' => 'active',
+        'entityType' => 'organization', 'entityId' => $this->organization->id,
+    ])->assertCreated()->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->post('/api/v1/documents', [
+        'file' => UploadedFile::fake()->create('autre.pdf', 60, 'application/pdf'),
+        'documentType' => 'invoice', 'status' => 'active',
+    ])->assertCreated();
+
+    $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/documents?entityType=organization&entityId='.$this->organization->id)
+        ->assertOk();
+
+    expect($response->json('data'))->toHaveCount(1)
+        ->and($response->json('data.0.id'))->toBe($mine);
+
+    // Et le filtre par type reste independant.
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/documents?documentType=invoice')
+        ->assertOk()
+        ->assertJsonCount(1, 'data');
+});

@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Claims\Models\Claim;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Organizations\Models\Organization;
 use Illuminate\Http\UploadedFile;
@@ -120,4 +121,40 @@ it('lists the documents attached to a given entity', function (): void {
         ->getJson('/api/v1/documents?documentType=invoice')
         ->assertOk()
         ->assertJsonCount(1, 'data');
+});
+
+/**
+ * Une photo ou un vocal verse a une reclamation.
+ *
+ * La cible d'une liaison est acceptee des lors qu'elle porte l'organisation
+ * active. Une liste fermee de types refusait la reclamation avec un message
+ * d'appartenance, qui faisait chercher du cote des droits.
+ */
+it('links a document to a claim of the active organization', function (): void {
+    $claim = Claim::factory()->create(['organization_id' => $this->organization->id]);
+
+    $document = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->post('/api/v1/documents', [
+        'file' => UploadedFile::fake()->image('rayure.jpg'),
+        'documentType' => 'claim_evidence', 'status' => 'active',
+        'entityType' => 'claim', 'entityId' => $claim->id,
+    ])->assertCreated()->json('data.id');
+
+    $this->assertDatabaseHas('document_links', [
+        'document_id' => $document, 'entity_type' => 'claim', 'entity_id' => $claim->id,
+    ]);
+
+    // Et le filtre par entite la retrouve : c'est ce que lit la fiche.
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/documents?entityType=claim&entityId='.$claim->id)
+        ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $document);
+});
+
+it('refuses to link a document to a claim of another organization', function (): void {
+    $claim = Claim::factory()->create(['organization_id' => Organization::factory()->create()->id]);
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->post('/api/v1/documents', [
+        'file' => UploadedFile::fake()->image('rayure.jpg'),
+        'documentType' => 'claim_evidence', 'status' => 'active',
+        'entityType' => 'claim', 'entityId' => $claim->id,
+    ])->assertForbidden();
 });

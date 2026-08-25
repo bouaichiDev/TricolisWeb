@@ -7,6 +7,7 @@ namespace App\Modules\Orders\Models;
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Packages\Models\Package;
+use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,6 +50,7 @@ class OrderService extends Model
 {
     use HasFactory;
     use HasUlid;
+    use TracksStatusChanges;
 
     protected $keyType = 'string';
 

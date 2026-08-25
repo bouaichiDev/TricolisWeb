@@ -6,6 +6,7 @@ namespace App\Modules\Packages\Models;
 
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderLine;
+use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,6 +40,7 @@ class Package extends Model
 {
     use HasFactory;
     use HasUlid;
+    use TracksStatusChanges;
 
     /**
      * Profondeur maximale de l'imbrication.

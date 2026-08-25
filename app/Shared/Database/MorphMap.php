@@ -293,4 +293,20 @@ final class MorphMap
 
         return $map[$alias] ?? null;
     }
+
+    /**
+     * Retourne l'alias morphique d'une classe Eloquent.
+     *
+     * Reciproque de `class()`. Sans elle, chaque appelant refaisait un
+     * `array_flip` de la morph map, ou pire, ecrivait l'alias en dur.
+     */
+    public static function aliasFor(string $class): ?string
+    {
+        /** @var array<string, class-string> $map */
+        $map = Relation::morphMap();
+
+        $alias = array_search($class, $map, true);
+
+        return $alias === false ? null : $alias;
+    }
 }

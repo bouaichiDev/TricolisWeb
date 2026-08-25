@@ -74,3 +74,14 @@ Element.prototype.hasPointerCapture = () => false
 Element.prototype.setPointerCapture = () => {}
 Element.prototype.releasePointerCapture = () => {}
 Element.prototype.scrollIntoView = () => {}
+
+/**
+ * URL d'objet.
+ *
+ * jsdom ne l'implemente pas, et les apercus de documents s'en servent pour
+ * republier au navigateur un fichier recupere avec ses en-tetes
+ * d'authentification. Sans ce doublon, toute vignette ferait echouer le test
+ * sur un manque de l'environnement, pas du composant.
+ */
+URL.createObjectURL = () => 'blob:document'
+URL.revokeObjectURL = () => {}

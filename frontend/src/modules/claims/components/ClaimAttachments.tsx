@@ -1,12 +1,11 @@
-import { Paperclip, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
-import { DocumentDownloadLink } from '@/modules/documents/components/DocumentDownloadLink'
+import { DocumentGallery } from '@/modules/documents/components/DocumentGallery'
 import { useEntityDocuments, useUploadEntityDocument } from '@/modules/documents/hooks/useEntityDocuments'
 import { Button } from '@/shared/components/ui/button'
-import { formatBytes } from '@/shared/utils/format'
 
 /** Type porté par les pièces versées à une réclamation. */
 export const CLAIM_EVIDENCE_TYPE = 'claim_evidence'
@@ -79,21 +78,8 @@ export function ClaimAttachments({ claimId }: { claimId: string }) {
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('claims.noAttachment')}</p>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 rounded-md border px-2 py-1.5">
-              <Paperclip className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm">{item.fileName}</span>
-                <span className="block text-xs text-muted-foreground">
-                  {item.mimeType} · {formatBytes(item.size)}
-                </span>
-              </span>
-
-              <DocumentDownloadLink documentId={item.id} fileName={item.fileName} />
-            </li>
-          ))}
-        </ul>
+        /* Des photos se reconnaissent en vignettes ; leurs noms d'appareil, non. */
+        <DocumentGallery documents={items} defaultView="cards" />
       )}
     </div>
   )

@@ -304,4 +304,61 @@ describe('fiche d’une réclamation', () => {
     expect(await drawer.findByRole('button', { name: /Ajouter une pièce/ })).toBeInTheDocument()
     expect(drawer.getByText(/Aucune pièce jointe/)).toBeInTheDocument()
   })
+
+  /**
+   * Une photo se reconnait, un nom d'appareil non : la vue par defaut est en
+   * vignettes, et l'apercu s'ouvre sur place.
+   */
+  it('montre les pièces en vignettes, bascule en liste et ouvre l’aperçu', async () => {
+    renderDetail(['orders.view', 'claims.view'])
+
+    const document = {
+      id: '01JQZ0000000000000DOCU01',
+      organizationId: '01JQZ0000000000000000ORG1',
+      referenceNumber: null,
+      documentType: 'claim_evidence',
+      status: 'active',
+      fileName: 'rayure.jpg',
+      mimeType: 'image/jpeg',
+      size: 2048,
+      receivedAt: null,
+      createdBy: null,
+      createdAt: '2026-08-07T10:00:00+00:00',
+      updatedAt: '2026-08-07T10:00:00+00:00',
+    }
+
+    server.use(
+      http.get(`${API}/documents`, () =>
+        HttpResponse.json(
+          paginated([
+            document,
+            { ...document, id: '01JQZ0000000000000DOCU02', fileName: 'vocal.m4a', mimeType: 'audio/mp4' },
+          ]),
+        ),
+      ),
+      // La route de telechargement est authentifiee : l'apercu passe par le
+      // client HTTP, pas par un `src` direct.
+      http.get(`${API}/documents/:id/download`, () =>
+        new HttpResponse('binaire', { headers: { 'Content-Type': 'image/jpeg' } }),
+      ),
+    )
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Voir le détail' }))
+
+    const drawer = within(await screen.findByRole('dialog'))
+    expect(await drawer.findByText('rayure.jpg')).toBeInTheDocument()
+    expect(drawer.getByText('vocal.m4a')).toBeInTheDocument()
+
+    // Les deux vues montrent la meme chose : seule la mise en forme change.
+    await userEvent.click(drawer.getByRole('button', { name: 'Vue en liste' }))
+    expect(drawer.getByText('rayure.jpg')).toBeInTheDocument()
+    expect(drawer.getByText(/image\/jpeg/)).toBeInTheDocument()
+
+    await userEvent.click(drawer.getByRole('button', { name: /rayure\.jpg/ }))
+
+    const preview = await screen.findByRole('dialog', { name: /rayure\.jpg/ })
+    expect(await within(preview).findByAltText('rayure.jpg')).toBeInTheDocument()
+  })
+
 })

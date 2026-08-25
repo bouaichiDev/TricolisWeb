@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { trackingApi } from '../api/tracking.api'
 import { trackingDefinitionsApi } from '../api/trackingDefinitions.api'
 import type { TrackingEventFilters, TrackingEventPayload } from '../types/trackingEvent'
+import type { TrackingDefinitionPayload } from '../types/trackingDefinition'
 
 export const trackingKeys = {
   all: ['tracking'] as const,
@@ -66,4 +67,40 @@ export function useTrackingDefinitions(enabled = true) {
     enabled,
     staleTime: 5 * 60 * 1000,
   })
+}
+
+function useDefinitionMutation<TVariables>(
+  mutationFn: (variables: TVariables) => Promise<unknown>,
+  message: 'created' | 'updated' | 'deleted',
+) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      // Toute la racine : le parcours affiche sur les commandes en depend.
+      void queryClient.invalidateQueries({ queryKey: trackingKeys.all })
+      toast.success(t(`toast.${message}`))
+    },
+  })
+}
+
+export function useCreateTrackingDefinition() {
+  return useDefinitionMutation(
+    (payload: TrackingDefinitionPayload) => trackingDefinitionsApi.create(payload),
+    'created',
+  )
+}
+
+export function useUpdateTrackingDefinition() {
+  return useDefinitionMutation(
+    ({ id, ...payload }: Partial<TrackingDefinitionPayload> & { id: string }) =>
+      trackingDefinitionsApi.update(id, payload),
+    'updated',
+  )
+}
+
+export function useDeleteTrackingDefinition() {
+  return useDefinitionMutation((id: string) => trackingDefinitionsApi.remove(id), 'deleted')
 }

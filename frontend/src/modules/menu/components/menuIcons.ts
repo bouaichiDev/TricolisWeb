@@ -7,6 +7,8 @@ import {
   Mail,
   MessageSquareWarning,
   Network,
+  Plug,
+  Route,
   Package,
   Settings,
   Shield,
@@ -42,6 +44,8 @@ const ICONS: Record<string, LucideIcon> = {
   Layers,
   MessageSquareWarning,
   Mail,
+  Plug,
+  Route,
 }
 
 export function menuIcon(name: string): LucideIcon {

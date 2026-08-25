@@ -184,6 +184,27 @@ final class MenuCatalogue
                 permission: 'communication_templates.view',
             ),
 
+            new MenuEntry(
+                code: 'journey',
+                labelKey: 'nav.journey',
+                icon: 'Route',
+                section: MenuSection::OPERATIONS,
+                position: 36,
+                route: '/journey',
+                permission: 'tracking_event_definitions.view',
+                parent: 'operations',
+            ),
+
+            new MenuEntry(
+                code: 'api-configurations',
+                labelKey: 'nav.apiConfigurations',
+                icon: 'Plug',
+                section: MenuSection::INTEGRATIONS,
+                position: 70,
+                route: '/api-configurations',
+                permission: 'api_configurations.view',
+            ),
+
             // L'administration ne se masque pas : un organisme qui la
             // retirerait n'aurait plus d'écran pour revenir en arrière.
             new MenuEntry(

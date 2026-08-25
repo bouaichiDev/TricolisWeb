@@ -2,6 +2,8 @@ import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
 import { CommunicationTemplateListPage } from '@/modules/communications/pages/CommunicationTemplateListPage'
+import { ApiConfigurationListPage } from '@/modules/integrations/pages/ApiConfigurationListPage'
+import { JourneyConfigurationPage } from '@/modules/tracking/pages/JourneyConfigurationPage'
 import { AuditLogPage } from '@/modules/audit/pages/AuditLogPage'
 import { MyOrganizationPage } from '@/modules/organizations/pages/MyOrganizationPage'
 import { OrganizationCreatePage } from '@/modules/organizations/pages/OrganizationCreatePage'
@@ -28,6 +30,22 @@ import { UserListPage } from '@/modules/users/pages/UserListPage'
  * L'audit n'a ni création ni édition : `audit-logs` n'expose qu'un `index`.
  */
 export const adminRoutes = [
+  <Route
+    key="api-configurations"
+    path="/api-configurations"
+    element={guarded('api_configurations.view', <ApiConfigurationListPage />, {
+      organizationOnly: true,
+    })}
+  />,
+
+  <Route
+    key="journey"
+    path="/journey"
+    element={guarded('tracking_event_definitions.view', <JourneyConfigurationPage />, {
+      organizationOnly: true,
+    })}
+  />,
+
   <Route
     key="communication-templates"
     path="/communication-templates"

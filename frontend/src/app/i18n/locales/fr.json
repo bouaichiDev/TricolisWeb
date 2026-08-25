@@ -87,7 +87,9 @@
     "communicationTemplates": "Modèles de communication",
     "stock": "Stock",
     "stockLocations": "Emplacements",
-    "statuses": "Statuts"
+    "statuses": "Statuts",
+    "journey": "Parcours client",
+    "apiConfigurations": "API externes"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1331,5 +1333,63 @@
   "bodyFormats": {
     "text": "Texte brut",
     "html": "HTML"
+  },
+  "authTypes": {
+    "none": "Aucune",
+    "bearer": "Jeton Bearer",
+    "api_key": "Clé d’API",
+    "basic": "Basic"
+  },
+  "apiConfigurations": {
+    "title": "API externes",
+    "description": "Les services que Tricolis appelle pour le compte de votre organisation",
+    "empty": "Aucune API déclarée",
+    "create": "Déclarer une API",
+    "edit": "Modifier l’API",
+    "formHint": "L’adresse doit être en HTTPS : un secret envoyé en clair n’en est plus un.",
+    "codeHint": "À quoi elle sert, par exemple driver_position.",
+    "baseUrlHint": "Adresse de base, sans le chemin de l’appel.",
+    "secretHint": "Écrit une fois. Il n’est jamais réaffiché — on le remplace, on ne le consulte pas.",
+    "secretKept": "Inchangé — remplir pour remplacer",
+    "secretSet": "Secret enregistré",
+    "neverUsed": "Jamais appelée",
+    "deleteConfirm": "Supprimer {{name}} ? Les étapes du parcours qui s’y référaient resteront, sans suivi en direct.",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "baseUrl": "Adresse",
+      "authType": "Authentification",
+      "credentials": "Secret",
+      "isActive": "Active",
+      "lastUsedAt": "Dernier appel"
+    }
+  },
+  "journey": {
+    "title": "Parcours client",
+    "description": "Quels changements de statut deviennent des étapes visibles par le client",
+    "empty": "Aucune étape configurée",
+    "create": "Ajouter une étape",
+    "edit": "Modifier l’étape",
+    "formHint": "Le chauffeur pose le statut, l’étape apparaît sur la commande.",
+    "sourceHint": "La table qui porte le statut déclencheur.",
+    "pickSourceFirst": "Choisissez d’abord une entité.",
+    "noStatus": "Aucun statut n’est décrit pour cette entité.",
+    "titleHint": "Ce que le client lit, pas le libellé interne.",
+    "codeHint": "Identifiant de l’étape. Il relie l’étape aux événements déjà survenus.",
+    "positionHint": "Ordre dans le parcours.",
+    "noApi": "Aucune — étape simple",
+    "apiHint": "Une API renseigne la position en direct : l’étape s’affiche alors avec sa carte.",
+    "deleteConfirm": "Supprimer l’étape {{title}} ? Les événements déjà survenus restent.",
+    "fields": {
+      "sourceType": "Entité",
+      "statusCode": "Statut déclencheur",
+      "code": "Code",
+      "title": "Titre affiché",
+      "description": "Détail",
+      "position": "Ordre",
+      "trigger": "Déclencheur",
+      "api": "Suivi en direct",
+      "active": "Active"
+    }
   }
 }

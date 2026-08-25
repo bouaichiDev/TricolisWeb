@@ -84,6 +84,7 @@
     "orders": "Commandes",
     "catalogs": "Catalogues",
     "claims": "Réclamations",
+    "communicationTemplates": "Modèles de communication",
     "stock": "Stock",
     "stockLocations": "Emplacements",
     "statuses": "Statuts"
@@ -777,6 +778,37 @@
     "billing_contact": "Contact de facturation",
     "internal_user": "Utilisateur interne",
     "custom": "Coordonnées saisies"
+  },
+  "communicationTemplates": {
+    "title": "Modèles de communication",
+    "description": "Le contenu des messages envoyés depuis une commande",
+    "empty": "Aucun modèle",
+    "create": "Nouveau modèle",
+    "edit": "Modifier le modèle",
+    "formHint": "Le modèle porte le texte ; la commande fournit les valeurs à l’envoi.",
+    "codeHint": "Lettres, chiffres, point, tiret et souligné. Par exemple CUSTOMER_ABSENT_EMAIL.",
+    "codeLocked": "Le code identifie le modèle et ne change plus.",
+    "typeHint": "« Personnalisé » quand aucun type officiel ne correspond.",
+    "languageHint": "Code court, par exemple fr ou en.",
+    "variablesHint": "Ce que le modèle sait recevoir. Saisir le nom seul, sans accolades.",
+    "removeVariable": "Retirer la variable {{name}}",
+    "preview": "Aperçu",
+    "previewHint": "Mise en forme seulement : les variables sont remplacées à l’envoi, par le serveur.",
+    "undeclaredVariables": "Ces variables ne sont pas déclarées et ne seront pas remplacées : {{names}}.",
+    "emptySubject": "Sujet vide",
+    "emptyBody": "Message vide",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "channel": "Canal",
+      "templateType": "Type",
+      "language": "Langue",
+      "subjectTemplate": "Sujet",
+      "bodyTemplate": "Message",
+      "availableVariables": "Variables disponibles",
+      "isActive": "Actif",
+      "isDefault": "Par défaut"
+    }
   },
   "communications": {
     "title": "Communications",

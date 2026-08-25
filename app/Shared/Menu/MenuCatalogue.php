@@ -172,6 +172,18 @@ final class MenuCatalogue
                 parent: 'stock',
             ),
 
+            // Configuration des messages. Les *regles* de communication ne
+            // figurent pas ici : elles sont hors perimetre de la Phase 3.
+            new MenuEntry(
+                code: 'communication-templates',
+                labelKey: 'nav.communicationTemplates',
+                icon: 'Mail',
+                section: MenuSection::COMMUNICATIONS,
+                position: 60,
+                route: '/communication-templates',
+                permission: 'communication_templates.view',
+            ),
+
             // L'administration ne se masque pas : un organisme qui la
             // retirerait n'aurait plus d'écran pour revenir en arrière.
             new MenuEntry(

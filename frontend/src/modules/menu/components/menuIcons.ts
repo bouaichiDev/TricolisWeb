@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Layers,
   LayoutDashboard,
+  Mail,
   MessageSquareWarning,
   Network,
   Package,
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   Package,
   Layers,
   MessageSquareWarning,
+  Mail,
 }
 
 export function menuIcon(name: string): LucideIcon {

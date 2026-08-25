@@ -1,6 +1,7 @@
 import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { CommunicationTemplateListPage } from '@/modules/communications/pages/CommunicationTemplateListPage'
 import { AuditLogPage } from '@/modules/audit/pages/AuditLogPage'
 import { MyOrganizationPage } from '@/modules/organizations/pages/MyOrganizationPage'
 import { OrganizationCreatePage } from '@/modules/organizations/pages/OrganizationCreatePage'
@@ -27,6 +28,14 @@ import { UserListPage } from '@/modules/users/pages/UserListPage'
  * L'audit n'a ni création ni édition : `audit-logs` n'expose qu'un `index`.
  */
 export const adminRoutes = [
+  <Route
+    key="communication-templates"
+    path="/communication-templates"
+    element={guarded('communication_templates.view', <CommunicationTemplateListPage />, {
+      organizationOnly: true,
+    })}
+  />,
+
   <Route
     key="users"
     path="/users"

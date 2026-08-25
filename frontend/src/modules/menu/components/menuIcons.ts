@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Layers,
   LayoutDashboard,
+  MessageSquareWarning,
   Network,
   Package,
   Settings,
@@ -38,6 +39,7 @@ const ICONS: Record<string, LucideIcon> = {
   Wrench,
   Package,
   Layers,
+  MessageSquareWarning,
 }
 
 export function menuIcon(name: string): LucideIcon {

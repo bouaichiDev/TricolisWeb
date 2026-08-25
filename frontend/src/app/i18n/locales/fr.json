@@ -83,6 +83,7 @@
     "operations": "Exploitation",
     "orders": "Commandes",
     "catalogs": "Catalogues",
+    "claims": "Réclamations",
     "stock": "Stock",
     "stockLocations": "Emplacements",
     "statuses": "Statuts"
@@ -737,6 +738,42 @@
       "status": "Statut"
     }
   },
+  "claims": {
+    "title": "Réclamations",
+    "description": "Suivi des réclamations de l’organisation",
+    "orderDescription": "Réclamations portant sur cette commande. Le client est celui de la commande.",
+    "empty": "Aucune réclamation",
+    "create": "Nouvelle réclamation",
+    "createHint": "Elle naît ouverte : ce qu’on en a fait s’écrit ensuite.",
+    "edit": "Modifier la réclamation",
+    "editHint": "Le traitement se renseigne ici, au fil de l’instruction.",
+    "freeTextHint": "Texte libre, par exemple « casse » ou « retard ».",
+    "wholeOrder": "Toute la commande",
+    "serviceHint": "Facultatif : la réclamation peut viser un service précis.",
+    "treatmentHint": "Renseigné au fil de l’instruction ; le serveur ne l’accepte pas à la création.",
+    "noStatus": "Aucun statut n’est décrit pour les réclamations. Définissez-les depuis l’écran",
+    "noStatusMember": "Aucun statut n’est décrit pour les réclamations. Demandez à un administrateur plateforme de les définir.",
+    "sections": {
+      "claim": "Réclamation",
+      "context": "Contexte",
+      "treatment": "Traitement"
+    },
+    "fields": {
+      "title": "Titre",
+      "claimType": "Type",
+      "status": "Statut",
+      "description": "Description",
+      "cause": "Cause",
+      "customer": "Client",
+      "orderService": "Service",
+      "decision": "Décision",
+      "followUp": "Suivi",
+      "result": "Résultat",
+      "cost": "Coût",
+      "createdAt": "Créée le",
+      "closedAt": "Fermée le"
+    }
+  },
   "pod": {
     "title": "Preuves de livraison",
     "description": "Une preuve constate un fait : elle ne se modifie ni ne s’efface. Une livraison mal constatée se corrige par une réclamation.",
@@ -1005,6 +1042,7 @@
       "services": "Services",
       "tracking": "Suivi",
       "pod": "Preuves",
+      "claims": "Réclamations",
       "documents": "Documents",
       "history": "Historique"
     },

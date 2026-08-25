@@ -1,6 +1,7 @@
 import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { ClaimListPage } from '@/modules/claims/pages/ClaimListPage'
 import { GroupingTypeListPage } from '@/modules/packages/pages/GroupingTypeListPage'
 import { PackageTypeListPage } from '@/modules/packages/pages/PackageTypeListPage'
 import { ServiceCreatePage } from '@/modules/services/pages/ServiceCreatePage'
@@ -63,6 +64,12 @@ export const operationsRoutes = [
     key="service-edit"
     path="/services/:id/edit"
     element={guarded('services.update', <ServiceEditPage />, { organizationOnly: true })}
+  />,
+
+  <Route
+    key="claims"
+    path="/claims"
+    element={guarded('claims.view', <ClaimListPage />, { organizationOnly: true })}
   />,
 
   <Route

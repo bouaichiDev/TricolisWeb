@@ -121,6 +121,16 @@ final class MenuCatalogue
                 parent: 'operations',
             ),
             new MenuEntry(
+                code: 'claims',
+                labelKey: 'nav.claims',
+                icon: 'MessageSquareWarning',
+                section: MenuSection::OPERATIONS,
+                position: 35,
+                route: '/claims',
+                permission: 'claims.view',
+                parent: 'operations',
+            ),
+            new MenuEntry(
                 code: 'package-types',
                 labelKey: 'nav.packageTypes',
                 icon: 'Package',

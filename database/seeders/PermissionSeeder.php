@@ -133,10 +133,13 @@ class PermissionSeeder extends Seeder
         ['code' => 'drivers.update', 'name' => 'Modifier un chauffeur', 'module' => 'drivers', 'action' => 'update'],
         ['code' => 'drivers.delete', 'name' => 'Supprimer un chauffeur', 'module' => 'drivers', 'action' => 'delete'],
 
-        ['code' => 'vehicle_types.view', 'name' => 'Voir les types de véhicule', 'module' => 'vehicle_types', 'action' => 'view'],
-        ['code' => 'vehicle_types.create', 'name' => 'Créer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'create'],
-        ['code' => 'vehicle_types.update', 'name' => 'Modifier un type de véhicule', 'module' => 'vehicle_types', 'action' => 'update'],
-        ['code' => 'vehicle_types.delete', 'name' => 'Supprimer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'delete'],
+        // Un seul module pour tous les référentiels de type : un référentiel
+        // ajouté par l'organisme serait sinon inaccessible jusqu'à ce qu'on lui
+        // écrive sa permission.
+        ['code' => 'types.view', 'name' => 'Voir les types', 'module' => 'types', 'action' => 'view'],
+        ['code' => 'types.create', 'name' => 'Créer un type', 'module' => 'types', 'action' => 'create'],
+        ['code' => 'types.update', 'name' => 'Modifier un type', 'module' => 'types', 'action' => 'update'],
+        ['code' => 'types.delete', 'name' => 'Supprimer un type', 'module' => 'types', 'action' => 'delete'],
 
         ['code' => 'vehicles.view', 'name' => 'Voir les véhicules', 'module' => 'vehicles', 'action' => 'view'],
         ['code' => 'vehicles.create', 'name' => 'Créer un véhicule', 'module' => 'vehicles', 'action' => 'create'],

@@ -2,13 +2,13 @@
 
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Permission;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\RolePermission;
 use App\Modules\Identity\Models\UserRole;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Types\Models\TypeItem;
 
 beforeEach(function (): void {
     $this->seed();
@@ -20,7 +20,7 @@ beforeEach(function (): void {
     $this->powerless = $this->membership->user;
 
     $this->provider = Provider::factory()->forOrganization($this->organization)->create();
-    $this->type = VehicleType::factory()->forOrganization($this->organization)->create();
+    $this->type = TypeItem::factory()->forOrganization($this->organization)->ofSystemType('vehicle')->create();
     $this->driver = Driver::factory()->forProvider($this->provider)->create();
     $this->vehicle = Vehicle::factory()->forProvider($this->provider)->ofType($this->type)->create();
 });
@@ -30,7 +30,7 @@ describe('missing permissions', function (): void {
         foreach ([
             '/api/v1/providers',
             '/api/v1/drivers',
-            '/api/v1/vehicle-types',
+            '/api/v1/type-items',
             '/api/v1/vehicles',
         ] as $url) {
             $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
@@ -44,7 +44,7 @@ describe('missing permissions', function (): void {
             ->assertForbidden();
 
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/vehicle-types', ['code' => 'X', 'name' => 'X', 'status' => 'active'])
+            ->postJson('/api/v1/type-items', ['typeId' => $this->type->type_id, 'code' => 'X', 'name' => 'X'])
             ->assertForbidden();
     });
 
@@ -62,7 +62,7 @@ describe('missing permissions', function (): void {
     it('grants access once the matching permission is attached to the role', function (): void {
         $role = Role::factory()->forOrganization($this->organization)->create();
         $viewPermissions = Permission::whereIn('code', [
-            'providers.view', 'drivers.view', 'vehicle_types.view', 'vehicles.view',
+            'providers.view', 'drivers.view', 'types.view', 'vehicles.view',
         ])->pluck('id');
 
         foreach ($viewPermissions as $permissionId) {
@@ -74,7 +74,7 @@ describe('missing permissions', function (): void {
         foreach ([
             '/api/v1/providers',
             '/api/v1/drivers',
-            '/api/v1/vehicle-types',
+            '/api/v1/type-items',
             '/api/v1/vehicles',
         ] as $url) {
             $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
@@ -92,7 +92,7 @@ describe('missing permissions', function (): void {
         foreach ([
             '/api/v1/providers',
             '/api/v1/drivers',
-            '/api/v1/vehicle-types',
+            '/api/v1/type-items',
             '/api/v1/vehicles',
         ] as $url) {
             $this->actingAs($user, 'sanctum')->getJson($url)->assertForbidden();

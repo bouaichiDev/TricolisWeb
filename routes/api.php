@@ -30,7 +30,6 @@ use App\Http\Controllers\Api\V1\Drivers\DriverController;
 use App\Http\Controllers\Api\V1\Exports\ExportConfigurationController;
 use App\Http\Controllers\Api\V1\Exports\ExportJobController;
 use App\Http\Controllers\Api\V1\Fleet\VehicleController;
-use App\Http\Controllers\Api\V1\Fleet\VehicleTypeController;
 use App\Http\Controllers\Api\V1\Identity\OrganizationUserController;
 use App\Http\Controllers\Api\V1\Identity\PermissionController;
 use App\Http\Controllers\Api\V1\Identity\RoleController;
@@ -50,10 +49,8 @@ use App\Http\Controllers\Api\V1\Orders\ServiceController;
 use App\Http\Controllers\Api\V1\Organizations\MenuController;
 use App\Http\Controllers\Api\V1\Organizations\OrganizationController;
 use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
-use App\Http\Controllers\Api\V1\Packages\GroupingTypeController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
-use App\Http\Controllers\Api\V1\Packages\PackageTypeController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
@@ -73,6 +70,8 @@ use App\Http\Controllers\Api\V1\Tours\TourStopServiceController;
 use App\Http\Controllers\Api\V1\Tracking\OrderPositionController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingEventController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingEventDefinitionController;
+use App\Http\Controllers\Api\V1\Types\TypeController;
+use App\Http\Controllers\Api\V1\Types\TypeItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(static function (): void {
@@ -150,21 +149,15 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('organization-users', OrganizationUserController::class)->except(['create', 'edit']);
         Route::apiResource('providers', ProviderController::class)->except(['create', 'edit']);
         Route::apiResource('drivers', DriverController::class)->except(['create', 'edit']);
-        // Sans ce renommage, Laravel genere le parametre `vehicle_type` et la
-        // liaison implicite vers $vehicleType ne se fait pas.
-        Route::apiResource('vehicle-types', VehicleTypeController::class)
-            ->parameters(['vehicle-types' => 'vehicleType'])
-            ->except(['create', 'edit']);
         Route::apiResource('vehicles', VehicleController::class)->except(['create', 'edit']);
         Route::apiResource('services', ServiceController::class)->except(['create', 'edit']);
-        Route::get('package-types', [PackageTypeController::class, 'index'])->name('package-types.index');
-        Route::post('package-types', [PackageTypeController::class, 'store'])->name('package-types.store');
-        Route::patch('package-types/{packageType}', [PackageTypeController::class, 'update'])->name('package-types.update');
-        Route::delete('package-types/{packageType}', [PackageTypeController::class, 'destroy'])->name('package-types.destroy');
-        Route::get('package-grouping-types', [GroupingTypeController::class, 'index'])->name('package-grouping-types.index');
-        Route::post('package-grouping-types', [GroupingTypeController::class, 'store'])->name('package-grouping-types.store');
-        Route::patch('package-grouping-types/{groupingType}', [GroupingTypeController::class, 'update'])->name('package-grouping-types.update');
-        Route::delete('package-grouping-types/{groupingType}', [GroupingTypeController::class, 'destroy'])->name('package-grouping-types.destroy');
+        // Les referentiels de type tiennent en deux routes : la source, puis
+        // ses valeurs. Un referentiel ajoute par l'organisme est servi sans
+        // qu'une ligne soit ecrite ici.
+        Route::apiResource('types', TypeController::class)->except(['create', 'edit']);
+        Route::apiResource('type-items', TypeItemController::class)
+            ->parameters(['type-items' => 'typeItem'])
+            ->except(['create', 'edit']);
         Route::patch('orders/{order}/services/{orderService}/status', [OrderServiceController::class, 'updateStatus'])->name('orders.services.status');
         Route::get('orders/{order}/services/{orderService}/contacts', [OrderServiceContactController::class, 'index'])->name('orders.services.contacts.index');
         Route::post('orders/{order}/services/{orderService}/contacts', [OrderServiceContactController::class, 'store'])->name('orders.services.contacts.store');

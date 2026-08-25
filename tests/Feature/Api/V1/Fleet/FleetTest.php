@@ -1,9 +1,9 @@
 <?php
 
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Types\Models\TypeItem;
 
 beforeEach(function (): void {
     $this->seed();
@@ -11,7 +11,7 @@ beforeEach(function (): void {
     $this->organization = authOrganization();
     $this->headers = ['X-Organization-Id' => $this->organization->id];
     $this->provider = Provider::factory()->forOrganization($this->organization)->create();
-    $this->type = VehicleType::factory()->forOrganization($this->organization)->create();
+    $this->type = TypeItem::factory()->forOrganization($this->organization)->ofSystemType('vehicle')->create();
     $this->payload = fn (array $o = []): array => array_merge([
         'providerId' => $this->provider->id,
         'vehicleTypeId' => $this->type->id,
@@ -22,58 +22,6 @@ beforeEach(function (): void {
         'palletCapacity' => 8,
         'status' => 'active',
     ], $o);
-});
-
-describe('vehicle types', function (): void {
-    it('creates, reads, updates and deletes a vehicle type', function (): void {
-        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/vehicle-types', ['code' => 'VT-NEW', 'name' => 'Fourgon 20m3', 'status' => 'active'])
-            ->assertCreated()->assertJsonPath('data.code', 'VT-NEW');
-        $id = $response->json('data.id');
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson("/api/v1/vehicle-types/$id")->assertOk();
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->patchJson("/api/v1/vehicle-types/$id", ['name' => 'Renommé'])
-            ->assertOk()->assertJsonPath('data.name', 'Renommé');
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->deleteJson("/api/v1/vehicle-types/$id")->assertNoContent();
-
-        $this->assertDatabaseHas('audit_logs', ['action' => 'vehicle_type.created', 'entity_type' => 'vehicle_type']);
-        $this->assertDatabaseHas('audit_logs', ['action' => 'vehicle_type.deleted']);
-    });
-
-    it('refuses deletion when a vehicle uses the type', function (): void {
-        Vehicle::factory()->forProvider($this->provider)->ofType($this->type)->create();
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->deleteJson("/api/v1/vehicle-types/{$this->type->id}")
-            ->assertStatus(409);
-
-        $this->assertDatabaseHas('vehicle_types', ['id' => $this->type->id]);
-    });
-
-    it('refuses a duplicated code and hides types of other organizations', function (): void {
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/vehicle-types', ['code' => $this->type->code, 'name' => 'Doublon', 'status' => 'active'])
-            ->assertStatus(422)->assertJsonValidationErrors('code');
-
-        $foreign = VehicleType::factory()->create();
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson("/api/v1/vehicle-types/{$foreign->id}")->assertNotFound();
-    });
-
-    it('searches and filters vehicle types', function (): void {
-        VehicleType::factory()->forOrganization($this->organization)->create(['name' => 'Frigorifique', 'status' => 'inactive']);
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson('/api/v1/vehicle-types?search=Frigo')->assertOk()->assertJsonCount(1, 'data');
-
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson('/api/v1/vehicle-types?status=inactive')->assertOk()->assertJsonCount(1, 'data');
-    });
 });
 
 describe('vehicles CRUD', function (): void {
@@ -112,7 +60,7 @@ describe('vehicles invariants', function (): void {
     });
 
     it('refuses a vehicle type from another organization', function (): void {
-        $foreignType = VehicleType::factory()->create();
+        $foreignType = TypeItem::factory()->ofSystemType('vehicle')->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/vehicles', ($this->payload)(['vehicleTypeId' => $foreignType->id]))
@@ -122,7 +70,7 @@ describe('vehicles invariants', function (): void {
     it('refuses a provider and a type from two different organizations', function (): void {
         $other = Organization::factory()->create();
         $otherProvider = Provider::factory()->forOrganization($other)->create();
-        $otherType = VehicleType::factory()->forOrganization($other)->create();
+        $otherType = TypeItem::factory()->forOrganization($other)->ofSystemType('vehicle')->create();
 
         // Les deux sont hors organisation active : la creation est refusee, et
         // l'invariant provider.organization = type.organization reste tenu.

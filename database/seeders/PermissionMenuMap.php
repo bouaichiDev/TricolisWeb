@@ -38,7 +38,7 @@ final class PermissionMenuMap
         'agencies' => MenuSection::RESOURCES,
         'depots' => MenuSection::RESOURCES,
         'vehicles' => MenuSection::RESOURCES,
-        'vehicle_types' => MenuSection::RESOURCES,
+        'types' => MenuSection::RESOURCES,
         'drivers' => MenuSection::RESOURCES,
         'providers' => MenuSection::RESOURCES,
 

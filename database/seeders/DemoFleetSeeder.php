@@ -6,9 +6,10 @@ namespace Database\Seeders;
 
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Types\Models\Type;
+use App\Modules\Types\Models\TypeItem;
 use Illuminate\Database\Seeder;
 
 /**
@@ -48,13 +49,18 @@ class DemoFleetSeeder extends Seeder
             ]
         );
 
-        $vanType = VehicleType::firstOrCreate(
-            ['organization_id' => $organization->id, 'code' => 'van'],
+        $vehicleTypes = Type::firstOrCreate(
+            ['organization_id' => $organization->id, 'code' => 'vehicle'],
+            ['name' => 'Type de véhicule', 'status' => 'active', 'is_system' => true]
+        );
+
+        $vanType = TypeItem::firstOrCreate(
+            ['organization_id' => $organization->id, 'type_id' => $vehicleTypes->id, 'code' => 'van'],
             ['name' => 'Fourgon', 'status' => 'active']
         );
 
-        VehicleType::firstOrCreate(
-            ['organization_id' => $organization->id, 'code' => 'truck-12t'],
+        TypeItem::firstOrCreate(
+            ['organization_id' => $organization->id, 'type_id' => $vehicleTypes->id, 'code' => 'truck-12t'],
             ['name' => 'Porteur 12T', 'status' => 'active']
         );
 

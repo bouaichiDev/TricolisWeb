@@ -145,8 +145,13 @@ describe('scenario 2 : fournisseur, chauffeur, vehicule, decompte', function ():
             'status' => 'active',
         ])->assertCreated()->assertJsonPath('data.providerId', $providerId);
 
-        $vehicleTypeId = ($this->api)('POST', '/api/v1/vehicle-types', [
-            'code' => 'VL-3T5', 'name' => 'Vehicule leger 3,5 t', 'status' => 'active',
+        // La source `vehicle` est livree avec l'organisation : on y ajoute une
+        // valeur, sans creer de table ni de route.
+        $vehicleType = ($this->api)('GET', '/api/v1/types?search=vehicle')
+            ->assertOk()->json('data.0.id');
+
+        $vehicleTypeId = ($this->api)('POST', '/api/v1/type-items', [
+            'typeId' => $vehicleType, 'code' => 'VL-3T5', 'name' => 'Vehicule leger 3,5 t',
         ])->assertCreated()->json('data.id');
 
         ($this->api)('POST', '/api/v1/vehicles', [

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useReferentialSelectOptions } from '@/modules/packages/hooks/useReferentials'
+import { useTypeItemOptions } from '@/modules/types/hooks/useTypes'
 import { ApiError } from '@/shared/api/errors'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
@@ -48,8 +48,8 @@ export function OrderPackageDialog({
   const { t } = useTranslation()
   const create = useCreateOrderPackage(orderId)
   const update = useUpdateOrderPackage(orderId)
-  const types = useReferentialSelectOptions('package-types')
-  const groupings = useReferentialSelectOptions('package-grouping-types')
+  const types = useTypeItemOptions('package')
+  const groupings = useTypeItemOptions('grouping')
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})

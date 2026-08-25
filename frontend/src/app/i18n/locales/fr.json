@@ -78,8 +78,6 @@
     "resources": "Ressources",
     "myOrganization": "Mon organisation",
     "services": "Services",
-    "packageTypes": "Types de colis",
-    "groupingTypes": "Types de regroupement",
     "operations": "Exploitation",
     "orders": "Commandes",
     "catalogs": "Catalogues",
@@ -89,7 +87,8 @@
     "stockLocations": "Emplacements",
     "statuses": "Statuts",
     "journey": "Parcours client",
-    "apiConfigurations": "API externes"
+    "apiConfigurations": "API externes",
+    "types": "Types"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -620,20 +619,6 @@
       "name": "Nom",
       "status": "Statut"
     }
-  },
-  "packageTypes": {
-    "title": "Types de colis",
-    "subtitle": "Palette, carton, bac — la nature physique d’un colis",
-    "create": "Nouveau type de colis",
-    "edit": "Modifier le type de colis",
-    "empty": "Aucun type de colis"
-  },
-  "groupingTypes": {
-    "title": "Types de regroupement",
-    "subtitle": "La façon dont les colis sont assemblés",
-    "create": "Nouveau type de regroupement",
-    "edit": "Modifier le type de regroupement",
-    "empty": "Aucun type de regroupement"
   },
   "catalogs": {
     "title": "Catalogues",
@@ -1409,6 +1394,31 @@
       "trigger": "Déclencheur",
       "api": "Suivi en direct",
       "active": "Active"
+    }
+  },
+  "types": {
+    "title": "Types",
+    "subtitle": "Les référentiels de votre organisation : les sources à gauche, leurs valeurs à droite",
+    "sources": "Sources",
+    "values": "Valeurs",
+    "createSource": "Ajouter un type",
+    "createItem": "Ajouter une valeur",
+    "newSourceTitle": "Nouveau type",
+    "sourceTitle": "Modifier le type",
+    "newItemTitle": "Nouvelle valeur",
+    "itemTitle": "Modifier la valeur",
+    "formHint": "Le code sert aux échanges avec vos outils ; le nom est ce que vos équipes lisent.",
+    "codeLocked": "Ce code est utilisé par la structure de la base : il ne peut pas être modifié.",
+    "systemSource": "Type structurel",
+    "noSource": "Aucun type déclaré.",
+    "noItem": "Aucune valeur dans ce type.",
+    "pickSource": "Choisissez un type à gauche pour voir ses valeurs.",
+    "itemCount_one": "{{count}} valeur",
+    "itemCount_other": "{{count}} valeurs",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "status": "Statut"
     }
   }
 }

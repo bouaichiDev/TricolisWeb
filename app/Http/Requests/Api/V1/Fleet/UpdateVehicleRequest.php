@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Fleet;
 
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\IsTypeItemOf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +32,7 @@ class UpdateVehicleRequest extends FormRequest
             ],
             'vehicleTypeId' => [
                 'sometimes', 'ulid',
-                new BelongsToActiveOrganization(VehicleType::class, null, 'Ce type de véhicule n’appartient pas à l’organisation active.'),
+                new IsTypeItemOf('vehicle', 'Ce type de véhicule n’appartient pas à l’organisation active.'),
             ],
             'code' => [
                 'sometimes', 'string', 'max:64',

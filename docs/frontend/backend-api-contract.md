@@ -293,11 +293,22 @@ GET|POST /agencies/{agency}/depots     GET|PATCH|DELETE /agencies/{agency}/depot
 GET|POST /addresses             GET|PATCH|DELETE /addresses/{id}
 GET|POST /contacts              GET|PATCH|DELETE /contacts/{id}
 GET|POST /services              GET|PATCH|DELETE /services/{id}
-GET|POST /package-types         PATCH|DELETE /package-types/{id}
-GET|POST /package-grouping-types PATCH|DELETE /package-grouping-types/{id}
-GET|POST /vehicle-types         GET|PATCH|DELETE /vehicle-types/{id}
+GET|POST /types                 GET|PATCH|DELETE /types/{id}
+GET|POST /type-items            GET|PATCH|DELETE /type-items/{id}
 GET|POST /documents             GET|DELETE /documents/{id}     GET /documents/{id}/download
 ```
+
+Les référentiels de type tiennent en deux routes. `/types` porte les sources —
+`vehicle`, `package`, `grouping` sont livrées avec l'organisation, et un
+organisme en ajoute d'autres — `/type-items` leurs valeurs, filtrables par
+`?type=vehicle` (code de la source) ou `?typeId=`. Les anciennes routes
+`/package-types`, `/package-grouping-types` et `/vehicle-types` n'existent plus ;
+les identifiants, eux, n'ont pas changé.
+
+Le code d'une valeur est unique **au sein de sa source** : « STD » peut désigner
+un colis standard et un véhicule standard. Une valeur prise dans une autre
+source est refusée en 422 — `vehicleTypeId` n'accepte qu'une valeur de
+`vehicle`.
 
 ### Clients
 

@@ -13,6 +13,7 @@ use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Actions\SyncOrganizationMenu;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\Types\Actions\SeedSystemTypes;
 use App\Shared\Enums\OrganizationStatus;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Http\Requests\ListRequest;
@@ -123,6 +124,9 @@ class OrganizationController extends Controller
             // écran de réglage, et son administrateur ne saurait pas quelles
             // entrées existent.
             app(SyncOrganizationMenu::class)->execute($organization->id);
+            // Sans ses sources structurelles, l'organisation ne pourrait ni
+            // creer un vehicule ni classer un colis.
+            app(SeedSystemTypes::class)->execute($organization->id);
 
             return $organization;
         });

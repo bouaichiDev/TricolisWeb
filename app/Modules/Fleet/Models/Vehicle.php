@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Fleet\Models;
 
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Types\Models\TypeItem;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,11 +64,11 @@ class Vehicle extends Model
     }
 
     /**
-     * @return BelongsTo<VehicleType, $this>
+     * @return BelongsTo<TypeItem, $this>
      */
     public function vehicleType(): BelongsTo
     {
-        return $this->belongsTo(VehicleType::class, 'vehicle_type_id');
+        return $this->belongsTo(TypeItem::class, 'vehicle_type_id');
     }
 
     /**

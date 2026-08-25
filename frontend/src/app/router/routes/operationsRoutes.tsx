@@ -1,9 +1,8 @@
 import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { TypeListPage } from '@/modules/types/pages/TypeListPage'
 import { ClaimListPage } from '@/modules/claims/pages/ClaimListPage'
-import { GroupingTypeListPage } from '@/modules/packages/pages/GroupingTypeListPage'
-import { PackageTypeListPage } from '@/modules/packages/pages/PackageTypeListPage'
 import { ServiceCreatePage } from '@/modules/services/pages/ServiceCreatePage'
 import { ServiceDetailPage } from '@/modules/services/pages/ServiceDetailPage'
 import { ServiceEditPage } from '@/modules/services/pages/ServiceEditPage'
@@ -16,9 +15,9 @@ import { ServiceListPage } from '@/modules/services/pages/ServiceListPage'
 /**
  * Exploitation — référentiels de la Phase 2.
  *
- * Les types de colis et de regroupement sont gouvernés par `packages.*` :
- * `PermissionSeeder` ne leur donne aucune permission propre, et en inventer
- * une produirait un code que rien ne vérifie côté serveur.
+ * Les référentiels de type sont gouvernés par `types.*`, un seul module pour
+ * toutes les sources : celle qu'un organisme ajoute est couverte d'office,
+ * alors qu'une permission par référentiel aurait demandé du code à chaque fois.
  *
  * `organizationOnly` sur chaque route : ces référentiels appartiennent aux
  * organismes, pas à la plateforme.
@@ -73,13 +72,8 @@ export const operationsRoutes = [
   />,
 
   <Route
-    key="package-types"
-    path="/package-types"
-    element={guarded('packages.view', <PackageTypeListPage />, { organizationOnly: true })}
-  />,
-  <Route
-    key="grouping-types"
-    path="/package-grouping-types"
-    element={guarded('packages.view', <GroupingTypeListPage />, { organizationOnly: true })}
+    key="types"
+    path="/types"
+    element={guarded('types.view', <TypeListPage />, { organizationOnly: true })}
   />,
 ]

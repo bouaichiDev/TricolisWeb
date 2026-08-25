@@ -127,8 +127,9 @@ export function serveWizardScope({ catalogEnabled = true } = {}) {
     http.get(`${API}/addresses/:addressId/contacts`, () =>
       HttpResponse.json({ data: [], meta: [] }),
     ),
-    http.get(`${API}/package-types`, () => HttpResponse.json(paginated([]))),
-    http.get(`${API}/package-grouping-types`, () => HttpResponse.json(paginated([]))),
+    // Les trois referentiels de type passent par la meme route, distingues
+    // par leur source.
+    http.get(`${API}/type-items`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/customers/${CUSTOMER_ID}/catalogs`, () =>
       HttpResponse.json(
         paginated([

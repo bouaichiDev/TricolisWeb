@@ -10,8 +10,7 @@ use App\Modules\Agencies\Models\Depot;
 use App\Modules\Catalogs\Models\CustomerCatalogItem;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Service;
-use App\Modules\Packages\Models\GroupingType;
-use App\Modules\Packages\Models\PackageType;
+use App\Modules\Types\Models\TypeItem;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -72,21 +71,34 @@ final readonly class OrderScopeGuard
         );
     }
 
-    public function packageType(string $packageTypeId, string $organizationId, string $field = 'packageTypeId'): PackageType
+    public function packageType(string $packageTypeId, string $organizationId, string $field = 'packageTypeId'): TypeItem
     {
-        return $this->findOrFail(
-            PackageType::where('organization_id', $organizationId)->whereKey($packageTypeId)->first(),
-            $field,
-            'Ce type de colis n’appartient pas à l’organisation active.',
-        );
+        return $this->typeItem($packageTypeId, $organizationId, 'package', $field,
+            'Ce type de colis n’appartient pas à l’organisation active.');
     }
 
-    public function groupingType(string $groupingTypeId, string $organizationId, string $field = 'groupingTypeId'): GroupingType
+    public function groupingType(string $groupingTypeId, string $organizationId, string $field = 'groupingTypeId'): TypeItem
+    {
+        return $this->typeItem($groupingTypeId, $organizationId, 'grouping', $field,
+            'Ce type de regroupement n’appartient pas à l’organisation active.');
+    }
+
+    /**
+     * Une valeur de référentiel, de la source attendue.
+     *
+     * Le code de la source est vérifié en plus de l'organisation : depuis que
+     * les référentiels partagent une table, « Palette » et « Camion 19T » y
+     * cohabitent, et seul ce filtre empêche d'affecter l'un pour l'autre.
+     */
+    private function typeItem(string $id, string $organizationId, string $typeCode, string $field, string $message): TypeItem
     {
         return $this->findOrFail(
-            GroupingType::where('organization_id', $organizationId)->whereKey($groupingTypeId)->first(),
+            TypeItem::where('organization_id', $organizationId)
+                ->whereKey($id)
+                ->whereHas('type', fn ($query) => $query->where('code', $typeCode))
+                ->first(),
             $field,
-            'Ce type de regroupement n’appartient pas à l’organisation active.',
+            $message,
         );
     }
 

@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Modules\Identity\Models\User;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\Types\Actions\SeedSystemTypes;
 use App\Shared\Enums\OrganizationStatus;
 use App\Shared\Enums\UserStatus;
 use Illuminate\Database\Seeder;
@@ -43,6 +44,10 @@ class DevelopmentOrganizationSeeder extends Seeder
                 'settings' => [],
             ]
         );
+
+        // Memes sources que pour une organisation creee par l'API : sans elles,
+        // ni vehicule ni colis ne pourrait etre classe.
+        app(SeedSystemTypes::class)->execute($organization->id);
 
         $user = User::firstOrCreate(
             ['email' => self::ADMIN_EMAIL],

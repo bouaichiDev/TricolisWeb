@@ -1,7 +1,7 @@
 import { CornerDownRight, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { useReferentialSelectOptions } from '@/modules/packages/hooks/useReferentials'
+import { useTypeItemOptions } from '@/modules/types/hooks/useTypes'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
 import { Button } from '@/shared/components/ui/button'
@@ -46,8 +46,8 @@ export function PackageCard({
   onDetach,
 }: PackageCardProps) {
   const { t } = useTranslation()
-  const types = useReferentialSelectOptions('package-types')
-  const groupings = useReferentialSelectOptions('package-grouping-types')
+  const types = useTypeItemOptions('package')
+  const groupings = useTypeItemOptions('grouping')
 
   return (
     <li style={{ marginLeft: `${depth * 1.5}rem` }} className="rounded-lg border p-4">

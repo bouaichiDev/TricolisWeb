@@ -26,7 +26,6 @@ use App\Modules\Drivers\Models\Driver;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
@@ -37,8 +36,6 @@ use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
-use App\Modules\Packages\Models\GroupingType;
-use App\Modules\Packages\Models\PackageType;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
@@ -56,6 +53,8 @@ use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
 use App\Modules\Tracking\Models\TrackingEvent;
 use App\Modules\Tracking\Models\TrackingEventDefinition;
+use App\Modules\Types\Models\Type;
+use App\Modules\Types\Models\TypeItem;
 use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
@@ -83,7 +82,6 @@ use App\Policies\OrderPolicy;
 use App\Policies\OrganizationApiConfigurationPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
-use App\Policies\PackageReferentialPolicy;
 use App\Policies\ProofOfDeliveryPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\ProviderSettlementLinePolicy;
@@ -104,9 +102,10 @@ use App\Policies\TourStopPolicy;
 use App\Policies\TourStopServicePolicy;
 use App\Policies\TrackingEventDefinitionPolicy;
 use App\Policies\TrackingEventPolicy;
+use App\Policies\TypeItemPolicy;
+use App\Policies\TypePolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehiclePolicy;
-use App\Policies\VehicleTypePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Opcodes\LogViewer\LogFile;
@@ -133,11 +132,10 @@ class AuthServiceProvider extends ServiceProvider
         Order::class => OrderPolicy::class,
         Service::class => ServicePolicy::class,
         CustomerCatalog::class => CustomerCatalogPolicy::class,
-        PackageType::class => PackageReferentialPolicy::class,
-        GroupingType::class => PackageReferentialPolicy::class,
         Provider::class => ProviderPolicy::class,
         Driver::class => DriverPolicy::class,
-        VehicleType::class => VehicleTypePolicy::class,
+        Type::class => TypePolicy::class,
+        TypeItem::class => TypeItemPolicy::class,
         Vehicle::class => VehiclePolicy::class,
         Tour::class => TourPolicy::class,
         TourStop::class => TourStopPolicy::class,

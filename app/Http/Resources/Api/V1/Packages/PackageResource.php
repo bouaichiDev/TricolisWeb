@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Packages;
 
+use App\Http\Resources\Api\V1\Types\TypeItemResource;
 use App\Modules\Packages\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -36,8 +37,8 @@ class PackageResource extends JsonResource
             'width' => $this->width,
             'height' => $this->height,
             'status' => $this->status,
-            'packageType' => new ReferentialResource($this->whenLoaded('packageType')),
-            'groupingType' => new ReferentialResource($this->whenLoaded('groupingType')),
+            'packageType' => new TypeItemResource($this->whenLoaded('packageType')),
+            'groupingType' => new TypeItemResource($this->whenLoaded('groupingType')),
             'lines' => $this->whenLoaded('packageOrderLines', fn () => $this->packageOrderLines->map(fn ($allocation): array => [
                 'id' => $allocation->id,
                 'orderLineId' => $allocation->order_line_id,

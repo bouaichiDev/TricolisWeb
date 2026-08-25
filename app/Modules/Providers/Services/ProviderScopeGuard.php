@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Providers\Services;
 
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Providers\Models\Provider;
+use App\Modules\Types\Models\TypeItem;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -29,9 +29,19 @@ final readonly class ProviderScopeGuard
         return $provider;
     }
 
-    public function vehicleType(string $vehicleTypeId, string $organizationId, string $field = 'vehicleTypeId'): VehicleType
+    /**
+     * Le type de véhicule est une valeur du référentiel `vehicle`.
+     *
+     * Depuis la fusion des référentiels, la table héberge aussi les types de
+     * colis : sans le filtre sur la source, « Palette » passerait pour un type
+     * de véhicule valide.
+     */
+    public function vehicleType(string $vehicleTypeId, string $organizationId, string $field = 'vehicleTypeId'): TypeItem
     {
-        $type = VehicleType::where('organization_id', $organizationId)->whereKey($vehicleTypeId)->first();
+        $type = TypeItem::where('organization_id', $organizationId)
+            ->whereKey($vehicleTypeId)
+            ->whereHas('type', fn ($query) => $query->where('code', 'vehicle'))
+            ->first();
 
         if ($type === null) {
             $this->fail($field, 'Ce type de véhicule n’appartient pas à l’organisation active.');
@@ -44,7 +54,7 @@ final readonly class ProviderScopeGuard
      * Un véhicule ne peut pas croiser le fournisseur d'une organisation avec le
      * type de véhicule d'une autre.
      */
-    public function assertSameOrganization(Provider $provider, VehicleType $vehicleType): void
+    public function assertSameOrganization(Provider $provider, TypeItem $vehicleType): void
     {
         if ($provider->organization_id !== $vehicleType->organization_id) {
             $this->fail('vehicleTypeId', 'Le fournisseur et le type de véhicule doivent appartenir à la même organisation.');

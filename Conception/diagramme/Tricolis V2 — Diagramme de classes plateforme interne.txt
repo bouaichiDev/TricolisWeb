@@ -268,21 +268,8 @@ package "Commandes, articles et colis" {
     +status: string
   }
 
-  class PackageType {
-    +id: ULID
-    +organizationId: ULID
-    +code: string
-    +name: string
-    +status: string
-  }
-
-  class GroupingType {
-    +id: ULID
-    +organizationId: ULID
-    +code: string
-    +name: string
-    +status: string
-  }
+  ' Les referentiels de type sont reunis dans Type / TypeItem : voir plus bas.
+  ' PackageType et GroupingType sont devenus les sources `package` et `grouping`.
 
   class Package {
     +id: ULID 
@@ -461,12 +448,29 @@ package "Fournisseurs et ressources" {
   +status: string
 }
 
-  class VehicleType {
+  ' Referentiels de type, communs a toute l'organisation.
+  '
+  ' Type porte la source (vehicule, colis, groupage, et celles que l'organisme
+  ' ajoute), TypeItem ses valeurs. Les trois tables jumelles d'origine
+  ' (VehicleType, PackageType, GroupingType) y ont ete fondues : ajouter un
+  ' referentiel ne demande plus de migration.
+  class Type {
     +id: ULID
     +organizationId: ULID
     +code: string
     +name: string
     +status: string
+    +isSystem: bool
+  }
+
+  class TypeItem {
+    +id: ULID
+    +organizationId: ULID
+    +typeId: ULID
+    +code: string
+    +name: string
+    +status: string
+    +position: int
   }
 
   class Vehicle {
@@ -863,8 +867,9 @@ CustomerCatalogItem "0..1" -- "0..*" OrderLine
 
 Order "1" *-- "0..*" Package
 Package "0..1" --> "0..*" Package : parent
-PackageType "1" -- "0..*" Package
-GroupingType "1" -- "0..*" Package
+Type "1" -- "0..*" TypeItem
+TypeItem "1" -- "0..*" Package : packageTypeId
+TypeItem "1" -- "0..*" Package : groupingTypeId
 Package "1" -- "0..*" PackageOrderLine
 OrderLine "1" -- "0..*" PackageOrderLine
 StockLocation "0..1" -- "0..*" Package : currentLocation
@@ -893,7 +898,7 @@ Provider "0..*" --> "0..1" Contact
 Provider "1" -- "0..*" Driver
 Provider "1" -- "0..*" Vehicle
 
-VehicleType "1" -- "0..*" Vehicle
+TypeItem "1" -- "0..*" Vehicle : vehicleTypeId
 
 Organization "1" -- "0..*" Tour
 Agency "1" -- "0..*" Tour

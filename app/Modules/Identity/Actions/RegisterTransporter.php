@@ -13,6 +13,7 @@ use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Actions\SyncOrganizationMenu;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\Types\Actions\SeedSystemTypes;
 use App\Shared\Enums\OrganizationStatus;
 use App\Shared\Enums\RoleScope;
 use App\Shared\Enums\UserStatus;
@@ -95,6 +96,9 @@ final readonly class RegisterTransporter
             // Même menu de base qu'une organisation créée par la plateforme :
             // s'inscrire ne doit pas donner un back-office vide de réglages.
             app(SyncOrganizationMenu::class)->execute($organization->id);
+            // Sans ses sources structurelles, l'organisation ne pourrait ni
+            // creer un vehicule ni classer un colis.
+            app(SeedSystemTypes::class)->execute($organization->id);
 
             $token = $user->createToken($deviceName)->plainTextToken;
 

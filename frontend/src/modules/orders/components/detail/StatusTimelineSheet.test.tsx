@@ -43,8 +43,9 @@ function renderDetail(permissions: string[], order: Partial<OrderDetail> = {}) {
     ),
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([AUDIT]))),
-    http.get(`${API}/package-types`, () => HttpResponse.json(paginated([]))),
-    http.get(`${API}/package-grouping-types`, () => HttpResponse.json(paginated([]))),
+    // Les trois referentiels de type passent par la meme route, distingues
+    // par leur source.
+    http.get(`${API}/type-items`, () => HttpResponse.json(paginated([]))),
   )
 
   return renderWithProviders(<OrderDetailPage />, {

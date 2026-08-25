@@ -29,7 +29,6 @@ use App\Modules\Drivers\Models\Driver;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
@@ -43,10 +42,8 @@ use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
-use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
-use App\Modules\Packages\Models\PackageType;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
@@ -63,6 +60,8 @@ use App\Modules\Tours\Models\TourPeriodAssignment;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
 use App\Modules\Tracking\Models\TrackingEvent;
+use App\Modules\Types\Models\Type;
+use App\Modules\Types\Models\TypeItem;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -118,17 +117,15 @@ final class MorphMap
 
     public const string PACKAGE = 'package';
 
-    public const string PACKAGE_TYPE = 'package_type';
+    public const string TYPE = 'type';
 
-    public const string GROUPING_TYPE = 'grouping_type';
+    public const string TYPE_ITEM = 'type_item';
 
     public const string PACKAGE_ORDER_LINE = 'package_order_line';
 
     public const string PROVIDER = 'provider';
 
     public const string DRIVER = 'driver';
-
-    public const string VEHICLE_TYPE = 'vehicle_type';
 
     public const string VEHICLE = 'vehicle';
 
@@ -224,12 +221,11 @@ final class MorphMap
             self::CUSTOMER_CATALOG => CustomerCatalog::class,
             self::CUSTOMER_CATALOG_ITEM => CustomerCatalogItem::class,
             self::PACKAGE => Package::class,
-            self::PACKAGE_TYPE => PackageType::class,
-            self::GROUPING_TYPE => GroupingType::class,
+            self::TYPE => Type::class,
+            self::TYPE_ITEM => TypeItem::class,
             self::PACKAGE_ORDER_LINE => PackageOrderLine::class,
             self::PROVIDER => Provider::class,
             self::DRIVER => Driver::class,
-            self::VEHICLE_TYPE => VehicleType::class,
             self::VEHICLE => Vehicle::class,
             self::ENTITY_ADDRESS => EntityAddress::class,
             self::ENTITY_CONTACT => EntityContact::class,

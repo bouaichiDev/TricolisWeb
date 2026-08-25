@@ -130,24 +130,16 @@ final class MenuCatalogue
                 permission: 'claims.view',
                 parent: 'operations',
             ),
+            // Une seule entree pour tous les referentiels de type : celui
+            // qu'un organisme ajoute y apparait sans qu'on touche au catalogue.
             new MenuEntry(
-                code: 'package-types',
-                labelKey: 'nav.packageTypes',
-                icon: 'Package',
+                code: 'types',
+                labelKey: 'nav.types',
+                icon: 'Tags',
                 section: MenuSection::OPERATIONS,
                 position: 33,
-                route: '/package-types',
-                permission: 'packages.view',
-                parent: 'operations',
-            ),
-            new MenuEntry(
-                code: 'grouping-types',
-                labelKey: 'nav.groupingTypes',
-                icon: 'Layers',
-                section: MenuSection::OPERATIONS,
-                position: 34,
-                route: '/package-grouping-types',
-                permission: 'packages.view',
+                route: '/types',
+                permission: 'types.view',
                 parent: 'operations',
             ),
 

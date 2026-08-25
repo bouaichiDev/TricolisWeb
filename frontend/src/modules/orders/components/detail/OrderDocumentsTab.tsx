@@ -8,6 +8,7 @@ import {
 } from '@/modules/documents/hooks/useOrderDocuments'
 import type { Document } from '@/modules/documents/types/document'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { OrderPodSection } from '@/modules/pod/components/OrderPodSection'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ControlledField } from '@/shared/components/form/ControlledField'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
@@ -72,6 +73,10 @@ export function OrderDocumentsTab({ orderId }: { orderId: string }) {
     )
   }
 
+  // Les preuves sont des documents comme les autres, reconnus a leur type :
+  // elles ont leur section, en tete, parce qu'on les cherche en premier.
+  const all = documents.data?.data ?? []
+
   return (
     <div className="flex flex-col gap-6">
       <SectionCard title={t('documents.upload')}>
@@ -105,10 +110,14 @@ export function OrderDocumentsTab({ orderId }: { orderId: string }) {
         </div>
       </SectionCard>
 
+      <SectionCard title={t('pod.title')}>
+        <OrderPodSection documents={all} isLoading={documents.isPending} />
+      </SectionCard>
+
       <SectionCard title={t('documents.title')}>
         <DataTable
           columns={columns}
-          rows={documents.data?.data ?? []}
+          rows={all}
           isLoading={documents.isPending}
           meta={documents.data?.meta}
           onPageChange={setPage}

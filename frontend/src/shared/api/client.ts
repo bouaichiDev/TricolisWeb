@@ -107,6 +107,34 @@ async function request<T>(
   return (await response.json()) as T
 }
 
+/**
+ * Récupère un fichier, en conservant l'authentification.
+ *
+ * `GET /documents/{id}/download` est une route authentifiée : un `<a href>`
+ * partirait sans l'en-tête `Bearer` ni `X-Organization-Id` et reviendrait en
+ * 401. Le corps n'est pas du JSON, d'où cette variante — la gestion d'erreur
+ * reste celle de `request`.
+ */
+async function requestBlob(path: string): Promise<Blob> {
+  let response: Response
+
+  try {
+    response = await fetch(buildUrl(path), { method: 'GET', headers: buildHeaders(false) })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error
+    throw new NetworkError()
+  }
+
+  if (!response.ok) {
+    const apiError = await toApiError(response)
+    if (apiError.isUnauthenticated) session.clear()
+
+    throw apiError
+  }
+
+  return response.blob()
+}
+
 export const api = {
   get: <T>(path: string, options?: Omit<RequestOptions, 'body' | 'formData'>) =>
     request<T>('GET', path, options),
@@ -122,6 +150,8 @@ export const api = {
     request<T>('DELETE', path, options),
   upload: <T>(path: string, formData: FormData, options?: RequestOptions) =>
     request<T>('POST', path, { ...options, formData }),
+  /** Téléchargement authentifié : le corps est un fichier, pas du JSON. */
+  blob: (path: string) => requestBlob(path),
 }
 
 export { ApiError, NetworkError }

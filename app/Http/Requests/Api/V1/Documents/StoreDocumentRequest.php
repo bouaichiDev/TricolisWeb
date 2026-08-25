@@ -16,7 +16,9 @@ class StoreDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt'],
+            // L'audio est accepte pour les reclamations : un client decrit un
+            // dommage en trente secondes de vocal la ou il n'ecrirait pas.
+            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,csv,txt,mp3,wav,m4a,ogg,webm'],
             'referenceNumber' => ['nullable', 'string', 'max:255'],
             'documentType' => ['required', 'string', 'max:64'],
             'status' => ['required', 'string', 'max:20'],

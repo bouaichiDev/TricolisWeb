@@ -426,10 +426,12 @@
       "fileName": "Fichier",
       "documentType": "Type",
       "size": "Taille",
-      "createdAt": "Ajouté le"
+      "createdAt": "Ajouté le",
+      "mimeType": "Type de fichier"
     },
     "apiMissingTitle": "Liste indisponible",
-    "apiMissingHint": "L’API ne permet pas encore de lister les documents d’un client : GET /documents n’accepte ni entityType ni entityId. Le manque est consigné au rapport de phase."
+    "apiMissingHint": "L’API ne permet pas encore de lister les documents d’un client : GET /documents n’accepte ni entityType ni entityId. Le manque est consigné au rapport de phase.",
+    "download": "Télécharger"
   },
   "audit": {
     "title": "Journal d’audit",
@@ -899,7 +901,7 @@
   "pod": {
     "title": "Preuves de livraison",
     "description": "Une preuve constate un fait : elle ne se modifie ni ne s’efface. Une livraison mal constatée se corrige par une réclamation.",
-    "empty": "Aucune preuve de livraison",
+    "empty": "Aucune preuve de livraison déposée",
     "add": "Enregistrer une preuve",
     "addHint": "Le nom de qui a reçu et la date suffisent. La signature et la photo sont facultatives.",
     "created": "Preuve de livraison enregistrée.",
@@ -916,7 +918,8 @@
       "photo": "Photo",
       "remark": "Remarque",
       "createdBy": "Enregistré par"
-    }
+    },
+    "sectionHint": "Déposées par le chauffeur dans le dossier de la commande. Elles ne peuvent pas être supprimées : une preuve erronée se conteste par une réclamation."
   },
   "tracking": {
     "title": "Suivi d’exécution",

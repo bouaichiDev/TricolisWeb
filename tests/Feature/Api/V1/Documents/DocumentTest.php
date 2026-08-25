@@ -55,3 +55,37 @@ it('does not expose a document from another organization', function (): void {
     $document = Document::create(['organization_id' => $other->id, 'document_type' => 'proof', 'status' => 'active', 'file_name' => 'x.pdf', 'storage_path' => 'documents/x.pdf', 'mime_type' => 'application/pdf', 'size' => 1, 'created_by' => $this->user->id]);
     $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->getJson("/api/v1/documents/$document->id")->assertNotFound();
 });
+
+/**
+ * Une preuve de livraison ne s'efface pas.
+ *
+ * Elle est deposee par le chauffeur et fait foi : la supprimer detruirait la
+ * seule trace de ce qui a ete remis. Une preuve erronee se conteste par une
+ * reclamation.
+ */
+it('refuses to delete a proof of delivery, whatever the permission', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->post('/api/v1/documents', [
+        'file' => UploadedFile::fake()->create('pod-signature.pdf', 50, 'application/pdf'),
+        'documentType' => 'pod', 'status' => 'active',
+        'entityType' => 'organization', 'entityId' => $this->organization->id,
+    ])->assertCreated()->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->deleteJson("/api/v1/documents/$created")
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('documents', ['id' => $created, 'deleted_at' => null]);
+
+    // Elle reste consultable et telechargeable.
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->get("/api/v1/documents/$created/download")->assertOk();
+});
+
+/** Un vocal decrit un dommage en trente secondes la ou personne n'ecrirait. */
+it('accepts an audio file as a document', function (): void {
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)->post('/api/v1/documents', [
+        'file' => UploadedFile::fake()->create('temoignage.mp3', 200, 'audio/mpeg'),
+        'documentType' => 'claim_evidence', 'status' => 'active',
+        'entityType' => 'organization', 'entityId' => $this->organization->id,
+    ])->assertCreated()->assertJsonPath('data.fileName', 'temoignage.mp3');
+});

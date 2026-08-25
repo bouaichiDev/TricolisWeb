@@ -737,6 +737,28 @@
       "status": "Statut"
     }
   },
+  "pod": {
+    "title": "Preuves de livraison",
+    "description": "Une preuve constate un fait : elle ne se modifie ni ne s’efface. Une livraison mal constatée se corrige par une réclamation.",
+    "empty": "Aucune preuve de livraison",
+    "add": "Enregistrer une preuve",
+    "addHint": "Le nom de qui a reçu et la date suffisent. La signature et la photo sont facultatives.",
+    "created": "Preuve de livraison enregistrée.",
+    "openDetail": "Détail",
+    "wholeOrder": "Toute la commande",
+    "serviceHint": "Facultatif : la preuve peut porter sur un service précis.",
+    "noDocument": "Non fournie.",
+    "fields": {
+      "recipientName": "Destinataire",
+      "deliveredAt": "Livré le",
+      "orderService": "Service",
+      "proofs": "Pièces",
+      "signature": "Signature",
+      "photo": "Photo",
+      "remark": "Remarque",
+      "createdBy": "Enregistré par"
+    }
+  },
   "tracking": {
     "title": "Suivi d’exécution",
     "description": "Journal chronologique des événements. Un événement ne se modifie ni ne s’efface : on en ajoute un qui corrige.",
@@ -982,6 +1004,7 @@
       "packages": "Colis",
       "services": "Services",
       "tracking": "Suivi",
+      "pod": "Preuves",
       "documents": "Documents",
       "history": "Historique"
     },

@@ -14,15 +14,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { formatDate } from '@/shared/utils/format'
-
-/** Taille lisible ; le serveur renvoie des octets. */
-function formatSize(size: number): string {
-  if (size < 1024) return `${size} o`
-  if (size < 1024 * 1024) return `${Math.round(size / 1024)} Ko`
-
-  return `${(size / (1024 * 1024)).toFixed(1)} Mo`
-}
+import { formatBytes, formatDate } from '@/shared/utils/format'
 
 /**
  * Documents rattachés à la commande.
@@ -56,7 +48,7 @@ export function OrderDocumentsTab({ orderId }: { orderId: string }) {
       key: 'size',
       header: t('documents.fields.size'),
       hideOnMobile: true,
-      cell: (row) => formatSize(row.size),
+      cell: (row) => formatBytes(row.size),
     },
     {
       key: 'createdAt',

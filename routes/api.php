@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\V1\Identity\RoleController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
 use App\Http\Controllers\Api\V1\Integrations\ApiConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
+use App\Http\Controllers\Api\V1\Integrations\OrganizationApiConfigurationController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Http\Controllers\Api\V1\Orders\OrderDocumentController;
 use App\Http\Controllers\Api\V1\Orders\OrderHistoryController;
@@ -70,6 +71,7 @@ use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
 use App\Http\Controllers\Api\V1\Tours\TourStopController;
 use App\Http\Controllers\Api\V1\Tours\TourStopServiceController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingEventController;
+use App\Http\Controllers\Api\V1\Tracking\TrackingEventDefinitionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(static function (): void {
@@ -251,6 +253,17 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->except(['create', 'edit']);
         Route::apiResource('provider-settlements', ProviderSettlementController::class)
             ->parameters(['provider-settlements' => 'providerSettlement'])
+            ->except(['create', 'edit']);
+
+        // Le parcours client : quels statuts deviennent des etapes visibles.
+        Route::apiResource('tracking-event-definitions', TrackingEventDefinitionController::class)
+            ->parameters(['tracking-event-definitions' => 'trackingEventDefinition'])
+            ->except(['create', 'edit']);
+
+        // Les API externes appelees par l'organisme, sens inverse de
+        // customer-api-configurations ou le client nous appelle.
+        Route::apiResource('api-configurations', OrganizationApiConfigurationController::class)
+            ->parameters(['api-configurations' => 'apiConfiguration'])
             ->except(['create', 'edit']);
 
         // Stock client

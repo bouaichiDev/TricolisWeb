@@ -31,6 +31,7 @@ use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
+use App\Modules\Integrations\Models\OrganizationApiConfiguration;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
@@ -54,6 +55,7 @@ use App\Modules\Tours\Models\TourPeriodAssignment;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
 use App\Modules\Tracking\Models\TrackingEvent;
+use App\Modules\Tracking\Models\TrackingEventDefinition;
 use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
@@ -78,6 +80,7 @@ use App\Policies\InvoiceLinePolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\OrderCommunicationPolicy;
 use App\Policies\OrderPolicy;
+use App\Policies\OrganizationApiConfigurationPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
 use App\Policies\PackageReferentialPolicy;
@@ -99,6 +102,7 @@ use App\Policies\TourPeriodPolicy;
 use App\Policies\TourPolicy;
 use App\Policies\TourStopPolicy;
 use App\Policies\TourStopServicePolicy;
+use App\Policies\TrackingEventDefinitionPolicy;
 use App\Policies\TrackingEventPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehiclePolicy;
@@ -148,6 +152,8 @@ class AuthServiceProvider extends ServiceProvider
         ProviderSettlement::class => ProviderSettlementPolicy::class,
         ProviderSettlementLine::class => ProviderSettlementLinePolicy::class,
         StockItem::class => StockItemPolicy::class,
+        OrganizationApiConfiguration::class => OrganizationApiConfigurationPolicy::class,
+        TrackingEventDefinition::class => TrackingEventDefinitionPolicy::class,
         StockLocation::class => StockLocationPolicy::class,
         StockBalance::class => StockBalancePolicy::class,
         StockMovement::class => StockMovementPolicy::class,

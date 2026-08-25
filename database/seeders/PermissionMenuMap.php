@@ -57,6 +57,9 @@ final class PermissionMenuMap
         'proofs_of_delivery' => MenuSection::OPERATIONS,
         'claims' => MenuSection::OPERATIONS,
 
+        'tracking_event_definitions' => MenuSection::OPERATIONS,
+        'api_configurations' => MenuSection::INTEGRATIONS,
+
         'stock_items' => MenuSection::STOCK,
         'stock_balances' => MenuSection::STOCK,
         'stock_locations' => MenuSection::STOCK,

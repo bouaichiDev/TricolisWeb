@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
     'description',
     'icon',
     'position',
-    'is_live',
+    'api_configuration_id',
     'active',
 ])]
 class TrackingEventDefinition extends Model
@@ -44,7 +44,6 @@ class TrackingEventDefinition extends Model
     {
         return [
             'position' => 'integer',
-            'is_live' => 'boolean',
             'active' => 'boolean',
         ];
     }

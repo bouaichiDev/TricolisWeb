@@ -42,7 +42,6 @@ beforeEach(function (): void {
         'code' => 'loaded',
         'title' => 'Votre commande est chargée',
         'position' => 20,
-        'is_live' => false,
         'active' => true,
         ...$overrides,
     ]);

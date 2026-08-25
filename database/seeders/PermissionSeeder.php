@@ -174,6 +174,18 @@ class PermissionSeeder extends Seeder
         ['code' => 'tracking_events.view', 'name' => 'Voir les événements de suivi', 'module' => 'tracking_events', 'action' => 'view'],
         ['code' => 'tracking_events.create', 'name' => 'Créer un événement de suivi', 'module' => 'tracking_events', 'action' => 'create'],
 
+        // Le parcours client : quels statuts deviennent des etapes visibles.
+        ['code' => 'tracking_event_definitions.view', 'name' => 'Voir le parcours client', 'module' => 'tracking_event_definitions', 'action' => 'view'],
+        ['code' => 'tracking_event_definitions.create', 'name' => 'Ajouter une etape au parcours', 'module' => 'tracking_event_definitions', 'action' => 'create'],
+        ['code' => 'tracking_event_definitions.update', 'name' => 'Modifier une etape du parcours', 'module' => 'tracking_event_definitions', 'action' => 'update'],
+        ['code' => 'tracking_event_definitions.delete', 'name' => 'Supprimer une etape du parcours', 'module' => 'tracking_event_definitions', 'action' => 'delete'],
+
+        // Les API externes appelees par l'organisme.
+        ['code' => 'api_configurations.view', 'name' => 'Voir les API externes', 'module' => 'api_configurations', 'action' => 'view'],
+        ['code' => 'api_configurations.create', 'name' => 'Ajouter une API externe', 'module' => 'api_configurations', 'action' => 'create'],
+        ['code' => 'api_configurations.update', 'name' => 'Modifier une API externe', 'module' => 'api_configurations', 'action' => 'update'],
+        ['code' => 'api_configurations.delete', 'name' => 'Supprimer une API externe', 'module' => 'api_configurations', 'action' => 'delete'],
+
         ['code' => 'proofs_of_delivery.view', 'name' => 'Voir les preuves de livraison', 'module' => 'proofs_of_delivery', 'action' => 'view'],
         ['code' => 'proofs_of_delivery.create', 'name' => 'Créer une preuve de livraison', 'module' => 'proofs_of_delivery', 'action' => 'create'],
 

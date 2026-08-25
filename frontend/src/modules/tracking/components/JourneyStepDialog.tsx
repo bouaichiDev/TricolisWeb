@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useApiConfigurationList } from '@/modules/integrations/hooks/useApiConfigurations'
-import { useStatusList, useStatusSources } from '@/modules/statuses/hooks/useStatuses'
 import { ApiError } from '@/shared/api/errors'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
@@ -19,6 +18,7 @@ import {
 import { Label } from '@/shared/components/ui/label'
 import { Switch } from '@/shared/components/ui/switch'
 
+import { JourneyTriggerFields } from './JourneyTriggerFields'
 import { useCreateTrackingDefinition, useUpdateTrackingDefinition } from '../hooks/useTracking'
 import type { TrackingEventDefinition } from '../types/trackingDefinition'
 
@@ -58,11 +58,6 @@ export function JourneyStepDialog({ step, open, onOpenChange }: JourneyStepDialo
   const [active, setActive] = useState(step?.active ?? true)
   const [error, setError] = useState<string | null>(null)
 
-  const sources = useStatusSources()
-  const statuses = useStatusList(
-    { page: 1, perPage: 100, source: sourceType, sort: 'position', direction: 'asc' },
-    open && sourceType !== '',
-  )
   const apis = useApiConfigurationList({ page: 1, perPage: 100 }, open)
 
   const create = useCreateTrackingDefinition()
@@ -95,9 +90,6 @@ export function JourneyStepDialog({ step, open, onOpenChange }: JourneyStepDialo
     }
   }
 
-  const noStatus =
-    sourceType !== '' && !statuses.isPending && (statuses.data?.data ?? []).length === 0
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
@@ -109,43 +101,15 @@ export function JourneyStepDialog({ step, open, onOpenChange }: JourneyStepDialo
         <FormErrorSummary message={error} />
 
         <div className="flex flex-col gap-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AsyncSelect
-              label={t('journey.fields.sourceType')}
-              value={sourceType}
-              onChange={(next) => {
-                setSourceType(next)
-                // Le statut retenu appartenait a l'autre entite : le garder
-                // decrirait un declencheur qui n'existe pas.
-                setStatusCode('')
-              }}
-              options={(sources.data ?? []).map((source) => ({ value: source, label: source }))}
-              isLoading={sources.isPending}
-              required
-              description={t('journey.sourceHint')}
-            />
-
-            <AsyncSelect
-              label={t('journey.fields.statusCode')}
-              value={statusCode}
-              onChange={setStatusCode}
-              options={(statuses.data?.data ?? []).map((status) => ({
-                value: status.code,
-                label: status.label,
-                hint: status.code,
-              }))}
-              isLoading={statuses.isPending}
-              disabled={sourceType === ''}
-              required
-              description={
-                sourceType === ''
-                  ? t('journey.pickSourceFirst')
-                  : noStatus
-                    ? t('journey.noStatus')
-                    : undefined
-              }
-            />
-          </div>
+          <JourneyTriggerFields
+            sourceType={sourceType}
+            statusCode={statusCode}
+            onChange={(patch) => {
+              if (patch.sourceType !== undefined) setSourceType(patch.sourceType)
+              if (patch.statusCode !== undefined) setStatusCode(patch.statusCode)
+            }}
+            enabled={open}
+          />
 
           <ControlledField
             label={t('journey.fields.title')}

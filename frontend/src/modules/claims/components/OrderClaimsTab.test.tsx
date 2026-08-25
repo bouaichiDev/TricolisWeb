@@ -65,6 +65,22 @@ function renderDetail(permissions: string[], statuses = [status('open', 'Ouverte
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated(statuses))),
+    http.get(`${API}/organization-users`, () => HttpResponse.json(paginated([]))),
+    // `ClaimListResource` n'expose ni description, ni cause, ni traitement :
+    // seul le detail les porte.
+    http.get(`${API}/claims/${CLAIM_ID}`, () =>
+      HttpResponse.json({
+        data: {
+          ...claim(),
+          description: 'Le revêtement est griffé sur tout un accoudoir.',
+          cause: 'Manutention',
+          decision: 'Remplacement accepté',
+          followUp: 'Nouveau canapé commandé',
+          orderServiceId: null,
+        },
+        meta: [],
+      }),
+    ),
     http.get(`${API}/orders/${ORDER_ID}/claims`, ({ request }) => {
       calls.push(new URL(request.url))
 
@@ -146,8 +162,56 @@ describe('réclamations d’une commande', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
 
     dialog = within(await screen.findByRole('dialog'))
-    expect(dialog.getByLabelText(/^Décision/)).toBeInTheDocument()
+    expect(await dialog.findByLabelText(/^Décision/)).toBeInTheDocument()
     expect(dialog.getByLabelText(/^Coût/)).toHaveValue(250)
+  })
+
+  /**
+   * La liste ne porte ni description, ni cause, ni traitement.
+   *
+   * Construire le formulaire depuis la ligne les affichait vides, et
+   * enregistrer les effaçait — une perte silencieuse. Le détail est donc
+   * rechargé avant d'ouvrir la saisie.
+   */
+  it('recharge le détail avant modification, sans effacer ce qui est absent de la liste', async () => {
+    let body: unknown = null
+    renderDetail(['orders.view', 'claims.view', 'claims.update'])
+
+    server.use(
+      http.patch(`${API}/claims/${CLAIM_ID}`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: claim(), meta: [] })
+      }),
+    )
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(await dialog.findByLabelText(/^Description/)).toHaveValue(
+      'Le revêtement est griffé sur tout un accoudoir.',
+    )
+
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({
+      description: 'Le revêtement est griffé sur tout un accoudoir.',
+      cause: 'Manutention',
+      decision: 'Remplacement accepté',
+      followUp: 'Nouveau canapé commandé',
+    })
+  })
+
+  /** Affecter dès la création : le serveur accepte `responsibleUserId`. */
+  it('permet d’affecter la réclamation à un membre', async () => {
+    renderDetail(['orders.view', 'claims.view', 'claims.create'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: /Nouvelle réclamation/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByLabelText(/^Responsable/)).toBeInTheDocument()
   })
 
   /** Le référentiel est vide pour `claim` : le dire, pas inventer une liste. */

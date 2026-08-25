@@ -15,6 +15,8 @@ interface CommunicationMessageFieldsProps {
   channel: string
   value: MessageValue
   onChange: (patch: Partial<MessageValue>) => void
+  /** Faux sans modèle : il n'y a alors aucune variable à substituer. */
+  showRenderHint: boolean
 }
 
 /**
@@ -33,14 +35,17 @@ export function CommunicationMessageFields({
   channel,
   value,
   onChange,
+  showRenderHint,
 }: CommunicationMessageFieldsProps) {
   const { t } = useTranslation()
 
   return (
     <>
-      <Alert>
-        <AlertDescription>{t('communications.noRenderHint')}</AlertDescription>
-      </Alert>
+      {showRenderHint ? (
+        <Alert>
+          <AlertDescription>{t('communications.noRenderHint')}</AlertDescription>
+        </Alert>
+      ) : null}
 
       {hasSubject(channel) ? (
         <ControlledField

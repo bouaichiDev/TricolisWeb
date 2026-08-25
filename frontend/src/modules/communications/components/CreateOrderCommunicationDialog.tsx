@@ -18,7 +18,12 @@ import { CommunicationMessageFields } from './CommunicationMessageFields'
 import { CommunicationRecipientFields } from './CommunicationRecipientFields'
 import { useCommunicationTemplateList } from '../hooks/useCommunicationTemplates'
 import { useCreateOrderCommunication } from '../hooks/useOrderCommunications'
-import { hasSubject, RECIPIENT_ROLES } from '../types/communication'
+import {
+  COMMUNICATION_CHANNELS,
+  COMMUNICATION_TEMPLATE_TYPES,
+  hasSubject,
+  RECIPIENT_ROLES,
+} from '../types/communication'
 
 interface CreateOrderCommunicationDialogProps {
   orderId: string
@@ -27,6 +32,9 @@ interface CreateOrderCommunicationDialogProps {
 }
 
 const blank = (value: string): string | null => (value.trim() === '' ? null : value.trim())
+
+/** Valeur designant « sans modele », Radix refusant une option vide. */
+const FREE_FORM = 'free'
 
 /**
  * Nouvelle communication, à partir d'un template.
@@ -41,6 +49,11 @@ const blank = (value: string): string | null => (value.trim() === '' ? null : va
  * et l'écran le dit plutôt que de simuler une substitution que le serveur ne
  * ferait pas de la même façon.
  *
+ * **Un modèle n'est pas obligatoire.** `templateId` est `nullable` côté
+ * serveur : un message ponctuel, qui ne se reproduira pas, n'a pas à devenir un
+ * modèle de l'organisation. Sans modèle, le canal et le type se choisissent à
+ * la main — c'est ce que le modèle aurait fourni.
+ *
  * Le message part en **brouillon**. La mise en file est une action distincte,
  * volontairement : relire avant d'envoyer vaut mieux qu'un envoi au premier
  * clic.
@@ -53,7 +66,9 @@ export function CreateOrderCommunicationDialog({
   const { t } = useTranslation()
   const create = useCreateOrderCommunication(orderId)
 
-  const [templateId, setTemplateId] = useState('')
+  const [templateId, setTemplateId] = useState(FREE_FORM)
+  const [channel, setChannel] = useState('email')
+  const [communicationType, setCommunicationType] = useState('custom')
   const [recipientRole, setRecipientRole] = useState('customer')
   const [recipient, setRecipient] = useState({ name: '', email: '', phone: '' })
   const [message, setMessage] = useState({ subject: '', body: '', scheduledAt: '' })
@@ -69,6 +84,10 @@ export function CreateOrderCommunicationDialog({
   const available = templates.data?.data ?? []
   const chosen = available.find((item) => item.id === templateId)
 
+  // Sans modele, le canal et le type viennent des selecteurs ; avec, du modele.
+  const effectiveChannel = chosen?.channel ?? channel
+  const effectiveType = chosen?.templateType ?? communicationType
+
   const applyTemplate = (id: string) => {
     setTemplateId(id)
 
@@ -83,19 +102,18 @@ export function CreateOrderCommunicationDialog({
   }
 
   const submit = async () => {
-    if (chosen === undefined) return
     setError(null)
 
     try {
       await create.mutateAsync({
-        templateId: chosen.id,
-        channel: chosen.channel,
-        communicationType: chosen.templateType,
+        templateId: chosen?.id ?? null,
+        channel: effectiveChannel,
+        communicationType: effectiveType,
         recipientRole,
         recipientName: blank(recipient.name),
         recipientEmail: blank(recipient.email),
         recipientPhone: blank(recipient.phone),
-        subject: hasSubject(chosen.channel) ? blank(message.subject) : null,
+        subject: hasSubject(effectiveChannel) ? blank(message.subject) : null,
         body: blank(message.body),
         scheduledAt:
           message.scheduledAt === '' ? null : new Date(message.scheduledAt).toISOString(),
@@ -122,7 +140,9 @@ export function CreateOrderCommunicationDialog({
             label={t('communications.fields.template')}
             value={templateId}
             onChange={applyTemplate}
-            options={available.map((template) => ({
+            options={[
+              { value: FREE_FORM, label: t('communications.noTemplate') },
+              ...available.map((template) => ({
               value: template.id,
               label: template.name,
               hint: [
@@ -130,7 +150,8 @@ export function CreateOrderCommunicationDialog({
                 t(`communicationTemplateTypes.${template.templateType}`),
                 template.language.toUpperCase(),
               ].join(' · '),
-            }))}
+            })),
+            ]}
             isLoading={templates.isPending}
             required
             description={t('communications.templateHint')}
@@ -148,21 +169,45 @@ export function CreateOrderCommunicationDialog({
             description={t('communications.recipientHint')}
           />
 
-          {chosen ? (
-            <>
+          {chosen === undefined ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <AsyncSelect
+                label={t('communications.fields.channel')}
+                value={channel}
+                onChange={setChannel}
+                options={COMMUNICATION_CHANNELS.map((value) => ({
+                  value,
+                  label: t(`communicationChannels.${value}`),
+                }))}
+                required
+              />
+              <AsyncSelect
+                label={t('communications.fields.communicationType')}
+                value={communicationType}
+                onChange={setCommunicationType}
+                options={COMMUNICATION_TEMPLATE_TYPES.map((value) => ({
+                  value,
+                  label: t(`communicationTemplateTypes.${value}`),
+                }))}
+                required
+              />
+            </div>
+          ) : null}
+
+          <>
               <CommunicationRecipientFields
-                channel={chosen.channel}
+                channel={effectiveChannel}
                 value={recipient}
                 onChange={(patch) => setRecipient((current) => ({ ...current, ...patch }))}
               />
 
               <CommunicationMessageFields
-                channel={chosen.channel}
+                channel={effectiveChannel}
                 value={message}
                 onChange={(patch) => setMessage((current) => ({ ...current, ...patch }))}
+                showRenderHint={chosen !== undefined}
               />
-            </>
-          ) : null}
+          </>
         </div>
 
         <DialogFooter>
@@ -172,7 +217,7 @@ export function CreateOrderCommunicationDialog({
           <Button
             type="button"
             onClick={() => void submit()}
-            disabled={chosen === undefined || create.isPending}
+            disabled={message.body.trim() === '' || create.isPending}
           >
             {t('communications.saveDraft')}
           </Button>

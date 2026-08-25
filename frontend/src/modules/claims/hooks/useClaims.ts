@@ -15,6 +15,22 @@ export const claimKeys = {
   detail: (id: string) => [...claimKeys.all, 'detail', id] as const,
 }
 
+/**
+ * Détail d'une réclamation.
+ *
+ * `ClaimListResource` **n'expose pas** `description`, `cause`, `decision`,
+ * `followUp` ni `orderServiceId` : ouvrir un formulaire depuis une ligne de
+ * liste les afficherait vides, et enregistrer les effacerait. Le détail est
+ * donc rechargé avant toute modification.
+ */
+export function useClaim(id: string | null) {
+  return useQuery({
+    queryKey: claimKeys.detail(id ?? ''),
+    queryFn: () => claimsApi.get(id ?? ''),
+    enabled: id !== null && id !== '',
+  })
+}
+
 export function useClaimList(filters: ClaimFilters) {
   return useQuery({
     queryKey: claimKeys.list(filters),

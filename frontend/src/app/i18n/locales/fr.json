@@ -819,7 +819,7 @@
     "createHint": "Le contenu vient d’un modèle déjà configuré. Le message est enregistré en brouillon : la mise en file est une action à part.",
     "saveDraft": "Enregistrer le brouillon",
     "created": "Communication enregistrée en brouillon.",
-    "templateHint": "Seuls les modèles actifs sont proposés.",
+    "templateHint": "Seuls les modèles actifs sont proposés. Sans modèle, le message se rédige librement.",
     "recipientHint": "Le serveur résout le destinataire à partir du rôle ; les coordonnées ci-dessous passent outre.",
     "recipientResolved": "Résolu par le serveur à partir du rôle.",
     "noRenderHint": "L’aperçu montre le modèle tel quel : les variables comme {{orderNumber}} sont remplacées à l’envoi, par le serveur.",
@@ -852,8 +852,10 @@
       "sentAt": "Envoyée le",
       "deliveredAt": "Remise le",
       "readAt": "Lue le",
-      "failedAt": "Échec le"
-    }
+      "failedAt": "Échec le",
+      "communicationType": "Type"
+    },
+    "noTemplate": "Sans modèle — message ponctuel"
   },
   "claims": {
     "title": "Réclamations",
@@ -867,6 +869,8 @@
     "freeTextHint": "Texte libre, par exemple « casse » ou « retard ».",
     "wholeOrder": "Toute la commande",
     "serviceHint": "Facultatif : la réclamation peut viser un service précis.",
+    "noResponsible": "Personne pour l’instant",
+    "responsibleHint": "Qui instruit la réclamation. Elle apparaîtra dans sa liste.",
     "treatmentHint": "Renseigné au fil de l’instruction ; le serveur ne l’accepte pas à la création.",
     "noStatus": "Aucun statut n’est décrit pour les réclamations. Définissez-les depuis l’écran",
     "noStatusMember": "Aucun statut n’est décrit pour les réclamations. Demandez à un administrateur plateforme de les définir.",
@@ -883,6 +887,7 @@
       "cause": "Cause",
       "customer": "Client",
       "orderService": "Service",
+      "responsible": "Responsable",
       "decision": "Décision",
       "followUp": "Suivi",
       "result": "Résultat",

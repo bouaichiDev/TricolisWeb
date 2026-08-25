@@ -4,6 +4,7 @@ import type { OrderService } from '@/modules/orders/types/orderDetail'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
 
+import { ResponsibleUserPicker } from './ResponsibleUserPicker'
 import { StatusFromReferential } from './StatusFromReferential'
 import { NO_SERVICE, type ClaimFormValues } from '../schemas/claimForm'
 
@@ -81,6 +82,11 @@ export function ClaimForm({ values, onChange, services, showTreatment }: ClaimFo
 
       <section className="flex flex-col gap-4 border-t pt-4">
         <p className="text-sm font-medium">{t('claims.sections.context')}</p>
+
+        <ResponsibleUserPicker
+          value={values.responsibleUserId}
+          onChange={(responsibleUserId) => onChange({ responsibleUserId })}
+        />
 
         <AsyncSelect
           label={t('claims.fields.orderService')}

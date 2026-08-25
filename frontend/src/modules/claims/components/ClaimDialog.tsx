@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { OrderService } from '@/modules/orders/types/orderDetail'
@@ -15,7 +15,7 @@ import {
 } from '@/shared/components/ui/dialog'
 
 import { ClaimForm } from './ClaimForm'
-import { useCreateClaim, useUpdateClaim } from '../hooks/useClaims'
+import { useClaim, useCreateClaim, useUpdateClaim } from '../hooks/useClaims'
 import {
   CLAIM_FORM_DEFAULTS,
   toClaimFormValues,
@@ -58,18 +58,34 @@ export function ClaimDialog({
   const { t } = useTranslation()
   const isEdit = claim !== null
 
-  const [values, setValues] = useState<ClaimFormValues>(() =>
-    claim === null ? CLAIM_FORM_DEFAULTS : toClaimFormValues(claim),
+  // La ligne de liste ne porte ni description, ni cause, ni traitement :
+  // construire le formulaire depuis elle les afficherait vides, et enregistrer
+  // les effacerait. Le detail est donc recharge avant d'ouvrir la saisie.
+  const detail = useClaim(claim?.id ?? null)
+  const loaded = detail.data
+
+  const [values, setValues] = useState<ClaimFormValues | null>(
+    claim === null ? CLAIM_FORM_DEFAULTS : null,
   )
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (loaded === undefined || values !== null) return
+
+    setValues(toClaimFormValues(loaded))
+  }, [loaded, values])
 
   const create = useCreateClaim(customerId)
   const update = useUpdateClaim()
 
   const incomplete =
-    values.title.trim() === '' || values.claimType.trim() === '' || values.status === ''
+    values === null ||
+    values.title.trim() === '' ||
+    values.claimType.trim() === '' ||
+    values.status === ''
 
   const submit = async () => {
+    if (values === null) return
     setError(null)
 
     try {
@@ -94,12 +110,18 @@ export function ClaimDialog({
 
         <FormErrorSummary message={error} />
 
-        <ClaimForm
-          values={values}
-          onChange={(patch) => setValues((current) => ({ ...current, ...patch }))}
-          services={services}
-          showTreatment={isEdit}
-        />
+        {values === null ? (
+          <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+        ) : (
+          <ClaimForm
+            values={values}
+            onChange={(patch) =>
+              setValues((current) => (current === null ? current : { ...current, ...patch }))
+            }
+            services={services}
+            showTreatment={isEdit}
+          />
+        )}
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

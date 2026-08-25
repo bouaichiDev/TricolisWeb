@@ -14,6 +14,7 @@ export interface ClaimFormValues {
   description: string
   cause: string
   orderServiceId: string
+  responsibleUserId: string
   decision: string
   followUp: string
   result: string
@@ -24,6 +25,9 @@ export interface ClaimFormValues {
 /** Valeur désignant « toute la commande », Radix refusant une option vide. */
 export const NO_SERVICE = 'none'
 
+/** Valeur designant « personne pour l'instant ». */
+export const NO_USER = 'none'
+
 export const CLAIM_FORM_DEFAULTS: ClaimFormValues = {
   title: '',
   claimType: '',
@@ -31,6 +35,7 @@ export const CLAIM_FORM_DEFAULTS: ClaimFormValues = {
   description: '',
   cause: '',
   orderServiceId: NO_SERVICE,
+  responsibleUserId: NO_USER,
   decision: '',
   followUp: '',
   result: '',
@@ -63,6 +68,9 @@ export function toClaimPayload(values: ClaimFormValues): Omit<ClaimPayload, 'cus
     description: blank(values.description),
     cause: blank(values.cause),
     orderServiceId: values.orderServiceId === NO_SERVICE ? null : values.orderServiceId,
+    // Accepte des la creation par StoreClaimRequest : affecter tout de suite
+    // evite qu'une reclamation reste sans personne pour la traiter.
+    responsibleUserId: values.responsibleUserId === NO_USER ? null : values.responsibleUserId,
   }
 }
 
@@ -88,6 +96,7 @@ export function toClaimFormValues(claim: Claim): ClaimFormValues {
     description: text(claim.description),
     cause: text(claim.cause),
     orderServiceId: claim.orderServiceId ?? NO_SERVICE,
+    responsibleUserId: claim.responsibleUserId ?? NO_USER,
     decision: text(claim.decision),
     followUp: text(claim.followUp),
     result: text(claim.result),

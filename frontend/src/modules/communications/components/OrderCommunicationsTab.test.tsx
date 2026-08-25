@@ -187,6 +187,44 @@ describe('communications d’une commande', () => {
     expect(body).not.toHaveProperty('communicationRuleId')
   })
 
+  /**
+   * `templateId` est `nullable` cote serveur : un message ponctuel, qui ne se
+   * reproduira pas, n'a pas a devenir un modele de l'organisation.
+   */
+  it('accepte une communication sans modèle', async () => {
+    let body: unknown = null
+    renderDetail(ALL)
+
+    server.use(
+      http.post(`${API}/orders/${ORDER_ID}/communications`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: communication(), meta: [] }, { status: 201 })
+      }),
+    )
+
+    await openTab()
+    await userEvent.click(await screen.findByRole('button', { name: /Nouvelle communication/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByLabelText(/^Modèle/))
+    await userEvent.click(await screen.findByRole('option', { name: /Sans modèle/ }))
+
+    // Sans modele, le canal et le type se choisissent a la main.
+    expect(dialog.getByLabelText(/^Canal/)).toBeInTheDocument()
+    expect(dialog.getByLabelText(/^Type/)).toBeInTheDocument()
+
+    await userEvent.type(dialog.getByLabelText(/^Message/), 'Nous vous rappelons demain.')
+    await userEvent.click(dialog.getByRole('button', { name: /Enregistrer le brouillon/ }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({
+      templateId: null,
+      channel: 'email',
+      communicationType: 'custom',
+      body: 'Nous vous rappelons demain.',
+    })
+  })
+
   /** Il n'existe pas de route `send` : le verbe est « mettre en file ». */
   it('met un brouillon en file d’envoi, sans prétendre l’envoyer', async () => {
     let queued = false

@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -67,9 +67,21 @@ export function claimColumns({ t, onOpen, onEdit, onDelete }: Handlers, withCust
     {
       key: 'actions',
       header: '',
-      className: 'w-24',
+      className: 'w-32',
       cell: (row) => (
         <span className="flex justify-end gap-1">
+          {/* Le titre ouvre deja la fiche, mais rien ne le laisse deviner : sans
+              ce bouton, la piece jointe et l'historique restent introuvables. */}
+          <Button
+            variant="ghost"
+            size="icon"
+            title={t('claims.openDetail')}
+            aria-label={t('claims.openDetail')}
+            onClick={() => onOpen(row)}
+          >
+            <Eye className="size-4" aria-hidden />
+          </Button>
+
           <PermissionGuard permission="claims.update">
             <Button
               variant="ghost"

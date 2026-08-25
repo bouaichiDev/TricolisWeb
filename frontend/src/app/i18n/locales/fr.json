@@ -906,7 +906,8 @@
     "attachmentsHint": "Photos, vocaux ou PDF. Le vocal décrit un dommage en trente secondes.",
     "noAttachment": "Aucune pièce jointe.",
     "addAttachment": "Ajouter une pièce",
-    "mineOnly": "Mes réclamations"
+    "mineOnly": "Mes réclamations",
+    "openDetail": "Voir le détail"
   },
   "pod": {
     "title": "Preuves de livraison",

@@ -272,11 +272,16 @@ describe('réclamations d’une commande', () => {
  * elle est passée.
  */
 describe('fiche d’une réclamation', () => {
+  /**
+   * Le titre ouvre aussi la fiche, mais rien ne le laisse deviner : c'est le
+   * bouton qui doit y mener, sinon la piece jointe et l'historique n'existent
+   * que pour qui a survole le bon endroit.
+   */
   it('montre la description, le traitement et l’historique', async () => {
     renderDetail(['orders.view', 'claims.view'])
 
     await openClaims()
-    await userEvent.click(await screen.findByRole('button', { name: 'Canapé livré rayé' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Voir le détail' }))
 
     const drawer = within(await screen.findByRole('dialog'))
 
@@ -293,7 +298,7 @@ describe('fiche d’une réclamation', () => {
     renderDetail(['orders.view', 'claims.view', 'documents.upload'])
 
     await openClaims()
-    await userEvent.click(await screen.findByRole('button', { name: 'Canapé livré rayé' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Voir le détail' }))
 
     const drawer = within(await screen.findByRole('dialog'))
     expect(await drawer.findByRole('button', { name: /Ajouter une pièce/ })).toBeInTheDocument()

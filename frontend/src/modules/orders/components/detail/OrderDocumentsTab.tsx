@@ -6,8 +6,7 @@ import {
   useOrderDocuments,
   useUploadOrderDocument,
 } from '@/modules/documents/hooks/useOrderDocuments'
-import type { Document } from '@/modules/documents/types/document'
-import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { DocumentGallery } from '@/modules/documents/components/DocumentGallery'
 import { OrderPodSection } from '@/modules/pod/components/OrderPodSection'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ControlledField } from '@/shared/components/form/ControlledField'
@@ -15,7 +14,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { formatBytes, formatDate } from '@/shared/utils/format'
+import { formatDate } from '@/shared/utils/format'
 
 /**
  * Documents rattachés à la commande.
@@ -24,8 +23,10 @@ import { formatBytes, formatDate } from '@/shared/utils/format'
  * énumération côté serveur. Proposer une liste fermée inventerait un vocabulaire
  * que rien ne valide.
  *
- * Aucun lien de téléchargement : `DocumentResource` n'expose ni URL ni chemin
- * de stockage, et il n'existe pas de route de téléchargement à ce jour.
+ * `DocumentResource` n'expose ni URL ni chemin de stockage — le chemin interne
+ * ne doit pas quitter le serveur. Le fichier passe par
+ * `GET /documents/{document}/download`, qui est authentifiée : la galerie le
+ * récupère avec ses en-têtes avant de l'afficher ou de le remettre.
  */
 export function OrderDocumentsTab({ orderId }: { orderId: string }) {
   const { t } = useTranslation()
@@ -36,28 +37,6 @@ export function OrderDocumentsTab({ orderId }: { orderId: string }) {
 
   const documents = useOrderDocuments(orderId, page)
   const upload = useUploadOrderDocument(orderId)
-
-  const columns: Column<Document>[] = [
-    { key: 'fileName', header: t('documents.fields.fileName'), cell: (row) => row.fileName },
-    {
-      key: 'documentType',
-      header: t('documents.fields.documentType'),
-      cell: (row) => row.documentType,
-    },
-    { key: 'status', header: t('orders.fields.status'), cell: (row) => <StatusBadge status={row.status} /> },
-    {
-      key: 'size',
-      header: t('documents.fields.size'),
-      hideOnMobile: true,
-      cell: (row) => formatBytes(row.size),
-    },
-    {
-      key: 'createdAt',
-      header: t('documents.fields.createdAt'),
-      hideOnMobile: true,
-      cell: (row) => formatDate(row.createdAt),
-    },
-  ]
 
   const submit = () => {
     if (file === null || documentType.trim() === '') return
@@ -115,14 +94,18 @@ export function OrderDocumentsTab({ orderId }: { orderId: string }) {
       </SectionCard>
 
       <SectionCard title={t('documents.title')}>
-        <DataTable
-          columns={columns}
-          rows={all}
+        <DocumentGallery
+          documents={all}
           isLoading={documents.isPending}
           meta={documents.data?.meta}
           onPageChange={setPage}
-          emptyMessage={t('documents.empty')}
-          rowKey={(row) => row.id}
+          details={(item) => (
+            <>
+              <span>{item.documentType}</span>
+              <StatusBadge status={item.status} />
+              <span>{formatDate(item.createdAt)}</span>
+            </>
+          )}
         />
       </SectionCard>
     </div>

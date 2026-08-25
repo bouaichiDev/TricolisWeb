@@ -935,7 +935,8 @@
       "remark": "Remarque",
       "createdBy": "Enregistré par"
     },
-    "sectionHint": "Déposées par le chauffeur dans le dossier de la commande. Elles ne peuvent pas être supprimées : une preuve erronée se conteste par une réclamation."
+    "sectionHint": "Déposées par le chauffeur dans le dossier de la commande. Elles ne peuvent pas être supprimées : une preuve erronée se conteste par une réclamation.",
+    "deliveredOn": "Remise le {{date}}"
   },
   "tracking": {
     "title": "Suivi d’exécution",

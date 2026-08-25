@@ -1,10 +1,9 @@
 import { ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { DocumentDownloadLink } from '@/modules/documents/components/DocumentDownloadLink'
+import { DocumentGallery } from '@/modules/documents/components/DocumentGallery'
 import type { Document } from '@/modules/documents/types/document'
-import { DataTable, type Column } from '@/shared/components/data/DataTable'
-import { formatBytes, formatDate } from '@/shared/utils/format'
+import { formatDate } from '@/shared/utils/format'
 
 /** Type de document déposé par le chauffeur comme preuve de livraison. */
 export const POD_DOCUMENT_TYPE = 'pod'
@@ -29,7 +28,8 @@ interface OrderPodSectionProps {
  * réclamation.
  *
  * Aucun bouton de suppression n'est donc affiché : proposer une action que le
- * serveur refuse serait une promesse en l'air.
+ * serveur refuse serait une promesse en l'air. Le téléchargement et l'aperçu,
+ * eux, sont là : une preuve qu'on ne peut pas regarder ne prouve rien.
  */
 export function OrderPodSection({ documents, isLoading }: OrderPodSectionProps) {
   const { t } = useTranslation()
@@ -37,42 +37,6 @@ export function OrderPodSection({ documents, isLoading }: OrderPodSectionProps) 
   const proofs = documents.filter(
     (item) => item.documentType.toLowerCase() === POD_DOCUMENT_TYPE,
   )
-
-  const columns: Column<Document>[] = [
-    {
-      key: 'fileName',
-      header: t('documents.fields.fileName'),
-      cell: (row) => <span className="font-medium">{row.fileName}</span>,
-    },
-    {
-      key: 'mimeType',
-      header: t('documents.fields.mimeType'),
-      hideOnMobile: true,
-      cell: (row) => row.mimeType,
-    },
-    {
-      key: 'size',
-      header: t('documents.fields.size'),
-      hideOnMobile: true,
-      cell: (row) => formatBytes(row.size),
-    },
-    {
-      key: 'receivedAt',
-      header: t('pod.fields.deliveredAt'),
-      cell: (row) => formatDate(row.receivedAt ?? row.createdAt),
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-16',
-      // Telechargement seulement : la suppression est refusee par le serveur.
-      cell: (row) => (
-        <span className="flex justify-end">
-          <DocumentDownloadLink documentId={row.id} fileName={row.fileName} />
-        </span>
-      ),
-    },
-  ]
 
   return (
     <section className="flex flex-col gap-3">
@@ -82,12 +46,16 @@ export function OrderPodSection({ documents, isLoading }: OrderPodSectionProps) 
         {t('pod.sectionHint')}
       </p>
 
-      <DataTable
-        columns={columns}
-        rows={proofs}
-        rowKey={(row) => row.id}
+      {/* Une preuve se regarde : c'est une photo du colis remis, ou un PDF
+          signe. La date de remise reste sous chaque piece. */}
+      <DocumentGallery
+        documents={proofs}
+        defaultView="cards"
         isLoading={isLoading}
         emptyMessage={t('pod.empty')}
+        details={(item) =>
+          t('pod.deliveredOn', { date: formatDate(item.receivedAt ?? item.createdAt) })
+        }
       />
     </section>
   )

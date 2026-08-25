@@ -1,13 +1,14 @@
 import { LayoutGrid, List } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { PaginationMeta } from '@/shared/api/types'
+import { DataTablePagination } from '@/shared/components/data/DataTablePagination'
 import { Button } from '@/shared/components/ui/button'
-import { formatBytes } from '@/shared/utils/format'
 
-import { DocumentDownloadLink } from './DocumentDownloadLink'
+import { DocumentCard } from './DocumentCard'
 import { DocumentPreviewDialog } from './DocumentPreviewDialog'
-import { DocumentThumbnail } from './DocumentThumbnail'
+import { DocumentRow } from './DocumentRow'
 import type { Document } from '../types/document'
 
 type View = 'list' | 'cards'
@@ -16,6 +17,15 @@ interface DocumentGalleryProps {
   documents: Document[]
   /** Vue initiale ; les photos se regardent mieux en vignettes. */
   defaultView?: View
+  /**
+   * Ligne secondaire propre au contexte : type et statut dans une commande,
+   * date de livraison pour une preuve. Le composant ne les devine pas.
+   */
+  details?: (document: Document) => ReactNode
+  isLoading?: boolean
+  emptyMessage?: string
+  meta?: PaginationMeta
+  onPageChange?: (page: number) => void
 }
 
 /**
@@ -27,10 +37,26 @@ interface DocumentGalleryProps {
  *
  * Ouvrir un document l'affiche sur place — image, vocal ou PDF.
  */
-export function DocumentGallery({ documents, defaultView = 'list' }: DocumentGalleryProps) {
+export function DocumentGallery({
+  documents,
+  defaultView = 'list',
+  details,
+  isLoading = false,
+  emptyMessage,
+  meta,
+  onPageChange,
+}: DocumentGalleryProps) {
   const { t } = useTranslation()
   const [view, setView] = useState<View>(defaultView)
   const [opened, setOpened] = useState<Document | null>(null)
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+
+  if (documents.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">{emptyMessage ?? t('documents.empty')}</p>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -54,50 +80,30 @@ export function DocumentGallery({ documents, defaultView = 'list' }: DocumentGal
       {view === 'list' ? (
         <ul className="flex flex-col gap-1">
           {documents.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 rounded-md border px-2 py-1.5">
-              <DocumentThumbnail document={item} />
-
-              <button
-                type="button"
-                className="min-w-0 flex-1 text-left"
-                onClick={() => setOpened(item)}
-              >
-                <span className="block truncate text-sm underline-offset-2 hover:underline">
-                  {item.fileName}
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  {item.mimeType} · {formatBytes(item.size)}
-                </span>
-              </button>
-
-              <DocumentDownloadLink documentId={item.id} fileName={item.fileName} />
-            </li>
+            <DocumentRow
+              key={item.id}
+              document={item}
+              details={details?.(item)}
+              onOpen={() => setOpened(item)}
+            />
           ))}
         </ul>
       ) : (
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {documents.map((item) => (
-            <li key={item.id} className="flex flex-col gap-1 rounded-md border p-2">
-              <button
-                type="button"
-                className="flex flex-col gap-1 text-left"
-                onClick={() => setOpened(item)}
-                title={t('documents.preview')}
-              >
-                <DocumentThumbnail document={item} className="aspect-square w-full" />
-                <span className="truncate text-sm">{item.fileName}</span>
-              </button>
-
-              <span className="flex items-center justify-between gap-1">
-                <span className="truncate text-xs text-muted-foreground">
-                  {formatBytes(item.size)}
-                </span>
-                <DocumentDownloadLink documentId={item.id} fileName={item.fileName} />
-              </span>
-            </li>
+            <DocumentCard
+              key={item.id}
+              document={item}
+              details={details?.(item)}
+              onOpen={() => setOpened(item)}
+            />
           ))}
         </ul>
       )}
+
+      {meta && meta.total > 0 ? (
+        <DataTablePagination meta={meta} onPageChange={onPageChange} />
+      ) : null}
 
       <DocumentPreviewDialog document={opened} onClose={() => setOpened(null)} />
     </div>
@@ -113,7 +119,7 @@ function ViewButton({
   active: boolean
   label: string
   onClick: () => void
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <Button

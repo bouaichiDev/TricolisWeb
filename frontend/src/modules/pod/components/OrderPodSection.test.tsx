@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -81,6 +81,33 @@ describe('preuves de livraison', () => {
 
     expect(screen.getAllByRole('button', { name: /Télécharger/ }).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument()
+  })
+
+  /**
+   * Une preuve qu'on ne peut pas regarder ne prouve rien : la photo s'ouvre
+   * sur place, sans quitter la commande ni telecharger d'abord.
+   */
+  it('ouvre l’aperçu d’une preuve en photo', async () => {
+    renderDetail(
+      ['orders.view', 'documents.view'],
+      [doc({ fileName: 'colis-remis.jpg', mimeType: 'image/jpeg' })],
+    )
+
+    server.use(
+      http.get(`${API}/documents/:id/download`, () =>
+        new HttpResponse('binaire', { headers: { 'Content-Type': 'image/jpeg' } }),
+      ),
+    )
+
+    await openDocuments()
+
+    // La meme piece figure dans la section Preuves et dans la liste generale
+    // des documents : les deux ouvrent le meme apercu.
+    const [proof] = await screen.findAllByRole('button', { name: /colis-remis\.jpg/ })
+    await userEvent.click(proof)
+
+    const preview = await screen.findByRole('dialog', { name: /colis-remis\.jpg/ })
+    expect(await within(preview).findByAltText('colis-remis.jpg')).toBeInTheDocument()
   })
 
   /** Un document ordinaire n'est pas une preuve : la section reste vide. */

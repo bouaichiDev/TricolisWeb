@@ -75,12 +75,13 @@ export function ClaimAttachments({ claimId }: { claimId: string }) {
 
       <p className="text-xs text-muted-foreground">{t('claims.attachmentsHint')}</p>
 
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('claims.noAttachment')}</p>
-      ) : (
-        /* Des photos se reconnaissent en vignettes ; leurs noms d'appareil, non. */
-        <DocumentGallery documents={items} defaultView="cards" />
-      )}
+      {/* Des photos se reconnaissent en vignettes ; leurs noms d'appareil, non. */}
+      <DocumentGallery
+        documents={items}
+        defaultView="cards"
+        isLoading={documents.isPending}
+        emptyMessage={t('claims.noAttachment')}
+      />
     </div>
   )
 }

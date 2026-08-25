@@ -82,6 +82,9 @@ function renderDetail(
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/tracking-event-definitions`, () => HttpResponse.json(paginated(definitions))),
+    http.get(`${API}/orders/${ORDER_ID}/positions`, () =>
+      HttpResponse.json({ data: { points: [], reason: 'not_configured' }, meta: [] }),
+    ),
     http.get(`${API}/orders/${ORDER_ID}/tracking-events`, ({ request }) => {
       calls.push(new URL(request.url))
 
@@ -250,5 +253,86 @@ describe('parcours d’une commande', () => {
 
     expect(await screen.findByText('Autres événements')).toBeInTheDocument()
     expect(screen.getByText('incident_route')).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le suivi en direct passe par le serveur.
+ *
+ * Le jeton du fournisseur ne traverse jamais le navigateur : un jeton pose dans
+ * du JavaScript est lisible par quiconque ouvre les outils de developpement, et
+ * il donne acces a l'historique de tous les vehicules.
+ */
+describe('position du véhicule', () => {
+  it('interroge Tricolis et non le fournisseur', async () => {
+    const calls: string[] = []
+
+    renderDetail(
+      ['orders.view', 'tracking_events.view'],
+      [],
+      [definition({ code: 'en_route', title: 'En route', isLive: true })],
+    )
+
+    server.use(
+      http.get(`${API}/orders/${ORDER_ID}/positions`, ({ request }) => {
+        calls.push(request.url)
+
+        return HttpResponse.json({
+          data: {
+            points: [
+              { latitude: 33.5731, longitude: -7.5898, occurredAt: '2026-08-06T10:00:00+00:00' },
+            ],
+            reason: null,
+          },
+          meta: [],
+        })
+      }),
+    )
+
+    await openTracking()
+
+    expect(await screen.findByText('33.5731, -7.5898')).toBeInTheDocument()
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0))
+    expect(calls[0]).toContain('/orders/')
+    // Rien ne part vers le fournisseur depuis le navigateur.
+    expect(calls.every((url) => !url.includes('flespi'))).toBe(true)
+  })
+
+  /** Sans étape suivie en direct, aucune position n'est demandée. */
+  it('ne demande aucune position quand rien n’est suivi', async () => {
+    let asked = false
+
+    renderDetail(
+      ['orders.view', 'tracking_events.view'],
+      [],
+      [definition({ code: 'livree', title: 'Livrée', isLive: false })],
+    )
+
+    server.use(
+      http.get(`${API}/orders/${ORDER_ID}/positions`, () => {
+        asked = true
+        return HttpResponse.json({ data: { points: [], reason: null }, meta: [] })
+      }),
+    )
+
+    await openTracking()
+    await screen.findByText('Livrée')
+
+    expect(asked).toBe(false)
+  })
+
+  /** Rien de configuré : le dire, plutôt qu'un panneau vide. */
+  it('explique quand aucune API de position n’est déclarée', async () => {
+    renderDetail(
+      ['orders.view', 'tracking_events.view'],
+      [],
+      [definition({ code: 'en_route', title: 'En route', isLive: true })],
+    )
+
+    await openTracking()
+
+    expect(
+      await screen.findByText(/Aucune API de position n’est déclarée/),
+    ).toBeInTheDocument()
   })
 })

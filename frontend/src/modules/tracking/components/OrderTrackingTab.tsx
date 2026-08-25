@@ -11,6 +11,7 @@ import { JourneyTimeline } from './JourneyTimeline'
 import { NewTrackingEventDialog } from './NewTrackingEventDialog'
 import { TrackingEventCard } from './TrackingEventCard'
 import { TrackingEventDetailDrawer } from './TrackingEventDetailDrawer'
+import { VehiclePositionPanel } from './VehiclePositionPanel'
 import { useOrderTracking, useTrackingDefinitions } from '../hooks/useTracking'
 import { buildJourney, looseEvents } from '../schemas/journey'
 import type { TrackingEvent } from '../types/trackingEvent'
@@ -54,6 +55,13 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
   const steps = buildJourney(definitions.data?.data ?? [], events)
   const loose = looseEvents(definitions.data?.data ?? [], events)
 
+  // Une etape franchie mais pas depassee : c'est la que le camion roule.
+  const currentIndex = steps.findIndex((step) => step.occurredAt === null)
+  const hasLiveStep = steps.some(
+    (step, index) =>
+      step.definition.isLive && (index === currentIndex || index === currentIndex - 1),
+  )
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -80,6 +88,9 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
         <EmptyState title={t('tracking.empty')} description={t('tracking.noJourney')} />
       ) : (
         <>
+          {/* Le suivi n'a de sens que si une etape en cours l'annonce. */}
+          <VehiclePositionPanel orderId={orderId} enabled={hasLiveStep} />
+
           {steps.length > 0 ? <JourneyTimeline steps={steps} /> : null}
 
           {loose.length > 0 ? (

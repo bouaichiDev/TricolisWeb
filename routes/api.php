@@ -70,6 +70,7 @@ use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
 use App\Http\Controllers\Api\V1\Tours\TourStopController;
 use App\Http\Controllers\Api\V1\Tours\TourStopServiceController;
+use App\Http\Controllers\Api\V1\Tracking\OrderPositionController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingEventController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingEventDefinitionController;
 use Illuminate\Support\Facades\Route;
@@ -188,6 +189,8 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('orders/{order}/history', [OrderHistoryController::class, 'index'])->name('orders.history');
         // Apercu de la sortie de stock : consulte avant de confirmer, pour
         // faire choisir un emplacement quand la ligne en a plusieurs.
+        // Positions du vehicule : le jeton du fournisseur reste au serveur.
+        Route::get('orders/{order}/positions', OrderPositionController::class)->name('orders.positions');
         Route::get('orders/{order}/stock-plan', OrderStockPlanController::class)->name('orders.stock-plan');
         Route::get('orders/{order}/documents', [OrderDocumentController::class, 'index'])->name('orders.documents.index');
         Route::post('orders/{order}/documents', [OrderDocumentController::class, 'store'])->name('orders.documents.store');

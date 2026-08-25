@@ -962,7 +962,16 @@
     "upcoming": "À venir",
     "liveStep": "Suivi en direct",
     "otherEvents": "Autres événements",
-    "rawJournal": "Journal des événements"
+    "rawJournal": "Journal des événements",
+    "vehiclePosition": "Position du véhicule",
+    "positionNotConfigured": "Aucune API de position n’est déclarée. Ajoutez-en une avec le code driver_position depuis API externes.",
+    "positionNoReference": "Aucune tournée de cette commande ne porte de référence chez le fournisseur de télématique.",
+    "positionNone": "Aucune position remontée pour l’instant.",
+    "positionAt": "Relevée le {{at}}",
+    "positionUndated": "Sans horodatage",
+    "positionCount_one": "{{count}} point",
+    "positionCount_other": "{{count}} points",
+    "openMap": "Voir sur la carte"
   },
   "orders": {
     "title": "Commandes",

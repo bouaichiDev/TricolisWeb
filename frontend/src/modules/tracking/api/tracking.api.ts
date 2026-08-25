@@ -30,3 +30,22 @@ export const trackingApi = {
       .post<ApiResource<TrackingEvent>>('/tracking-events', payload)
       .then((response) => response.data),
 }
+
+/**
+ * Positions du véhicule qui exécute la commande.
+ *
+ * Le jeton du fournisseur reste au serveur : cette route l'appelle pour nous.
+ * `reason` dit pourquoi la liste est vide — rien de configuré, aucune tournée
+ * référencée — plutôt que de laisser deviner.
+ */
+export interface OrderPositions {
+  points: { latitude: number; longitude: number; occurredAt: string | null }[]
+  reason: 'not_configured' | 'no_reference' | null
+}
+
+export const orderPositionsApi = {
+  get: (orderId: string) =>
+    api
+      .get<ApiResource<OrderPositions>>(`/orders/${orderId}/positions`)
+      .then((response) => response.data),
+}

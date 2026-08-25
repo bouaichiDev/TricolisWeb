@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'provider_id',
     'vehicle_id',
     'driver_id',
+    'telematics_reference',
     'tour_type',
     'instructions',
     'planned_start_at',

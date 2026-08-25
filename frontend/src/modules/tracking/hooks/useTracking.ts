@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { trackingApi } from '../api/tracking.api'
+import { orderPositionsApi, trackingApi } from '../api/tracking.api'
 import { trackingDefinitionsApi } from '../api/trackingDefinitions.api'
 import type { TrackingEventFilters, TrackingEventPayload } from '../types/trackingEvent'
 import type { TrackingDefinitionPayload } from '../types/trackingDefinition'
@@ -103,4 +103,24 @@ export function useUpdateTrackingDefinition() {
 
 export function useDeleteTrackingDefinition() {
   return useDefinitionMutation((id: string) => trackingDefinitionsApi.remove(id), 'deleted')
+}
+
+/**
+ * Positions du véhicule, réinterrogées régulièrement.
+ *
+ * Trente secondes : un camion parcourt cinq cents mètres dans ce laps de temps,
+ * ce qui suffit à suivre une livraison. Plus court multiplierait les appels au
+ * fournisseur — qui les facture — sans rien montrer de plus.
+ *
+ * Le rafraîchissement s'arrête quand l'onglet passe en arrière-plan : personne
+ * ne regarde, et l'appel serait perdu.
+ */
+export function useOrderPositions(orderId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...trackingKeys.byOrder(orderId), 'positions'] as const,
+    queryFn: () => orderPositionsApi.get(orderId),
+    enabled: enabled && orderId !== '',
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+  })
 }

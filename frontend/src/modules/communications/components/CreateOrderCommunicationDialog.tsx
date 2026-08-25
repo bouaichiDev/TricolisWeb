@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/shared/api/errors'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
-import { ControlledField } from '@/shared/components/form/ControlledField'
 import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
-import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import {
   Dialog,
@@ -16,6 +14,7 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 
+import { CommunicationMessageFields } from './CommunicationMessageFields'
 import { CommunicationRecipientFields } from './CommunicationRecipientFields'
 import { useCommunicationTemplateList } from '../hooks/useCommunicationTemplates'
 import { useCreateOrderCommunication } from '../hooks/useOrderCommunications'
@@ -57,9 +56,7 @@ export function CreateOrderCommunicationDialog({
   const [templateId, setTemplateId] = useState('')
   const [recipientRole, setRecipientRole] = useState('customer')
   const [recipient, setRecipient] = useState({ name: '', email: '', phone: '' })
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
-  const [scheduledAt, setScheduledAt] = useState('')
+  const [message, setMessage] = useState({ subject: '', body: '', scheduledAt: '' })
   const [error, setError] = useState<string | null>(null)
 
   // Seuls les templates actifs : proposer un template retire ferait partir un
@@ -78,8 +75,11 @@ export function CreateOrderCommunicationDialog({
     const template = available.find((item) => item.id === id)
     if (template === undefined) return
 
-    setSubject(template.subjectTemplate ?? '')
-    setBody(template.bodyTemplate)
+    setMessage((current) => ({
+      ...current,
+      subject: template.subjectTemplate ?? '',
+      body: template.bodyTemplate,
+    }))
   }
 
   const submit = async () => {
@@ -95,9 +95,10 @@ export function CreateOrderCommunicationDialog({
         recipientName: blank(recipient.name),
         recipientEmail: blank(recipient.email),
         recipientPhone: blank(recipient.phone),
-        subject: hasSubject(chosen.channel) ? blank(subject) : null,
-        body: blank(body),
-        scheduledAt: scheduledAt === '' ? null : new Date(scheduledAt).toISOString(),
+        subject: hasSubject(chosen.channel) ? blank(message.subject) : null,
+        body: blank(message.body),
+        scheduledAt:
+          message.scheduledAt === '' ? null : new Date(message.scheduledAt).toISOString(),
       })
 
       onOpenChange(false)
@@ -155,31 +156,10 @@ export function CreateOrderCommunicationDialog({
                 onChange={(patch) => setRecipient((current) => ({ ...current, ...patch }))}
               />
 
-              <Alert>
-                <AlertDescription>{t('communications.noRenderHint')}</AlertDescription>
-              </Alert>
-
-              {hasSubject(chosen.channel) ? (
-                <ControlledField
-                  label={t('communications.fields.subject')}
-                  value={subject}
-                  onChange={setSubject}
-                />
-              ) : null}
-
-              <ControlledField
-                label={t('communications.fields.body')}
-                value={body}
-                onChange={setBody}
-                multiline
-              />
-
-              <ControlledField
-                label={t('communications.fields.scheduledAt')}
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={setScheduledAt}
-                description={t('communications.scheduleHint')}
+              <CommunicationMessageFields
+                channel={chosen.channel}
+                value={message}
+                onChange={(patch) => setMessage((current) => ({ ...current, ...patch }))}
               />
             </>
           ) : null}

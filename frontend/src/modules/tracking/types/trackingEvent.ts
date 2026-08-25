@@ -49,20 +49,6 @@ export interface TrackingEventFilters {
   direction?: 'asc' | 'desc'
 }
 
-/** Charge utile de `StoreTrackingEventRequest`. */
-export interface TrackingEventPayload {
-  orderId: string
-  orderServiceId?: string | null
-  tourId?: string | null
-  tourStopId?: string | null
-  eventType: string
-  status: string
-  description?: string | null
-  latitude?: number | null
-  longitude?: number | null
-  occurredAt: string
-}
-
 /** Vrai quand l'événement porte une position exploitable. */
 export function hasCoordinates(event: TrackingEvent): boolean {
   return event.latitude !== null && event.longitude !== null

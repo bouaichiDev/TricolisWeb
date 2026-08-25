@@ -1,17 +1,14 @@
 import { api } from '@/shared/api/client'
 import type { ApiCollection, ApiResource } from '@/shared/api/types'
-import type {
-  TrackingEvent,
-  TrackingEventFilters,
-  TrackingEventPayload,
-} from '../types/trackingEvent'
+import type { TrackingEvent, TrackingEventFilters } from '../types/trackingEvent'
 
 /**
  * Suivi d'exécution.
  *
- * `POST /tracking-events` est la **seule** écriture : il n'existe ni `update`
- * ni `destroy`. Un événement de suivi est un fait daté ; on ne réécrit pas
- * l'histoire, on ajoute un événement qui la corrige.
+ * **En lecture seule depuis le web.** Les événements naissent des changements
+ * de statut décrits dans le parcours de l'organisation, ou du terminal du
+ * chauffeur ; `POST /tracking-events` existe côté serveur pour eux, pas pour
+ * une saisie commande par commande.
  */
 export const trackingApi = {
   /** Événements d'une commande, tournées et arrêts compris. */
@@ -23,11 +20,6 @@ export const trackingApi = {
   get: (id: string) =>
     api
       .get<ApiResource<TrackingEvent>>(`/tracking-events/${id}`)
-      .then((response) => response.data),
-
-  create: (payload: TrackingEventPayload) =>
-    api
-      .post<ApiResource<TrackingEvent>>('/tracking-events', payload)
       .then((response) => response.data),
 }
 

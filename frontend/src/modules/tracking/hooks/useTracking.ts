@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { orderPositionsApi, trackingApi } from '../api/tracking.api'
 import { trackingDefinitionsApi } from '../api/trackingDefinitions.api'
-import type { TrackingEventFilters, TrackingEventPayload } from '../types/trackingEvent'
+import type { TrackingEventFilters } from '../types/trackingEvent'
 import type { TrackingDefinitionPayload } from '../types/trackingDefinition'
 
 export const trackingKeys = {
@@ -31,26 +31,6 @@ export function useOrderTracking(
     queryFn: () => trackingApi.byOrder(orderId, filters),
     enabled: enabled && orderId !== '',
     placeholderData: (previous) => previous,
-  })
-}
-
-/**
- * Ajoute un événement.
- *
- * Le §9 ne l'autorise qu'à trois conditions, toutes vérifiées : la route
- * `POST /tracking-events` existe, la permission `tracking_events.create` est
- * au référentiel, et le backend prévoit l'usage interne.
- */
-export function useCreateTrackingEvent(orderId: string) {
-  const queryClient = useQueryClient()
-  const { t } = useTranslation()
-
-  return useMutation({
-    mutationFn: (payload: TrackingEventPayload) => trackingApi.create(payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: trackingKeys.byOrder(orderId) })
-      toast.success(t('tracking.created'))
-    },
   })
 }
 

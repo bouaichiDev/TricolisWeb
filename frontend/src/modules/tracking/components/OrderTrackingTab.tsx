@@ -1,14 +1,14 @@
-import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
+
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { Button } from '@/shared/components/ui/button'
 
 import { JourneyTimeline } from './JourneyTimeline'
-import { NewTrackingEventDialog } from './NewTrackingEventDialog'
 import { TrackingEventCard } from './TrackingEventCard'
 import { TrackingEventDetailDrawer } from './TrackingEventDetailDrawer'
 import { VehiclePositionPanel } from './VehiclePositionPanel'
@@ -36,13 +36,14 @@ interface OrderTrackingTabProps {
  * Sans parcours configuré, l'écran retombe sur le journal brut et le dit :
  * mieux vaut des événements sans mise en scène qu'un écran vide.
  *
- * Rien ne se modifie ni ne s'efface : `tracking-events` n'expose ni `update` ni
- * `destroy`. Un journal se complète, il ne se corrige pas.
+ * Rien ne se saisit ici, et rien ne s'y modifie : les étapes sont décrites une
+ * fois pour toute l'organisation dans la configuration du parcours, et publiées
+ * par les changements de statut. Un bouton par commande ferait de chaque
+ * commande une exception à un parcours censé être commun.
  */
 export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
   const { t } = useTranslation()
   const [opened, setOpened] = useState<TrackingEvent | null>(null)
-  const [creating, setCreating] = useState(false)
 
   const definitions = useTrackingDefinitions(active)
   const { data, isPending, error, refetch } = useOrderTracking(
@@ -64,20 +65,11 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="font-semibold">{t('tracking.title')}</p>
-          <p className="text-sm text-muted-foreground">
-            {steps.length > 0 ? t('tracking.journeyHint') : t('tracking.description')}
-          </p>
-        </div>
-
-        <PermissionGuard permission="tracking_events.create">
-          <Button type="button" variant="outline" size="sm" onClick={() => setCreating(true)}>
-            <Plus className="size-4" aria-hidden />
-            {t('tracking.add')}
-          </Button>
-        </PermissionGuard>
+      <div>
+        <p className="font-semibold">{t('tracking.title')}</p>
+        <p className="text-sm text-muted-foreground">
+          {steps.length > 0 ? t('tracking.journeyHint') : t('tracking.description')}
+        </p>
       </div>
 
       {error ? (
@@ -85,7 +77,19 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
       ) : isPending || definitions.isPending ? (
         <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : steps.length === 0 && events.length === 0 ? (
-        <EmptyState title={t('tracking.empty')} description={t('tracking.noJourney')} />
+        <EmptyState
+          title={t('tracking.empty')}
+          description={t('tracking.noJourney')}
+          action={
+            /* Le parcours vaut pour toutes les commandes : il se decrit une fois
+               dans la configuration, pas commande par commande. */
+            <PermissionGuard permission="tracking_event_definitions.view">
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to="/journey">{t('tracking.configureJourney')}</Link>
+              </Button>
+            </PermissionGuard>
+          }
+        />
       ) : (
         <>
           {/* Le suivi n'a de sens que si une etape en cours l'annonce. */}
@@ -113,10 +117,6 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
       )}
 
       <TrackingEventDetailDrawer event={opened} onClose={() => setOpened(null)} />
-
-      {creating ? (
-        <NewTrackingEventDialog orderId={orderId} open onOpenChange={setCreating} />
-      ) : null}
     </div>
   )
 }

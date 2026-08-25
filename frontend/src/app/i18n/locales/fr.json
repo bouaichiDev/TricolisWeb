@@ -933,16 +933,11 @@
   },
   "tracking": {
     "title": "Suivi d’exécution",
-    "description": "Journal chronologique des événements. Un événement ne se modifie ni ne s’efface : on en ajoute un qui corrige.",
+    "description": "Le parcours de la commande. Les étapes viennent de la configuration de l’organisation et apparaissent quand le statut correspondant est posé.",
     "empty": "Aucun événement de suivi",
     "emptyHint": "Les événements apparaissent au fil de l’exécution de la commande.",
-    "add": "Ajouter un événement",
-    "addHint": "Le type et le statut sont libres : ils suivent le vocabulaire de votre exploitation.",
-    "created": "Événement enregistré.",
     "openDetail": "Détail",
     "references": "Références",
-    "freeTextHint": "Texte libre, par exemple « départ entrepôt ».",
-    "coordinatesHint": "Facultatif, en degrés décimaux.",
     "fields": {
       "eventType": "Type d’événement",
       "status": "Statut",
@@ -957,7 +952,7 @@
       "tourStop": "Arrêt"
     },
     "journeyHint": "Le parcours de la commande. Les étapes apparaissent quand le statut correspondant est posé.",
-    "noJourney": "Aucun parcours n’est configuré et aucun événement n’a été enregistré.",
+    "noJourney": "Aucun parcours n’est configuré et aucun événement n’a été enregistré. Le parcours se décrit une fois pour toutes les commandes.",
     "pending": "En attente",
     "upcoming": "À venir",
     "liveStep": "Suivi en direct",
@@ -971,7 +966,8 @@
     "positionUndated": "Sans horodatage",
     "positionCount_one": "{{count}} point",
     "positionCount_other": "{{count}} points",
-    "openMap": "Voir sur la carte"
+    "openMap": "Voir sur la carte",
+    "configureJourney": "Configurer le parcours"
   },
   "orders": {
     "title": "Commandes",

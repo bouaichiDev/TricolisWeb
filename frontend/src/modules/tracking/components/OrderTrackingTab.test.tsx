@@ -157,36 +157,13 @@ describe('suivi d’une commande', () => {
     expect(drawer.queryByText('Coordonnées')).not.toBeInTheDocument()
   })
 
-  it('enregistre un événement avec son type et son statut libres', async () => {
-    let body: unknown = null
+  /**
+   * Le parcours vaut pour toutes les commandes : il se decrit une fois dans la
+   * configuration. Un bouton par commande ferait de chaque commande une
+   * exception, meme pour qui a le droit de creer des evenements.
+   */
+  it('n’offre aucune saisie d’événement, même avec tracking_events.create', async () => {
     renderDetail(['orders.view', 'tracking_events.view', 'tracking_events.create'])
-
-    server.use(
-      http.post(`${API}/tracking-events`, async ({ request }) => {
-        body = await request.json()
-        return HttpResponse.json({ data: event(), meta: [] }, { status: 201 })
-      }),
-    )
-
-    await openTracking()
-    await userEvent.click(await screen.findByRole('button', { name: /Ajouter un événement/ }))
-
-    const dialog = within(await screen.findByRole('dialog'))
-    await userEvent.type(dialog.getByLabelText(/Type d’événement/), 'arrivee_client')
-    await userEvent.type(dialog.getByLabelText(/^Statut/), 'done')
-    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
-
-    await waitFor(() => expect(body).not.toBeNull())
-    expect(body).toMatchObject({
-      orderId: ORDER_ID,
-      eventType: 'arrivee_client',
-      status: 'done',
-    })
-  })
-
-  /** Sans la permission, le journal se lit et rien ne s'y ajoute. */
-  it('masque l’ajout sans tracking_events.create', async () => {
-    renderDetail(['orders.view', 'tracking_events.view'])
 
     await openTracking()
     await screen.findByText('depart_entrepot')
@@ -194,6 +171,26 @@ describe('suivi d’une commande', () => {
     expect(
       screen.queryByRole('button', { name: /Ajouter un événement/ }),
     ).not.toBeInTheDocument()
+  })
+
+  it('renvoie vers la configuration du parcours quand rien n’est suivi', async () => {
+    renderDetail(['orders.view', 'tracking_events.view', 'tracking_event_definitions.view'], [])
+
+    await openTracking()
+
+    expect(
+      await screen.findByRole('link', { name: 'Configurer le parcours' }),
+    ).toHaveAttribute('href', '/journey')
+  })
+
+  /** Sans le droit de configurer, le renvoi n'a pas lieu d'etre. */
+  it('ne renvoie pas vers la configuration sans la permission', async () => {
+    renderDetail(['orders.view', 'tracking_events.view'], [])
+
+    await openTracking()
+    await screen.findByText('Aucun événement de suivi')
+
+    expect(screen.queryByRole('link', { name: 'Configurer le parcours' })).not.toBeInTheDocument()
   })
 })
 

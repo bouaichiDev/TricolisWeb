@@ -1,0 +1,56 @@
+/** Une commande vue depuis la planification — `PlanningPoolResource`. */
+export interface PoolService {
+  id: string
+  serviceNumber: string
+  serviceCode: string | null
+  serviceName: string | null
+  status: string
+  addressId: string | null
+  addressLabel: string | null
+  requestedDate: string | null
+  requestedFrom: string | null
+  requestedTo: string | null
+  weight: number
+  volume: number
+  packageCount: number
+}
+
+/**
+ * Seuls les services **encore à planifier** sont rendus, et les totaux ne
+ * portent que sur eux : une commande à moitié planifiée n'apporte à la tournée
+ * que ce qui reste.
+ */
+export interface PoolOrder {
+  id: string
+  orderNumber: string
+  customerId: string
+  customerName?: string
+  status: string
+  earliestRequestedDate: string | null
+  serviceCount: number
+  addressCount: number
+  totalWeight: number
+  totalVolume: number
+  totalPackages: number
+  services: PoolService[]
+}
+
+export interface PoolFilters {
+  page: number
+  perPage: number
+  search?: string
+  requestedDate?: string
+  customerId?: string
+  agencyId?: string
+}
+
+/** Motifs de refus rendus par la planification, en codes que l'écran traduit. */
+export type PlanningRejection = {
+  orderServiceId: string
+  reason: 'already_assigned' | 'status' | 'no_address' | 'not_found'
+}
+
+export interface PlanningResult {
+  planned: string[]
+  rejected: PlanningRejection[]
+}

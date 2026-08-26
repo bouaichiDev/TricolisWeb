@@ -126,6 +126,36 @@ final class MenuCatalogue
             // Exploitation — Phase 2. Les référentiels de colis sont
             // gouvernés par `packages.*` : `PermissionSeeder` ne leur donne
             // aucune permission propre.
+            // Transport — Phase 5. La planification n'est ni un referentiel ni
+            // une commande : c'est ce qu'on fait rouler.
+            new MenuEntry(
+                code: 'transport',
+                labelKey: 'nav.transport',
+                icon: 'Route',
+                section: MenuSection::TRANSPORT,
+                position: 40,
+            ),
+            new MenuEntry(
+                code: 'planning',
+                labelKey: 'nav.planning',
+                icon: 'CalendarRange',
+                section: MenuSection::TRANSPORT,
+                position: 41,
+                route: '/planning',
+                permission: 'tours.view',
+                parent: 'transport',
+            ),
+            new MenuEntry(
+                code: 'tours',
+                labelKey: 'nav.tours',
+                icon: 'Route',
+                section: MenuSection::TRANSPORT,
+                position: 42,
+                route: '/tours',
+                permission: 'tours.view',
+                parent: 'transport',
+            ),
+
             new MenuEntry(
                 code: 'operations',
                 labelKey: 'nav.operations',

@@ -39,7 +39,8 @@
     "showingRange": "Affichage de {{from}} à {{to}} sur {{total}} résultats",
     "detail": "Détail",
     "createdAt": "Créé le",
-    "updatedAt": "Modifié le"
+    "updatedAt": "Modifié le",
+    "open": "Ouvrir"
   },
   "auth": {
     "login": "Connexion",
@@ -91,7 +92,10 @@
     "types": "Types",
     "providers": "Fournisseurs",
     "drivers": "Chauffeurs",
-    "vehicles": "Véhicules"
+    "vehicles": "Véhicules",
+    "transport": "Transport",
+    "planning": "Planification",
+    "tours": "Tournées"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1521,6 +1525,60 @@
     "loadingServicesHint": "Cochez les services qui correspondent à un chargement. La planification s’en sert pour regrouper les chargements au dépôt de départ.",
     "isLoading": "Chargement",
     "noService": "Aucun service n’est encore déclaré.",
-    "unmatchedCodes": "Réglé mais introuvable : {{codes}}. Ce code ne correspond à aucun service — il a sans doute été renommé. Le regroupement au dépôt ne s’appliquera pas pour lui."
+    "unmatchedCodes": "Réglé mais introuvable : {{codes}}. Ce code ne correspond à aucun service — il a sans doute été renommé. Le regroupement au dépôt ne s’appliquera pas pour lui.",
+    "title": "Planification",
+    "subtitle": "Composez vos tournées à partir des services qui attendent",
+    "date": "Date demandée",
+    "pool": "À planifier",
+    "poolHint": "Commandes dont au moins un service attend une tournée",
+    "poolEmpty": "Rien à planifier",
+    "poolEmptyHint": "Aucun service n’attend de tournée pour cette date.",
+    "drafts": "Tournées en préparation",
+    "draftsHint": "Choisissez celle qui recevra les services",
+    "noDraft": "Aucune tournée en préparation",
+    "noDraftHint": "Créez une tournée depuis la liste des tournées pour commencer à planifier.",
+    "pickTour": "Choisissez une tournée pour y verser des services.",
+    "planOrder": "Planifier la commande",
+    "planService": "Planifier",
+    "planned": "{{count}} service planifié",
+    "planned_other": "{{count}} services planifiés",
+    "serviceCount": "{{count}} service",
+    "serviceCount_other": "{{count}} services",
+    "addressCount": "{{count}} adresse",
+    "addressCount_other": "{{count}} adresses",
+    "stopCount": "{{count}} arrêt",
+    "stopCount_other": "{{count}} arrêts",
+    "noAddress": "Sans adresse",
+    "expand": "Déplier",
+    "collapse": "Replier",
+    "draftNotice": "Une tournée en préparation n’est modifiable que par celui qui l’a créée.",
+    "rejected": {
+      "already_assigned": "Service déjà planifié dans une autre tournée.",
+      "status": "Service dans un état qui ne permet pas la planification.",
+      "no_address": "Service sans adresse : impossible de le placer.",
+      "not_found": "Service introuvable."
+    }
+  },
+  "tours": {
+    "title": "Tournées",
+    "subtitle": "Les tournées de votre organisation, de la préparation à leur achèvement",
+    "empty": "Aucune tournée.",
+    "notComputed": "Non calculé",
+    "loadSummary": "{{packages}} colis · {{customers}} clients",
+    "minutes": "{{count}} min",
+    "sections": {
+      "summary": "Résumé"
+    },
+    "fields": {
+      "tourNumber": "Numéro",
+      "tourDate": "Date",
+      "status": "Statut",
+      "stops": "Arrêts",
+      "load": "Chargement",
+      "weight": "Poids et volume",
+      "distance": "Distance",
+      "drivingTime": "Temps de conduite",
+      "instructions": "Consignes"
+    }
   }
 }

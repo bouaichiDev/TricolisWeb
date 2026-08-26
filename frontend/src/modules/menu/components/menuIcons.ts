@@ -1,6 +1,7 @@
 import {
   Boxes,
   Building2,
+  CalendarRange,
   ClipboardList,
   IdCard,
   Layers,
@@ -43,6 +44,7 @@ const ICONS: Record<string, LucideIcon> = {
   Shield,
   ClipboardList,
   Wrench,
+  CalendarRange,
   Package,
   Layers,
   Tags,

@@ -24,6 +24,7 @@ enum MenuSection: string
     case CUSTOMERS = 'customers';
     case RESOURCES = 'resources';
     case OPERATIONS = 'operations';
+    case TRANSPORT = 'transport';
     case STOCK = 'stock';
     case BILLING = 'billing';
     case COMMUNICATIONS = 'communications';

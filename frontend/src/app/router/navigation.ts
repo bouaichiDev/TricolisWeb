@@ -1,4 +1,5 @@
 import {
+  Route,
   Boxes,
   Building2,
   ClipboardList,
@@ -72,6 +73,14 @@ export const organizationNavigation: NavEntry[] = [
       { labelKey: 'nav.drivers', to: '/drivers', permission: 'drivers.view' },
       { labelKey: 'nav.vehicles', to: '/vehicles', permission: 'vehicles.view' },
       { labelKey: 'nav.types', to: '/types', permission: 'types.view' },
+    ],
+  },
+  {
+    labelKey: 'nav.transport',
+    icon: Route,
+    children: [
+      { labelKey: 'nav.planning', to: '/planning', permission: 'tours.view' },
+      { labelKey: 'nav.tours', to: '/tours', permission: 'tours.view' },
     ],
   },
   {

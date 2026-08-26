@@ -29,6 +29,10 @@ class ListTourRequest extends ListRequest
             'tourDateFrom' => ['sometimes', 'date'],
             'tourDateTo' => ['sometimes', 'date', 'after_or_equal:tourDateFrom'],
             'tourType' => ['sometimes', 'string', 'max:64'],
+            // La vue en colonnes montre les arrets sous chaque tournee. Les
+            // charger toujours couterait une jointure a qui ne veut qu'une
+            // liste.
+            'withStops' => ['sometimes', 'boolean'],
         ]);
     }
 }

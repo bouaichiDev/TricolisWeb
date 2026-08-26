@@ -1557,7 +1557,9 @@
       "status": "Service dans un état qui ne permet pas la planification.",
       "no_address": "Service sans adresse : impossible de le placer.",
       "not_found": "Service introuvable."
-    }
+    },
+    "poolEmptyFiltered": "Aucun service ne correspond à vos filtres. Effacez la date ou la recherche pour voir tout ce qui attend.",
+    "dateHint": "Laissez vide pour voir tout ce qui attend"
   },
   "tours": {
     "title": "Tournées",
@@ -1578,7 +1580,15 @@
       "weight": "Poids et volume",
       "distance": "Distance",
       "drivingTime": "Temps de conduite",
-      "instructions": "Consignes"
-    }
+      "instructions": "Consignes",
+      "packages": "Colis",
+      "customers": "Clients",
+      "weightShort": "Poids"
+    },
+    "viewBoard": "Vue en colonnes",
+    "viewList": "Vue en tableau",
+    "noStop": "Aucun arrêt",
+    "serviceCount": "{{count}} service",
+    "serviceCount_other": "{{count}} services"
   }
 }

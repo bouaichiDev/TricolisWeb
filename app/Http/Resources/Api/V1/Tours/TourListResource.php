@@ -9,8 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Tournée vue depuis une liste : aucun arrêt, aucune période, aucune
- * affectation chargée — seulement leurs compteurs.
+ * Tournée vue depuis une liste : ni période ni affectation chargée, seulement
+ * leurs compteurs.
+ *
+ * Les arrêts font exception, et seulement sur demande — `?withStops=1`. La vue
+ * en colonnes les montre sous chaque tournée ; les charger toujours coûterait
+ * une jointure à qui ne veut qu'une liste.
  *
  * @mixin Tour
  */
@@ -42,6 +46,7 @@ class TourListResource extends JsonResource
             'status' => $this->status->value,
             'agencyName' => $this->whenLoaded('agency', fn () => $this->agency->name),
             'stopCount' => $this->whenCounted('stops'),
+            'stops' => TourStopResource::collection($this->whenLoaded('stops')),
             'periodCount' => $this->whenCounted('periods'),
         ];
     }

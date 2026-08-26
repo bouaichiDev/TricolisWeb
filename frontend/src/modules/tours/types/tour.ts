@@ -20,6 +20,19 @@ export interface Tour {
   distanceMeters: number
   status: string
   stopCount?: number
+  /** Rendu seulement sur `?withStops=1` : la vue en colonnes les montre. */
+  stops?: TourStop[]
+}
+
+/** Arrêt d'une tournée — `TourStopResource`. */
+export interface TourStop {
+  id: string
+  tourId: string
+  addressId: string
+  sequence: number
+  status: string
+  addressLabel?: string | null
+  serviceCount?: number
 }
 
 export interface TourFilters {
@@ -35,6 +48,8 @@ export interface TourFilters {
   tourDate?: string
   tourDateFrom?: string
   tourDateTo?: string
+  /** Charge les arrêts sous chaque tournée, pour la vue en colonnes. */
+  withStops?: boolean
   sort?: string
   direction?: 'asc' | 'desc'
 }

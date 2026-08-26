@@ -34,8 +34,10 @@ import type { PlanningRejection, PoolFilters } from '../types/pool'
 export function PlanningPage() {
   const { t } = useTranslation()
 
-  const today = new Date().toISOString().slice(0, 10)
-  const [date, setDate] = useState(today)
+  // Aucune date au depart : un pool ouvert sur le seul jour courant parait
+  // vide des que rien n'est demande pour aujourd'hui, et on croit la recherche
+  // cassee. La date sert a restreindre, pas a masquer.
+  const [date, setDate] = useState('')
   const [search, setSearch] = useState('')
   const [selectedTourId, setSelectedTourId] = useState<string | null>(null)
 
@@ -47,7 +49,12 @@ export function PlanningPage() {
   }
 
   const pool = usePlanningPool(filters)
-  const tours = useTourList({ page: 1, perPage: 50, status: 'draft', tourDate: date || undefined })
+  const tours = useTourList({
+    page: 1,
+    perPage: 50,
+    status: 'draft',
+    tourDate: date === '' ? undefined : date,
+  })
   const plan = usePlanIntoTour()
 
   const orders = pool.data?.data ?? []
@@ -99,7 +106,14 @@ export function PlanningPage() {
           ) : pool.isPending ? (
             <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
           ) : orders.length === 0 ? (
-            <EmptyState title={t('planning.poolEmpty')} description={t('planning.poolEmptyHint')} />
+            <EmptyState
+              title={t('planning.poolEmpty')}
+              description={
+                date === '' && search === ''
+                  ? t('planning.poolEmptyHint')
+                  : t('planning.poolEmptyFiltered')
+              }
+            />
           ) : (
             <ul className="flex flex-col gap-2">
               {orders.map((order) => (

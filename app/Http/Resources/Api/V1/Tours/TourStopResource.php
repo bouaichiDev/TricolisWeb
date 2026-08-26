@@ -35,6 +35,26 @@ class TourStopResource extends JsonResource
             'serviceMinutes' => $this->service_minutes,
             'status' => $this->status->value,
             'serviceCount' => $this->whenCounted('services'),
+            // L'adresse en une ligne : la vue en colonnes montre ou le camion
+            // s'arrete, pas un identifiant de 26 caracteres.
+            'addressLabel' => $this->whenLoaded('address', fn (): ?string => $this->addressLabel()),
         ];
+    }
+
+    /** Adresse en une ligne, telle qu'un planificateur la lit. */
+    private function addressLabel(): ?string
+    {
+        $address = $this->address;
+
+        if ($address === null) {
+            return null;
+        }
+
+        $parts = array_filter([
+            $address->name ?? $address->address_line_1,
+            trim(($address->postal_code ?? '').' '.($address->city ?? '')),
+        ], static fn (?string $part): bool => $part !== null && trim($part) !== '');
+
+        return implode(' · ', $parts) ?: null;
     }
 }

@@ -33,6 +33,12 @@ final readonly class TourListQuery
             ->with(['agency:id,code,name'])
             ->withCount(['stops', 'periods']);
 
+        // Chargement anticipe, pas une requete par colonne : la vue en
+        // colonnes affiche cinq tournees et leurs arrets d'un coup.
+        if ($request->boolean('withStops')) {
+            $query->with(['stops' => fn ($stops) => $stops->orderBy('sequence')->with('address')->withCount('services')]);
+        }
+
         if ($request->filled('search')) {
             $search = $request->validated('search');
             $query->where(fn ($builder) => $builder

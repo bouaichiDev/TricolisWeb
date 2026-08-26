@@ -2,19 +2,30 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { LayoutGrid, List } from 'lucide-react'
+
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
+import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { formatDate } from '@/shared/utils/format'
 
+import { Button } from '@/shared/components/ui/button'
+
+import { TourBoard } from '../components/TourBoard'
 import { useTourList } from '../hooks/useTours'
 import type { Tour, TourFilters } from '../types/tour'
 
 /** Liste des tournées, tous états confondus. */
 export function TourListPage() {
   const { t } = useTranslation()
+
+  // Deux lectures d'une meme liste : le tableau pour retrouver une tournee,
+  // les colonnes pour les comparer entre elles. Les arrets ne sont demandes
+  // que par la seconde, qui seule les montre.
+  const [view, setView] = useState<'list' | 'board'>('board')
 
   const [filters, setFilters] = useState<TourFilters>({
     page: 1,
@@ -23,7 +34,10 @@ export function TourListPage() {
     direction: 'desc',
   })
 
-  const { data, isPending, error, refetch } = useTourList(filters)
+  const { data, isPending, error, refetch } = useTourList({
+    ...filters,
+    withStops: view === 'board',
+  })
 
   const patch = (next: Partial<TourFilters>) =>
     setFilters((current) => ({ ...current, page: 1, ...next }))
@@ -68,7 +82,36 @@ export function TourListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={t('tours.title')} description={t('tours.subtitle')} />
+      <PageHeader
+        title={t('tours.title')}
+        description={t('tours.subtitle')}
+        actions={
+          <span className="flex gap-1">
+            <Button
+              type="button"
+              variant={view === 'board' ? 'secondary' : 'ghost'}
+              size="icon"
+              title={t('tours.viewBoard')}
+              aria-label={t('tours.viewBoard')}
+              aria-pressed={view === 'board'}
+              onClick={() => setView('board')}
+            >
+              <LayoutGrid className="size-4" aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant={view === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
+              title={t('tours.viewList')}
+              aria-label={t('tours.viewList')}
+              aria-pressed={view === 'list'}
+              onClick={() => setView('list')}
+            >
+              <List className="size-4" aria-hidden />
+            </Button>
+          </span>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput
@@ -83,6 +126,15 @@ export function TourListPage() {
         />
       </div>
 
+      {view === 'board' ? (
+        error ? (
+          <ErrorState error={error} onRetry={() => void refetch()} />
+        ) : isPending ? (
+          <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+        ) : (
+          <TourBoard tours={data?.data ?? []} emptyMessage={t('tours.empty')} />
+        )
+      ) : (
       <DataTable
         columns={columns}
         rows={data?.data ?? []}
@@ -94,6 +146,7 @@ export function TourListPage() {
         onRetry={() => void refetch()}
         emptyMessage={t('tours.empty')}
       />
+      )}
     </div>
   )
 }

@@ -2,7 +2,9 @@ import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
 import { PlanningPage } from '@/modules/planning/pages/PlanningPage'
+import { TourCreatePage } from '@/modules/tours/pages/TourCreatePage'
 import { TourDetailPage } from '@/modules/tours/pages/TourDetailPage'
+import { TourEditPage } from '@/modules/tours/pages/TourEditPage'
 import { TourListPage } from '@/modules/tours/pages/TourListPage'
 
 /**
@@ -21,6 +23,16 @@ export const transportRoutes = [
     key="tours"
     path="/tours"
     element={guarded('tours.view', <TourListPage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="tour-create"
+    path="/tours/create"
+    element={guarded('tours.create', <TourCreatePage />, { organizationOnly: true })}
+  />,
+  <Route
+    key="tour-edit"
+    path="/tours/:id/edit"
+    element={guarded('tours.update', <TourEditPage />, { organizationOnly: true })}
   />,
   <Route
     key="tour-detail"

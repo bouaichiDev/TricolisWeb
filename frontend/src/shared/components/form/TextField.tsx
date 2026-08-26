@@ -8,7 +8,7 @@ interface TextFieldProps<T extends FieldValues> {
   form: UseFormReturn<T>
   name: Path<T>
   label: string
-  type?: 'text' | 'email' | 'password' | 'tel' | 'number'
+  type?: 'text' | 'email' | 'password' | 'tel' | 'number' | 'date' | 'time' | 'datetime-local'
   required?: boolean
   disabled?: boolean
   placeholder?: string

@@ -1,6 +1,10 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+
+import { PermissionGuard } from '@/app/guards/PermissionGuard'
 
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { SearchInput } from '@/shared/components/data/SearchInput'
@@ -8,6 +12,7 @@ import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
+import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { useTourList } from '@/modules/tours/hooks/useTours'
@@ -82,7 +87,20 @@ export function PlanningPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={t('planning.title')} description={t('planning.subtitle')} />
+      <PageHeader
+        title={t('planning.title')}
+        description={t('planning.subtitle')}
+        actions={
+          <PermissionGuard permission="tours.create">
+            <Button asChild>
+              <Link to="/tours/create">
+                <Plus className="size-4" aria-hidden />
+                {t('tours.create')}
+              </Link>
+            </Button>
+          </PermissionGuard>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex flex-col gap-2">
@@ -144,6 +162,16 @@ export function PlanningPage() {
             <EmptyState
               title={t('planning.noDraft')}
               description={t('planning.noDraftHint')}
+              action={
+                <PermissionGuard permission="tours.create">
+                  <Button asChild>
+                    <Link to="/tours/create">
+                      <Plus className="size-4" aria-hidden />
+                      {t('tours.create')}
+                    </Link>
+                  </Button>
+                </PermissionGuard>
+              }
             />
           ) : (
             <ul className="flex flex-col gap-2">

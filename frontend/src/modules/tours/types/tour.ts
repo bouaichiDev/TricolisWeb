@@ -11,6 +11,11 @@ export interface Tour {
   driverId: string | null
   tourType: string | null
   instructions: string | null
+  plannedStartAt: string | null
+  plannedEndAt: string | null
+  /** Rendus par `TourDetailResource` seulement : la liste n'en a pas l'usage. */
+  actualStartAt?: string | null
+  actualEndAt?: string | null
   totalWeight: number | string
   totalVolume: number | string
   totalPackages: number
@@ -33,6 +38,27 @@ export interface TourStop {
   status: string
   addressLabel?: string | null
   serviceCount?: number
+}
+
+/**
+ * Creation / modification d'une tournee — `StoreTourRequest`.
+ *
+ * Le statut n'est pas saisi : une tournee nait au brouillon et change d'etat
+ * par les passages du referentiel, depuis sa fiche.
+ */
+export interface TourPayload {
+  tourNumber: string
+  tourDate: string
+  agencyId: string
+  depotId: string | null
+  providerId: string | null
+  vehicleId: string | null
+  driverId: string | null
+  tourType: string | null
+  instructions: string | null
+  plannedStartAt: string | null
+  plannedEndAt: string | null
+  status?: string
 }
 
 export interface TourFilters {

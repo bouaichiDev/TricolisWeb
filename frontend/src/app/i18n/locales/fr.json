@@ -1583,12 +1583,33 @@
       "instructions": "Consignes",
       "packages": "Colis",
       "customers": "Clients",
-      "weightShort": "Poids"
+      "weightShort": "Poids",
+      "agency": "Agence",
+      "depot": "Dépôt",
+      "provider": "Fournisseur",
+      "driver": "Chauffeur",
+      "vehicle": "Véhicule",
+      "tourType": "Type de tournée",
+      "plannedStartAt": "Début prévu",
+      "plannedEndAt": "Fin prévue"
     },
     "viewBoard": "Vue en colonnes",
     "viewList": "Vue en tableau",
     "noStop": "Aucun arrêt",
     "serviceCount": "{{count}} service",
-    "serviceCount_other": "{{count}} services"
+    "serviceCount_other": "{{count}} services",
+    "create": "Nouvelle tournée",
+    "createTitle": "Nouvelle tournée",
+    "createHint": "La tournée naît au brouillon : c’est dans cet état qu’on y planifie des commandes.",
+    "editTitle": "Modifier la tournée",
+    "form": {
+      "identity": "Identification",
+      "resources": "Moyens",
+      "resourcesHint": "Facultatifs : une tournée peut se composer avant de savoir qui la conduira.",
+      "schedule": "Horaires et consignes",
+      "scheduleHint": "Les horaires prévus servent à comparer les tournées entre elles.",
+      "none": "Aucun",
+      "pickAgencyFirst": "Choisissez d’abord une agence."
+    }
   }
 }

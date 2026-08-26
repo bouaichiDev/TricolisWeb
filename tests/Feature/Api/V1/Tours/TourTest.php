@@ -91,6 +91,44 @@ describe('tours reference constraints', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('depotId');
     });
 
+    /**
+     * Un identifiant venant d'une autre organisation ne doit pas seulement
+     * exister : il doit exister *ici*. Sans cloisonnement, un simple ULID
+     * deviné rattacherait le dépôt, le véhicule ou le chauffeur d'un
+     * concurrent — et le confirmerait en répondant 201.
+     */
+    it('refuses a depot from another organization', function (): void {
+        $foreign = Depot::factory()->create([
+            'agency_id' => Agency::factory()->create([
+                'organization_id' => Organization::factory()->create()->id,
+            ])->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)(['depotId' => $foreign->id]))
+            ->assertStatus(422)->assertJsonValidationErrors('depotId');
+    });
+
+    it('refuses a vehicle from another organization', function (): void {
+        $foreign = Vehicle::factory()->create([
+            'organization_id' => Organization::factory()->create()->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)(['vehicleId' => $foreign->id]))
+            ->assertStatus(422)->assertJsonValidationErrors('vehicleId');
+    });
+
+    it('refuses a driver from another organization', function (): void {
+        $foreign = Driver::factory()->create([
+            'organization_id' => Organization::factory()->create()->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)(['driverId' => $foreign->id]))
+            ->assertStatus(422)->assertJsonValidationErrors('driverId');
+    });
+
     it('refuses a provider from another organization', function (): void {
         $foreign = Provider::factory()->create();
 
@@ -175,6 +213,30 @@ describe('tours read, update and delete', function (): void {
             ->deleteJson("/api/v1/tours/{$tour->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('tours', ['id' => $tour->id]);
+    });
+
+    /**
+     * La modification passe par des règles `sometimes`, écrites à part : le
+     * cloisonnement doit y être répété, faute de quoi ce qu'on refuse à la
+     * création redevient acceptable par une simple mise à jour.
+     */
+    it('refuses foreign resources on update', function (): void {
+        $tour = Tour::factory()->forAgency($this->agency)->create();
+        $other = Organization::factory()->create();
+
+        $foreign = [
+            'depotId' => Depot::factory()->create([
+                'agency_id' => Agency::factory()->create(['organization_id' => $other->id])->id,
+            ])->id,
+            'vehicleId' => Vehicle::factory()->create(['organization_id' => $other->id])->id,
+            'driverId' => Driver::factory()->create(['organization_id' => $other->id])->id,
+        ];
+
+        foreach ($foreign as $field => $id) {
+            $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+                ->patchJson("/api/v1/tours/{$tour->id}", [$field => $id])
+                ->assertStatus(422)->assertJsonValidationErrors($field);
+        }
     });
 
     it('hides a tour from another organization', function (): void {

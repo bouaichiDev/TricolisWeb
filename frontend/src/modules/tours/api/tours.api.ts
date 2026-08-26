@@ -1,13 +1,21 @@
 import { api } from '@/shared/api/client'
 import type { ApiCollection, ApiResource } from '@/shared/api/types'
 
-import type { Tour, TourFilters } from '../types/tour'
+import type { Tour, TourFilters, TourPayload } from '../types/tour'
 
 export const toursApi = {
   list: (filters: TourFilters) =>
     api.get<ApiCollection<Tour>>('/tours', { query: { ...filters } }),
 
   get: (id: string) => api.get<ApiResource<Tour>>(`/tours/${id}`).then((r) => r.data),
+
+  create: (payload: TourPayload) =>
+    api.post<ApiResource<Tour>>('/tours', payload).then((r) => r.data),
+
+  update: (id: string, payload: TourPayload) =>
+    api.patch<ApiResource<Tour>>(`/tours/${id}`, payload).then((r) => r.data),
+
+  remove: (id: string) => api.delete<void>(`/tours/${id}`),
 
   /**
    * Faire passer la tournée d'un état à un autre.

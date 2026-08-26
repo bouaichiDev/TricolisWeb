@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, Plus } from 'lucide-react'
 
+import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
 import { SearchInput } from '@/shared/components/data/SearchInput'
@@ -109,6 +110,15 @@ export function TourListPage() {
             >
               <List className="size-4" aria-hidden />
             </Button>
+
+            <PermissionGuard permission="tours.create">
+              <Button asChild className="ml-2">
+                <Link to="/tours/create">
+                  <Plus className="size-4" aria-hidden />
+                  {t('tours.create')}
+                </Link>
+              </Button>
+            </PermissionGuard>
           </span>
         }
       />

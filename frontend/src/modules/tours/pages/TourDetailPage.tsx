@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { useStatusOptions } from '@/modules/statuses/hooks/useStatuses'
@@ -45,6 +45,10 @@ export function TourDetailPage() {
         actions={
           <PermissionGuard permission="tours.update">
             <span className="flex flex-wrap gap-2">
+              <Button asChild variant="secondary" size="sm">
+                <Link to={`/tours/${tour.id}/edit`}>{t('common.edit')}</Link>
+              </Button>
+
               {targets.map((status) => (
                 <Button
                   key={status.id}

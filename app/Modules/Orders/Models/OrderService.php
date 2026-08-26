@@ -7,6 +7,7 @@ namespace App\Modules\Orders\Models;
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Packages\Models\Package;
+use App\Modules\Tours\Models\TourStopService;
 use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -127,5 +128,18 @@ class OrderService extends Model
     {
         return $this->belongsToMany(Package::class, 'order_service_packages', 'order_service_id', 'package_id')
             ->withPivot(['id', 'quantity', 'handling_instructions', 'status']);
+    }
+
+    /**
+     * Affectations de ce service, actives comme historiques.
+     *
+     * Un service peut avoir ete planifie plusieurs fois : c'est la
+     * replanification. Une seule de ces affectations est active a la fois.
+     *
+     * @return HasMany<TourStopService, $this>
+     */
+    public function tourStopServices(): HasMany
+    {
+        return $this->hasMany(TourStopService::class, 'order_service_id');
     }
 }

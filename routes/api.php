@@ -51,6 +51,7 @@ use App\Http\Controllers\Api\V1\Organizations\OrganizationController;
 use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
+use App\Http\Controllers\Api\V1\Planning\PlanningPoolController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
@@ -212,6 +213,9 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->except(['create', 'edit']);
         // Validation et annulation d'un brouillon : le referentiel dit quels
         // passages existent, l'action les applique dans une transaction.
+        // Ce qui attend d'etre planifie : une lecture des commandes, pas une
+        // table de plus a tenir a jour.
+        Route::get('planning/pool', [PlanningPoolController::class, 'index'])->name('planning.pool');
         Route::post('tours/{tour}/status', [TourController::class, 'changeStatus'])->name('tours.status');
         // Glisser une commande ou des services : un seul appel, une transaction.
         Route::post('tours/{tour}/plan', [TourController::class, 'plan'])->name('tours.plan');

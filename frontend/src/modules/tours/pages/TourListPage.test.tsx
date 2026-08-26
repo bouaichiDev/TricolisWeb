@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -55,21 +55,84 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-function render() {
+const ORDER_ID = '01JQZ00000000000000ORDR1'
+
+const poolOrder = {
+  id: ORDER_ID,
+  orderNumber: 'CMD-9001',
+  customerId: '01JQZ0000000000000CUSTO1',
+  customerName: 'Atlas Distribution',
+  status: 'ready',
+  earliestRequestedDate: '2026-09-01',
+  serviceCount: 1,
+  addressCount: 1,
+  totalWeight: 12,
+  totalVolume: 0.5,
+  totalPackages: 2,
+  services: [
+    {
+      id: '01JQZ000000000000000SVC1',
+      serviceNumber: 'S-1',
+      serviceCode: 'DEL',
+      serviceName: 'Livraison',
+      status: 'pending',
+      addressId: '01JQZ0000000000000ADDR03',
+      addressLabel: 'Client · 20100 Casablanca',
+      latitude: 33.57,
+      longitude: -7.59,
+      requestedDate: '2026-09-01',
+      requestedFrom: null,
+      requestedTo: null,
+      weight: 12,
+      volume: 0.5,
+      packageCount: 2,
+    },
+  ],
+}
+
+function render(overrides: Record<string, unknown> = {}) {
   const calls: URL[] = []
+  const plans: { url: string; body: Record<string, unknown> }[] = []
 
   server.use(
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder]))),
+    http.post(`${API}/tours/:id/plan`, async ({ request, params }) => {
+      plans.push({
+        url: String(params.id),
+        body: (await request.json()) as Record<string, unknown>,
+      })
+
+      return HttpResponse.json({ data: { planned: ['x'], rejected: [] } })
+    }),
     http.get(`${API}/tours`, ({ request }) => {
       calls.push(new URL(request.url))
 
-      return HttpResponse.json(paginated([tour()]))
+      return HttpResponse.json(paginated([tour(overrides)]))
     }),
   )
 
   renderWithProviders(<TourListPage />, { membership: withPermissions(['tours.view']) })
 
-  return calls
+  return { calls, plans }
+}
+
+/** Glisse une charge de planification sur une colonne, comme le navigateur le ferait. */
+function dragOnto(column: HTMLElement, payload: Record<string, unknown>) {
+  const data = new Map<string, string>([
+    ['application/x-tricolis-planning', JSON.stringify(payload)],
+  ])
+
+  const dataTransfer = {
+    types: [...data.keys()],
+    getData: (type: string) => data.get(type) ?? '',
+    setData: (type: string, value: string) => data.set(type, value),
+    dropEffect: '',
+    effectAllowed: '',
+  }
+
+  fireEvent.dragOver(column, { dataTransfer })
+  fireEvent.drop(column, { dataTransfer })
 }
 
 /**
@@ -92,7 +155,7 @@ describe('liste des tournées', () => {
    * toujours coûterait une jointure à qui ne veut qu'un tableau.
    */
   it('ne demande les arrêts que pour la vue en colonnes', async () => {
-    const calls = render()
+    const { calls } = render()
 
     await screen.findByText('TR-001')
     await waitFor(() => expect(calls[0].searchParams.get('withStops')).toBe('1'))
@@ -116,7 +179,7 @@ describe('liste des tournées', () => {
   })
 
   it('cherche côté serveur', async () => {
-    const calls = render()
+    const { calls } = render()
 
     await screen.findByText('TR-001')
     await userEvent.type(screen.getByLabelText('Rechercher'), 'TR-001')
@@ -131,5 +194,95 @@ describe('liste des tournées', () => {
     render()
 
     expect(await screen.findByText('Non calculé')).toBeInTheDocument()
+  })
+})
+
+/**
+ * Le pool tient dans un panneau, à côté des colonnes : on garde d'un côté ce qui
+ * attend, de l'autre ce qui peut le prendre.
+ */
+describe('planification depuis la liste', () => {
+  it('montre le pool à côté des colonnes, et le replie', async () => {
+    render()
+
+    expect(await screen.findByText('CMD-9001')).toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Replier les commandes à planifier' }),
+    )
+
+    expect(screen.queryByText('CMD-9001')).not.toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Afficher les commandes à planifier' }),
+    )
+
+    expect(await screen.findByText('CMD-9001')).toBeInTheDocument()
+  })
+
+  it('planifie la commande déposée sur une tournée', async () => {
+    const { plans } = render()
+
+    await screen.findByText('CMD-9001')
+
+    dragOnto(screen.getByTestId(`tour-column-${TOUR_ID}`), {
+      kind: 'order',
+      id: ORDER_ID,
+      label: 'CMD-9001',
+    })
+
+    await waitFor(() => expect(plans).toHaveLength(1))
+    expect(plans[0]).toEqual({ url: TOUR_ID, body: { orderIds: [ORDER_ID] } })
+  })
+
+  it('planifie un service seul quand c’est lui qu’on dépose', async () => {
+    const { plans } = render()
+
+    await screen.findByText('CMD-9001')
+
+    dragOnto(screen.getByTestId(`tour-column-${TOUR_ID}`), {
+      kind: 'service',
+      id: 'svc-42',
+      label: 'Livraison',
+    })
+
+    await waitFor(() => expect(plans).toHaveLength(1))
+    expect(plans[0].body).toEqual({ orderServiceIds: ['svc-42'] })
+  })
+
+  /**
+   * Une tournée confirmée n'a plus à changer de contenu, et le serveur le
+   * refuserait : la colonne ne doit pas laisser croire le contraire.
+   */
+  it('n’accepte rien sur une tournée qui n’est plus brouillon', async () => {
+    const { plans } = render({ status: 'confirmed' })
+
+    await screen.findByText('CMD-9001')
+
+    dragOnto(screen.getByTestId(`tour-column-${TOUR_ID}`), {
+      kind: 'order',
+      id: ORDER_ID,
+      label: 'CMD-9001',
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    expect(plans).toHaveLength(0)
+  })
+
+  /** Le bouton ne choisit pas à la place du planificateur : il n'apparaît que
+   *  lorsqu'une seule tournée brouillon peut recevoir. */
+  it('propose le bouton quand un seul brouillon existe', async () => {
+    const { plans } = render()
+
+    const pool = await screen.findByText('CMD-9001')
+    const card = pool.closest('li')
+
+    expect(card).not.toBeNull()
+
+    await userEvent.click(within(card as HTMLElement).getByRole('button', { name: 'Planifier la commande' }))
+
+    await waitFor(() => expect(plans).toHaveLength(1))
+    expect(plans[0].body).toEqual({ orderIds: [ORDER_ID] })
   })
 })

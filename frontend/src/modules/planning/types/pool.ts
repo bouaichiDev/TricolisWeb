@@ -7,6 +7,9 @@ export interface PoolService {
   status: string
   addressId: string | null
   addressLabel: string | null
+  /** Nuls tant que l'adresse n'est pas géocodée : la carte ne peut alors la poser. */
+  latitude: number | null
+  longitude: number | null
   requestedDate: string | null
   requestedFrom: string | null
   requestedTo: string | null

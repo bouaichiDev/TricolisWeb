@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, MapPin, Package } from 'lucide-react'
+import { ChevronDown, ChevronRight, GripVertical, MapPin, Package } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,6 +6,7 @@ import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { formatDate } from '@/shared/utils/format'
 
+import { startPlanningDrag } from '../dnd'
 import type { PoolOrder } from '../types/pool'
 
 interface PoolOrderCardProps {
@@ -14,6 +15,14 @@ interface PoolOrderCardProps {
   onPlanOrder: (() => void) | null
   onPlanService: ((orderServiceId: string) => void) | null
   isPending: boolean
+  /**
+   * Rend la carte et ses services glissables vers une tournée.
+   *
+   * Faux par défaut : l'écran de planification range ses tournées à côté du
+   * pool et se pilote au clic. Le glisser n'a de sens que là où des colonnes
+   * peuvent le recevoir.
+   */
+  draggable?: boolean
 }
 
 /**
@@ -31,15 +40,34 @@ export function PoolOrderCard({
   onPlanOrder,
   onPlanService,
   isPending,
+  draggable = false,
 }: PoolOrderCardProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   return (
-    <li className="flex flex-col gap-2 rounded-lg border bg-card p-3">
+    <li
+      className={`flex flex-col gap-2 rounded-lg border bg-card p-3 ${
+        draggable ? 'cursor-grab active:cursor-grabbing' : ''
+      }`}
+      draggable={draggable}
+      onDragStart={
+        draggable
+          ? (event) =>
+              startPlanningDrag(event, {
+                kind: 'order',
+                id: order.id,
+                label: order.orderNumber,
+              })
+          : undefined
+      }
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-center gap-2 font-medium">
+            {draggable ? (
+              <GripVertical className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            ) : null}
             <button
               type="button"
               onClick={() => setOpen((current) => !current)}
@@ -90,7 +118,24 @@ export function PoolOrderCard({
           {order.services.map((service) => (
             <li
               key={service.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-2 py-1.5"
+              className={`flex flex-wrap items-center justify-between gap-2 rounded-md border px-2 py-1.5 ${
+                draggable ? 'cursor-grab active:cursor-grabbing' : ''
+              }`}
+              draggable={draggable}
+              // Le glisser d'un service ne doit pas remonter à la carte, qui
+              // emporterait la commande entière.
+              onDragStart={
+                draggable
+                  ? (event) => {
+                      event.stopPropagation()
+                      startPlanningDrag(event, {
+                        kind: 'service',
+                        id: service.id,
+                        label: service.serviceName ?? service.serviceNumber,
+                      })
+                    }
+                  : undefined
+              }
             >
               <span className="min-w-0">
                 <span className="block truncate text-sm">

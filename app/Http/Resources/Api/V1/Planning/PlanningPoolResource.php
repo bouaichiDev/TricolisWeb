@@ -52,6 +52,15 @@ class PlanningPoolResource extends JsonResource
                 'status' => $service->status?->value ?? $service->status,
                 'addressId' => $service->address_id,
                 'addressLabel' => $service->relationLoaded('address') ? $this->label($service) : null,
+                // La carte a besoin du point, pas seulement du libellé. Une
+                // adresse non géocodée les rend nuls : l'écran la listera sans
+                // pouvoir la poser, plutôt que de la placer au large du Ghana.
+                'latitude' => $service->relationLoaded('address')
+                    ? $this->coordinate($service->address?->latitude)
+                    : null,
+                'longitude' => $service->relationLoaded('address')
+                    ? $this->coordinate($service->address?->longitude)
+                    : null,
                 'requestedDate' => $service->requested_date?->toDateString(),
                 'requestedFrom' => $service->requested_from?->toIso8601String(),
                 'requestedTo' => $service->requested_to?->toIso8601String(),
@@ -60,6 +69,12 @@ class PlanningPoolResource extends JsonResource
                 'packageCount' => (int) $service->package_count,
             ])->values(),
         ];
+    }
+
+    /** `decimal:8` rend une chaîne : la carte attend un nombre. */
+    private function coordinate(mixed $value): ?float
+    {
+        return $value === null ? null : (float) $value;
     }
 
     /** Adresse en une ligne, telle qu'un planificateur la lit. */

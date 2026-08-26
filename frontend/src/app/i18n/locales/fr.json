@@ -1559,7 +1559,19 @@
       "not_found": "Service introuvable."
     },
     "poolEmptyFiltered": "Aucun service ne correspond à vos filtres. Effacez la date ou la recherche pour voir tout ce qui attend.",
-    "dateHint": "Laissez vide pour voir tout ce qui attend"
+    "dateHint": "Laissez vide pour voir tout ce qui attend",
+    "showPool": "Afficher les commandes à planifier",
+    "hidePool": "Replier les commandes à planifier",
+    "dragHint": "Glissez une commande ou un service vers une tournée brouillon.",
+    "dropHere": "Déposez ici une commande à planifier.",
+    "modePanels": "Vue en panneaux",
+    "modeMap": "Vue carte",
+    "mapEmpty": "Rien à placer sur la carte",
+    "mapEmptyHint": "Aucune commande ni arrêt ne porte de coordonnées pour ces filtres. Le géocodage renseigne les adresses à mesure.",
+    "departure": "Départ · dépôt",
+    "notGeocoded": "{{count}} service non placé : son adresse n’est pas géocodée.",
+    "notGeocoded_other": "{{count}} services non placés : leur adresse n’est pas géocodée.",
+    "searchPool": "Rechercher une commande à planifier"
   },
   "tours": {
     "title": "Tournées",

@@ -38,6 +38,9 @@ export interface TourStop {
   status: string
   addressLabel?: string | null
   serviceCount?: number
+  /** Nuls tant que l'adresse n'est pas géocodée : l'arrêt existe sans être traçable. */
+  latitude?: number | null
+  longitude?: number | null
 }
 
 /**

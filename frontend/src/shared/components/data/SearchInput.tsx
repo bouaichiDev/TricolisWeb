@@ -10,6 +10,14 @@ interface SearchInputProps {
   placeholder?: string
   /** Delai avant de propager la saisie, en millisecondes. */
   delay?: number
+  /**
+   * Nom accessible, quand l'ecran en porte plusieurs.
+   *
+   * Deux champs nommes « Rechercher » cote a cote ne se distinguent ni au
+   * lecteur d'ecran ni au clavier : celui qui accompagne un panneau doit dire
+   * ce qu'il cherche.
+   */
+  label?: string
 }
 
 /**
@@ -19,7 +27,13 @@ interface SearchInputProps {
  * en produirait cinq, dont quatre inutiles, et la derniere pourrait revenir
  * avant l'avant-derniere.
  */
-export function SearchInput({ value, onChange, placeholder, delay = 350 }: SearchInputProps) {
+export function SearchInput({
+  value,
+  onChange,
+  placeholder,
+  delay = 350,
+  label,
+}: SearchInputProps) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(value)
 
@@ -44,7 +58,7 @@ export function SearchInput({ value, onChange, placeholder, delay = 350 }: Searc
         onChange={(event) => setDraft(event.target.value)}
         placeholder={placeholder ?? t('common.searchPlaceholder')}
         className="pl-9 pr-9"
-        aria-label={t('common.search')}
+        aria-label={label ?? t('common.search')}
       />
       {draft.length > 0 ? (
         <button

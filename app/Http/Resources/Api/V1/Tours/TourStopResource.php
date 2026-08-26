@@ -38,7 +38,17 @@ class TourStopResource extends JsonResource
             // L'adresse en une ligne : la vue en colonnes montre ou le camion
             // s'arrete, pas un identifiant de 26 caracteres.
             'addressLabel' => $this->whenLoaded('address', fn (): ?string => $this->addressLabel()),
+            // La carte trace l'ordre des arrêts : sans point, un arrêt existe
+            // dans la tournée mais reste absent du tracé.
+            'latitude' => $this->whenLoaded('address', fn (): ?float => $this->coordinate($this->address?->latitude)),
+            'longitude' => $this->whenLoaded('address', fn (): ?float => $this->coordinate($this->address?->longitude)),
         ];
+    }
+
+    /** `decimal:8` rend une chaîne : la carte attend un nombre. */
+    private function coordinate(mixed $value): ?float
+    {
+        return $value === null ? null : (float) $value;
     }
 
     /** Adresse en une ligne, telle qu'un planificateur la lit. */

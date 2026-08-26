@@ -1,24 +1,18 @@
-import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
-
-import { StatusBadge } from '@/shared/components/data/StatusBadge'
+import { useTourList } from '@/modules/tours/hooks/useTours'
 import { SearchInput } from '@/shared/components/data/SearchInput'
-import { EmptyState } from '@/shared/components/feedback/EmptyState'
-import { ErrorState } from '@/shared/components/feedback/ErrorState'
+import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
-import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { useTourList } from '@/modules/tours/hooks/useTours'
 
-import { PoolOrderCard } from '../components/PoolOrderCard'
-import { TourDraftPanel } from '../components/TourDraftPanel'
+import { PlanningMap } from '../components/PlanningMap'
+import { PlanningModeSwitcher, type PlanningMode } from '../components/PlanningModeSwitcher'
+import { PlanningPanels } from '../components/PlanningPanels'
 import { usePlanIntoTour, usePlanningPool } from '../hooks/usePlanning'
 import type { PlanningRejection, PoolFilters } from '../types/pool'
 
@@ -27,14 +21,12 @@ import type { PlanningRejection, PoolFilters } from '../types/pool'
  *
  * À gauche ce qui attend une tournée, à droite les brouillons du jour. On
  * choisit une tournée, puis on y verse une commande ou l'un de ses services.
+ * La vue carte répond à l'autre question — ces commandes sont-elles voisines ?
+ * — sur les **mêmes** brouillons : le §73 l'exige.
  *
  * **Le serveur décide, l'écran rapporte.** Le regroupement des arrêts, l'ordre
  * des chargements et les refus viennent de lui ; reproduire ces règles ici
  * donnerait deux vérités qui finiraient par diverger.
- *
- * Le glisser-déposer viendra par-dessus cette même mutation : ce sont deux
- * façons de dire la même chose au serveur, et il vaut mieux que la seconde
- * arrive sur un écran qui fonctionne déjà.
  */
 export function PlanningPage() {
   const { t } = useTranslation()
@@ -45,6 +37,7 @@ export function PlanningPage() {
   const [date, setDate] = useState('')
   const [search, setSearch] = useState('')
   const [selectedTourId, setSelectedTourId] = useState<string | null>(null)
+  const [mode, setMode] = useState<PlanningMode>('panels')
 
   const filters: PoolFilters = {
     page: 1,
@@ -59,6 +52,9 @@ export function PlanningPage() {
     perPage: 50,
     status: 'draft',
     tourDate: date === '' ? undefined : date,
+    // La carte trace l'ordre des arrets : sans eux, un brouillon n'y est qu'un
+    // nom. Les panneaux, eux, n'en ont pas l'usage.
+    withStops: mode === 'map',
   })
   const plan = usePlanIntoTour()
 
@@ -90,16 +86,7 @@ export function PlanningPage() {
       <PageHeader
         title={t('planning.title')}
         description={t('planning.subtitle')}
-        actions={
-          <PermissionGuard permission="tours.create">
-            <Button asChild>
-              <Link to="/tours/create">
-                <Plus className="size-4" aria-hidden />
-                {t('tours.create')}
-              </Link>
-            </Button>
-          </PermissionGuard>
-        }
+        actions={<PlanningModeSwitcher mode={mode} onChange={setMode} />}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -117,80 +104,57 @@ export function PlanningPage() {
         <SearchInput value={search} onChange={setSearch} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title={t('planning.pool')} description={t('planning.poolHint')}>
-          {pool.error ? (
-            <ErrorState error={pool.error} onRetry={() => void pool.refetch()} />
-          ) : pool.isPending ? (
-            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-          ) : orders.length === 0 ? (
-            <EmptyState
-              title={t('planning.poolEmpty')}
-              description={
-                date === '' && search === ''
-                  ? t('planning.poolEmptyHint')
-                  : t('planning.poolEmptyFiltered')
-              }
-            />
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {orders.map((order) => (
-                <PoolOrderCard
-                  key={order.id}
-                  order={order}
-                  isPending={plan.isPending}
-                  onPlanOrder={
-                    selectedTourId === null ? null : () => send({ orderIds: [order.id] })
-                  }
-                  onPlanService={
-                    selectedTourId === null
-                      ? null
-                      : (orderServiceId) => send({ orderServiceIds: [orderServiceId] })
-                  }
-                />
-              ))}
-            </ul>
-          )}
-        </SectionCard>
-
-        <SectionCard title={t('planning.drafts')} description={t('planning.draftsHint')}>
-          {tours.error ? (
-            <ErrorState error={tours.error} onRetry={() => void tours.refetch()} />
-          ) : tours.isPending ? (
-            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-          ) : drafts.length === 0 ? (
-            <EmptyState
-              title={t('planning.noDraft')}
-              description={t('planning.noDraftHint')}
-              action={
-                <PermissionGuard permission="tours.create">
-                  <Button asChild>
-                    <Link to="/tours/create">
-                      <Plus className="size-4" aria-hidden />
-                      {t('tours.create')}
-                    </Link>
-                  </Button>
-                </PermissionGuard>
-              }
-            />
-          ) : (
-            <ul className="flex flex-col gap-2">
+      {mode === 'map' ? (
+        <div className="flex flex-col gap-3">
+          {/* Le choix de la tournee vit dans le panneau de droite, absent en
+              mode carte : sans ce rappel, rien ne dirait ou verser. */}
+          {drafts.length === 0 ? null : (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">{t('planning.pickTour')}</span>
               {drafts.map((tour) => (
-                <TourDraftPanel
+                <Button
                   key={tour.id}
-                  tour={tour}
-                  selected={tour.id === selectedTourId}
-                  onSelect={() => setSelectedTourId(tour.id)}
-                />
+                  type="button"
+                  size="sm"
+                  variant={tour.id === selectedTourId ? 'secondary' : 'outline'}
+                  aria-pressed={tour.id === selectedTourId}
+                  onClick={() => setSelectedTourId(tour.id)}
+                >
+                  {tour.tourNumber}
+                </Button>
               ))}
-            </ul>
+            </div>
           )}
 
-          {selectedTourId === null && drafts.length > 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">{t('planning.pickTour')}</p>
-          ) : null}
-        </SectionCard>
-      </div>
+          <PlanningMap
+            orders={orders}
+            tours={drafts}
+            onPlanOrder={
+              selectedTourId === null ? undefined : (orderId) => send({ orderIds: [orderId] })
+            }
+          />
+        </div>
+      ) : (
+        <PlanningPanels
+          orders={orders}
+          drafts={drafts}
+          poolState={{
+            error: pool.error,
+            isPending: pool.isPending,
+            refetch: () => void pool.refetch(),
+          }}
+          toursState={{
+            error: tours.error,
+            isPending: tours.isPending,
+            refetch: () => void tours.refetch(),
+          }}
+          filtered={date !== '' || search !== ''}
+          isPending={plan.isPending}
+          selectedTourId={selectedTourId}
+          onSelectTour={setSelectedTourId}
+          onPlan={send}
+        />
+      )}
 
       <p className="text-xs text-muted-foreground">
         <StatusBadge status="draft" source="tour" /> {t('planning.draftNotice')}

@@ -210,6 +210,9 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('tours.periods', TourPeriodController::class)
             ->parameters(['periods' => 'tourPeriod'])
             ->except(['create', 'edit']);
+        // Validation et annulation d'un brouillon : le referentiel dit quels
+        // passages existent, l'action les applique dans une transaction.
+        Route::post('tours/{tour}/status', [TourController::class, 'changeStatus'])->name('tours.status');
         Route::apiResource('tours', TourController::class)->except(['create', 'edit']);
 
         // Suivi — pas de PATCH ni de DELETE : un evenement est historique.

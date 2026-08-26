@@ -7,11 +7,13 @@ namespace App\Http\Controllers\Api\V1\Tours;
 use App\Http\Controllers\Api\V1\Concerns\BuildsAuditContext;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesTourScope;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Tours\ChangeTourStatusRequest;
 use App\Http\Requests\Api\V1\Tours\ListTourRequest;
 use App\Http\Requests\Api\V1\Tours\StoreTourRequest;
 use App\Http\Requests\Api\V1\Tours\UpdateTourRequest;
 use App\Http\Resources\Api\V1\Tours\TourDetailResource;
 use App\Http\Resources\Api\V1\Tours\TourListResource;
+use App\Modules\Planning\Actions\ChangeTourStatus;
 use App\Modules\Tours\Actions\CreateTourAction;
 use App\Modules\Tours\Actions\DeleteTourAction;
 use App\Modules\Tours\Actions\UpdateTourAction;
@@ -113,6 +115,35 @@ class TourController extends Controller
      *
      * @response 204
      */
+    /**
+     * Faire passer une tournée d'un état à un autre.
+     *
+     * Permission requise : `tours.update`. C'est par ici que se valide un
+     * brouillon et qu'il s'annule : le référentiel dit quels passages
+     * existent, et l'action les applique dans une transaction, tournée
+     * verrouillée.
+     *
+     * Un brouillon reste réservé à celui qui le prépare, comme toute autre
+     * écriture.
+     */
+    public function changeStatus(
+        ChangeTourStatusRequest $request,
+        Tour $tour,
+        ChangeTourStatus $action,
+    ): JsonResponse {
+        $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
+        $this->authorize('update', $tour);
+
+        $updated = $action->execute(
+            $tour,
+            $request->validated('status'),
+            $this->auditContext($request, $organizationId),
+        );
+
+        return ApiResponse::ok(new TourDetailResource($updated));
+    }
+
     public function destroy(Request $request, Tour $tour, DeleteTourAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);

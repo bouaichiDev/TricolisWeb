@@ -28,8 +28,34 @@ use Illuminate\Database\Seeder;
  */
 class StatusTransitionSeeder extends Seeder
 {
+    /**
+     * Cycle de vie d'une tournee, decide par le proprietaire du projet le
+     * 26 aout 2026.
+     *
+     * Il n'est pas deduit d'une enumeration : `TourStatus` enumere les valeurs
+     * sans dire lesquelles s'enchainent. La suite retenue est celle du metier —
+     * on confirme la tournee preparee, puis on la planifie, puis elle roule.
+     *
+     * L'annulation reste ouverte tant que la tournee n'est pas terminee : une
+     * tournee achevee ne s'annule pas, elle se conteste.
+     *
+     * « Livree » et « effectuee » ne sont pas deux statuts : c'est le meme
+     * `completed`, dont le libelle affiche au client vient du parcours de suivi,
+     * ou chaque organisme nomme ses etapes.
+     *
+     * @var array<string, list<string>>
+     */
+    private const array TOUR_LIFECYCLE = [
+        'draft' => ['confirmed', 'cancelled'],
+        'confirmed' => ['planned', 'cancelled'],
+        'planned' => ['in_progress', 'cancelled'],
+        'in_progress' => ['completed', 'cancelled'],
+    ];
+
     public function run(): void
     {
+        $this->seedTours();
+
         $statuses = Status::where('source', MorphMap::ORDER)->get()->keyBy('code');
 
         if ($statuses->isEmpty()) {
@@ -58,6 +84,44 @@ class StatusTransitionSeeder extends Seeder
                 StatusTransition::firstOrCreate(
                     ['from_status_id' => $source->id, 'to_status_id' => $target->id],
                     ['is_manual' => in_array($to->value, $manual, true)],
+                );
+            }
+        }
+    }
+
+    /**
+     * Sème le cycle de vie des tournées.
+     *
+     * Toutes ces transitions sont posables à la main : c'est le planificateur
+     * qui confirme, planifie et lance une tournée depuis le back-office. Le
+     * jour où le terminal du chauffeur posera « terminée » tout seul, la
+     * distinction se réglera sur la ligne, sans toucher au code.
+     */
+    private function seedTours(): void
+    {
+        $statuses = Status::where('source', MorphMap::TOUR)->get()->keyBy('code');
+
+        if ($statuses->isEmpty()) {
+            return;
+        }
+
+        foreach (self::TOUR_LIFECYCLE as $from => $targets) {
+            $source = $statuses->get($from);
+
+            if ($source === null) {
+                continue;
+            }
+
+            foreach ($targets as $to) {
+                $target = $statuses->get($to);
+
+                if ($target === null) {
+                    continue;
+                }
+
+                StatusTransition::firstOrCreate(
+                    ['from_status_id' => $source->id, 'to_status_id' => $target->id],
+                    ['is_manual' => true],
                 );
             }
         }

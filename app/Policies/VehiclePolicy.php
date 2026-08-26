@@ -8,8 +8,13 @@ use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Identity\Models\User;
 
 /**
- * Le véhicule n'a pas d'organisation propre : sa permission est évaluée dans
- * l'organisation de son fournisseur.
+ * Le véhicule porte son organisation : la permission s'évalue dessus, sans
+ * charger le fournisseur.
+ *
+ * Elle passait par lui tant qu'il était obligatoire. Depuis qu'un véhicule peut
+ * appartenir en propre à l'organisation — phase 4 — ce détour rendait `null`
+ * pour tout véhicule sans fournisseur, et sa fiche répondait 403 même au
+ * propriétaire de l'organisation.
  */
 class VehiclePolicy extends BaseOrganizationPolicy
 {
@@ -40,6 +45,6 @@ class VehiclePolicy extends BaseOrganizationPolicy
 
     private function organizationOf(Vehicle $vehicle): ?string
     {
-        return $vehicle->provider?->organization_id;
+        return $vehicle->organization_id;
     }
 }

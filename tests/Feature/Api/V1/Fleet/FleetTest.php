@@ -113,6 +113,31 @@ describe('vehicles invariants', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('palletCapacity');
     });
 
+    /**
+     * La permission s'évalue sur l'organisation du véhicule, pas sur celle de
+     * son fournisseur.
+     *
+     * La policy passait par lui tant qu'il était obligatoire : depuis qu'il ne
+     * l'est plus, ce détour rendait `null`, et la fiche d'un véhicule en propre
+     * répondait 403 au propriétaire même de l'organisation. La liste, elle,
+     * passait — c'est ce qui rendait l'écart invisible.
+     */
+    it('opens, updates and deletes it without a provider', function (): void {
+        $vehicle = Vehicle::factory()->forOrganization($this->organization)
+            ->withoutProvider()->create();
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson("/api/v1/vehicles/{$vehicle->id}")
+            ->assertOk()->assertJsonPath('data.providerId', null);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->patchJson("/api/v1/vehicles/{$vehicle->id}", ['status' => 'maintenance'])
+            ->assertOk()->assertJsonPath('data.status', 'maintenance');
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->deleteJson("/api/v1/vehicles/{$vehicle->id}")->assertNoContent();
+    });
+
     it('hides a vehicle of another organization', function (): void {
         $foreign = Vehicle::factory()->create();
 

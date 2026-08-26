@@ -27,9 +27,21 @@ beforeEach(function (): void {
         ->create(['created_by' => $this->user->id, 'status' => 'draft']);
 });
 
-/** Le semis reproduit exactement l'ancienne machine figée dans le code. */
+/**
+ * Le semis reproduit exactement l'ancienne machine figée dans le code.
+ *
+ * Le compte porte sur les transitions **de commande**, pas sur la table
+ * entière : celle-ci accueille depuis la phase 5 le cycle de vie des tournées,
+ * et un total global aurait fait échouer ce test à chaque ressource dotée du
+ * sien — sans rien dire des commandes.
+ */
 it('reprend le cycle de vie des commandes tel qu’il était', function (): void {
-    expect(StatusTransition::count())->toBe(20);
+    $orderTransitions = StatusTransition::whereHas(
+        'from',
+        fn ($status) => $status->where('source', MorphMap::ORDER),
+    )->count();
+
+    expect($orderTransitions)->toBe(20);
 
     $codes = array_map(
         static fn (Status $status): string => $status->code,

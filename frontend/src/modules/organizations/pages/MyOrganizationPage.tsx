@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 
 import { OrganizationDetailPage } from './OrganizationDetailPage'
 import { MenuSettingsPanel } from '@/modules/menu/components/MenuSettingsPanel'
+import { LoadingServicesPanel } from '@/modules/planning/components/LoadingServicesPanel'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
@@ -39,6 +40,15 @@ export function MyOrganizationPage() {
       <PermissionGuard permission="organizations.update">
         <SectionCard title={t('menu.settings')}>
           <MenuSettingsPanel />
+        </SectionCard>
+      </PermissionGuard>
+
+      {/* La planification a besoin de savoir quels services sont des
+          chargements : sans ce reglage, le regroupement au depot ne peut pas
+          s'appliquer. */}
+      <PermissionGuard permission="organizations.update">
+        <SectionCard title={t('planning.loadingServices')}>
+          <LoadingServicesPanel />
         </SectionCard>
       </PermissionGuard>
     </div>

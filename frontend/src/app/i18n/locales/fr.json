@@ -285,10 +285,13 @@
     "selectAgency": "Agence",
     "chooseAgency": "Sélectionnez une agence pour voir ses dépôts.",
     "sections": {
-      "general": "Informations générales"
+      "general": "Informations générales",
+      "addresses": "Adresses"
     },
     "editSubtitle": "Modifier le dépôt",
-    "tabTitle": "Dépôts"
+    "tabTitle": "Dépôts",
+    "addressesHint": "L’adresse du dépôt est le point de départ des tournées.",
+    "noAddress": "Aucune adresse rattachée à ce dépôt."
   },
   "customers": {
     "title": "Clients",
@@ -1512,5 +1515,12 @@
       "palletCapacity": "Palettes"
     },
     "ownVehicle": "Aucun — véhicule du transporteur"
+  },
+  "planning": {
+    "loadingServices": "Services de chargement",
+    "loadingServicesHint": "Cochez les services qui correspondent à un chargement. La planification s’en sert pour regrouper les chargements au dépôt de départ.",
+    "isLoading": "Chargement",
+    "noService": "Aucun service n’est encore déclaré.",
+    "unmatchedCodes": "Réglé mais introuvable : {{codes}}. Ce code ne correspond à aucun service — il a sans doute été renommé. Le regroupement au dépôt ne s’appliquera pas pour lui."
   }
 }

@@ -14,6 +14,13 @@ export interface OrganizationPayload {
   timezone?: string
   currencyCode?: string
   status?: string
+  /**
+   * Réglages libres de l'organisation — `organizations.settings`.
+   *
+   * `PATCH` remplace la valeur en entier : qui n'envoie qu'une partie efface
+   * le reste. Les appelants recopient donc l'existant avant d'ajouter le leur.
+   */
+  settings?: Record<string, unknown>
 }
 
 /**

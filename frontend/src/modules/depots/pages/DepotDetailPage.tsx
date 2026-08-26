@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useDeleteDepot, useDepot } from '../hooks/useDepots'
+import { EntityAddressesPanel } from '@/modules/addresses/components/EntityAddressesPanel'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
@@ -43,6 +44,16 @@ export function DepotDetailPage() {
           <DetailField label={t('common.createdAt')}>{formatDateTime(depot.createdAt)}</DetailField>
           <DetailField label={t('common.updatedAt')}>{formatDateTime(depot.updatedAt)}</DetailField>
         </dl>
+      </SectionCard>
+
+      {/* Le depot est le point de depart des tournees : sans adresse, aucun
+          itineraire ne peut partir. */}
+      <SectionCard title={t('depots.sections.addresses')} description={t('depots.addressesHint')}>
+        <EntityAddressesPanel
+          entityType="depot"
+          entityId={depotId}
+          emptyMessage={t('depots.noAddress')}
+        />
       </SectionCard>
 
       <ConfirmDialog

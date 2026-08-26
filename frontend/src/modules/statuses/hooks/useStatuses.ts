@@ -124,3 +124,53 @@ export function useSyncStatusTransitions(statusId: string) {
     },
   })
 }
+
+/**
+ * Statuts d'une entité, prêts pour un formulaire ou un filtre.
+ *
+ * Le référentiel remplace les listes codées dans chaque module : une valeur
+ * ajoutée à `statuses` apparaît partout sans qu'on touche au frontend.
+ *
+ * **Seuls les statuts actifs sont proposés.** Une donnée ancienne peut porter
+ * un code désactivé depuis ; `current` le réinjecte pour qu'il reste visible en
+ * modification. Le retirer de la liste ferait perdre l'information sans que
+ * personne l'ait demandé — et le serveur refuse de toute façon d'y revenir.
+ */
+export function useStatusOptions(source: string, current?: string | null) {
+  const query = useQuery({
+    queryKey: statusKeys.list({ page: 1, perPage: 100, source, active: true }),
+    queryFn: () => statusesApi.list({ page: 1, perPage: 100, source, active: true }),
+    // Sans source, il n'y a rien a demander : `StatusBadge` s'en sert pour les
+    // champs `status` restes en chaine libre, et interroger le referentiel
+    // pour chacun d'eux le ferait pour rien.
+    enabled: source !== '',
+    // Un referentiel de plateforme ne bouge qu'a l'initiative d'un
+    // administrateur : le rappeler a chaque ouverture d'un formulaire serait
+    // du trafic pour rien.
+    staleTime: 10 * 60 * 1000,
+  })
+
+  const rows = query.data?.data ?? []
+  const options = rows.map((status) => ({
+    value: status.code,
+    label: status.label,
+    hint: status.code,
+  }))
+
+  const known = options.some((option) => option.value === current)
+
+  if (current != null && current !== '' && !known && !query.isPending) {
+    options.push({ value: current, label: current, hint: current })
+  }
+
+  return { isLoading: query.isPending, options, statuses: rows }
+}
+
+/** Libellé d'un code, ou le code lui-même tant que le référentiel n'a pas répondu. */
+export function useStatusLabel(source: string, code: string | null | undefined) {
+  const { statuses } = useStatusOptions(source, code)
+
+  if (!code) return null
+
+  return statuses.find((status) => status.code === code)?.label ?? code
+}

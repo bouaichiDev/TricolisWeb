@@ -49,10 +49,66 @@ class StatusSeeder extends Seeder
         MorphMap::TOUR_STOP => TourStopStatus::class,
     ];
 
+    /**
+     * Entités dont le statut n'est gouverné par aucune énumération.
+     *
+     * Ressources et référentiels n'ont pas de cycle de vie : ils servent ou ne
+     * servent plus. Les deux codes repris ici sont ceux que le projet emploie
+     * déjà partout — `active` est la seule valeur présente en base, `inactive`
+     * son pendant, connu de l'interface et des anciens référentiels. Aucun
+     * autre n'est inventé : un administrateur en ajoute depuis l'écran des
+     * statuts, ce qui est précisément la raison d'être du référentiel.
+     *
+     * Deux exceptions, tirées du domaine lui-même : un véhicule peut être en
+     * maintenance et un fournisseur bloqué. Ces codes n'ont pas été devinés,
+     * ils sont déjà employés par la suite de tests — les omettre aurait fait
+     * refuser une écriture que le projet pratique.
+     *
+     * @var array<string, array<string, string>>
+     */
+    private array $resources = [
+        MorphMap::PROVIDER => ['active' => 'Actif', 'inactive' => 'Inactif', 'blocked' => 'Bloqué'],
+        MorphMap::DRIVER => ['active' => 'Actif', 'inactive' => 'Inactif'],
+        MorphMap::VEHICLE => ['active' => 'Actif', 'inactive' => 'Inactif', 'maintenance' => 'En maintenance'],
+        MorphMap::TYPE => ['active' => 'Actif', 'inactive' => 'Inactif'],
+        MorphMap::TYPE_ITEM => ['active' => 'Actif', 'inactive' => 'Inactif'],
+    ];
+
     public function run(): void
     {
         foreach ($this->enums as $source => $enum) {
             $this->seedSource((string) $source, $enum);
+        }
+
+        foreach ($this->resources as $source => $codes) {
+            $this->seedCodes((string) $source, $codes);
+        }
+    }
+
+    /**
+     * @param  array<string, string>  $codes  code => libellé
+     */
+    private function seedCodes(string $source, array $codes): void
+    {
+        $rank = 0;
+
+        foreach ($codes as $code => $label) {
+            $rank++;
+
+            $status = Status::firstOrNew(['source' => $source, 'code' => $code]);
+
+            // Une ligne existante n'est jamais reecrite : le libelle et le rang
+            // se reglent depuis l'ecran, et rejouer le seeder ne doit pas
+            // effacer ce qu'un administrateur a decide.
+            if ($status->exists) {
+                continue;
+            }
+
+            $status->fill([
+                'status' => $rank,
+                'label' => $label,
+                'position' => $rank * 10,
+            ])->save();
         }
     }
 

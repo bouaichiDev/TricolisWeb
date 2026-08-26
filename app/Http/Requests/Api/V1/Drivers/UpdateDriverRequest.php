@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Drivers;
 
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,7 +39,7 @@ class UpdateDriverRequest extends FormRequest
                 Rule::unique('drivers', 'code')->where('provider_id', $providerId)->ignore($driver?->id),
             ],
             'name' => ['sometimes', 'string', 'max:255'],
-            'status' => ['sometimes', 'string', 'max:32'],
+            'status' => ['sometimes', 'string', 'max:32', new ExistsInStatusReferential('driver')],
         ];
     }
 }

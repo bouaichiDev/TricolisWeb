@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Types;
 
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTypeRequest extends FormRequest
@@ -21,7 +22,7 @@ class StoreTypeRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:255'],
-            'status' => ['sometimes', 'string', 'max:32'],
+            'status' => ['sometimes', 'string', 'max:32', new ExistsInStatusReferential('type')],
         ];
     }
 }

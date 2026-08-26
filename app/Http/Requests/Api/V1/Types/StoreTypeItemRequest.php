@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Types;
 
 use App\Modules\Types\Models\Type;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTypeItemRequest extends FormRequest
@@ -28,7 +29,7 @@ class StoreTypeItemRequest extends FormRequest
             ],
             'code' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:255'],
-            'status' => ['sometimes', 'string', 'max:32'],
+            'status' => ['sometimes', 'string', 'max:32', new ExistsInStatusReferential('type_item')],
             'position' => ['sometimes', 'integer', 'min:0', 'max:65535'],
         ];
     }

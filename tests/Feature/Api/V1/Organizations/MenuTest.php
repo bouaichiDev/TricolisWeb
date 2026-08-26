@@ -105,7 +105,10 @@ describe('effective menu', function (): void {
      * Un groupe dont plus aucun enfant ne subsiste afficherait un titre vide.
      */
     it('drops a group left without any visible child', function (): void {
-        foreach (['agencies', 'depots'] as $code) {
+        // Tous les enfants du groupe, pas seulement les deux premiers : depuis
+        // la Phase 4, « Ressources » porte aussi fournisseurs, chauffeurs et
+        // vehicules, et en laisser un visible garderait le groupe.
+        foreach (['agencies', 'depots', 'providers', 'drivers', 'vehicles'] as $code) {
             OrganizationMenuItem::create([
                 'organization_id' => $this->organization->id,
                 'code' => $code,

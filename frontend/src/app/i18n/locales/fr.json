@@ -88,7 +88,10 @@
     "statuses": "Statuts",
     "journey": "Parcours client",
     "apiConfigurations": "API externes",
-    "types": "Types"
+    "types": "Types",
+    "providers": "Fournisseurs",
+    "drivers": "Chauffeurs",
+    "vehicles": "Véhicules"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -478,7 +481,8 @@
     "password": "Le mot de passe doit contenir au moins 8 caractères.",
     "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
     "integer": "Nombre entier attendu.",
-    "positive": "Une valeur strictement positive est attendue."
+    "positive": "Une valeur strictement positive est attendue.",
+    "positiveNumber": "Indiquez un nombre positif."
   },
   "toast": {
     "created": "Création effectuée.",
@@ -1324,7 +1328,9 @@
       "manualHint": "Décochée, la transition reste valide mais n’est plus proposée : elle est réservée à la planification ou à la facturation.",
       "inactive": "Statut inactif : la transition existe mais n’est pas proposée.",
       "noSibling": "Aucun autre statut pour cette entité."
-    }
+    },
+    "pick": "Choisir un statut",
+    "filter": "Statut"
   },
   "bodyFormats": {
     "text": "Texte brut",
@@ -1418,6 +1424,69 @@
       "code": "Code",
       "name": "Nom",
       "status": "Statut"
+    }
+  },
+  "providers": {
+    "title": "Fournisseurs",
+    "subtitle": "Les transporteurs et prestataires avec qui vous travaillez",
+    "create": "Ajouter un fournisseur",
+    "createTitle": "Nouveau fournisseur",
+    "editTitle": "Modifier le fournisseur",
+    "empty": "Aucun fournisseur.",
+    "identity": "Identité",
+    "noAddress": "Aucune adresse rattachée.",
+    "noContact": "Aucun contact rattaché.",
+    "tabs": {
+      "information": "Informations",
+      "drivers": "Chauffeurs",
+      "vehicles": "Véhicules",
+      "documents": "Documents"
+    },
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "status": "Statut",
+      "address": "Adresse",
+      "contact": "Contact",
+      "driverCount": "Chauffeurs",
+      "vehicleCount": "Véhicules"
+    }
+  },
+  "drivers": {
+    "title": "Chauffeurs",
+    "subtitle": "Les conducteurs rattachés à vos fournisseurs",
+    "create": "Ajouter un chauffeur",
+    "createTitle": "Nouveau chauffeur",
+    "editTitle": "Modifier le chauffeur",
+    "empty": "Aucun chauffeur.",
+    "identity": "Identité",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "status": "Statut",
+      "provider": "Fournisseur"
+    }
+  },
+  "vehicles": {
+    "title": "Véhicules",
+    "subtitle": "La flotte de vos fournisseurs",
+    "create": "Ajouter un véhicule",
+    "createTitle": "Nouveau véhicule",
+    "editTitle": "Modifier le véhicule",
+    "empty": "Aucun véhicule.",
+    "identity": "Identité",
+    "capacities": "Capacités",
+    "capacitiesHint": "Charge utile en kilogrammes, volume en mètres cubes, palettes en nombre.",
+    "capacitySummary": "{{payload}} kg · {{volume}} m³ · {{pallets}} pal.",
+    "fields": {
+      "code": "Code",
+      "registrationNumber": "Immatriculation",
+      "status": "Statut",
+      "provider": "Fournisseur",
+      "vehicleType": "Type de véhicule",
+      "payloadCapacity": "Charge utile",
+      "volumeCapacity": "Volume",
+      "palletCapacity": "Palettes"
     }
   }
 }

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Fleet;
 
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use App\Shared\Http\Rules\IsTypeItemOf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -45,7 +46,7 @@ class StoreVehicleRequest extends FormRequest
             'payloadCapacity' => ['required', 'numeric', 'min:0'],
             'volumeCapacity' => ['required', 'numeric', 'min:0'],
             'palletCapacity' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'string', 'max:32'],
+            'status' => ['required', 'string', 'max:32', new ExistsInStatusReferential('vehicle')],
         ];
     }
 }

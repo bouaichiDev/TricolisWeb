@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Drivers;
 
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,7 +43,7 @@ class StoreDriverRequest extends FormRequest
                 Rule::unique('drivers', 'code')->where('provider_id', $this->input('providerId')),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'max:32'],
+            'status' => ['required', 'string', 'max:32', new ExistsInStatusReferential('driver')],
         ];
     }
 }

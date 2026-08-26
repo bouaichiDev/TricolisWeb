@@ -90,6 +90,39 @@ final class MenuCatalogue
                 parent: 'resources',
             ),
 
+            // Fournisseurs et leurs ressources — Phase 4. Pas d'entree pour les
+            // types de vehicule : le referentiel a rejoint `/types`.
+            new MenuEntry(
+                code: 'providers',
+                labelKey: 'nav.providers',
+                icon: 'Truck',
+                section: MenuSection::RESOURCES,
+                position: 23,
+                route: '/providers',
+                permission: 'providers.view',
+                parent: 'resources',
+            ),
+            new MenuEntry(
+                code: 'drivers',
+                labelKey: 'nav.drivers',
+                icon: 'IdCard',
+                section: MenuSection::RESOURCES,
+                position: 24,
+                route: '/drivers',
+                permission: 'drivers.view',
+                parent: 'resources',
+            ),
+            new MenuEntry(
+                code: 'vehicles',
+                labelKey: 'nav.vehicles',
+                icon: 'Truck',
+                section: MenuSection::RESOURCES,
+                position: 25,
+                route: '/vehicles',
+                permission: 'vehicles.view',
+                parent: 'resources',
+            ),
+
             // Exploitation — Phase 2. Les référentiels de colis sont
             // gouvernés par `packages.*` : `PermissionSeeder` ne leur donne
             // aucune permission propre.

@@ -62,6 +62,7 @@ class TourStopController extends Controller
     public function store(StoreTourStopRequest $request, Tour $tour, CreateTourStopAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
         $this->authorize('create', [TourStop::class, $organizationId]);
 
         $stop = $action->execute(
@@ -95,6 +96,7 @@ class TourStopController extends Controller
     public function update(UpdateTourStopRequest $request, Tour $tour, TourStop $tourStop, UpdateTourStopAction $action): JsonResponse
     {
         $organizationId = $this->guardStop($tour, $tourStop);
+        $this->guardDraftOwner($tour);
         $this->authorize('update', $tourStop);
 
         $updated = $action->execute(
@@ -117,6 +119,7 @@ class TourStopController extends Controller
     public function destroy(Request $request, Tour $tour, TourStop $tourStop, DeleteTourStopAction $action): JsonResponse
     {
         $organizationId = $this->guardStop($tour, $tourStop);
+        $this->guardDraftOwner($tour);
         $this->authorize('delete', $tourStop);
 
         try {
@@ -140,6 +143,7 @@ class TourStopController extends Controller
     public function reorder(ReorderRequest $request, Tour $tour, ReorderTourStopsAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
         $this->authorize('reorder', [TourStop::class, $organizationId]);
 
         $action->execute($tour, $request->orderedIds(), $this->auditContext($request, $organizationId));

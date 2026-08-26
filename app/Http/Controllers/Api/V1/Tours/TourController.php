@@ -94,6 +94,7 @@ class TourController extends Controller
     public function update(UpdateTourRequest $request, Tour $tour, UpdateTourAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
         $this->authorize('update', $tour);
 
         $updated = $action->execute(
@@ -115,6 +116,7 @@ class TourController extends Controller
     public function destroy(Request $request, Tour $tour, DeleteTourAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
         $this->authorize('delete', $tour);
 
         $action->execute($tour, $this->auditContext($request, $organizationId));

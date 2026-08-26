@@ -158,3 +158,42 @@ it('recalcule les totaux et journalise le retrait', function (): void {
         'entity_id' => $this->tour->id,
     ]);
 });
+
+/**
+ * L'arrêt dit de quelles commandes il vient.
+ *
+ * Sans cela, la carte et les colonnes montrent une adresse et un compteur, mais
+ * rien qui permette de remonter à ce que le camion vient y faire.
+ */
+it('nomme les commandes posées sur l’arrêt, sans doublon', function (): void {
+    $address = Address::factory()->create();
+    $order = ($this->orderAt)($address, 2);
+
+    ($this->plan)(['orderIds' => [$order->id]])->assertOk();
+
+    $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/tours?withStops=1')->assertOk();
+
+    $orders = $response->json('data.0.stops.0.orders');
+
+    // Deux services d'une meme commande ne font qu'une ligne : c'est la
+    // commande qu'on ouvre, pas chacun de ses services.
+    expect($orders)->toHaveCount(1)
+        ->and($orders[0]['id'])->toBe($order->id)
+        ->and($orders[0]['serviceCount'])->toBe(2);
+});
+
+/** Une affectation retirée ne doit plus renvoyer vers sa commande. */
+it('oublie la commande d’un service retiré', function (): void {
+    $address = Address::factory()->create();
+    $kept = ($this->orderAt)($address);
+    $removed = ($this->orderAt)($address);
+
+    ($this->plan)(['orderIds' => [$kept->id, $removed->id]])->assertOk();
+    ($this->unplan)(['orderIds' => [$removed->id]])->assertOk();
+
+    $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/tours?withStops=1')->assertOk();
+
+    expect($response->json('data.0.stops.0.orders.*.id'))->toBe([$kept->id]);
+});

@@ -43,6 +43,8 @@ export interface TourStop {
   longitude?: number | null
   /** Services **actifs** de l'arrêt : ce qu'on peut en retirer. */
   orderServiceIds?: string[]
+  /** Commandes posées sur l'arrêt, sans doublon : de quoi remonter à chacune. */
+  orders?: { id: string; orderNumber: string | null; serviceCount: number }[]
 }
 
 /**

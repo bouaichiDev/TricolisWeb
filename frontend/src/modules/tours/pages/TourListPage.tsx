@@ -19,9 +19,10 @@ import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 
 import { TourBoard } from '../components/TourBoard'
+import { TourMapDialog } from '../components/TourMapDialog'
 import { useTourColumns } from '../components/useTourColumns'
 import { useTourList } from '../hooks/useTours'
-import type { TourFilters } from '../types/tour'
+import type { Tour, TourFilters } from '../types/tour'
 
 /** Liste des tournées, tous états confondus. */
 export function TourListPage() {
@@ -96,6 +97,9 @@ export function TourListPage() {
 
   const columns = useTourColumns()
 
+  // La tournee dont on regarde le trace ; nulle quand la carte est fermee.
+  const [mapped, setMapped] = useState<Tour | null>(null)
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -164,6 +168,7 @@ export function TourListPage() {
                 emptyMessage={t('tours.empty')}
                 onPlanDrop={drop}
                 onUnplan={release}
+                onShowMap={setMapped}
               />
             )}
           </div>
@@ -187,6 +192,8 @@ export function TourListPage() {
         emptyMessage={t('tours.empty')}
       />
       )}
+
+      <TourMapDialog tour={mapped} onClose={() => setMapped(null)} />
     </div>
   )
 }

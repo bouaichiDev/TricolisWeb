@@ -42,7 +42,9 @@ final readonly class TourListQuery
             // plus.
             $query->with(['stops' => fn ($stops) => $stops
                 ->orderBy('sequence')
-                ->with(['address', 'services' => fn ($services) => $services->where('is_active_assignment', true)])
+                ->with(['address', 'services' => fn ($services) => $services
+                    ->where('is_active_assignment', true)
+                    ->with('orderService.order:id,order_number')])
                 ->withCount(['services' => fn ($services) => $services->where('is_active_assignment', true)]),
             ]);
         }

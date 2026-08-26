@@ -36,8 +36,9 @@ class TourStopResource extends JsonResource
             'status' => $this->status->value,
             'serviceCount' => $this->whenCounted('services'),
             // Ce que l'arret porte reellement, pour pouvoir le retirer d'un
-            // geste. Les affectations historiques en sont exclues : elles
-            // racontent ou le service est passe, pas ce qu'il reste a faire.
+            // geste et remonter a la commande. Les affectations historiques en
+            // sont exclues : elles racontent ou le service est passe, pas ce
+            // qu'il reste a faire.
             'orderServiceIds' => $this->whenLoaded(
                 'services',
                 fn () => $this->services
@@ -45,6 +46,7 @@ class TourStopResource extends JsonResource
                     ->pluck('order_service_id')
                     ->values(),
             ),
+            'orders' => $this->whenLoaded('services', fn () => $this->plannedOrders()),
             // L'adresse en une ligne : la vue en colonnes montre ou le camion
             // s'arrete, pas un identifiant de 26 caracteres.
             'addressLabel' => $this->whenLoaded('address', fn (): ?string => $this->addressLabel()),
@@ -53,6 +55,31 @@ class TourStopResource extends JsonResource
             'latitude' => $this->whenLoaded('address', fn (): ?float => $this->coordinate($this->address?->latitude)),
             'longitude' => $this->whenLoaded('address', fn (): ?float => $this->coordinate($this->address?->longitude)),
         ];
+    }
+
+    /**
+     * Commandes posées sur cet arrêt, sans doublon.
+     *
+     * Un arrêt regroupe les services d'une même adresse : deux services d'une
+     * même commande n'y font qu'une ligne. C'est ce qui permet à la carte
+     * d'ouvrir la commande depuis le point où le camion s'arrête.
+     *
+     * @return list<array{id: string, orderNumber: string|null, serviceCount: int}>
+     */
+    private function plannedOrders(): array
+    {
+        return $this->services
+            ->where('is_active_assignment', true)
+            ->map(fn ($service) => $service->orderService?->order)
+            ->filter()
+            ->groupBy('id')
+            ->map(fn ($group): array => [
+                'id' => $group->first()->id,
+                'orderNumber' => $group->first()->order_number,
+                'serviceCount' => $group->count(),
+            ])
+            ->values()
+            ->all();
     }
 
     /** `decimal:8` rend une chaîne : la carte attend un nombre. */

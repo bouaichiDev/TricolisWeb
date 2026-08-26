@@ -41,7 +41,10 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
       status: 'pending',
       addressLabel: 'Entrepôt · 20000 Casablanca',
       serviceCount: 3,
+      latitude: 33.59,
+      longitude: -7.62,
       orderServiceIds: ['01JQZ000000000000OSRV01', '01JQZ000000000000OSRV02'],
+      orders: [{ id: '01JQZ00000000000000ORD1', orderNumber: 'CMD-100', serviceCount: 2 }],
     },
     {
       id: '01JQZ0000000000000STOP02',
@@ -51,7 +54,10 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
       status: 'pending',
       addressLabel: 'Client · 20100 Casablanca',
       serviceCount: 1,
+      latitude: 33.55,
+      longitude: -7.6,
       orderServiceIds: ['01JQZ000000000000OSRV03'],
+      orders: [{ id: '01JQZ00000000000000ORD2', orderNumber: 'CMD-200', serviceCount: 1 }],
     },
   ],
   ...overrides,
@@ -346,5 +352,43 @@ describe('retrait depuis la liste', () => {
     await userEvent.click(buttons[0])
 
     await waitFor(() => expect(unplans).toHaveLength(1))
+  })
+})
+
+/**
+ * Depuis la colonne, deux façons de vérifier ce qu'une tournée porte : la voir
+ * tracée, ou ouvrir la commande qui l'a fait exister.
+ */
+describe('commandes d’une tournée', () => {
+  it('mène à la commande depuis l’arrêt', async () => {
+    render()
+
+    expect(await screen.findByRole('link', { name: 'CMD-100' })).toHaveAttribute(
+      'href',
+      '/orders/01JQZ00000000000000ORD1',
+    )
+  })
+
+  it('ouvre la carte de la seule tournée choisie', async () => {
+    render()
+
+    await screen.findByText('TR-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Voir la tournée sur la carte' }))
+
+    const dialog = await screen.findByRole('dialog')
+
+    expect(within(dialog).getByText('Tournée TR-001 sur la carte')).toBeInTheDocument()
+    await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
+  })
+
+  /** Sans arrêt tracé, la carte n'aurait rien à montrer. */
+  it('n’offre pas la carte d’une tournée sans arrêt', async () => {
+    render({ stops: [], stopCount: 0 })
+
+    await screen.findByText('TR-001')
+
+    expect(
+      screen.queryByRole('button', { name: 'Voir la tournée sur la carte' }),
+    ).not.toBeInTheDocument()
   })
 })

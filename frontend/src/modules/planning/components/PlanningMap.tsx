@@ -2,6 +2,7 @@ import 'leaflet/dist/leaflet.css'
 
 import { useTranslation } from 'react-i18next'
 import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
+import { Link } from 'react-router-dom'
 
 import type { Tour } from '@/modules/tours/types/tour'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
@@ -39,6 +40,9 @@ const DEPARTURE_COLOR = '#059669'
  * veut rien dire : une tournée n'y est pas une zone mais une ligne brisée. Le
  * glisser vit dans la vue en panneaux ; ici on planifie depuis la bulle d'un
  * marqueur.
+ *
+ * La bulle d'un arrêt mène aux commandes qui l'ont fait exister : c'est de là
+ * qu'on vérifie un contenu sans quitter la carte.
  *
  * Une adresse non géocodée n'apparaît pas : elle reste planifiable, et leur
  * nombre est annoncé sous la carte plutôt que passé sous silence.
@@ -104,6 +108,20 @@ export function PlanningMap({ orders, tours, onPlanOrder }: PlanningMapProps) {
                   <span className="mt-1 block">
                     {t('tours.serviceCount', { count: stop.serviceCount ?? 0 })}
                   </span>
+
+                  {/* Depuis l'arret, remonter a ce qui l'a fait exister : le
+                      planificateur y verifie le contenu sans quitter la carte. */}
+                  {(stop.orders ?? []).length === 0 ? null : (
+                    <ul className="mt-1 flex flex-col gap-0.5">
+                      {(stop.orders ?? []).map((order) => (
+                        <li key={order.id}>
+                          <Link to={`/orders/${order.id}`} className="underline">
+                            {order.orderNumber ?? order.id}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </Popup>
               </Marker>
             ))}

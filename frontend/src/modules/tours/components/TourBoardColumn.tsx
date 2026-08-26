@@ -1,4 +1,4 @@
-import { Clock, MapPin, Package, Route, Users, Weight, X } from 'lucide-react'
+import { Map, Package, Route, Users, Weight } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -11,6 +11,7 @@ import {
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { formatDate } from '@/shared/utils/format'
 
+import { TourBoardStop } from './TourBoardStop'
 import type { Tour } from '../types/tour'
 
 interface TourBoardColumnProps {
@@ -19,6 +20,8 @@ interface TourBoardColumnProps {
   onPlanDrop?: (tourId: string, drag: PlanningDragPayload) => void
   /** Rend les services d'un arrêt au pool. */
   onUnplan?: (tourId: string, orderServiceIds: string[]) => void
+  /** Ouvre la carte de cette seule tournée. */
+  onShowMap?: (tour: Tour) => void
 }
 
 /**
@@ -28,7 +31,12 @@ interface TourBoardColumnProps {
  * plus à changer de contenu, et le serveur le refuserait : la colonne ne doit
  * pas laisser croire le contraire en s'illuminant au survol.
  */
-export function TourBoardColumn({ tour, onPlanDrop, onUnplan }: TourBoardColumnProps) {
+export function TourBoardColumn({
+  tour,
+  onPlanDrop,
+  onUnplan,
+  onShowMap,
+}: TourBoardColumnProps) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
 
@@ -74,7 +82,22 @@ export function TourBoardColumn({ tour, onPlanDrop, onUnplan }: TourBoardColumnP
         <Link to={`/tours/${tour.id}`} className="min-w-0 font-medium text-primary hover:underline">
           {tour.tourNumber}
         </Link>
-        <StatusBadge status={tour.status} source="tour" />
+        <span className="flex shrink-0 items-center gap-1">
+          <StatusBadge status={tour.status} source="tour" />
+
+          {/* Sans arret trace, la carte n'aurait rien a montrer. */}
+          {onShowMap !== undefined && (tour.stops ?? []).length > 0 ? (
+            <button
+              type="button"
+              title={t('tours.showMap')}
+              aria-label={t('tours.showMap')}
+              className="rounded p-1 text-muted-foreground transition-colors hover:text-primary"
+              onClick={() => onShowMap(tour)}
+            >
+              <Map className="size-4" aria-hidden />
+            </button>
+          ) : null}
+        </span>
       </div>
 
       {tour.tourDate === null ? null : (
@@ -103,38 +126,11 @@ export function TourBoardColumn({ tour, onPlanDrop, onUnplan }: TourBoardColumnP
           </p>
         ) : (
           (tour.stops ?? []).map((stop) => (
-            <div key={stop.id} className="flex items-start gap-2 rounded-md border px-2 py-1.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded border text-xs font-medium">
-                {stop.sequence}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1 truncate text-xs">
-                  <MapPin className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-                  {stop.addressLabel ?? stop.addressId}
-                </span>
-                <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                  <StatusBadge status={stop.status} source="tour_stop" />
-                  {stop.serviceCount === undefined ? null : (
-                    <span className="flex items-center gap-1">
-                      <Clock className="size-3" aria-hidden />
-                      {t('tours.serviceCount', { count: stop.serviceCount })}
-                    </span>
-                  )}
-                </span>
-              </span>
-
-              {releasable && (stop.orderServiceIds ?? []).length > 0 ? (
-                <button
-                  type="button"
-                  title={t('planning.unplanStop')}
-                  aria-label={t('planning.unplanStop')}
-                  className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
-                  onClick={() => onUnplan(tour.id, stop.orderServiceIds ?? [])}
-                >
-                  <X className="size-3.5" aria-hidden />
-                </button>
-              ) : null}
-            </div>
+            <TourBoardStop
+              key={stop.id}
+              stop={stop}
+              onUnplan={releasable ? (ids) => onUnplan(tour.id, ids) : undefined}
+            />
           ))
         )}
       </div>

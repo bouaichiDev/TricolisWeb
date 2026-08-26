@@ -1626,6 +1626,9 @@
       "scheduleHint": "Les horaires prévus servent à comparer les tournées entre elles.",
       "none": "Aucun",
       "pickAgencyFirst": "Choisissez d’abord une agence."
-    }
+    },
+    "showMap": "Voir la tournée sur la carte",
+    "mapTitle": "Tournée {{number}} sur la carte",
+    "mapHint": "Les arrêts dans leur ordre de passage."
   }
 }

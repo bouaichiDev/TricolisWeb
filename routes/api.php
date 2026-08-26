@@ -213,6 +213,8 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // Validation et annulation d'un brouillon : le referentiel dit quels
         // passages existent, l'action les applique dans une transaction.
         Route::post('tours/{tour}/status', [TourController::class, 'changeStatus'])->name('tours.status');
+        // Glisser une commande ou des services : un seul appel, une transaction.
+        Route::post('tours/{tour}/plan', [TourController::class, 'plan'])->name('tours.plan');
         Route::apiResource('tours', TourController::class)->except(['create', 'edit']);
 
         // Suivi — pas de PATCH ni de DELETE : un evenement est historique.

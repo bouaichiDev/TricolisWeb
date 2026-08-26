@@ -9,11 +9,14 @@ use App\Http\Controllers\Api\V1\Concerns\ResolvesTourScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Tours\ChangeTourStatusRequest;
 use App\Http\Requests\Api\V1\Tours\ListTourRequest;
+use App\Http\Requests\Api\V1\Tours\PlanServicesRequest;
 use App\Http\Requests\Api\V1\Tours\StoreTourRequest;
 use App\Http\Requests\Api\V1\Tours\UpdateTourRequest;
 use App\Http\Resources\Api\V1\Tours\TourDetailResource;
 use App\Http\Resources\Api\V1\Tours\TourListResource;
+use App\Modules\Orders\Models\OrderService;
 use App\Modules\Planning\Actions\ChangeTourStatus;
+use App\Modules\Planning\Actions\PlanOrderServices;
 use App\Modules\Tours\Actions\CreateTourAction;
 use App\Modules\Tours\Actions\DeleteTourAction;
 use App\Modules\Tours\Actions\UpdateTourAction;
@@ -142,6 +145,68 @@ class TourController extends Controller
         );
 
         return ApiResponse::ok(new TourDetailResource($updated));
+    }
+
+    /**
+     * Planifier une commande, ou certains de ses services, dans la tournée.
+     *
+     * Permission requise : `tours.update`. Les services éligibles entrent, les
+     * autres sont rendus avec leur motif : un service déjà livré ne doit pas
+     * empêcher de planifier le reste de sa commande.
+     *
+     * Un seul appel, une seule transaction — glisser une commande de huit
+     * services ne doit pas laisser la tournée à mi-chemin.
+     */
+    public function plan(
+        PlanServicesRequest $request,
+        Tour $tour,
+        PlanOrderServices $action,
+    ): JsonResponse {
+        $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
+        $this->authorize('update', $tour);
+
+        $serviceIds = $this->serviceIdsFrom($request, $organizationId);
+
+        $result = $action->execute(
+            $tour,
+            $serviceIds,
+            $this->auditContext($request, $organizationId),
+        );
+
+        return ApiResponse::ok([
+            'tour' => new TourDetailResource($tour->fresh()->load('stops.services')),
+            'planned' => $result['planned'],
+            'rejected' => $result['rejected'],
+        ]);
+    }
+
+    /**
+     * Services visés : ceux des commandes glissées, plus ceux nommés un à un.
+     *
+     * Les commandes sont résolues **dans l'organisation active** : un
+     * identifiant venu d'ailleurs ne rapporte rien plutôt que d'ouvrir une
+     * porte.
+     *
+     * @return list<string>
+     */
+    private function serviceIdsFrom(PlanServicesRequest $request, string $organizationId): array
+    {
+        $ids = $request->validated('orderServiceIds', []);
+
+        $orderIds = $request->validated('orderIds', []);
+
+        if ($orderIds !== []) {
+            $fromOrders = OrderService::whereIn('order_id', $orderIds)
+                ->whereHas('order', fn ($order) => $order->where('organization_id', $organizationId))
+                ->orderBy('sequence')
+                ->pluck('id')
+                ->all();
+
+            $ids = array_merge($ids, $fromOrders);
+        }
+
+        return array_values(array_unique($ids));
     }
 
     public function destroy(Request $request, Tour $tour, DeleteTourAction $action): JsonResponse

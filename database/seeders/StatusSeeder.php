@@ -72,6 +72,19 @@ class StatusSeeder extends Seeder
         MorphMap::VEHICLE => ['active' => 'Actif', 'inactive' => 'Inactif', 'maintenance' => 'En maintenance'],
         MorphMap::TYPE => ['active' => 'Actif', 'inactive' => 'Inactif'],
         MorphMap::TYPE_ITEM => ['active' => 'Actif', 'inactive' => 'Inactif'],
+        // Planification : `tour` et `tour_stop` tiennent leurs valeurs de leurs
+        // enumerations. Ces deux-la n'en ont pas, et leurs codes sont ceux que
+        // le projet emploie deja — `replanned` distingue une affectation qui
+        // remplace une precedente.
+        MorphMap::TOUR_STOP_SERVICE => [
+            'planned' => 'Planifié',
+            'replanned' => 'Replanifié',
+            'done' => 'Effectué',
+        ],
+        MorphMap::TOUR_PERIOD => [
+            'planned' => 'Planifié',
+            'done' => 'Effectué',
+        ],
     ];
 
     public function run(): void

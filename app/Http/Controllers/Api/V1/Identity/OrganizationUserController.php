@@ -35,7 +35,10 @@ class OrganizationUserController extends Controller
     {
         $org = $this->requireOrganizationId();
         $this->authorize('viewAny', [OrganizationUser::class, $org]);
-        $query = OrganizationUser::where('organization_id', $org)->with(['user', 'roles']);
+        // `driver` est borne a l'organisation : un meme compte peut conduire
+        // dans deux organisations, et la relation se fait par l'utilisateur.
+        $query = OrganizationUser::where('organization_id', $org)
+            ->with(['user', 'roles', 'driver' => fn ($driver) => $driver->where('organization_id', $org)]);
         if ($request->filled('search')) {
             $search = $request->validated('search');
             $query->whereHas('user', fn ($q) => $q->where('email', 'like', "%$search%")->orWhere('first_name', 'like', "%$search%")->orWhere('last_name', 'like', "%$search%"));
@@ -61,7 +64,7 @@ class OrganizationUserController extends Controller
         $membership = $createMember->execute($data, $org);
         $this->audit($request, $org, 'created', $membership, null, $membership->load('roles')->toArray());
 
-        return ApiResponse::created(new OrganizationUserResource($membership->load(['user', 'roles'])));
+        return ApiResponse::created(new OrganizationUserResource($membership->load(['user', 'roles', 'driver' => fn ($driver) => $driver->where('organization_id', $membership->organization_id)])));
     }
 
     /**
@@ -73,7 +76,7 @@ class OrganizationUserController extends Controller
     {
         $this->authorize('view', $organizationUser);
 
-        return ApiResponse::ok(new OrganizationUserResource($organizationUser->load(['user', 'roles'])));
+        return ApiResponse::ok(new OrganizationUserResource($organizationUser->load(['user', 'roles', 'driver' => fn ($driver) => $driver->where('organization_id', $organizationUser->organization_id)])));
     }
 
     /**
@@ -97,7 +100,7 @@ class OrganizationUserController extends Controller
         });
         $this->audit($request, $organizationUser->organization_id, 'updated', $organizationUser, $oldValues, $organizationUser->fresh()->load('roles')->toArray());
 
-        return ApiResponse::ok(new OrganizationUserResource($organizationUser->fresh()->load(['user', 'roles'])));
+        return ApiResponse::ok(new OrganizationUserResource($organizationUser->fresh()->load(['user', 'roles', 'driver' => fn ($driver) => $driver->where('organization_id', $organizationUser->organization_id)])));
     }
 
     /**

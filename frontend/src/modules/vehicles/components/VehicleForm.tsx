@@ -22,6 +22,9 @@ import type { Vehicle, VehiclePayload } from '../types/vehicle'
  * l'enregistrerait sans rien dire. On valide donc le texte, puis on convertit à
  * l'envoi : un champ vide est une erreur, pas une charge utile nulle.
  */
+/** Sentinelle du choix « aucun » : Radix refuse une option de valeur vide. */
+const NONE = 'none'
+
 const capacity = (message: string) =>
   z
     .string()
@@ -30,7 +33,7 @@ const capacity = (message: string) =>
 
 /** Contraintes reprises de `StoreVehicleRequest`. */
 export const vehicleSchema = z.object({
-  providerId: z.string().min(1, 'validation.required'),
+  providerId: z.string(),
   vehicleTypeId: z.string().min(1, 'validation.required'),
   code: z.string().min(1, 'validation.required').max(64, 'validation.max'),
   registrationNumber: z.string().min(1, 'validation.required').max(32, 'validation.max'),
@@ -57,6 +60,9 @@ interface VehicleFormProps {
  * Le type vient du référentiel `vehicle` de `type_items` : les types de colis
  * et de groupage partagent la même table, et `useTypeItemOptions('vehicle')` ne
  * remonte que ceux qui conviennent. Le serveur revérifie la provenance.
+ *
+ * Le fournisseur est facultatif : un transporteur possède ses propres camions,
+ * et l'organisation du véhicule est alors portée par le véhicule lui-même.
  */
 export function VehicleForm({
   vehicle,
@@ -72,7 +78,7 @@ export function VehicleForm({
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      providerId: vehicle?.providerId ?? providerId ?? '',
+      providerId: vehicle?.providerId ?? providerId ?? NONE,
       vehicleTypeId: vehicle?.vehicleTypeId ?? '',
       code: vehicle?.code ?? '',
       registrationNumber: vehicle?.registrationNumber ?? '',
@@ -90,6 +96,7 @@ export function VehicleForm({
     try {
       await onSubmit({
         ...values,
+        providerId: values.providerId === NONE ? null : values.providerId,
         payloadCapacity: Number(values.payloadCapacity),
         volumeCapacity: Number(values.volumeCapacity),
         palletCapacity: Number(values.palletCapacity),
@@ -111,9 +118,8 @@ export function VehicleForm({
             onChange={(value) =>
               form.setValue('providerId', value, { shouldDirty: true, shouldValidate: true })
             }
-            options={providers.options}
+            options={[{ value: NONE, label: t('vehicles.ownVehicle') }, ...providers.options]}
             isLoading={providers.isLoading}
-            required
             error={form.formState.errors.providerId?.message}
           />
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { driversApi } from '../api/drivers.api'
-import type { DriverFilters, DriverPayload } from '../types/driver'
+import type { DriverFilters, DriverPayload, DriverUpdatePayload } from '../types/driver'
 
 export const driverKeys = {
   all: ['drivers'] as const,
@@ -46,7 +46,7 @@ export function useUpdateDriver() {
   const { t } = useTranslation()
 
   return useMutation({
-    mutationFn: ({ id, ...payload }: Partial<DriverPayload> & { id: string }) =>
+    mutationFn: ({ id, ...payload }: DriverUpdatePayload & { id: string }) =>
       driversApi.update(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: driverKeys.all })

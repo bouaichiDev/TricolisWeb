@@ -26,9 +26,9 @@ présente dans l'historique. Aucun commit n'est attribué à un assistant, aucun
 
 Liste (recherche, filtre de statut, tri sur `code`, `name`, `status`), création,
 modification, fiche à quatre onglets — Informations, Chauffeurs, Véhicules,
-Documents. L'adresse et le contact se lisent dans Informations : le fournisseur
-en porte **un seul de chaque**, par colonne directe, et non par liaison
-polymorphe.
+Documents. L'adresse et le contact se lisent dans Informations et se choisissent au
+formulaire : le fournisseur en porte **un seul de chaque**, par colonne directe,
+et non par liaison polymorphe. « Aucune » détache, en envoyant `null`.
 
 ### Chauffeurs
 
@@ -148,15 +148,16 @@ référentiel, et la coder ici la ferait diverger.
 
 | Suite | Résultat |
 |---|---|
-| Backend (Pest) | **896 tests, 3 012 assertions, 0 échec** |
-| Frontend (Vitest) | **374 tests, 0 échec** |
+| Backend (Pest) | **899 tests, 0 échec** |
+| Frontend (Vitest) | **376 tests, 0 échec** |
 | Pint | passe sur tout le dépôt |
 | TypeScript | `tsc --noEmit` propre |
 | oxlint | 0 erreur |
 | Build Vite | 1 069 kB, sans erreur |
 
-Nouveaux tests : 7 backend sur l'application du référentiel de statuts, 19
-frontend répartis sur les trois modules.
+Nouveaux tests : 7 backend sur l'application du référentiel de statuts, 3 sur le
+cloisonnement de l'adresse et du contact, 21 frontend répartis sur les trois
+modules.
 
 Aucun test E2E : le projet n'embarque ni Playwright ni Cypress, et en installer
 un dépasse le périmètre de cette phase (§53 le subordonne à leur présence).
@@ -178,6 +179,13 @@ un dépasse le périmètre de cette phase (§53 le subordonne à leur présence)
 5. La fiche fournisseur portait un onglet « Adresses » avec le panneau de
    liaisons polymorphes, modèle qui n'est pas le sien. Remplacé par la lecture
    de l'adresse et du contact directs.
+6. **Faille de cloisonnement.** `addressId` et `contactId` étaient validés par
+   un simple `Rule::exists` : n'importe quel identifiant existant passait, y
+   compris celui d'une autre organisation, que la fiche rendait ensuite lisible.
+   Ces deux tables n'ont pas d'`organization_id` — elles le tiennent de leurs
+   liaisons — et la validation traverse désormais `entityAddresses` et
+   `entityContacts`. Trois tests le couvrent. Le défaut existait avant cette
+   phase, sur fournisseur comme sur chauffeur.
 
 ## 14. Fichiers
 
@@ -195,9 +203,8 @@ statut partagés, 1 règle de validation, 1 commande Artisan, 1 fichier de route
   avec un code inconnu s'affichera en gris. Ajouter `color` à `statuses`
   résoudrait cela, mais c'est une modification de schéma que cette phase n'a pas
   à décider.
-- **Adresse et contact d'un fournisseur en lecture seule.** Le formulaire ne les
-  modifie pas encore ; `addressId` et `contactId` sont acceptés par l'API, un
-  sélecteur reste à brancher.
+Le troisième risque de la première version de ce rapport — adresse et contact en
+lecture seule — est levé : le formulaire les choisit et sait les détacher.
 
 ## 16. Phase suivante
 

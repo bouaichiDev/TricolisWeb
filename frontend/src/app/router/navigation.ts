@@ -68,6 +68,10 @@ export const organizationNavigation: NavEntry[] = [
     children: [
       { labelKey: 'nav.agencies', to: '/agencies', permission: 'agencies.view' },
       { labelKey: 'nav.depots', to: '/depots', permission: 'depots.view' },
+      { labelKey: 'nav.providers', to: '/providers', permission: 'providers.view' },
+      { labelKey: 'nav.drivers', to: '/drivers', permission: 'drivers.view' },
+      { labelKey: 'nav.vehicles', to: '/vehicles', permission: 'vehicles.view' },
+      { labelKey: 'nav.types', to: '/types', permission: 'types.view' },
     ],
   },
   {

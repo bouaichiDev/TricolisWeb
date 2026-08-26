@@ -12,12 +12,16 @@ use App\Shared\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Crée un véhicule chez un fournisseur de l'organisation active.
+ * Crée un véhicule de l'organisation active, fourni ou non par un tiers.
  *
- * Invariant du §15 : le fournisseur et le type de véhicule doivent appartenir
- * à la même organisation. Les deux étant vérifiés séparément contre
- * l'organisation active, l'égalité est garantie ; elle est tout de même
- * revérifiée explicitement pour rester vraie si l'un des contrôles évolue.
+ * **Le fournisseur est facultatif** : un transporteur possède ses propres
+ * camions. L'organisation vient du contexte actif, pas du fournisseur, qui peut
+ * manquer.
+ *
+ * Invariant du §15 quand un fournisseur est donné : lui et le type de véhicule
+ * doivent appartenir à la même organisation. Les deux étant vérifiés
+ * séparément contre l'organisation active, l'égalité est garantie ; elle est
+ * tout de même revérifiée pour rester vraie si l'un des contrôles évolue.
  */
 final readonly class CreateVehicleAction
 {
@@ -28,12 +32,18 @@ final readonly class CreateVehicleAction
 
     public function execute(CreateVehicleData $data, AuditContext $context): Vehicle
     {
-        $provider = $this->guard->provider($data->providerId, $context->organizationId);
         $vehicleType = $this->guard->vehicleType($data->vehicleTypeId, $context->organizationId);
-        $this->guard->assertSameOrganization($provider, $vehicleType);
 
-        return DB::transaction(function () use ($data, $provider, $context): Vehicle {
-            $vehicle = $provider->vehicles()->create($data->toAttributes());
+        // Le fournisseur est facultatif : le transporteur possede ses propres
+        // camions. Quand il est donne, il doit etre de la meme organisation que
+        // le type — l'invariant du §15 tient sur ce qui existe.
+        if ($data->providerId !== null) {
+            $provider = $this->guard->provider($data->providerId, $context->organizationId);
+            $this->guard->assertSameOrganization($provider, $vehicleType);
+        }
+
+        return DB::transaction(function () use ($data, $context): Vehicle {
+            $vehicle = Vehicle::create($data->toAttributes($context->organizationId));
 
             $this->audit->execute(
                 $context->organizationId,
@@ -41,7 +51,7 @@ final readonly class CreateVehicleAction
                 'vehicle.created',
                 $vehicle,
                 null,
-                $vehicle->only(['provider_id', 'vehicle_type_id', 'code', 'registration_number', 'status']),
+                $vehicle->only(['organization_id', 'provider_id', 'vehicle_type_id', 'code', 'registration_number', 'status']),
                 null,
                 $context->ipAddress,
             );

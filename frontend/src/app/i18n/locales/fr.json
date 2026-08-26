@@ -202,7 +202,8 @@
     "sections": {
       "identity": "Identité",
       "account": "Compte",
-      "roles": "Rôles"
+      "roles": "Rôles",
+      "driver": "Chauffeur"
     },
     "assignableOnly": "Les rôles système et plateforme ne sont pas attribuables."
   },
@@ -1450,7 +1451,9 @@
       "contact": "Contact",
       "driverCount": "Chauffeurs",
       "vehicleCount": "Véhicules"
-    }
+    },
+    "location": "Adresse et contact",
+    "locationHint": "Un fournisseur porte une adresse et un contact. Les listes sont celles de votre organisation."
   },
   "drivers": {
     "title": "Chauffeurs",
@@ -1464,7 +1467,27 @@
       "code": "Code",
       "name": "Nom",
       "status": "Statut",
-      "provider": "Fournisseur"
+      "provider": "Fournisseur",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Adresse e-mail",
+      "phone": "Téléphone",
+      "account": "Compte"
+    },
+    "identityHint": "Ces informations créent aussi le compte du chauffeur, avec le rôle chauffeur.",
+    "assignment": "Rattachement",
+    "ownDriver": "Aucun — chauffeur du transporteur",
+    "emailHint": "Adresse avec laquelle il ouvrira l’application. Le compte naît invité : il choisit son mot de passe.",
+    "noAccount": "Aucun compte rattaché.",
+    "tabs": {
+      "information": "Informations",
+      "report": "Rapport"
+    },
+    "report": {
+      "title": "Activité du chauffeur",
+      "subtitle": "Ce qu’il a effectué : tournées, arrêts servis, incidents",
+      "pending": "Rien à résumer pour l’instant",
+      "pendingHint": "Ce récapitulatif se remplira quand les tournées seront en service. Afficher des zéros aujourd’hui laisserait croire à une activité nulle plutôt qu’à une mesure qui n’existe pas encore."
     }
   },
   "vehicles": {
@@ -1487,6 +1510,7 @@
       "payloadCapacity": "Charge utile",
       "volumeCapacity": "Volume",
       "palletCapacity": "Palettes"
-    }
+    },
+    "ownVehicle": "Aucun — véhicule du transporteur"
   }
 }

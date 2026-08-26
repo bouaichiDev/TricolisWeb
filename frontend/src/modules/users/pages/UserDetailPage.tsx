@@ -1,7 +1,7 @@
 import { UserX } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 import { useDisableMember, useMember } from '../hooks/useMembers'
 import { memberFullName } from '../types/member'
@@ -74,6 +74,17 @@ export function UserDetailPage() {
           </DetailField>
         </dl>
       </SectionCard>
+
+      {member.driver === null ? null : (
+        <SectionCard title={t('users.sections.driver')}>
+          <p className="text-sm">
+            <Link to={`/drivers/${member.driver.id}`} className="text-primary hover:underline">
+              {member.driver.name}
+            </Link>{' '}
+            <span className="text-muted-foreground">· {member.driver.code}</span>
+          </p>
+        </SectionCard>
+      )}
 
       <SectionCard title={t('users.sections.roles')}>
         {member.roles.length === 0 ? (

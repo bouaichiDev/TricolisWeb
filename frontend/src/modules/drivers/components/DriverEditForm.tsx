@@ -12,55 +12,45 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
-import type { Driver, DriverPayload } from '../types/driver'
+import type { Driver, DriverUpdatePayload } from '../types/driver'
 
-/** Longueurs reprises de `StoreDriverRequest`. */
-export const driverSchema = z.object({
-  providerId: z.string().min(1, 'validation.required'),
+const NONE = 'none'
+
+export const driverEditSchema = z.object({
+  providerId: z.string(),
   code: z.string().min(1, 'validation.required').max(64, 'validation.max'),
   name: z.string().min(1, 'validation.required').max(255, 'validation.max'),
   status: z.string().min(1, 'validation.required'),
 })
 
-export type DriverFormValues = z.infer<typeof driverSchema>
+export type DriverEditValues = z.infer<typeof driverEditSchema>
 
-interface DriverFormProps {
-  driver?: Driver
-  /** Prérempli à la création depuis la fiche d'un fournisseur. */
-  providerId?: string
+interface DriverEditFormProps {
+  driver: Driver
   isPending: boolean
-  onSubmit: (payload: DriverPayload) => Promise<unknown>
+  onSubmit: (payload: DriverUpdatePayload) => Promise<unknown>
   onCancel: () => void
 }
 
 /**
- * Saisie d'un chauffeur.
+ * Modification d'un chauffeur.
  *
- * La liste des fournisseurs est celle de l'organisation active : le serveur
- * refuserait de toute façon un fournisseur d'une autre organisation, mais le
- * proposer serait une promesse en l'air.
- *
- * Le fournisseur reste modifiable après coup : `UpdateDriverRequest` l'accepte
- * et vérifie que le code du chauffeur reste unique chez le nouveau. Le
- * verrouiller ici retirerait une opération que le serveur sait faire.
+ * **L'identité du compte ne se change pas ici.** Le nom, l'adresse électronique
+ * et le téléphone appartiennent à l'utilisateur : les modifier au passage
+ * changerait un identifiant de connexion sans que personne ne l'ait demandé. La
+ * fiche mène au compte, où ils se corrigent.
  */
-export function DriverForm({
-  driver,
-  providerId,
-  isPending,
-  onSubmit,
-  onCancel,
-}: DriverFormProps) {
+export function DriverEditForm({ driver, isPending, onSubmit, onCancel }: DriverEditFormProps) {
   const { t } = useTranslation()
   const providers = useProviderOptions()
 
-  const form = useForm<DriverFormValues>({
-    resolver: zodResolver(driverSchema),
+  const form = useForm<DriverEditValues>({
+    resolver: zodResolver(driverEditSchema),
     defaultValues: {
-      providerId: driver?.providerId ?? providerId ?? '',
-      code: driver?.code ?? '',
-      name: driver?.name ?? '',
-      status: driver?.status ?? 'active',
+      providerId: driver.providerId ?? NONE,
+      code: driver.code,
+      name: driver.name,
+      status: driver.status,
     },
   })
 
@@ -69,7 +59,10 @@ export function DriverForm({
   const submit = form.handleSubmit(async (values) => {
     clearError()
     try {
-      await onSubmit(values)
+      await onSubmit({
+        ...values,
+        providerId: values.providerId === NONE ? null : values.providerId,
+      })
     } catch (error) {
       handleError(error)
     }
@@ -79,22 +72,18 @@ export function DriverForm({
     <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
       <FormErrorSummary message={formError} />
 
-      <SectionCard title={t('drivers.identity')}>
+      <SectionCard title={t('drivers.assignment')}>
         <div className="grid gap-4 sm:grid-cols-2">
+          <TextField form={form} name="code" label={t('drivers.fields.code')} required />
+          <TextField form={form} name="name" label={t('drivers.fields.name')} required />
+
           <AsyncSelect
             label={t('drivers.fields.provider')}
             value={form.watch('providerId')}
-            onChange={(value) =>
-              form.setValue('providerId', value, { shouldDirty: true, shouldValidate: true })
-            }
-            options={providers.options}
+            onChange={(value) => form.setValue('providerId', value, { shouldDirty: true })}
+            options={[{ value: NONE, label: t('drivers.ownDriver') }, ...providers.options]}
             isLoading={providers.isLoading}
-            required
-            error={form.formState.errors.providerId?.message}
           />
-
-          <TextField form={form} name="code" label={t('drivers.fields.code')} required />
-          <TextField form={form} name="name" label={t('drivers.fields.name')} required />
 
           <ReferentialStatusSelect
             form={form}

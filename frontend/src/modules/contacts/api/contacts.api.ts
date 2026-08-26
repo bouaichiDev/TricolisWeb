@@ -1,5 +1,5 @@
 import { api } from '@/shared/api/client'
-import type { ApiResource } from '@/shared/api/types'
+import type { ApiCollection, ApiResource } from '@/shared/api/types'
 import type { AddressEntityType } from '@/modules/addresses/types/address'
 
 /** Contact — champs relevés sur `ContactResource`. */
@@ -32,6 +32,10 @@ export interface ContactPayload {
 }
 
 export const contactsApi = {
+  /** Contacts de l'organisation active ; `GET /contacts` s'en charge. */
+  list: (params: { page?: number; perPage?: number; search?: string }) =>
+    api.get<ApiCollection<Contact>>('/contacts', { query: params }),
+
   create: (payload: ContactPayload) =>
     api.post<ApiResource<Contact>>('/contacts', payload).then((response) => response.data),
 

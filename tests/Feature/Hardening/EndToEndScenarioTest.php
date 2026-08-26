@@ -140,10 +140,14 @@ describe('scenario 2 : fournisseur, chauffeur, vehicule, decompte', function ():
             'code' => 'TRANS-E2E', 'name' => 'Transports Atlas', 'status' => 'active',
         ])->assertCreated()->json('data.id');
 
+        // Creer un chauffeur cree aussi son compte : l'identite sert aux deux.
         ($this->api)('POST', '/api/v1/drivers', [
-            'providerId' => $providerId, 'code' => 'DRV-E2E-1', 'name' => 'Ali Ben Salah',
-            'status' => 'active',
-        ])->assertCreated()->assertJsonPath('data.providerId', $providerId);
+            'providerId' => $providerId, 'code' => 'DRV-E2E-1',
+            'firstName' => 'Ali', 'lastName' => 'Ben Salah',
+            'email' => 'ali.ben.salah@example.test', 'status' => 'active',
+        ])->assertCreated()
+            ->assertJsonPath('data.providerId', $providerId)
+            ->assertJsonPath('data.name', 'Ali Ben Salah');
 
         // La source `vehicle` est livree avec l'organisation : on y ajoute une
         // valeur, sans creer de table ni de route.

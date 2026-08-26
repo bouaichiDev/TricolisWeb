@@ -7,7 +7,8 @@
  */
 export interface Vehicle {
   id: string
-  providerId: string
+  organizationId: string
+  providerId: string | null
   vehicleTypeId: string
   code: string
   registrationNumber: string
@@ -20,7 +21,7 @@ export interface Vehicle {
 }
 
 export interface VehiclePayload {
-  providerId: string
+  providerId?: string | null
   vehicleTypeId: string
   code: string
   registrationNumber: string

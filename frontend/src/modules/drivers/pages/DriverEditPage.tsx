@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 
-import { DriverForm } from '../components/DriverForm'
+import { DriverEditForm } from '../components/DriverEditForm'
 import { useDriver, useUpdateDriver } from '../hooks/useDrivers'
 
 export function DriverEditPage() {
@@ -27,7 +27,7 @@ export function DriverEditPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('drivers.editTitle')} description={driver.data.name} />
 
-      <DriverForm
+      <DriverEditForm
         driver={driver.data}
         isPending={update.isPending}
         onCancel={() => void navigate(`/drivers/${id}`)}

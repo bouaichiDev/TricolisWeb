@@ -150,3 +150,56 @@ describe('vehicles list', function (): void {
             ->getJson("/api/v1/vehicles?vehicleTypeId={$this->type->id}")->assertOk()->assertJsonCount(2, 'data');
     });
 });
+
+/**
+ * Un transporteur possède ses propres camions : le fournisseur est facultatif,
+ * et c'est le véhicule qui porte alors son organisation.
+ */
+describe('véhicule du transporteur', function (): void {
+    it('creates a vehicle without any provider', function (): void {
+        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/vehicles', ($this->payload)(['providerId' => null]))
+            ->assertCreated()
+            ->assertJsonPath('data.providerId', null)
+            ->assertJsonPath('data.organizationId', $this->organization->id);
+
+        $this->assertDatabaseHas('vehicles', [
+            'id' => $response->json('data.id'),
+            'provider_id' => null,
+            'organization_id' => $this->organization->id,
+        ]);
+    });
+
+    it('lists it alongside the vehicles of providers', function (): void {
+        $own = Vehicle::factory()->forOrganization($this->organization)->withoutProvider()
+            ->create(['code' => 'VEH-OWN']);
+        $supplied = Vehicle::factory()->forProvider($this->provider)->create(['code' => 'VEH-SUP']);
+
+        // Les codes plutot qu'un compte : l'organisation de developpement est
+        // livree avec un vehicule de demonstration, qui ferait varier le total.
+        $codes = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson('/api/v1/vehicles')->assertOk()->json('data.*.code');
+
+        expect($codes)->toContain($own->code, $supplied->code);
+    });
+
+    /**
+     * Le code identifie un véhicule dans toute l'organisation : il était unique
+     * par fournisseur, et deux `NULL` étant distincts pour MySQL, les véhicules
+     * du transporteur auraient pu tous porter le même.
+     */
+    it('refuses a code already used elsewhere in the organization', function (): void {
+        Vehicle::factory()->forProvider($this->provider)->create(['code' => 'VEH-DUP']);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/vehicles', ($this->payload)(['providerId' => null, 'code' => 'VEH-DUP']))
+            ->assertStatus(422)->assertJsonValidationErrors('code');
+    });
+
+    it('hides a vehicle of another organization', function (): void {
+        $foreign = Vehicle::factory()->withoutProvider()->create();
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson("/api/v1/vehicles/{$foreign->id}")->assertNotFound();
+    });
+});

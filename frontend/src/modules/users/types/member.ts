@@ -28,6 +28,13 @@ export interface Member {
     preferredLanguage: string | null
   }
   roles: MemberRole[]
+  /**
+   * Le chauffeur que ce membre est, s'il en est un.
+   *
+   * Le lien se lit dans les deux sens : la fiche du chauffeur mène à son
+   * compte, celle du compte mène au chauffeur.
+   */
+  driver: { id: string; code: string; name: string } | null
 }
 
 /** Valeurs de `UserStatus` côté API. */

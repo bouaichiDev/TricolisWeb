@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 
-import { DriverForm } from '../components/DriverForm'
+import { DriverCreateForm } from '../components/DriverCreateForm'
 import { useCreateDriver } from '../hooks/useDrivers'
 
 /**
@@ -23,7 +23,7 @@ export function DriverCreatePage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('drivers.createTitle')} description={t('drivers.subtitle')} />
 
-      <DriverForm
+      <DriverCreateForm
         providerId={params.get('providerId') ?? undefined}
         isPending={create.isPending}
         onCancel={() => void navigate('/drivers')}

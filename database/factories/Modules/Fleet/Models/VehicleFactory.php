@@ -18,11 +18,22 @@ class VehicleFactory extends Factory
         return Vehicle::class;
     }
 
+    /**
+     * L'organisation vient en premier, le reste s'y accroche.
+     *
+     * Depuis que le fournisseur est facultatif, c'est le véhicule qui porte son
+     * organisation. Fournisseur et type sont donc dérivés d'elle : un véhicule
+     * dont les trois divergent serait un jeu de données que l'API refuserait.
+     */
     public function definition(): array
     {
         return [
-            'provider_id' => Provider::factory(),
-            'vehicle_type_id' => TypeItem::factory()->ofSystemType('vehicle'),
+            'organization_id' => Organization::factory(),
+            'provider_id' => fn (array $attributes): string => Provider::factory()
+                ->create(['organization_id' => $attributes['organization_id']])->id,
+            'vehicle_type_id' => fn (array $attributes): string => TypeItem::factory()
+                ->state(['organization_id' => $attributes['organization_id']])
+                ->ofSystemType('vehicle')->create()->id,
             'code' => fake()->unique()->bothify('VEH-####'),
             'registration_number' => fake()->unique()->bothify('##-?????-##'),
             'payload_capacity' => fake()->randomFloat(3, 500, 25000),
@@ -32,28 +43,30 @@ class VehicleFactory extends Factory
         ];
     }
 
-    /**
-     * Fournisseur et type dans la même organisation : un véhicule dont les deux
-     * divergent serait un jeu de données invalide, refusé par l'API.
-     */
     public function forOrganization(Organization $organization): static
     {
-        return $this->state(fn (): array => [
-            'provider_id' => Provider::factory()->forOrganization($organization),
-            'vehicle_type_id' => TypeItem::factory()->forOrganization($organization)->ofSystemType('vehicle'),
-        ]);
+        return $this->state(fn (): array => ['organization_id' => $organization->id]);
     }
 
     public function forProvider(Provider $provider): static
     {
         return $this->state(fn (): array => [
+            'organization_id' => $provider->organization_id,
             'provider_id' => $provider->id,
-            'vehicle_type_id' => TypeItem::factory()->state(['organization_id' => $provider->organization_id])->ofSystemType('vehicle'),
         ]);
+    }
+
+    /** Véhicule du transporteur lui-même, sans fournisseur. */
+    public function withoutProvider(): static
+    {
+        return $this->state(fn (): array => ['provider_id' => null]);
     }
 
     public function ofType(TypeItem $type): static
     {
-        return $this->state(fn (): array => ['vehicle_type_id' => $type->id]);
+        return $this->state(fn (): array => [
+            'organization_id' => $type->organization_id,
+            'vehicle_type_id' => $type->id,
+        ]);
     }
 }

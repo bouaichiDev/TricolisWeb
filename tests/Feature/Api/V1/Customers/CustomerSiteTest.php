@@ -5,6 +5,7 @@ use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Models\CustomerSite;
 use App\Shared\Database\MorphMap;
+use Illuminate\Support\Str;
 
 beforeEach(function (): void {
     $this->seed();
@@ -50,6 +51,14 @@ describe('customer sites', function (): void {
         ]);
     });
 
+    /**
+     * Une adresse hors de l'organisation est refusee a la validation.
+     *
+     * Elle l'etait deja, mais par la politique du controleur, en 404 — alors
+     * qu'une adresse inexistante donnait 422. Cette difference etait elle-meme
+     * la fuite : elle confirmait qu'un identifiant existait ailleurs. Les deux
+     * cas rendent desormais le meme 422, avec le meme message.
+     */
     it('rejects an address outside the active organization', function (): void {
         $foreignAddress = Address::factory()->create();
 
@@ -60,7 +69,18 @@ describe('customer sites', function (): void {
                 'code' => 'site-2',
                 'name' => 'Entrepôt interdit',
             ])
-            ->assertNotFound();
+            ->assertStatus(422)->assertJsonValidationErrors('addressId');
+    });
+
+    it('answers alike for an address that exists nowhere', function (): void {
+        $this->actingAs($this->user, 'sanctum')
+            ->withHeaders($this->headers)
+            ->postJson("/api/v1/customers/{$this->customer->id}/sites", [
+                'addressId' => (string) Str::ulid(),
+                'code' => 'site-3',
+                'name' => 'Adresse fantome',
+            ])
+            ->assertStatus(422)->assertJsonValidationErrors('addressId');
     });
 
     it('updates and deletes a site', function (): void {

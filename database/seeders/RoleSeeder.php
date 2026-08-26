@@ -42,6 +42,9 @@ class RoleSeeder extends Seeder
         $this->seedOrganizationRoles();
     }
 
+    /** Code du role porte par les comptes de chauffeur. */
+    public const string DRIVER_CODE = 'driver';
+
     private function seedPlatformRole(): void
     {
         $role = Role::firstOrCreate(
@@ -77,6 +80,20 @@ class RoleSeeder extends Seeder
             $this->syncPermissions($adminRole, $organizationalPermissionIds);
             $this->revokePlatformPermissions($adminRole);
             $this->attachToOwners($organization, $adminRole);
+
+            // Role du chauffeur : il identifie qui peut etre rattache a un
+            // chauffeur, et **n'ouvre rien** dans le back-office. Le chauffeur
+            // travaille sur le terminal mobile ; lui donner des permissions ici
+            // reviendrait a ouvrir des ecrans qu'il n'a pas a voir.
+            Role::firstOrCreate(
+                ['organization_id' => $organization->id, 'code' => self::DRIVER_CODE],
+                [
+                    'name' => 'Chauffeur',
+                    'scope' => RoleScope::ORGANIZATION->value,
+                    'is_system' => true,
+                    'status' => 'active',
+                ]
+            );
         });
     }
 

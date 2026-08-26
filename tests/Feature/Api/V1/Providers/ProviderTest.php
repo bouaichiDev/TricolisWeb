@@ -1,12 +1,15 @@
 <?php
 
 use App\Modules\Addresses\Models\Address;
+use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Audit\Models\AuditLog;
 use App\Modules\Contacts\Models\Contact;
+use App\Modules\Contacts\Models\EntityContact;
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Providers\Models\Provider;
+use App\Shared\Database\MorphMap;
 use Illuminate\Support\Str;
 
 beforeEach(function (): void {
@@ -48,8 +51,24 @@ describe('providers CRUD', function (): void {
     });
 
     it('accepts an optional address and contact', function (): void {
+        // Les deux sont rattachees a l'organisation active : une adresse
+        // flottante n'appartient a personne, et l'API n'en cree pas — la
+        // creation pose toujours une liaison, a l'organisation a defaut d'autre.
         $address = Address::factory()->create();
+        EntityAddress::create([
+            'organization_id' => $this->organization->id,
+            'address_id' => $address->id,
+            'entity_type' => MorphMap::ORGANIZATION,
+            'entity_id' => $this->organization->id,
+        ]);
+
         $contact = Contact::factory()->create();
+        EntityContact::create([
+            'organization_id' => $this->organization->id,
+            'contact_id' => $contact->id,
+            'entity_type' => MorphMap::ORGANIZATION,
+            'entity_id' => $this->organization->id,
+        ]);
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/providers', ['addressId' => $address->id, 'contactId' => $contact->id] + $this->payload)
@@ -212,5 +231,64 @@ describe('providers audit', function (): void {
         $log = AuditLog::where('action', 'provider.updated')->firstOrFail();
         expect($log->old_values)->toBe(['name' => 'Avant'])
             ->and($log->new_values)->toBe(['name' => 'Après']);
+    });
+});
+
+/**
+ * L'adresse et le contact d'un fournisseur sont cloisonnés par organisation.
+ *
+ * `addresses` et `contacts` n'ont pas d'`organization_id` : elles le tiennent
+ * de leurs liaisons. Une simple vérification d'existence laissait rattacher
+ * l'adresse d'une autre organisation — et la fiche la rendait ensuite lisible.
+ */
+describe('cloisonnement de l’adresse et du contact', function (): void {
+    it('accepts an address linked to the active organization', function (): void {
+        $address = Address::factory()->create();
+        EntityAddress::create([
+            'organization_id' => $this->organization->id,
+            'address_id' => $address->id,
+            'entity_type' => MorphMap::ORGANIZATION,
+            'entity_id' => $this->organization->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', [
+                'code' => 'TRANS-ADDR', 'name' => 'Transports Atlas',
+                'status' => 'active', 'addressId' => $address->id,
+            ])->assertCreated()->assertJsonPath('data.addressId', $address->id);
+    });
+
+    it('refuses an address belonging to another organization', function (): void {
+        $other = Organization::factory()->create();
+        $address = Address::factory()->create();
+        EntityAddress::create([
+            'organization_id' => $other->id,
+            'address_id' => $address->id,
+            'entity_type' => MorphMap::ORGANIZATION,
+            'entity_id' => $other->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', [
+                'code' => 'TRANS-LEAK', 'name' => 'Transports Atlas',
+                'status' => 'active', 'addressId' => $address->id,
+            ])->assertStatus(422)->assertJsonValidationErrors('addressId');
+    });
+
+    it('refuses a contact belonging to another organization', function (): void {
+        $other = Organization::factory()->create();
+        $contact = Contact::factory()->create();
+        EntityContact::create([
+            'organization_id' => $other->id,
+            'contact_id' => $contact->id,
+            'entity_type' => MorphMap::ORGANIZATION,
+            'entity_id' => $other->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/providers', [
+                'code' => 'TRANS-LEAK2', 'name' => 'Transports Atlas',
+                'status' => 'active', 'contactId' => $contact->id,
+            ])->assertStatus(422)->assertJsonValidationErrors('contactId');
     });
 });

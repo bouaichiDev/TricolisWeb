@@ -8,6 +8,7 @@ use App\Modules\Providers\Models\Provider;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
 use App\Shared\Http\Rules\ExistsInStatusReferential;
 use App\Shared\Http\Rules\IsTypeItemOf;
+use App\Shared\Organizations\CurrentOrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,9 +30,12 @@ class StoreVehicleRequest extends FormRequest
      */
     public function rules(): array
     {
+        $organizationId = app(CurrentOrganizationContext::class)->getOrganizationId();
+
         return [
+            // Facultatif : le transporteur possede ses propres camions.
             'providerId' => [
-                'required', 'ulid',
+                'nullable', 'ulid',
                 new BelongsToActiveOrganization(Provider::class, null, 'Ce fournisseur n’appartient pas à l’organisation active.'),
             ],
             'vehicleTypeId' => [
@@ -40,7 +44,7 @@ class StoreVehicleRequest extends FormRequest
             ],
             'code' => [
                 'required', 'string', 'max:64',
-                Rule::unique('vehicles', 'code')->where('provider_id', $this->input('providerId')),
+                Rule::unique('vehicles', 'code')->where('organization_id', $organizationId),
             ],
             'registrationNumber' => ['required', 'string', 'max:32', Rule::unique('vehicles', 'registration_number')],
             'payloadCapacity' => ['required', 'numeric', 'min:0'],

@@ -14,13 +14,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Véhicule d'un fournisseur
- * (`Provider 1 — 0..* Vehicle`, `VehicleType 1 — 0..* Vehicle`).
+ * Véhicule d'une organisation, éventuellement fourni par un tiers
+ * (`Provider 0..1 — 0..* Vehicle`, `TypeItem 1 — 0..* Vehicle`).
  *
- * Pas d'`organization_id` au diagramme : le périmètre passe par le fournisseur,
- * appliqué par le scope `inOrganization`.
+ * **Le fournisseur est facultatif** : un transporteur possède ses propres
+ * camions. L'organisation est donc portée en propre — la déduire du fournisseur
+ * laisserait sans périmètre un véhicule qui n'en a pas.
  */
 #[Fillable([
+    'organization_id',
     'provider_id',
     'vehicle_type_id',
     'code',
@@ -78,6 +80,8 @@ class Vehicle extends Model
      */
     public function scopeInOrganization(Builder $query, string $organizationId): void
     {
-        $query->whereHas('provider', fn (Builder $provider) => $provider->where('organization_id', $organizationId));
+        // La colonne porte desormais l'organisation : un vehicule du
+        // transporteur n'a pas de fournisseur par lequel la deduire.
+        $query->where('organization_id', $organizationId);
     }
 }

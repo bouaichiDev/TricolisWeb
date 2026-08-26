@@ -9,14 +9,23 @@ namespace App\Modules\Drivers\DTOs;
  *
  * `organizationId` n'est pas dans le payload : il vient du contexte actif, et
  * l'Action vérifie qu'il coïncide avec celui du fournisseur.
+ *
+ * `providerId` est **facultatif** : un transporteur emploie ses propres
+ * chauffeurs, sans passer par un fournisseur.
+ *
+ * `userId` est rempli par l'Action, qui crée le compte : il n'est pas saisi.
  */
 final readonly class CreateDriverData
 {
     public function __construct(
-        public string $providerId,
         public string $code,
         public string $name,
         public string $status,
+        public string $firstName,
+        public string $lastName,
+        public string $email,
+        public ?string $providerId = null,
+        public ?string $phone = null,
         public ?string $addressId = null,
         public ?string $contactId = null,
     ) {}
@@ -27,10 +36,14 @@ final readonly class CreateDriverData
     public static function fromValidated(array $validated): self
     {
         return new self(
-            providerId: $validated['providerId'],
             code: $validated['code'],
-            name: $validated['name'],
+            name: trim($validated['firstName'].' '.$validated['lastName']),
             status: $validated['status'],
+            firstName: $validated['firstName'],
+            lastName: $validated['lastName'],
+            email: $validated['email'],
+            providerId: $validated['providerId'] ?? null,
+            phone: $validated['phone'] ?? null,
             addressId: $validated['addressId'] ?? null,
             contactId: $validated['contactId'] ?? null,
         );
@@ -39,11 +52,12 @@ final readonly class CreateDriverData
     /**
      * @return array<string, mixed>
      */
-    public function toAttributes(string $organizationId): array
+    public function toAttributes(string $organizationId, ?string $userId = null): array
     {
         return [
             'organization_id' => $organizationId,
             'provider_id' => $this->providerId,
+            'user_id' => $userId,
             'address_id' => $this->addressId,
             'contact_id' => $this->contactId,
             'code' => $this->code,

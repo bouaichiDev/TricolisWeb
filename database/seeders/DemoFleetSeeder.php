@@ -67,6 +67,7 @@ class DemoFleetSeeder extends Seeder
         Vehicle::firstOrCreate(
             ['provider_id' => $provider->id, 'code' => 'demo-van'],
             [
+                'organization_id' => $organization->id,
                 'vehicle_type_id' => $vanType->id,
                 'registration_number' => 'DEMO-0001',
                 'payload_capacity' => 1200,

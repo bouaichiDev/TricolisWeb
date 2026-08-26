@@ -16,6 +16,7 @@ const driver = (overrides: Record<string, unknown> = {}) => ({
   id: '01JQZ0000000000000DRIV01',
   organizationId: '01JQZ0000000000000000ORG1',
   providerId: PROVIDER_ID,
+  userId: '01JQZ00000000000000USER1',
   addressId: null,
   contactId: null,
   code: 'DRV-01',
@@ -152,20 +153,55 @@ describe('création d’un chauffeur', () => {
 
     expect(await screen.findByText('Transports Atlas')).toBeInTheDocument()
 
+    // L'identite sert au chauffeur et a son compte : le serveur cree les deux.
+    await userEvent.type(screen.getByLabelText(/^Prénom/), 'Karim')
+    await userEvent.type(screen.getByLabelText(/^Nom/), 'Bensaïd')
+    await userEvent.type(screen.getByLabelText(/^Adresse e-mail/), 'karim@example.test')
     await userEvent.type(screen.getByLabelText(/^Code/), 'DRV-NEW')
-    await userEvent.type(screen.getByLabelText(/^Nom/), 'Karim Bensaïd')
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     await waitFor(() => expect(body).not.toBeNull())
     expect(body).toMatchObject({
       providerId: PROVIDER_ID,
       code: 'DRV-NEW',
-      name: 'Karim Bensaïd',
+      firstName: 'Karim',
+      lastName: 'Bensaïd',
+      email: 'karim@example.test',
       status: 'active',
     })
   })
 
-  it('refuse d’enregistrer sans fournisseur', async () => {
+  /**
+   * Un chauffeur du transporteur n'a pas de fournisseur : « Aucun » part a
+   * `null`, pas en chaine vide.
+   */
+  it('enregistre un chauffeur sans fournisseur', async () => {
+    let body: unknown = null
+
+    server.use(
+      ...referentials,
+      http.post(`${API}/drivers`, async ({ request }) => {
+        body = await request.json()
+
+        return HttpResponse.json({ data: driver(), meta: [] }, { status: 201 })
+      }),
+    )
+
+    renderWithProviders(<DriverCreatePage />, {
+      membership: withPermissions(['drivers.create']),
+    })
+
+    await userEvent.type(await screen.findByLabelText(/^Prénom/), 'Karim')
+    await userEvent.type(screen.getByLabelText(/^Nom/), 'Bensaïd')
+    await userEvent.type(screen.getByLabelText(/^Adresse e-mail/), 'karim@example.test')
+    await userEvent.type(screen.getByLabelText(/^Code/), 'DRV-NEW')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({ providerId: null, code: 'DRV-NEW' })
+  })
+
+  it('refuse d’enregistrer sans identité', async () => {
     let posted = false
 
     server.use(
@@ -182,7 +218,6 @@ describe('création d’un chauffeur', () => {
     })
 
     await userEvent.type(await screen.findByLabelText(/^Code/), 'DRV-NEW')
-    await userEvent.type(screen.getByLabelText(/^Nom/), 'Karim Bensaïd')
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(await screen.findAllByText('Ce champ est obligatoire.')).not.toHaveLength(0)

@@ -27,8 +27,9 @@ class UpdateVehicleRequest extends FormRequest
         $providerId = $this->input('providerId', $vehicle?->provider_id);
 
         return [
+            // Facultatif : le transporteur possede ses propres camions.
             'providerId' => [
-                'sometimes', 'ulid',
+                'nullable', 'ulid',
                 new BelongsToActiveOrganization(Provider::class, null, 'Ce fournisseur n’appartient pas à l’organisation active.'),
             ],
             'vehicleTypeId' => [
@@ -37,7 +38,7 @@ class UpdateVehicleRequest extends FormRequest
             ],
             'code' => [
                 'sometimes', 'string', 'max:64',
-                Rule::unique('vehicles', 'code')->where('provider_id', $providerId)->ignore($vehicle?->id),
+                Rule::unique('vehicles', 'code')->where('organization_id', $vehicle?->organization_id)->ignore($vehicle?->id),
             ],
             'registrationNumber' => [
                 'sometimes', 'string', 'max:32',

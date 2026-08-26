@@ -18,6 +18,7 @@ class VehicleListResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'organizationId' => $this->organization_id,
             'providerId' => $this->provider_id,
             'vehicleTypeId' => $this->vehicle_type_id,
             'code' => $this->code,

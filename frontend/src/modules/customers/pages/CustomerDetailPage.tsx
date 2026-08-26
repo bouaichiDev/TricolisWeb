@@ -7,7 +7,7 @@ import { CustomerInformationTab } from '../components/CustomerInformationTab'
 import { useCustomer } from '../hooks/useCustomers'
 import { CustomerCatalogsTab } from '@/modules/catalogs/components/CustomerCatalogsTab'
 import { CustomerContactsTab } from '@/modules/contacts/components/EntityContactsTab'
-import { CustomerDocumentsTab } from '@/modules/documents/components/EntityDocumentsTab'
+import { EntityDocumentsTab } from '@/modules/documents/components/EntityDocumentsTab'
 import { CustomerSitesTab } from '@/modules/customerSites/components/CustomerSitesTab'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
@@ -61,7 +61,7 @@ export function CustomerDetailPage() {
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
-          <CustomerDocumentsTab entityId={customer.id} />
+          <EntityDocumentsTab entityType="customer" entityId={customer.id} />
         </TabsContent>
 
         {/* Le catalogue est facultatif : l'onglet existe toujours, et dit

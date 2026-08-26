@@ -430,14 +430,13 @@
       "createdAt": "Ajouté le",
       "mimeType": "Type de fichier"
     },
-    "apiMissingTitle": "Liste indisponible",
-    "apiMissingHint": "L’API ne permet pas encore de lister les documents d’un client : GET /documents n’accepte ni entityType ni entityId. Le manque est consigné au rapport de phase.",
     "download": "Télécharger",
     "viewList": "Vue en liste",
     "viewCards": "Vue en vignettes",
     "preview": "Aperçu",
     "noPreview": "Ce format ne s’affiche pas ici. Téléchargez-le pour l’ouvrir.",
-    "previewFailed": "L’aperçu n’a pas pu être chargé."
+    "previewFailed": "L’aperçu n’a pas pu être chargé.",
+    "entityHint": "Pièces rattachées à cette fiche. Le type est libre : il suit le vocabulaire de votre exploitation."
   },
   "audit": {
     "title": "Journal d’audit",

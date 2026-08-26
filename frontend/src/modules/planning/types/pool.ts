@@ -50,10 +50,16 @@ export interface PoolFilters {
 /** Motifs de refus rendus par la planification, en codes que l'écran traduit. */
 export type PlanningRejection = {
   orderServiceId: string
-  reason: 'already_assigned' | 'status' | 'no_address' | 'not_found'
+  reason: 'already_assigned' | 'status' | 'no_address' | 'not_found' | 'not_planned'
 }
 
 export interface PlanningResult {
   planned: string[]
+  rejected: PlanningRejection[]
+}
+
+/** Résultat d'un retrait — `POST /tours/{id}/unplan`. */
+export interface UnplanningResult {
+  unplanned: string[]
   rejected: PlanningRejection[]
 }

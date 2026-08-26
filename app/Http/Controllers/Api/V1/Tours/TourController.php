@@ -17,6 +17,7 @@ use App\Http\Resources\Api\V1\Tours\TourListResource;
 use App\Modules\Orders\Models\OrderService;
 use App\Modules\Planning\Actions\ChangeTourStatus;
 use App\Modules\Planning\Actions\PlanOrderServices;
+use App\Modules\Planning\Actions\UnplanOrderServices;
 use App\Modules\Tours\Actions\CreateTourAction;
 use App\Modules\Tours\Actions\DeleteTourAction;
 use App\Modules\Tours\Actions\UpdateTourAction;
@@ -179,6 +180,81 @@ class TourController extends Controller
             'planned' => $result['planned'],
             'rejected' => $result['rejected'],
         ]);
+    }
+
+    /**
+     * Retirer des services d'une tournée et les rendre au pool.
+     *
+     * Permission requise : `tours.update`.
+     *
+     * **Une tournée terminée ne se déplanifie pas.** Ce qui a été livré ne
+     * retourne pas dans le pool ; tous les autres états acceptent le retrait,
+     * y compris une tournée en route dont un client s'annule.
+     *
+     * Le sort de l'affectation dépend de l'état : effacée dans un brouillon,
+     * désactivée ailleurs pour garder trace du passage. Voir
+     * {@see UnplanOrderServices}.
+     */
+    public function unplan(
+        PlanServicesRequest $request,
+        Tour $tour,
+        UnplanOrderServices $action,
+    ): JsonResponse {
+        $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
+        $this->authorize('update', $tour);
+
+        abort_if(
+            $tour->status->value === 'completed',
+            422,
+            'Une tournée terminée ne peut plus être déplanifiée.',
+        );
+
+        $result = $action->execute(
+            $tour,
+            $this->plannedServiceIdsFrom($request, $organizationId, $tour),
+            $this->auditContext($request, $organizationId),
+        );
+
+        return ApiResponse::ok([
+            'tour' => new TourDetailResource($tour->fresh()->load('stops.services')),
+            'unplanned' => $result['unplanned'],
+            'rejected' => $result['rejected'],
+        ]);
+    }
+
+    /**
+     * Services à retirer : ceux nommés, plus ceux **que cette tournée porte**
+     * parmi les commandes désignées.
+     *
+     * Une commande n'est pas toujours entièrement dans la même tournée :
+     * prendre tous ses services produirait autant de refus « non planifié »
+     * que de services restés ailleurs, pour un geste qui a pourtant abouti.
+     *
+     * @return list<string>
+     */
+    private function plannedServiceIdsFrom(
+        PlanServicesRequest $request,
+        string $organizationId,
+        Tour $tour,
+    ): array {
+        $ids = $request->validated('orderServiceIds', []);
+        $orderIds = $request->validated('orderIds', []);
+
+        if ($orderIds !== []) {
+            $held = OrderService::whereIn('order_id', $orderIds)
+                ->whereHas('order', fn ($order) => $order->where('organization_id', $organizationId))
+                ->whereHas('tourStopServices', fn ($assignments) => $assignments
+                    ->where('is_active_assignment', true)
+                    ->whereHas('tourStop', fn ($stop) => $stop->where('tour_id', $tour->id)))
+                ->orderBy('sequence')
+                ->pluck('id')
+                ->all();
+
+            $ids = array_merge($ids, $held);
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

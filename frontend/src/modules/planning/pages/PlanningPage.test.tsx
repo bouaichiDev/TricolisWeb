@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -34,6 +34,8 @@ const poolOrder = (overrides: Record<string, unknown> = {}) => ({
       status: 'ready_to_plan',
       addressId: '01JQZ0000000000000ADDR01',
       addressLabel: 'Entrepôt · 20000 Casablanca',
+      latitude: 33.59,
+      longitude: -7.62,
       requestedDate: '2026-09-01',
       requestedFrom: null,
       requestedTo: null,
@@ -69,13 +71,16 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-function render(result: { planned: string[]; rejected: unknown[] } = { planned: [SERVICE_ID], rejected: [] }) {
+function render(
+  result: { planned: string[]; rejected: unknown[] } = { planned: [SERVICE_ID], rejected: [] },
+  tours = [tour()],
+) {
   const sent: unknown[] = []
 
   server.use(
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder()]))),
-    http.get(`${API}/tours`, () => HttpResponse.json(paginated([tour()]))),
+    http.get(`${API}/tours`, () => HttpResponse.json(paginated(tours))),
     http.post(`${API}/tours/${TOUR_ID}/plan`, async ({ request }) => {
       sent.push(await request.json())
 
@@ -163,5 +168,116 @@ describe('écran de planification', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Planifier la commande/ }))
 
     expect(await screen.findByText(/déjà planifié dans une autre tournée/)).toBeInTheDocument()
+  })
+})
+
+/** Glisse une charge de planification sur une cible, comme le navigateur le ferait. */
+function dragOnto(target: HTMLElement, payload: Record<string, unknown>) {
+  const data = new Map<string, string>([
+    ['application/x-tricolis-planning', JSON.stringify(payload)],
+  ])
+
+  const dataTransfer = {
+    types: [...data.keys()],
+    getData: (type: string) => data.get(type) ?? '',
+    setData: (type: string, value: string) => data.set(type, value),
+    dropEffect: '',
+    effectAllowed: '',
+  }
+
+  fireEvent.dragOver(target, { dataTransfer })
+  fireEvent.drop(target, { dataTransfer })
+}
+
+describe('glisser dans la vue en panneaux', () => {
+  /**
+   * Lâcher une commande sur un brouillon désigne déjà la tournée : exiger de
+   * l'avoir choisie avant ferait faire deux gestes pour une seule intention.
+   */
+  it('planifie sans avoir choisi la tournée au préalable', async () => {
+    const sent = render()
+
+    await screen.findByText('CMD-42')
+
+    dragOnto(screen.getByTestId(`draft-panel-${TOUR_ID}`), {
+      kind: 'order',
+      id: ORDER_ID,
+      label: 'CMD-42',
+    })
+
+    await waitFor(() => expect(sent).toHaveLength(1))
+    expect(sent[0]).toEqual({ orderIds: [ORDER_ID] })
+  })
+})
+
+/**
+ * La carte répond à une question que les panneaux ne posent pas : qui occupe
+ * déjà le terrain ?
+ */
+describe('vue carte', () => {
+  const planned = tour({
+    id: '01JQZ0000000000000TOUR02',
+    tourNumber: 'TR-DEJA',
+    status: 'confirmed',
+    stopCount: 1,
+    stops: [
+      {
+        id: '01JQZ0000000000000STOP01',
+        tourId: '01JQZ0000000000000TOUR02',
+        addressId: '01JQZ0000000000000ADDR09',
+        sequence: 1,
+        status: 'pending',
+        addressLabel: 'Client · 20100 Casablanca',
+        latitude: 33.55,
+        longitude: -7.6,
+        serviceCount: 2,
+        orderServiceIds: ['01JQZ000000000000OSRV09'],
+      },
+    ],
+  })
+
+  it('montre les tournées qui portent déjà des commandes, brouillon ou non', async () => {
+    render(undefined, [tour(), planned])
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+
+    await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
+
+    // La legende nomme chaque tournee tracee : c'est elle qui dit laquelle
+    // porte quelle couleur.
+    expect(await screen.findByText('TR-DEJA')).toBeInTheDocument()
+  })
+
+  /** Les arrêts ne sont demandés que par la vue qui les trace. */
+  it('ne demande les arrêts qu’en mode carte', async () => {
+    const calls: URL[] = []
+
+    server.use(
+      http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
+      http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder()]))),
+      http.get(`${API}/tours`, ({ request }) => {
+        calls.push(new URL(request.url))
+
+        return HttpResponse.json(paginated([tour()]))
+      }),
+    )
+
+    renderWithProviders(<PlanningPage />, {
+      membership: withPermissions(['tours.view', 'tours.update']),
+    })
+
+    await screen.findByText('CMD-42')
+    await waitFor(() => expect(calls[0].searchParams.get('withStops')).toBe('0'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+
+    await waitFor(() => {
+      const last = calls.at(-1)
+      expect(last?.searchParams.get('withStops')).toBe('1')
+      // Le filtre brouillon tombe : les tournees confirmees occupent aussi
+      // le terrain.
+      expect(last?.searchParams.get('status')).toBeNull()
+    })
   })
 })

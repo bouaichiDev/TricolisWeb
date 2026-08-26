@@ -11,6 +11,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 
 import { PlanningMap } from '../components/PlanningMap'
+import { planPayloadOf, type PlanningDragPayload } from '../dnd'
 import { PlanningModeSwitcher, type PlanningMode } from '../components/PlanningModeSwitcher'
 import { PlanningPanels } from '../components/PlanningPanels'
 import { usePlanIntoTour, usePlanningPool } from '../hooks/usePlanning'
@@ -50,16 +51,22 @@ export function PlanningPage() {
   const tours = useTourList({
     page: 1,
     perPage: 50,
-    status: 'draft',
+    // La carte montre aussi les tournees deja confirmees : elles occupent le
+    // terrain, et planifier sans les voir enverrait deux camions dans la meme
+    // rue. Les panneaux, eux, ne recoivent que des brouillons.
+    status: mode === 'map' ? undefined : 'draft',
     tourDate: date === '' ? undefined : date,
-    // La carte trace l'ordre des arrets : sans eux, un brouillon n'y est qu'un
+    // La carte trace l'ordre des arrets : sans eux, une tournee n'y est qu'un
     // nom. Les panneaux, eux, n'en ont pas l'usage.
     withStops: mode === 'map',
   })
   const plan = usePlanIntoTour()
 
   const orders = pool.data?.data ?? []
-  const drafts = tours.data?.data ?? []
+  const visible = tours.data?.data ?? []
+
+  // Seul un brouillon recoit : c'est lui qu'on choisit, quelle que soit la vue.
+  const drafts = visible.filter((tour) => tour.status === 'draft')
 
   /** Rapporte ce que le serveur a fait, refus compris — il ne les invente pas. */
   const report = (planned: string[], rejected: PlanningRejection[]) => {
@@ -72,14 +79,22 @@ export function PlanningPage() {
     }
   }
 
+  const sendTo = (
+    tourId: string,
+    payload: { orderIds?: string[]; orderServiceIds?: string[] },
+  ) =>
+    plan.mutate(
+      { tourId, ...payload },
+      { onSuccess: (result) => report(result.planned, result.rejected) },
+    )
+
   const send = (payload: { orderIds?: string[]; orderServiceIds?: string[] }) => {
     if (selectedTourId === null) return
 
-    plan.mutate(
-      { tourId: selectedTourId, ...payload },
-      { onSuccess: (result) => report(result.planned, result.rejected) },
-    )
+    sendTo(selectedTourId, payload)
   }
+
+  const drop = (tourId: string, drag: PlanningDragPayload) => sendTo(tourId, planPayloadOf(drag))
 
   return (
     <div className="flex flex-col gap-6">
@@ -128,7 +143,7 @@ export function PlanningPage() {
 
           <PlanningMap
             orders={orders}
-            tours={drafts}
+            tours={visible}
             onPlanOrder={
               selectedTourId === null ? undefined : (orderId) => send({ orderIds: [orderId] })
             }
@@ -153,6 +168,7 @@ export function PlanningPage() {
           selectedTourId={selectedTourId}
           onSelectTour={setSelectedTourId}
           onPlan={send}
+          onPlanDrop={drop}
         />
       )}
 

@@ -42,3 +42,28 @@ export function usePlanIntoTour() {
     },
   })
 }
+
+/**
+ * Retirer une commande ou des services d'une tournée.
+ *
+ * Mêmes invalidations que la planification, et pour la même raison : ce qui
+ * sort d'une tournée rentre au pool.
+ */
+export function useUnplanFromTour() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      tourId,
+      ...payload
+    }: {
+      tourId: string
+      orderIds?: string[]
+      orderServiceIds?: string[]
+    }) => planningApi.unplan(tourId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: planningKeys.all })
+      void queryClient.invalidateQueries({ queryKey: tourKeys.all })
+    },
+  })
+}

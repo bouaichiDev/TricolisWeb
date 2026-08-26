@@ -1,4 +1,5 @@
 import { Check, Package, Users } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -6,10 +7,14 @@ import type { Tour } from '@/modules/tours/types/tour'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { formatDate } from '@/shared/utils/format'
 
+import { carriesPlanningDrag, readPlanningDrag, type PlanningDragPayload } from '../dnd'
+
 interface TourDraftPanelProps {
   tour: Tour
   selected: boolean
   onSelect: () => void
+  /** Absent en lecture seule : le panneau n'accepte alors aucun dépôt. */
+  onPlanDrop?: (tourId: string, drag: PlanningDragPayload) => void
 }
 
 /**
@@ -18,15 +23,47 @@ interface TourDraftPanelProps {
  * Les totaux affichés sont ceux que le serveur a recalculés : les recompter
  * ici donnerait un chiffre qui diffère de celui de la fiche.
  */
-export function TourDraftPanel({ tour, selected, onSelect }: TourDraftPanelProps) {
+export function TourDraftPanel({
+  tour,
+  selected,
+  onSelect,
+  onPlanDrop,
+}: TourDraftPanelProps) {
   const { t } = useTranslation()
+  const [over, setOver] = useState(false)
+
+  const handlers =
+    onPlanDrop === undefined
+      ? {}
+      : {
+          onDragOver: (event: React.DragEvent) => {
+            if (!carriesPlanningDrag(event)) return
+
+            // Sans ce refus du comportement par defaut, le navigateur
+            // n'autorise aucun depot et affiche un panneau d'interdiction.
+            event.preventDefault()
+            event.dataTransfer.dropEffect = 'copy'
+            setOver(true)
+          },
+          onDragLeave: () => setOver(false),
+          onDrop: (event: React.DragEvent) => {
+            event.preventDefault()
+            setOver(false)
+
+            const drag = readPlanningDrag(event)
+
+            if (drag !== null) onPlanDrop(tour.id, drag)
+          },
+        }
 
   return (
     <li>
       <div
-        className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 ${
+        {...handlers}
+        data-testid={`draft-panel-${tour.id}`}
+        className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 transition-colors ${
           selected ? 'border-primary bg-muted' : ''
-        }`}
+        } ${over ? 'border-primary bg-primary/5' : ''}`}
       >
         <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left">
           <span className="flex items-center gap-2 font-medium">

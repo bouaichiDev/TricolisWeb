@@ -11,6 +11,7 @@ import { Button } from '@/shared/components/ui/button'
 
 import { PoolOrderCard } from './PoolOrderCard'
 import { TourDraftPanel } from './TourDraftPanel'
+import type { PlanningDragPayload } from '../dnd'
 import type { PoolOrder } from '../types/pool'
 
 /** L'état d'une requête, réduit à ce que le panneau en montre. */
@@ -31,6 +32,8 @@ interface PlanningPanelsProps {
   selectedTourId: string | null
   onSelectTour: (tourId: string) => void
   onPlan: (payload: { orderIds?: string[]; orderServiceIds?: string[] }) => void
+  /** Glisser vers un brouillon désigne sa cible : nul besoin de l'avoir choisi. */
+  onPlanDrop: (tourId: string, drag: PlanningDragPayload) => void
 }
 
 /**
@@ -39,6 +42,12 @@ interface PlanningPanelsProps {
  * On choisit d'abord une tournée, ensuite on y verse. Les boutons de
  * planification n'apparaissent pas avant ce choix — ils n'auraient nulle part
  * où verser.
+ *
+ * **Le glisser, lui, se passe de ce choix** : lâcher une commande sur un
+ * brouillon désigne déjà la tournée. C'est ici, et non sur la carte, que le
+ * glisser a sa place — décision du propriétaire du projet du 26 août 2026 :
+ * sur un fond de plan, lâcher « sur une tournée » ne veut rien dire, une
+ * tournée n'y étant pas une zone mais une ligne brisée.
  */
 export function PlanningPanels({
   orders,
@@ -50,6 +59,7 @@ export function PlanningPanels({
   selectedTourId,
   onSelectTour,
   onPlan,
+  onPlanDrop,
 }: PlanningPanelsProps) {
   const { t } = useTranslation()
 
@@ -71,6 +81,7 @@ export function PlanningPanels({
               <PoolOrderCard
                 key={order.id}
                 order={order}
+                draggable
                 isPending={isPending}
                 onPlanOrder={selectedTourId === null ? null : () => onPlan({ orderIds: [order.id] })}
                 onPlanService={
@@ -112,6 +123,7 @@ export function PlanningPanels({
                 tour={tour}
                 selected={tour.id === selectedTourId}
                 onSelect={() => onSelectTour(tour.id)}
+                onPlanDrop={onPlanDrop}
               />
             ))}
           </ul>

@@ -40,10 +40,10 @@ export function pinIcon(className: string): L.DivIcon {
  * Un marqueur identique pour tous laisserait deviner le sens de la tournée
  * d'après le tracé, ce qu'un aller-retour rend impossible.
  */
-export function sequenceIcon(sequence: number, className: string): L.DivIcon {
+export function sequenceIcon(sequence: number, color: string): L.DivIcon {
   return L.divIcon({
     className: '',
-    html: `<span class="${className} flex size-7 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white shadow">${sequence}</span>`,
+    html: `<span style="background:${color}" class="flex size-7 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white shadow">${sequence}</span>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
     popupAnchor: [0, -14],

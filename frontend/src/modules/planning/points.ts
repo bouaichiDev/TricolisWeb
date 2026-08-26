@@ -100,3 +100,26 @@ export function stopPoints(tour: Tour): PlottedStop[] {
 export function isDeparture(tour: Tour, stop: TourStop): boolean {
   return tour.depotId !== null && stop.sequence === 1
 }
+
+/**
+ * Couleurs de tracé, une par tournée.
+ *
+ * Choisies distinctes à l'œil et tenues à l'écart de l'ambre du pool : sur la
+ * carte, la question est « laquelle passe par là », et deux tournées de même
+ * teinte la rendent insoluble.
+ */
+const TOUR_COLORS = [
+  '#2563eb',
+  '#7c3aed',
+  '#0891b2',
+  '#c2410c',
+  '#4d7c0f',
+  '#be123c',
+  '#0f766e',
+  '#a16207',
+]
+
+/** L'index vient de l'ordre d'affichage : même liste, mêmes couleurs. */
+export function tourColor(index: number): string {
+  return TOUR_COLORS[index % TOUR_COLORS.length]
+}

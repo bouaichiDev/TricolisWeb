@@ -35,6 +35,16 @@ class TourStopResource extends JsonResource
             'serviceMinutes' => $this->service_minutes,
             'status' => $this->status->value,
             'serviceCount' => $this->whenCounted('services'),
+            // Ce que l'arret porte reellement, pour pouvoir le retirer d'un
+            // geste. Les affectations historiques en sont exclues : elles
+            // racontent ou le service est passe, pas ce qu'il reste a faire.
+            'orderServiceIds' => $this->whenLoaded(
+                'services',
+                fn () => $this->services
+                    ->where('is_active_assignment', true)
+                    ->pluck('order_service_id')
+                    ->values(),
+            ),
             // L'adresse en une ligne : la vue en colonnes montre ou le camion
             // s'arrete, pas un identifiant de 26 caracteres.
             'addressLabel' => $this->whenLoaded('address', fn (): ?string => $this->addressLabel()),

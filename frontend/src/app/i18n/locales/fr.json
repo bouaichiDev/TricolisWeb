@@ -1556,7 +1556,8 @@
       "already_assigned": "Service déjà planifié dans une autre tournée.",
       "status": "Service dans un état qui ne permet pas la planification.",
       "no_address": "Service sans adresse : impossible de le placer.",
-      "not_found": "Service introuvable."
+      "not_found": "Service introuvable.",
+      "not_planned": "Ce service n’est pas planifié dans cette tournée."
     },
     "poolEmptyFiltered": "Aucun service ne correspond à vos filtres. Effacez la date ou la recherche pour voir tout ce qui attend.",
     "dateHint": "Laissez vide pour voir tout ce qui attend",
@@ -1571,7 +1572,10 @@
     "departure": "Départ · dépôt",
     "notGeocoded": "{{count}} service non placé : son adresse n’est pas géocodée.",
     "notGeocoded_other": "{{count}} services non placés : leur adresse n’est pas géocodée.",
-    "searchPool": "Rechercher une commande à planifier"
+    "searchPool": "Rechercher une commande à planifier",
+    "unplanStop": "Retirer cet arrêt de la tournée",
+    "unplanned": "{{count}} service rendu au pool.",
+    "unplanned_other": "{{count}} services rendus au pool."
   },
   "tours": {
     "title": "Tournées",

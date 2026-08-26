@@ -36,7 +36,15 @@ final readonly class TourListQuery
         // Chargement anticipe, pas une requete par colonne : la vue en
         // colonnes affiche cinq tournees et leurs arrets d'un coup.
         if ($request->boolean('withStops')) {
-            $query->with(['stops' => fn ($stops) => $stops->orderBy('sequence')->with('address')->withCount('services')]);
+            // Seules les affectations actives sont comptees : une tournee
+            // confirmee garde la trace des services qu'on lui a retires, et
+            // les compter ferait annoncer au camion un arret qu'il ne fait
+            // plus.
+            $query->with(['stops' => fn ($stops) => $stops
+                ->orderBy('sequence')
+                ->with(['address', 'services' => fn ($services) => $services->where('is_active_assignment', true)])
+                ->withCount(['services' => fn ($services) => $services->where('is_active_assignment', true)]),
+            ]);
         }
 
         if ($request->filled('search')) {

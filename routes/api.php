@@ -219,6 +219,7 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::post('tours/{tour}/status', [TourController::class, 'changeStatus'])->name('tours.status');
         // Glisser une commande ou des services : un seul appel, une transaction.
         Route::post('tours/{tour}/plan', [TourController::class, 'plan'])->name('tours.plan');
+        Route::post('tours/{tour}/unplan', [TourController::class, 'unplan'])->name('tours.unplan');
         Route::apiResource('tours', TourController::class)->except(['create', 'edit']);
 
         // Suivi — pas de PATCH ni de DELETE : un evenement est historique.

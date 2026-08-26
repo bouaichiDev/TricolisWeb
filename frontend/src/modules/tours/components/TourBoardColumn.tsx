@@ -1,4 +1,4 @@
-import { Clock, MapPin, Package, Route, Users, Weight } from 'lucide-react'
+import { Clock, MapPin, Package, Route, Users, Weight, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -17,6 +17,8 @@ interface TourBoardColumnProps {
   tour: Tour
   /** Absent quand la vue est en lecture seule : la colonne n'accepte alors rien. */
   onPlanDrop?: (tourId: string, drag: PlanningDragPayload) => void
+  /** Rend les services d'un arrêt au pool. */
+  onUnplan?: (tourId: string, orderServiceIds: string[]) => void
 }
 
 /**
@@ -26,11 +28,16 @@ interface TourBoardColumnProps {
  * plus à changer de contenu, et le serveur le refuserait : la colonne ne doit
  * pas laisser croire le contraire en s'illuminant au survol.
  */
-export function TourBoardColumn({ tour, onPlanDrop }: TourBoardColumnProps) {
+export function TourBoardColumn({ tour, onPlanDrop, onUnplan }: TourBoardColumnProps) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
 
   const accepts = onPlanDrop !== undefined && tour.status === 'draft'
+
+  // Ce qui a ete livre ne retourne pas dans le pool : seule une tournee non
+  // terminee laisse retirer ce qu'elle porte. Le serveur applique la meme
+  // regle — le bouton ne fait que ne pas promettre l'impossible.
+  const releasable = onUnplan !== undefined && tour.status !== 'completed'
 
   const handlers = accepts
     ? {
@@ -115,6 +122,18 @@ export function TourBoardColumn({ tour, onPlanDrop }: TourBoardColumnProps) {
                   )}
                 </span>
               </span>
+
+              {releasable && (stop.orderServiceIds ?? []).length > 0 ? (
+                <button
+                  type="button"
+                  title={t('planning.unplanStop')}
+                  aria-label={t('planning.unplanStop')}
+                  className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
+                  onClick={() => onUnplan(tour.id, stop.orderServiceIds ?? [])}
+                >
+                  <X className="size-3.5" aria-hidden />
+                </button>
+              ) : null}
             </div>
           ))
         )}

@@ -8,7 +8,7 @@ import { LayoutGrid, List, Plus } from 'lucide-react'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { PlanningPoolSidebar } from '@/modules/planning/components/PlanningPoolSidebar'
 import { planPayloadOf, type PlanningDragPayload } from '@/modules/planning/dnd'
-import { usePlanIntoTour } from '@/modules/planning/hooks/usePlanning'
+import { usePlanIntoTour, useUnplanFromTour } from '@/modules/planning/hooks/usePlanning'
 import type { PlanningRejection } from '@/modules/planning/types/pool'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable } from '@/shared/components/data/DataTable'
@@ -67,6 +67,26 @@ export function TourListPage() {
     )
 
   const drop = (tourId: string, drag: PlanningDragPayload) => send(tourId, planPayloadOf(drag))
+
+  const unplan = useUnplanFromTour()
+
+  const release = (tourId: string, orderServiceIds: string[]) =>
+    unplan.mutate(
+      { tourId, orderServiceIds },
+      {
+        onSuccess: (result) => {
+          if (result.unplanned.length > 0) {
+            toast.success(t('planning.unplanned', { count: result.unplanned.length }))
+          }
+
+          for (const refusal of result.rejected) {
+            toast.warning(
+              t(`planning.rejected.${refusal.reason}`, { defaultValue: refusal.reason }),
+            )
+          }
+        },
+      },
+    )
 
   // Une seule tournee brouillon : le bouton du pool sait ou verser sans qu'on
   // ait a la designer. Au-dela, seul le glisser tranche, et les boutons se
@@ -143,6 +163,7 @@ export function TourListPage() {
                 tours={data?.data ?? []}
                 emptyMessage={t('tours.empty')}
                 onPlanDrop={drop}
+                onUnplan={release}
               />
             )}
           </div>

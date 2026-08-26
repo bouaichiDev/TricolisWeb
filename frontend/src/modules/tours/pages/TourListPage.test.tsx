@@ -41,6 +41,7 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
       status: 'pending',
       addressLabel: 'Entrepôt · 20000 Casablanca',
       serviceCount: 3,
+      orderServiceIds: ['01JQZ000000000000OSRV01', '01JQZ000000000000OSRV02'],
     },
     {
       id: '01JQZ0000000000000STOP02',
@@ -50,6 +51,7 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
       status: 'pending',
       addressLabel: 'Client · 20100 Casablanca',
       serviceCount: 1,
+      orderServiceIds: ['01JQZ000000000000OSRV03'],
     },
   ],
   ...overrides,
@@ -93,10 +95,19 @@ const poolOrder = {
 function render(overrides: Record<string, unknown> = {}) {
   const calls: URL[] = []
   const plans: { url: string; body: Record<string, unknown> }[] = []
+  const unplans: { url: string; body: Record<string, unknown> }[] = []
 
   server.use(
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder]))),
+    http.post(`${API}/tours/:id/unplan`, async ({ request, params }) => {
+      unplans.push({
+        url: String(params.id),
+        body: (await request.json()) as Record<string, unknown>,
+      })
+
+      return HttpResponse.json({ data: { unplanned: ['x'], rejected: [] } })
+    }),
     http.post(`${API}/tours/:id/plan`, async ({ request, params }) => {
       plans.push({
         url: String(params.id),
@@ -114,7 +125,7 @@ function render(overrides: Record<string, unknown> = {}) {
 
   renderWithProviders(<TourListPage />, { membership: withPermissions(['tours.view']) })
 
-  return { calls, plans }
+  return { calls, plans, unplans }
 }
 
 /** Glisse une charge de planification sur une colonne, comme le navigateur le ferait. */
@@ -284,5 +295,56 @@ describe('planification depuis la liste', () => {
 
     await waitFor(() => expect(plans).toHaveLength(1))
     expect(plans[0].body).toEqual({ orderIds: [ORDER_ID] })
+  })
+})
+
+/**
+ * Retirer ce qu'une tournée porte, pour le rendre au pool.
+ *
+ * Ouvert à tous les états sauf « terminée » : ce qui a été livré n'y retourne
+ * pas. Règle posée par le propriétaire du projet le 26 août 2026.
+ */
+describe('retrait depuis la liste', () => {
+  it('rend au pool les services d’un arrêt', async () => {
+    const { unplans } = render()
+
+    await screen.findByText('TR-001')
+
+    const buttons = await screen.findAllByRole('button', {
+      name: 'Retirer cet arrêt de la tournée',
+    })
+
+    await userEvent.click(buttons[0])
+
+    await waitFor(() => expect(unplans).toHaveLength(1))
+    expect(unplans[0]).toEqual({
+      url: TOUR_ID,
+      body: { orderServiceIds: ['01JQZ000000000000OSRV01', '01JQZ000000000000OSRV02'] },
+    })
+  })
+
+  it('n’offre rien à retirer sur une tournée terminée', async () => {
+    render({ status: 'completed' })
+
+    await screen.findByText('TR-001')
+
+    expect(
+      screen.queryByRole('button', { name: 'Retirer cet arrêt de la tournée' }),
+    ).not.toBeInTheDocument()
+  })
+
+  /** Une tournée en route dont un client s'annule doit pouvoir se délester. */
+  it('laisse retirer d’une tournée en cours', async () => {
+    const { unplans } = render({ status: 'in_progress' })
+
+    await screen.findByText('TR-001')
+
+    const buttons = await screen.findAllByRole('button', {
+      name: 'Retirer cet arrêt de la tournée',
+    })
+
+    await userEvent.click(buttons[0])
+
+    await waitFor(() => expect(unplans).toHaveLength(1))
   })
 })

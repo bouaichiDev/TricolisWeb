@@ -110,13 +110,57 @@ it('retire l’arrêt devenu vide et resserre les rangs', function (): void {
         ->and($stops->first()->sequence)->toBe(1);
 });
 
-it('garde l’arrêt quand il porte encore un service', function (): void {
+/**
+ * Retirer un service retire ses frères, dans cette tournée.
+ *
+ * Règle posée le 27 août 2026, symétrique du §40 : glisser une commande prend
+ * tous ses services éligibles, la retirer les rend tous. Sans cela, retirer la
+ * livraison laisserait le chargement au dépôt — un arrêt où le camion charge ce
+ * que personne n'ira livrer.
+ */
+it('retire toute la commande quand on retire un seul de ses services', function (): void {
     $address = Address::factory()->create();
     $order = ($this->orderAt)($address, 2);
 
     ($this->plan)(['orderIds' => [$order->id]])->assertOk();
 
     $one = OrderService::where('order_id', $order->id)->orderBy('sequence')->value('id');
+
+    $response = ($this->unplan)(['orderServiceIds' => [$one]])->assertOk();
+
+    expect($response->json('data.unplanned'))->toHaveCount(2)
+        ->and(TourStop::where('tour_id', $this->tour->id)->count())->toBe(0);
+});
+
+/** L'extension s'arrête à cette tournée : ce qui est ailleurs y reste. */
+it('n’emporte pas les services de la même commande placés ailleurs', function (): void {
+    $order = ($this->orderAt)(Address::factory()->create(), 2);
+    $services = OrderService::where('order_id', $order->id)->orderBy('sequence')->pluck('id');
+
+    $other = Tour::factory()->forAgency($this->agency)->create(['status' => 'draft']);
+
+    ($this->plan)(['orderServiceIds' => [$services[0]]])->assertOk();
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson("/api/v1/tours/{$other->id}/plan", ['orderServiceIds' => [$services[1]]])
+        ->assertOk();
+
+    ($this->unplan)(['orderServiceIds' => [$services[0]]])->assertOk();
+
+    // Le second reste planifie dans l'autre tournee.
+    expect(TourStopService::where('order_service_id', $services[1])
+        ->where('is_active_assignment', true)->exists())->toBeTrue();
+});
+
+/** Deux commandes à la même adresse : retirer l'une garde l'arrêt pour l'autre. */
+it('garde l’arrêt quand une autre commande l’occupe encore', function (): void {
+    $address = Address::factory()->create();
+    $kept = ($this->orderAt)($address);
+    $removed = ($this->orderAt)($address);
+
+    ($this->plan)(['orderIds' => [$kept->id, $removed->id]])->assertOk();
+
+    $one = OrderService::where('order_id', $removed->id)->value('id');
 
     ($this->unplan)(['orderServiceIds' => [$one]])->assertOk();
 
@@ -178,9 +222,13 @@ it('nomme les commandes posées sur l’arrêt, sans doublon', function (): void
 
     // Deux services d'une meme commande ne font qu'une ligne : c'est la
     // commande qu'on ouvre, pas chacun de ses services.
+    // Le temps sur place est la somme des services de l'arret : deux services
+    // de trente minutes en font soixante, et c'est cela qu'on deplie pour lire.
     expect($orders)->toHaveCount(1)
         ->and($orders[0]['id'])->toBe($order->id)
-        ->and($orders[0]['serviceCount'])->toBe(2);
+        ->and($orders[0]['services'])->toHaveCount(2)
+        ->and($orders[0]['serviceMinutes'])->toBe(60)
+        ->and($orders[0]['customerName'])->not->toBeNull();
 });
 
 /** Une affectation retirée ne doit plus renvoyer vers sa commande. */

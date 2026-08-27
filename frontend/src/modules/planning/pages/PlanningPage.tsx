@@ -6,14 +6,13 @@ import { useTourList } from '@/modules/tours/hooks/useTours'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
-import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 
-import { PlanningMap } from '../components/PlanningMap'
-import { planPayloadOf, type PlanningDragPayload } from '../dnd'
+import { PlanningMapScreen } from '../components/map/PlanningMapScreen'
 import { PlanningModeSwitcher, type PlanningMode } from '../components/PlanningModeSwitcher'
 import { PlanningPanels } from '../components/PlanningPanels'
+import { planPayloadOf, type PlanningDragPayload } from '../dnd'
 import { usePlanIntoTour, usePlanningPool } from '../hooks/usePlanning'
 import type { PlanningRejection, PoolFilters } from '../types/pool'
 
@@ -120,35 +119,16 @@ export function PlanningPage() {
       </div>
 
       {mode === 'map' ? (
-        <div className="flex flex-col gap-3">
-          {/* Le choix de la tournee vit dans le panneau de droite, absent en
-              mode carte : sans ce rappel, rien ne dirait ou verser. */}
-          {drafts.length === 0 ? null : (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">{t('planning.pickTour')}</span>
-              {drafts.map((tour) => (
-                <Button
-                  key={tour.id}
-                  type="button"
-                  size="sm"
-                  variant={tour.id === selectedTourId ? 'secondary' : 'outline'}
-                  aria-pressed={tour.id === selectedTourId}
-                  onClick={() => setSelectedTourId(tour.id)}
-                >
-                  {tour.tourNumber}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          <PlanningMap
-            orders={orders}
-            tours={visible}
-            onPlanOrder={
-              selectedTourId === null ? undefined : (orderId) => send({ orderIds: [orderId] })
-            }
-          />
-        </div>
+        <PlanningMapScreen
+          orders={orders}
+          tours={visible}
+          search={search}
+          onSearchChange={setSearch}
+          selectedTourId={selectedTourId}
+          onSelectTour={setSelectedTourId}
+          onPlanOrder={(orderId) => send({ orderIds: [orderId] })}
+          isPending={plan.isPending}
+        />
       ) : (
         <PlanningPanels
           orders={orders}

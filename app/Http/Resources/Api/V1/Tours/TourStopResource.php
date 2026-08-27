@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Tours;
 
+use App\Modules\Orders\Models\OrderService;
 use App\Modules\Tours\Models\TourStop;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 
 /**
  * Arrêt vu depuis une liste.
@@ -35,6 +37,13 @@ class TourStopResource extends JsonResource
             'serviceMinutes' => $this->service_minutes,
             'status' => $this->status->value,
             'serviceCount' => $this->whenCounted('services'),
+            // Le temps total sur place, somme des services actifs de l'arret.
+            'totalServiceMinutes' => $this->whenLoaded(
+                'services',
+                fn (): int => (int) $this->services
+                    ->where('is_active_assignment', true)
+                    ->sum(fn ($assignment): int => (int) ($assignment->orderService?->required_time_minutes ?? 0)),
+            ),
             // Ce que l'arret porte reellement, pour pouvoir le retirer d'un
             // geste et remonter a la commande. Les affectations historiques en
             // sont exclues : elles racontent ou le service est passe, pas ce
@@ -58,28 +67,60 @@ class TourStopResource extends JsonResource
     }
 
     /**
-     * Commandes posées sur cet arrêt, sans doublon.
+     * Ce que l'arrêt porte, commande par commande.
      *
      * Un arrêt regroupe les services d'une même adresse : deux services d'une
-     * même commande n'y font qu'une ligne. C'est ce qui permet à la carte
-     * d'ouvrir la commande depuis le point où le camion s'arrête.
+     * même commande n'y font qu'une ligne, et c'est cette ligne qu'on déplie
+     * pour savoir ce que le camion vient déposer — chez qui, combien de colis,
+     * pour quel poids, et pour combien de temps sur place.
      *
-     * @return list<array{id: string, orderNumber: string|null, serviceCount: int}>
+     * Les grandeurs sont celles des **services posés ici**, pas de la commande
+     * entière : une commande à moitié planifiée ailleurs n'apporte à cet arrêt
+     * que ce qu'il en reçoit.
+     *
+     * @return list<array<string, mixed>>
      */
     private function plannedOrders(): array
     {
         return $this->services
             ->where('is_active_assignment', true)
-            ->map(fn ($service) => $service->orderService?->order)
-            ->filter()
-            ->groupBy('id')
-            ->map(fn ($group): array => [
-                'id' => $group->first()->id,
-                'orderNumber' => $group->first()->order_number,
-                'serviceCount' => $group->count(),
-            ])
+            ->map(fn ($assignment) => $assignment->orderService)
+            ->filter(fn ($service): bool => $service?->order !== null)
+            ->groupBy(fn ($service): string => $service->order_id)
+            ->map(fn ($services): array => $this->orderLine($services))
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  Collection<int, OrderService>  $services
+     * @return array<string, mixed>
+     */
+    private function orderLine($services): array
+    {
+        $order = $services->first()->order;
+
+        return [
+            'id' => $order->id,
+            'orderNumber' => $order->order_number,
+            'customerReference' => $order->customer_reference,
+            // Le destinataire : le client de la commande, pas l'organisation.
+            'customerId' => $order->customer_id,
+            'customerName' => $order->relationLoaded('customer') ? $order->customer?->name : null,
+            'weight' => (float) $services->sum('weight'),
+            'volume' => (float) $services->sum('volume'),
+            'packageCount' => (int) $services->sum('package_count'),
+            // Le temps que le camion passe ici pour cette commande.
+            'serviceMinutes' => (int) $services->sum('required_time_minutes'),
+            'services' => $services->map(fn ($service): array => [
+                'id' => $service->id,
+                'serviceNumber' => $service->service_number,
+                'name' => $service->relationLoaded('service') ? $service->service?->name : null,
+                'code' => $service->relationLoaded('service') ? $service->service?->code : null,
+                'minutes' => (int) $service->required_time_minutes,
+                'status' => $service->status?->value ?? $service->status,
+            ])->values()->all(),
+        ];
     }
 
     /** `decimal:8` rend une chaîne : la carte attend un nombre. */

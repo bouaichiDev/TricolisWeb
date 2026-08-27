@@ -16,7 +16,6 @@ beforeEach(function (): void {
     $this->headers = ['X-Organization-Id' => $this->organization->id];
     $this->agency = Agency::factory()->create(['organization_id' => $this->organization->id]);
     $this->payload = fn (array $o = []): array => array_merge([
-        'tourNumber' => 'TRN-0001',
         'tourDate' => '2026-09-01',
         'agencyId' => $this->agency->id,
         'status' => 'draft',
@@ -28,7 +27,7 @@ describe('tours creation', function (): void {
         $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/tours', ($this->payload)())
             ->assertCreated()
-            ->assertJsonPath('data.tourNumber', 'TRN-0001')
+            ->assertJsonPath('data.tourNumber', '1')
             ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.depotId', null)
             ->assertJsonPath('data.providerId', null);
@@ -180,21 +179,65 @@ describe('tours validation', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('status');
     });
 
-    it('refuses a duplicated tour number in the organization', function (): void {
-        Tour::factory()->forAgency($this->agency)->create(['tour_number' => 'TRN-DUP']);
-
+    /**
+     * Le numéro n'est plus saisi : le serveur l'attribue.
+     *
+     * Le refuser plutôt que l'ignorer évite qu'un appelant croie l'avoir choisi
+     * et s'étonne d'en lire un autre.
+     */
+    it('refuses a tour number supplied by the caller', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/tours', ($this->payload)(['tourNumber' => 'TRN-DUP']))
+            ->postJson('/api/v1/tours', ($this->payload)(['tourNumber' => 'TRN-MOI']))
             ->assertStatus(422)->assertJsonValidationErrors('tourNumber');
     });
 
-    it('allows the same tour number in another organization', function (): void {
-        $other = Organization::factory()->create();
-        Tour::factory()->forOrganization($other)->create(['tour_number' => 'TRN-DUP']);
+    it('refuses to renumber an existing tour', function (): void {
+        $tour = Tour::factory()->forAgency($this->agency)->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/tours', ($this->payload)(['tourNumber' => 'TRN-DUP']))
-            ->assertCreated();
+            ->patchJson("/api/v1/tours/{$tour->id}", ['tourNumber' => 'TRN-AUTRE'])
+            ->assertStatus(422)->assertJsonValidationErrors('tourNumber');
+    });
+});
+
+describe('tours numbering', function (): void {
+    it('numbers tours from one, by one', function (): void {
+        $numbers = [];
+
+        for ($created = 0; $created < 3; $created++) {
+            $numbers[] = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+                ->postJson('/api/v1/tours', ($this->payload)())
+                ->assertCreated()->json('data.tourNumber');
+        }
+
+        expect($numbers)->toBe(['1', '2', '3']);
+    });
+
+    /**
+     * Une organisation qui a saisi un numéro à la main le garde : la suite le
+     * saute plutôt que de repartir au-dessus, ce qui donnerait des numéros à
+     * sept chiffres pour toujours à cause d'une frappe d'essai.
+     */
+    it('skips a number already taken', function (): void {
+        Tour::factory()->forAgency($this->agency)->create(['tour_number' => '2']);
+
+        $first = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)())->assertCreated()->json('data.tourNumber');
+
+        $second = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)())->assertCreated()->json('data.tourNumber');
+
+        expect([$first, $second])->toBe(['1', '3']);
+    });
+
+    /** Chaque organisation a sa suite : la nôtre ne dépend pas de la sienne. */
+    it('counts per organization', function (): void {
+        $other = Organization::factory()->create();
+        Tour::factory()->forOrganization($other)->create(['tour_number' => '1']);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)())
+            ->assertCreated()->assertJsonPath('data.tourNumber', '1');
     });
 });
 

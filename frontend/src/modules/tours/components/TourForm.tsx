@@ -25,9 +25,11 @@ interface TourFormProps {
 /**
  * Saisie d'une tournée.
  *
- * **Le statut ne se choisit pas ici.** Une tournée naît au brouillon et change
- * d'état par les passages du référentiel, depuis sa fiche. Le proposer à la
- * création laisserait créer une tournée « terminée » qui n'a jamais roulé.
+ * **Ni le statut ni le numéro ne se saisissent ici.** Une tournée naît au
+ * brouillon et change d'état par les passages du référentiel, depuis sa fiche ;
+ * son numéro lui est attribué par le serveur, un entier qui avance de un. Les
+ * proposer laisserait créer une tournée « terminée » qui n'a jamais roulé, et
+ * des numéros en double que la contrainte refuserait au pire moment.
  *
  * Le dépôt appartient à l'agence : son sélecteur reste inerte tant qu'aucune
  * agence n'est choisie, faute de quoi il proposerait les dépôts de toutes.
@@ -38,7 +40,6 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
   const form = useForm<TourFormValues>({
     resolver: zodResolver(tourSchema),
     defaultValues: {
-      tourNumber: tour?.tourNumber ?? '',
       tourDate: tour?.tourDate ?? '',
       agencyId: tour?.agencyId ?? '',
       depotId: tour?.depotId ?? NONE,
@@ -63,7 +64,6 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
 
     try {
       await onSubmit({
-        tourNumber: values.tourNumber,
         tourDate: values.tourDate,
         agencyId: values.agencyId,
         depotId: optional(values.depotId),
@@ -86,7 +86,21 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
 
       <SectionCard title={t('tours.form.identity')}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField form={form} name="tourNumber" label={t('tours.fields.tourNumber')} required />
+          {/* Le numero n'est pas saisi : le serveur l'attribue. Montrer celui
+              d'une tournee existante evite de le croire perdu. */}
+          {tour === undefined ? (
+            <p className="text-sm text-muted-foreground sm:col-span-2">
+              {t('tours.form.numberAssigned')}
+            </p>
+          ) : (
+            <div className="sm:col-span-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('tours.fields.tourNumber')}
+              </span>
+              <p className="font-medium">{tour.tourNumber}</p>
+            </div>
+          )}
+
           <TextField
             form={form}
             name="tourDate"

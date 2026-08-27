@@ -14,6 +14,8 @@ import type { PoolFilters } from '../types/pool'
 interface PlanningPoolSidebarProps {
   /** Date des tournées affichées à côté, pour n'offrir que ce qui les concerne. */
   requestedDate?: string
+  /** Restreint à un client : c'est le seul filtre que le pool partage avec la liste. */
+  customerId?: string
   isPending: boolean
   /** Absent tant qu'aucune tournée ne peut recevoir : les boutons disparaîssent. */
   onPlan?: (payload: { orderIds?: string[]; orderServiceIds?: string[] }) => void
@@ -32,6 +34,7 @@ interface PlanningPoolSidebarProps {
  */
 export function PlanningPoolSidebar({
   requestedDate,
+  customerId,
   isPending,
   onPlan,
 }: PlanningPoolSidebarProps) {
@@ -43,6 +46,7 @@ export function PlanningPoolSidebar({
     page: 1,
     perPage: 50,
     requestedDate,
+    customerId,
     search: search === '' ? undefined : search,
   }
 

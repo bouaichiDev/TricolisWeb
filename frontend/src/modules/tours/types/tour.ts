@@ -25,6 +25,11 @@ export interface Tour {
   distanceMeters: number
   status: string
   stopCount?: number
+  /** Rendus par la liste : la colonne montre qui conduit, avec quoi. */
+  driverName?: string | null
+  vehicleRegistration?: string | null
+  /** Commandes distinctes de la tournée ; rendu seulement avec les arrêts. */
+  orderCount?: number
   /** Rendu seulement sur `?withStops=1` : la vue en colonnes les montre. */
   stops?: TourStop[]
 }
@@ -44,17 +49,19 @@ export interface TourStop {
   /** Services **actifs** de l'arrêt : ce qu'on peut en retirer. */
   orderServiceIds?: string[]
   /** Commandes posées sur l'arrêt, sans doublon : de quoi remonter à chacune. */
-  orders?: { id: string; orderNumber: string | null; serviceCount: number }[]
+  orders?: StopOrder[]
+  /** Temps total sur place, somme des services actifs de l'arrêt. */
+  totalServiceMinutes?: number
 }
 
 /**
  * Creation / modification d'une tournee — `StoreTourRequest`.
  *
  * Le statut n'est pas saisi : une tournee nait au brouillon et change d'etat
- * par les passages du referentiel, depuis sa fiche.
+ * par les passages du referentiel, depuis sa fiche. Le numero non plus : le
+ * serveur l'attribue, un entier qui avance de un.
  */
 export interface TourPayload {
-  tourNumber: string
   tourDate: string
   agencyId: string
   depotId: string | null
@@ -66,6 +73,28 @@ export interface TourPayload {
   plannedStartAt: string | null
   plannedEndAt: string | null
   status?: string
+}
+
+/** Une commande vue depuis l'arrêt qui la dessert. */
+export interface StopOrder {
+  id: string
+  orderNumber: string | null
+  customerReference: string | null
+  customerId: string
+  customerName: string | null
+  weight: number
+  volume: number
+  packageCount: number
+  /** Temps que le camion passe ici pour cette commande. */
+  serviceMinutes: number
+  services: {
+    id: string
+    serviceNumber: string
+    name: string | null
+    code: string | null
+    minutes: number
+    status: string
+  }[]
 }
 
 export interface TourFilters {

@@ -1,4 +1,4 @@
-import { Map, Package, Route, Users, Weight } from 'lucide-react'
+import { Map, Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -9,9 +9,9 @@ import {
   type PlanningDragPayload,
 } from '@/modules/planning/dnd'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
-import { formatDate } from '@/shared/utils/format'
 
 import { TourBoardStop } from './TourBoardStop'
+import { TourColumnHeader } from './TourColumnHeader'
 import type { Tour } from '../types/tour'
 
 interface TourBoardColumnProps {
@@ -22,6 +22,8 @@ interface TourBoardColumnProps {
   onUnplan?: (tourId: string, orderServiceIds: string[]) => void
   /** Ouvre la carte de cette seule tournée. */
   onShowMap?: (tour: Tour) => void
+  /** Ouvre la modification en fenêtre, sans quitter le plan. */
+  onEdit?: (tour: Tour) => void
 }
 
 /**
@@ -36,6 +38,7 @@ export function TourBoardColumn({
   onPlanDrop,
   onUnplan,
   onShowMap,
+  onEdit,
 }: TourBoardColumnProps) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
@@ -85,6 +88,18 @@ export function TourBoardColumn({
         <span className="flex shrink-0 items-center gap-1">
           <StatusBadge status={tour.status} source="tour" />
 
+          {onEdit === undefined ? null : (
+            <button
+              type="button"
+              title={t('tours.editPlan')}
+              aria-label={t('tours.editPlan')}
+              className="rounded p-1 text-muted-foreground transition-colors hover:text-primary"
+              onClick={() => onEdit(tour)}
+            >
+              <Pencil className="size-4" aria-hidden />
+            </button>
+          )}
+
           {/* Sans arret trace, la carte n'aurait rien a montrer. */}
           {onShowMap !== undefined && (tour.stops ?? []).length > 0 ? (
             <button
@@ -100,24 +115,9 @@ export function TourBoardColumn({
         </span>
       </div>
 
-      {tour.tourDate === null ? null : (
-        <p className="text-xs text-muted-foreground">{formatDate(tour.tourDate)}</p>
-      )}
-
-      <dl className="grid grid-cols-2 gap-2 text-xs">
-        <Metric icon={Package} label={t('tours.fields.packages')} value={tour.totalPackages} />
-        <Metric icon={Users} label={t('tours.fields.customers')} value={tour.totalCustomers} />
-        <Metric icon={Weight} label={t('tours.fields.weightShort')} value={`${tour.totalWeight} kg`} />
-        <Metric
-          icon={Route}
-          label={t('tours.fields.distance')}
-          value={
-            tour.distanceMeters === 0
-              ? t('tours.notComputed')
-              : `${(tour.distanceMeters / 1000).toFixed(1)} km`
-          }
-        />
-      </dl>
+      {/* La date seule n'est plus rappelee ici : la fenetre du/au la porte,
+          et la liste entiere est deja filtree sur un jour. */}
+      <TourColumnHeader tour={tour} />
 
       <div className="flex flex-col gap-1 border-t pt-2">
         {(tour.stops ?? []).length === 0 ? (
@@ -135,25 +135,5 @@ export function TourBoardColumn({
         )}
       </div>
     </li>
-  )
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Package
-  label: string
-  value: string | number
-}) {
-  return (
-    <div className="min-w-0">
-      <dt className="flex items-center gap-1 text-[11px] text-muted-foreground">
-        <Icon className="size-3" aria-hidden />
-        {label}
-      </dt>
-      <dd className="truncate font-medium">{value}</dd>
-    </div>
   )
 }

@@ -12,6 +12,7 @@ interface TourBoardProps {
   onPlanDrop?: (tourId: string, drag: PlanningDragPayload) => void
   onUnplan?: (tourId: string, orderServiceIds: string[]) => void
   onShowMap?: (tour: Tour) => void
+  onEdit?: (tour: Tour) => void
 }
 
 /**
@@ -30,6 +31,7 @@ export function TourBoard({
   onPlanDrop,
   onUnplan,
   onShowMap,
+  onEdit,
 }: TourBoardProps) {
   const { t } = useTranslation()
 
@@ -47,6 +49,7 @@ export function TourBoard({
             onPlanDrop={onPlanDrop}
             onUnplan={onUnplan}
             onShowMap={onShowMap}
+            onEdit={onEdit}
           />
         ))}
       </ul>

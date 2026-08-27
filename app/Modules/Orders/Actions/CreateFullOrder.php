@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Planning\Actions\GeocodeMissingAddresses;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Services\OrderScopeGuard;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ final readonly class CreateFullOrder
         private CreateOrderPackages $packages,
         private CreateOrderServices $services,
         private RecalculateOrderTotals $totals,
+        private GeocodeMissingAddresses $geocode,
         private WriteAuditLog $audit,
     ) {}
 
@@ -48,9 +50,17 @@ final readonly class CreateFullOrder
 
             $lines = $this->lines->execute($order, $customer, $data->lines);
             $packages = $this->packages->execute($order, $data->packages, $lines);
-            $this->services->execute($order, $data->services, $packages);
+            $services = $this->services->execute($order, $data->services, $packages);
 
             $this->totals->execute($order);
+
+            // Une commande dont l'adresse n'est pas situee ne peut ni se poser
+            // sur la carte ni entrer dans un calcul d'itineraire. Le geocodage
+            // part en file, apres validation de la transaction.
+            $this->geocode->execute(
+                collect($services)->pluck('address_id')->all(),
+                $organizationId,
+            );
 
             $this->audit->execute(
                 $organizationId,

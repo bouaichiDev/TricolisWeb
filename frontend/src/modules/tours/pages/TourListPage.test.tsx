@@ -32,6 +32,11 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
   distanceMeters: 0,
   status: 'draft',
   stopCount: 2,
+  driverName: 'Youssef Alami',
+  vehicleRegistration: 'GE-12345',
+  plannedStartAt: '2026-09-01T07:30:00+00:00',
+  plannedEndAt: '2026-09-01T17:00:00+00:00',
+  orderCount: 2,
   stops: [
     {
       id: '01JQZ0000000000000STOP01',
@@ -44,7 +49,30 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
       latitude: 33.59,
       longitude: -7.62,
       orderServiceIds: ['01JQZ000000000000OSRV01', '01JQZ000000000000OSRV02'],
-      orders: [{ id: '01JQZ00000000000000ORD1', orderNumber: 'CMD-100', serviceCount: 2 }],
+      totalServiceMinutes: 45,
+      orders: [
+        {
+          id: '01JQZ00000000000000ORD1',
+          orderNumber: 'CMD-100',
+          customerReference: 'REF-1',
+          customerId: '01JQZ0000000000000CUSTO1',
+          customerName: 'Meubles Atlas',
+          weight: 24,
+          volume: 0.5,
+          packageCount: 3,
+          serviceMinutes: 45,
+          services: [
+            {
+              id: '01JQZ000000000000OSRV01',
+              serviceNumber: 'S-1',
+              name: 'Livraison',
+              code: 'DELIV',
+              minutes: 45,
+              status: 'ready_to_plan',
+            },
+          ],
+        },
+      ],
     },
     {
       id: '01JQZ0000000000000STOP02',
@@ -57,7 +85,21 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
       latitude: 33.55,
       longitude: -7.6,
       orderServiceIds: ['01JQZ000000000000OSRV03'],
-      orders: [{ id: '01JQZ00000000000000ORD2', orderNumber: 'CMD-200', serviceCount: 1 }],
+      totalServiceMinutes: 20,
+      orders: [
+        {
+          id: '01JQZ00000000000000ORD2',
+          orderNumber: 'CMD-200',
+          customerReference: null,
+          customerId: '01JQZ0000000000000CUSTO2',
+          customerName: 'Client Sud',
+          weight: 8,
+          volume: 0.2,
+          packageCount: 1,
+          serviceMinutes: 20,
+          services: [],
+        },
+      ],
     },
   ],
   ...overrides,
@@ -105,6 +147,11 @@ function render(overrides: Record<string, unknown> = {}) {
 
   server.use(
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/customers`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/agencies`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/providers`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/drivers`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/vehicles`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder]))),
     http.post(`${API}/tours/:id/unplan`, async ({ request, params }) => {
       unplans.push({
@@ -206,11 +253,16 @@ describe('liste des tournées', () => {
     )
   })
 
-  /** Une distance à zéro n'est pas une mesure : c'est un calcul qui n'a pas eu lieu. */
+  /**
+   * Une distance à zéro n'est pas une mesure : c'est un calcul qui n'a pas eu
+   * lieu. La colonne montre un tiret, l'infobulle dit pourquoi.
+   */
   it('dit que la distance n’est pas calculée', async () => {
     render()
 
-    expect(await screen.findByText('Non calculé')).toBeInTheDocument()
+    await screen.findByText('TR-001')
+
+    expect(screen.getByTitle('Distance — Non calculé')).toBeInTheDocument()
   })
 })
 
@@ -321,6 +373,7 @@ describe('retrait depuis la liste', () => {
     })
 
     await userEvent.click(buttons[0])
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer' }))
 
     await waitFor(() => expect(unplans).toHaveLength(1))
     expect(unplans[0]).toEqual({
@@ -350,6 +403,7 @@ describe('retrait depuis la liste', () => {
     })
 
     await userEvent.click(buttons[0])
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer' }))
 
     await waitFor(() => expect(unplans).toHaveLength(1))
   })
@@ -360,10 +414,27 @@ describe('retrait depuis la liste', () => {
  * tracée, ou ouvrir la commande qui l'a fait exister.
  */
 describe('commandes d’une tournée', () => {
-  it('mène à la commande depuis l’arrêt', async () => {
+  /**
+   * L'arrêt est replié : une colonne de dix arrêts dépliés ne se lit plus. Le
+   * détail s'ouvre à la demande.
+   */
+  it('déplie l’arrêt et montre ce qu’il dépose', async () => {
     render()
 
-    expect(await screen.findByRole('link', { name: 'CMD-100' })).toHaveAttribute(
+    await screen.findByText('TR-001')
+    expect(screen.queryByText('Meubles Atlas')).not.toBeInTheDocument()
+
+    const stops = screen.getAllByRole('button', { name: 'Voir les commandes de cet arrêt' })
+
+    await userEvent.click(stops[0])
+
+    expect(await screen.findByText('Meubles Atlas')).toBeInTheDocument()
+    // « 3 » seul est ambigu : la colonne affiche aussi des compteurs. Le poids
+    // et le temps sur place, eux, ne se confondent pas.
+    expect(screen.getByText('24 kg')).toBeInTheDocument()
+    expect(screen.getAllByText('45 min').length).toBeGreaterThan(0)
+
+    expect(screen.getByRole('link', { name: 'CMD-100' })).toHaveAttribute(
       'href',
       '/orders/01JQZ00000000000000ORD1',
     )
@@ -390,5 +461,81 @@ describe('commandes d’une tournée', () => {
     expect(
       screen.queryByRole('button', { name: 'Voir la tournée sur la carte' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+/** Ce qu'une colonne dit avant qu'on l'ouvre : qui conduit, avec quoi, quand. */
+describe('en-tête d’une colonne', () => {
+  it('montre le chauffeur, le véhicule et les totaux', async () => {
+    render()
+
+    expect(await screen.findByText('Youssef Alami')).toBeInTheDocument()
+    expect(screen.getByText('GE-12345')).toBeInTheDocument()
+    // Les libelles vivent dans les infobulles : la colonne montre le chiffre.
+    expect(screen.getByTitle('Volume')).toHaveTextContent('2.5')
+    expect(screen.getByText('Début')).toBeInTheDocument()
+    expect(screen.getByText('Fin')).toBeInTheDocument()
+
+    // La date au format demande, l'heure en dessous. Le motif plutot que la
+    // valeur : le fuseau du poste de test decalerait celle-ci.
+    expect(screen.getAllByText(/^\d{2}-\d{2}-\d{4}$/)).toHaveLength(2)
+    expect(screen.getAllByText(/^\d{2}:\d{2}$/)).toHaveLength(2)
+  })
+
+  /** Un blanc se lit comme un oubli d'affichage, pas comme un manque. */
+  it('dit « à affecter » plutôt que de laisser un blanc', async () => {
+    render({ driverName: null, vehicleRegistration: null, plannedStartAt: null })
+
+    await screen.findByText('TR-001')
+
+    expect(screen.getAllByText('À affecter')).toHaveLength(2)
+    expect(screen.getByText('Horaires non prévus')).toBeInTheDocument()
+  })
+
+  /**
+   * Retirer une commande retire tous ses services de la tournée : le serveur
+   * étend le geste, et l'écran n'envoie donc qu'un service par commande.
+   */
+  it('retire une commande entière depuis l’arrêt déplié', async () => {
+    const { unplans } = render()
+
+    await screen.findByText('TR-001')
+
+    const stops = screen.getAllByRole('button', { name: 'Voir les commandes de cet arrêt' })
+
+    await userEvent.click(stops[0])
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Retirer la commande CMD-100 de la tournée',
+      }),
+    )
+
+    // Rendre au pool defait un travail de planification : l'ecran le confirme.
+    expect(await screen.findByText('Retirer de la tournée ?')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer' }))
+
+    await waitFor(() => expect(unplans).toHaveLength(1))
+    expect(unplans[0].body).toEqual({ orderServiceIds: ['01JQZ000000000000OSRV01'] })
+  })
+})
+
+/**
+ * Affecter un chauffeur se décide en comparant les colonnes voisines : quitter
+ * la vue pour `/tours/:id/edit` ferait perdre cette comparaison.
+ */
+describe('modifier une tournée sans quitter le plan', () => {
+  it('ouvre le formulaire en fenêtre', async () => {
+    render()
+
+    await screen.findByText('TR-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Modifier la tournée' }))
+
+    const dialog = await screen.findByRole('dialog')
+
+    expect(within(dialog).getByRole('heading', { name: 'Modifier la tournée' })).toBeInTheDocument()
+    // Le numero est montre, pas saisi : le serveur l'attribue. Il apparait deux
+    // fois — en sous-titre et dans le rappel du formulaire.
+    expect(within(dialog).getAllByText('TR-001').length).toBeGreaterThan(0)
+    expect(within(dialog).queryByLabelText(/Numéro/)).not.toBeInTheDocument()
   })
 })

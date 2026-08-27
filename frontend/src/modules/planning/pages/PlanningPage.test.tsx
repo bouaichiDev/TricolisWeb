@@ -244,9 +244,13 @@ describe('vue carte', () => {
 
     await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
 
-    // La legende nomme chaque tournee tracee : c'est elle qui dit laquelle
-    // porte quelle couleur.
-    expect(await screen.findByText('TR-DEJA')).toBeInTheDocument()
+    // La tournee confirmee apparait deux fois : dans le panneau de gauche, qui
+    // dit ce qui roule deja, et dans la legende de la carte.
+    expect(await screen.findAllByText('TR-DEJA')).toHaveLength(2)
+
+    // Le planificateur est nomme en haut : une brouillon n'appartient qu'a qui
+    // l'a ouverte.
+    expect(screen.getByText('Planification par')).toBeInTheDocument()
   })
 
   /** Les arrêts ne sont demandés que par la vue qui les trace. */
@@ -279,5 +283,56 @@ describe('vue carte', () => {
       // le terrain.
       expect(last?.searchParams.get('status')).toBeNull()
     })
+  })
+})
+
+/**
+ * Les trois panneaux de la carte partagent un seul état : ce qui roule à
+ * gauche, le terrain au centre, ce qui attend à droite.
+ */
+describe('panneaux de la vue carte', () => {
+  it('cherche dans les commandes à planifier', async () => {
+    render()
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+
+    expect(
+      await screen.findByLabelText('Rechercher une commande à planifier'),
+    ).toBeInTheDocument()
+  })
+
+  /**
+   * Regarder où est une commande et décider qu'elle part sont deux intentions :
+   * les confondre ferait planifier par mégarde.
+   */
+  it('n’offre de planifier qu’une fois la tournée choisie', async () => {
+    const sent = render()
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+
+    await screen.findByText('Planification par')
+    expect(screen.queryByRole('button', { name: 'Planifier la commande' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Planifier la commande' }))
+
+    await waitFor(() => expect(sent).toHaveLength(1))
+    expect(sent[0]).toEqual({ orderIds: [ORDER_ID] })
+  })
+
+  /**
+   * Le service de routage rend des distances, pas de tracé : les traits sont
+   * des vols d'oiseau, et la carte le dit plutôt que de les laisser passer pour
+   * des routes.
+   */
+  it('annonce que les traits ne sont pas des routes', async () => {
+    render()
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+
+    expect(await screen.findByText(/vol d’oiseau/)).toBeInTheDocument()
   })
 })

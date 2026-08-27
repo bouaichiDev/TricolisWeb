@@ -45,9 +45,18 @@ final readonly class GeocodingService
      *
      * Une adresse déjà située n'est pas redemandée : le service est payant en
      * temps comme en quota, et des murs ne se déplacent pas.
+     *
+     * `$force` sert au cas inverse : quand l'adresse **a changé**, les anciennes
+     * coordonnées désignent d'autres murs. Elles sont alors effacées d'abord,
+     * pour qu'un échec du service laisse l'adresse sans point plutôt qu'avec un
+     * point faux — même raison qui fait refuser le 0,0.
      */
-    public function locate(Address $address, string $organizationId): bool
+    public function locate(Address $address, string $organizationId, bool $force = false): bool
     {
+        if ($force) {
+            $address->forceFill(['latitude' => null, 'longitude' => null])->save();
+        }
+
         if ($address->latitude !== null && $address->longitude !== null) {
             return true;
         }
@@ -97,7 +106,12 @@ final readonly class GeocodingService
             $address->country,
         ];
 
-        $kept = array_filter(array_map('trim', $parts), static fn (string $part): bool => $part !== '');
+        // Les lignes non renseignees valent null en base : `trim(null)` est
+        // deprecie depuis PHP 8.4, et le cast doit preceder le nettoyage.
+        $kept = array_filter(
+            array_map(static fn (?string $part): string => trim($part ?? ''), $parts),
+            static fn (string $part): bool => $part !== '',
+        );
 
         return implode(', ', $kept);
     }

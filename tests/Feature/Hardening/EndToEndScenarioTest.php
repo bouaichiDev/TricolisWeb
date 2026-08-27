@@ -81,7 +81,7 @@ describe('scenario 1 : de la commande a la facturation', function (): void {
 
         // 2. Tournee, puis arret portant le service de la commande.
         $tourId = ($this->api)('POST', '/api/v1/tours', [
-            'tourNumber' => 'TRN-E2E-1', 'tourDate' => now()->addDay()->toDateString(),
+            'tourDate' => now()->addDay()->toDateString(),
             'agencyId' => $this->agency->id, 'status' => 'draft',
         ])->assertCreated()->json('data.id');
 

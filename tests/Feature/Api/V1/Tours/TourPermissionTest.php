@@ -46,7 +46,7 @@ describe('missing permissions', function (): void {
     it('forbids creating without the create permission', function (): void {
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/tours', [
-                'tourNumber' => 'X', 'tourDate' => '2026-09-01',
+                'tourDate' => '2026-09-01',
                 'agencyId' => $this->tour->agency_id, 'status' => 'draft',
             ])->assertForbidden();
 

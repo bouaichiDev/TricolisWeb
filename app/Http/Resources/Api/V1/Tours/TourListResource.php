@@ -21,6 +21,24 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class TourListResource extends JsonResource
 {
     /**
+     * Commandes distinctes portées par la tournée.
+     *
+     * Deux services d'une même commande, même posés sur deux arrêts — le
+     * chargement au dépôt et la livraison chez le client — ne font qu'une
+     * commande. Les compter séparément doublerait le chiffre annoncé.
+     */
+    private function distinctOrderCount(): int
+    {
+        return $this->stops
+            ->flatMap(fn ($stop) => $stop->relationLoaded('services') ? $stop->services : [])
+            ->filter(fn ($assignment): bool => (bool) $assignment->is_active_assignment)
+            ->map(fn ($assignment) => $assignment->orderService?->order_id)
+            ->filter()
+            ->unique()
+            ->count();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
@@ -45,6 +63,15 @@ class TourListResource extends JsonResource
             'distanceMeters' => $this->distance_meters,
             'status' => $this->status->value,
             'agencyName' => $this->whenLoaded('agency', fn () => $this->agency->name),
+            // Qui conduit, et avec quoi : une colonne qui ne montre qu'un
+            // identifiant oblige a ouvrir la fiche pour savoir si la tournee
+            // est affectee.
+            'driverName' => $this->whenLoaded('driver', fn () => $this->driver?->name),
+            'vehicleRegistration' => $this->whenLoaded('vehicle', fn () => $this->vehicle?->registration_number),
+            // Nombre de commandes distinctes, calcule sur les arrets deja
+            // charges : `tours` n'en porte pas le compte, et l'ajouter en base
+            // donnerait un total de plus a tenir a jour a chaque mouvement.
+            'orderCount' => $this->whenLoaded('stops', fn (): int => $this->distinctOrderCount()),
             'stopCount' => $this->whenCounted('stops'),
             'stops' => TourStopResource::collection($this->whenLoaded('stops')),
             'periodCount' => $this->whenCounted('periods'),

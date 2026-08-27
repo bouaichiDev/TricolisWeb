@@ -1575,7 +1575,20 @@
     "searchPool": "Rechercher une commande à planifier",
     "unplanStop": "Retirer cet arrêt de la tournée",
     "unplanned": "{{count}} service rendu au pool.",
-    "unplanned_other": "{{count}} services rendus au pool."
+    "unplanned_other": "{{count}} services rendus au pool.",
+    "unplanOrder": "Retirer cette commande de la tournée",
+    "unplanOrderNamed": "Retirer la commande {{number}} de la tournée",
+    "unplanConfirmTitle": "Retirer de la tournée ?",
+    "unplanConfirm": "Retirer",
+    "unplanConfirmBody": "Ce service repart dans les commandes à planifier. Tous les services de sa commande dans cette tournée le suivent.",
+    "unplanConfirmBody_other": "Ces {{count}} services repartent dans les commandes à planifier. Tous les services de leurs commandes dans cette tournée les suivent.",
+    "straightLines": "Traits à vol d’oiseau : le service de routage rend les distances, pas le tracé.",
+    "plannedBy": "Planification par",
+    "plannedTours": "Tournées du jour",
+    "noPlannedTour": "Aucune tournée pour ce filtre.",
+    "receiving": "Les commandes iront dans {{number}}.",
+    "showOnMap": "Montrer sur la carte",
+    "notPlaceable": "Adresse non géocodée : impossible à placer."
   },
   "tours": {
     "title": "Tournées",
@@ -1607,7 +1620,10 @@
       "vehicle": "Véhicule",
       "tourType": "Type de tournée",
       "plannedStartAt": "Début prévu",
-      "plannedEndAt": "Fin prévue"
+      "plannedEndAt": "Fin prévue",
+      "volume": "Volume",
+      "serviceTime": "Temps sur place",
+      "orders": "Commandes"
     },
     "viewBoard": "Vue en colonnes",
     "viewList": "Vue en tableau",
@@ -1625,10 +1641,25 @@
       "schedule": "Horaires et consignes",
       "scheduleHint": "Les horaires prévus servent à comparer les tournées entre elles.",
       "none": "Aucun",
-      "pickAgencyFirst": "Choisissez d’abord une agence."
+      "pickAgencyFirst": "Choisissez d’abord une agence.",
+      "numberAssigned": "Le numéro est attribué par le système à l’enregistrement."
     },
     "showMap": "Voir la tournée sur la carte",
     "mapTitle": "Tournée {{number}} sur la carte",
-    "mapHint": "Les arrêts dans leur ordre de passage."
+    "mapHint": "Les arrêts dans leur ordre de passage.",
+    "expandStop": "Voir les commandes de cet arrêt",
+    "collapseStop": "Replier les commandes de cet arrêt",
+    "noOrderHere": "Aucune commande sur cet arrêt.",
+    "filters": {
+      "customer": "Client",
+      "allCustomers": "Tous les clients",
+      "customerHint": "Filtre les commandes à planifier."
+    },
+    "unassigned": "À affecter",
+    "noSchedule": "Horaires non prévus",
+    "fromTo": "Du {{from}} au {{to}}",
+    "from": "Début",
+    "to": "Fin",
+    "editPlan": "Modifier la tournée"
   }
 }

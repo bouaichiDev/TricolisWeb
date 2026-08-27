@@ -8,7 +8,6 @@ use App\Modules\Agencies\Models\Agency;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
-use App\Shared\Organizations\CurrentOrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,14 +29,10 @@ class UpdateTourRequest extends FormRequest
      */
     public function rules(): array
     {
-        $organizationId = app(CurrentOrganizationContext::class)->getOrganizationId();
-        $tourId = $this->route('tour')?->id;
-
         return [
-            'tourNumber' => [
-                'sometimes', 'string', 'max:255',
-                Rule::unique('tours', 'tour_number')->where('organization_id', $organizationId)->ignore($tourId),
-            ],
+            // Le numero est attribue a la creation et ne se renegocie pas :
+            // le changer romprait les references deja imprimees ou envoyees.
+            'tourNumber' => ['prohibited'],
             'tourDate' => ['sometimes', 'date'],
             'agencyId' => [
                 'sometimes', 'ulid',

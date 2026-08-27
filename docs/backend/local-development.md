@@ -86,6 +86,41 @@ l'en-tête `X-Organization-Id` lorsqu'il s'applique, ses paramètres, son corps 
 requête avec ses règles de validation, un exemple de réponse et les erreurs
 possibles (401, 403, 404, 409, 422).
 
+## File d'attente
+
+`QUEUE_CONNECTION=database` : les travaux différés attendent dans la table
+`jobs` jusqu'à ce qu'un ouvrier les prenne.
+
+```bash
+php artisan queue:work
+```
+
+**Sans cet ouvrier, rien ne se géocode et aucun itinéraire ne se calcule.** Les
+deux partent en file délibérément : le service GPS est distant, et l'appeler
+pendant la requête ferait attendre le formulaire à chaque adresse enregistrée,
+ou le glisser à chaque commande planifiée. Les travaux concernés :
+
+| Travail | Déclenché par |
+|---|---|
+| `GeocodeAddressJob` | adresse créée sans point, adresse déplacée, commande créée sur une adresse non située |
+| `RecalculateTourRouteJob` | planification, déplanification, ajout / retrait / déplacement / réordonnancement d'un arrêt |
+| `SendOrderCommunicationJob` | communication mise en file |
+
+Les deux premiers exigent une configuration active dans
+`organization_api_configurations`, de code `gps_geocoding` et `gps_routing`. Sans
+elle, le travail s'exécute, journalise un avertissement et ne change rien — la
+carte reste vide et la distance affiche « non calculé ».
+
+Le stock d'adresses antérieur à la mise en place ne se rattrape pas tout seul :
+
+```bash
+php artisan tricolis:geocode-addresses --dry-run   # compter
+php artisan tricolis:geocode-addresses --limit=50  # traiter un lot
+```
+
+Le quota du service est limité : `--limit` borne le lot, et les adresses
+introuvables sont listées en fin de traitement plutôt que tues.
+
 ## Tests
 
 Les tests utilisent **Pest** (déjà installé) et le trait `RefreshDatabase`.

@@ -8,8 +8,13 @@ export interface PlanningPoint {
   latitude: number
   longitude: number
   label: string
-  /** Commandes distinctes attendant à cette adresse, identifiant compris. */
-  orders: { id: string; orderNumber: string }[]
+  /**
+   * Commandes distinctes attendant à cette adresse.
+   *
+   * `summary` est déjà rédigé : la bulle d'un marqueur est trop étroite pour
+   * une grille, et ce qu'on y cherche tient en une ligne — qui, combien.
+   */
+  orders: { id: string; orderNumber: string; summary: string }[]
   serviceIds: string[]
 }
 
@@ -37,7 +42,7 @@ export function poolPoints(orders: PoolOrder[]): PlanningPoint[] {
           latitude: service.latitude,
           longitude: service.longitude,
           label: service.addressLabel ?? order.orderNumber,
-          orders: [{ id: order.id, orderNumber: order.orderNumber }],
+          orders: [describe(order)],
           serviceIds: [service.id],
         })
         continue
@@ -46,12 +51,24 @@ export function poolPoints(orders: PoolOrder[]): PlanningPoint[] {
       existing.serviceIds.push(service.id)
 
       if (!existing.orders.some((known) => known.id === order.id)) {
-        existing.orders.push({ id: order.id, orderNumber: order.orderNumber })
+        existing.orders.push(describe(order))
       }
     }
   }
 
   return [...byAddress.values()]
+}
+
+/** Le client, ce qu'il attend, et pour quel poids — en une ligne. */
+function describe(order: PoolOrder): { id: string; orderNumber: string; summary: string } {
+  const parts = [
+    order.customerName ?? order.customerId,
+    `${order.serviceCount} svc`,
+    `${order.totalPackages} colis`,
+    `${order.totalWeight} kg`,
+  ]
+
+  return { id: order.id, orderNumber: order.orderNumber, summary: parts.join(' · ') }
 }
 
 /**

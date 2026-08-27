@@ -1,26 +1,23 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { LayoutGrid, List, Plus } from 'lucide-react'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { PlanningPoolSidebar } from '@/modules/planning/components/PlanningPoolSidebar'
-import { planPayloadOf, type PlanningDragPayload } from '@/modules/planning/dnd'
-import { usePlanIntoTour, useUnplanFromTour } from '@/modules/planning/hooks/usePlanning'
-import type { PlanningRejection } from '@/modules/planning/types/pool'
-import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable } from '@/shared/components/data/DataTable'
-import { SearchInput } from '@/shared/components/data/SearchInput'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 
 import { Button } from '@/shared/components/ui/button'
 
 import { TourBoard } from '../components/TourBoard'
+import { ALL_CUSTOMERS, TourFilterBar, todayIso } from '../components/TourFilterBar'
+import { TourEditDialog } from '../components/TourEditDialog'
 import { TourMapDialog } from '../components/TourMapDialog'
 import { useTourColumns } from '../components/useTourColumns'
+import { useBoardPlanning } from '../hooks/useBoardPlanning'
 import { useTourList } from '../hooks/useTours'
 import type { Tour, TourFilters } from '../types/tour'
 
@@ -33,12 +30,19 @@ export function TourListPage() {
   // que par la seconde, qui seule les montre.
   const [view, setView] = useState<'list' | 'board'>('board')
 
+  // La date est obligatoire : une tournee se lit par jour, et une liste sans
+  // date melangerait un mois de preparation. Le jour courant au depart.
   const [filters, setFilters] = useState<TourFilters>({
     page: 1,
     perPage: 25,
     sort: 'tour_date',
     direction: 'desc',
+    tourDate: todayIso(),
   })
+
+  // Le client ne filtre que le pool : une tournee en dessert plusieurs, et le
+  // serveur n'expose aucun filtre client sur `/tours`.
+  const [customerId, setCustomerId] = useState(ALL_CUSTOMERS)
 
   const { data, isPending, error, refetch } = useTourList({
     ...filters,
@@ -48,46 +52,7 @@ export function TourListPage() {
   const patch = (next: Partial<TourFilters>) =>
     setFilters((current) => ({ ...current, page: 1, ...next }))
 
-  const plan = usePlanIntoTour()
-
-  /** Rapporte ce que le serveur a fait, refus compris — il ne les invente pas. */
-  const report = (planned: string[], rejected: PlanningRejection[]) => {
-    if (planned.length > 0) {
-      toast.success(t('planning.planned', { count: planned.length }))
-    }
-
-    for (const refusal of rejected) {
-      toast.warning(t(`planning.rejected.${refusal.reason}`, { defaultValue: refusal.reason }))
-    }
-  }
-
-  const send = (tourId: string, payload: { orderIds?: string[]; orderServiceIds?: string[] }) =>
-    plan.mutate(
-      { tourId, ...payload },
-      { onSuccess: (result) => report(result.planned, result.rejected) },
-    )
-
-  const drop = (tourId: string, drag: PlanningDragPayload) => send(tourId, planPayloadOf(drag))
-
-  const unplan = useUnplanFromTour()
-
-  const release = (tourId: string, orderServiceIds: string[]) =>
-    unplan.mutate(
-      { tourId, orderServiceIds },
-      {
-        onSuccess: (result) => {
-          if (result.unplanned.length > 0) {
-            toast.success(t('planning.unplanned', { count: result.unplanned.length }))
-          }
-
-          for (const refusal of result.rejected) {
-            toast.warning(
-              t(`planning.rejected.${refusal.reason}`, { defaultValue: refusal.reason }),
-            )
-          }
-        },
-      },
-    )
+  const planning = useBoardPlanning()
 
   // Une seule tournee brouillon : le bouton du pool sait ou verser sans qu'on
   // ait a la designer. Au-dela, seul le glisser tranche, et les boutons se
@@ -99,6 +64,9 @@ export function TourListPage() {
 
   // La tournee dont on regarde le trace ; nulle quand la carte est fermee.
   const [mapped, setMapped] = useState<Tour | null>(null)
+
+  // La tournee en cours de modification ; nulle quand la fenetre est fermee.
+  const [edited, setEdited] = useState<Tour | null>(null)
 
   return (
     <div className="flex flex-col gap-6">
@@ -142,18 +110,16 @@ export function TourListPage() {
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <SearchInput
-          value={filters.search ?? ''}
-          onChange={(search) => patch({ search: search || undefined })}
-        />
-
-        <StatusFilterSelect
-          source="tour"
-          value={filters.status}
-          onChange={(status) => patch({ status })}
-        />
-      </div>
+      <TourFilterBar
+        date={filters.tourDate ?? todayIso()}
+        onDateChange={(tourDate) => patch({ tourDate })}
+        customerId={customerId}
+        onCustomerChange={setCustomerId}
+        search={filters.search ?? ''}
+        onSearchChange={(search) => patch({ search: search || undefined })}
+        status={filters.status}
+        onStatusChange={(status) => patch({ status })}
+      />
 
       {view === 'board' ? (
         <div className="flex gap-4">
@@ -166,17 +132,21 @@ export function TourListPage() {
               <TourBoard
                 tours={data?.data ?? []}
                 emptyMessage={t('tours.empty')}
-                onPlanDrop={drop}
-                onUnplan={release}
+                onPlanDrop={planning.drop}
+                onUnplan={planning.release}
                 onShowMap={setMapped}
+                onEdit={setEdited}
               />
             )}
           </div>
 
           <PlanningPoolSidebar
             requestedDate={filters.tourDate}
-            isPending={plan.isPending}
-            onPlan={soleDraft === undefined ? undefined : (payload) => send(soleDraft.id, payload)}
+            customerId={customerId === ALL_CUSTOMERS ? undefined : customerId}
+            isPending={planning.isPending}
+            onPlan={
+              soleDraft === undefined ? undefined : (payload) => planning.send(soleDraft.id, payload)
+            }
           />
         </div>
       ) : (
@@ -194,6 +164,7 @@ export function TourListPage() {
       )}
 
       <TourMapDialog tour={mapped} onClose={() => setMapped(null)} />
+      <TourEditDialog tour={edited} onClose={() => setEdited(null)} />
     </div>
   )
 }

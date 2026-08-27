@@ -72,11 +72,20 @@ describe('création d’une tournée', () => {
    * Une tournée naît au brouillon, et les moyens non affectés partent à `null` :
    * la sentinelle « aucun » ne doit jamais atteindre le serveur.
    */
+  it('annonce que le numéro est attribué par le système', async () => {
+    render()
+
+    expect(
+      await screen.findByText('Le numéro est attribué par le système à l’enregistrement.'),
+    ).toBeInTheDocument()
+
+    expect(screen.queryByLabelText(/Numéro/)).not.toBeInTheDocument()
+  })
+
   it('envoie un brouillon, moyens non affectés à null', async () => {
     const bodies = render()
 
-    await userEvent.type(await screen.findByLabelText(/Numéro/), 'TR-042')
-    await userEvent.type(screen.getByLabelText(/^Date/), '2026-09-01')
+    await userEvent.type(await screen.findByLabelText(/^Date/), '2026-09-01')
     await pick('Agence', 'Casablanca')
     await pick('Chauffeur', 'Youssef Alami')
 
@@ -84,8 +93,10 @@ describe('création d’une tournée', () => {
 
     await waitFor(() => expect(bodies).toHaveLength(1))
 
+    // Le numero n'est pas envoye : le serveur l'attribue, et le formulaire le
+    // dit plutot que de laisser un champ vide sans explication.
+    expect(bodies[0]).not.toHaveProperty('tourNumber')
     expect(bodies[0]).toMatchObject({
-      tourNumber: 'TR-042',
       tourDate: '2026-09-01',
       agencyId: AGENCY_ID,
       driverId: DRIVER_ID,

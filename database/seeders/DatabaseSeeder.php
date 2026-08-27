@@ -24,6 +24,13 @@ class DatabaseSeeder extends Seeder
             DemoAgencySeeder::class,
             DemoCustomerSeeder::class,
             DemoFleetSeeder::class,
+            // Les deux services GPS : sans eux, geocodage et itineraires
+            // s'executent sans rien changer, ce qui ressemble a une panne.
+            GpsApiConfigurationSeeder::class,
+            // Un mois de commandes suisses, pretes a planifier : depot d'abord,
+            // les commandes s'y accrochent.
+            SwissDepotSeeder::class,
+            SwissOrderSeeder::class,
         ]);
     }
 }

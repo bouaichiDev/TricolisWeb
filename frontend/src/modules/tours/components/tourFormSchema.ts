@@ -8,9 +8,14 @@ import { z } from 'zod'
  */
 export const NONE = 'none'
 
-/** Contraintes reprises de `StoreTourRequest`. */
+/**
+ * Contraintes reprises de `StoreTourRequest`.
+ *
+ * Le numéro n'y figure pas : le serveur l'attribue, un entier qui avance de un.
+ * Le laisser saisir produisait des doublons que la contrainte d'unicité
+ * refusait une fois le formulaire rempli.
+ */
 export const tourSchema = z.object({
-  tourNumber: z.string().min(1, 'validation.required').max(255, 'validation.max'),
   tourDate: z.string().min(1, 'validation.required'),
   agencyId: z.string().min(1, 'validation.required'),
   depotId: z.string(),

@@ -6,8 +6,10 @@ namespace App\Modules\Planning\Actions;
 
 use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Orders\Enums\OrderServiceStatus;
+use App\Modules\Orders\Models\OrderService;
+use App\Modules\Planning\Jobs\RecalculateTourRouteJob;
+use App\Modules\Planning\Services\StopSequence;
 use App\Modules\Tours\Models\Tour;
-use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
 use App\Shared\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +46,7 @@ final readonly class UnplanOrderServices
 
     public function __construct(
         private TourTotals $totals,
+        private StopSequence $sequence,
         private WriteAuditLog $audit,
     ) {}
 
@@ -58,10 +61,12 @@ final readonly class UnplanOrderServices
         }
 
         return DB::transaction(function () use ($tour, $orderServiceIds, $context): array {
+            $targets = $this->wholeOrders($tour, $orderServiceIds);
+
             // Verrouillees le temps du retrait : un autre planificateur ne doit
             // pas replanifier ailleurs un service qu'on est en train de rendre.
             $assignments = TourStopService::query()
-                ->whereIn('order_service_id', $orderServiceIds)
+                ->whereIn('order_service_id', $targets)
                 ->where('is_active_assignment', true)
                 ->whereHas('tourStop', fn ($stop) => $stop->where('tour_id', $tour->id))
                 ->with('tourStop')
@@ -73,7 +78,7 @@ final readonly class UnplanOrderServices
             $rejected = [];
             $touchedStops = [];
 
-            foreach ($orderServiceIds as $id) {
+            foreach ($targets as $id) {
                 $assignment = $assignments->get($id);
 
                 if ($assignment === null) {
@@ -92,7 +97,7 @@ final readonly class UnplanOrderServices
                 // emporterait par cascade l'historique qu'on vient tout juste
                 // de preserver en desactivant.
                 if ($tour->status->value === 'draft') {
-                    $this->pruneStops($tour, array_keys($touchedStops));
+                    $this->sequence->pruneAndCompact($tour, array_keys($touchedStops));
                 }
 
                 $this->totals->recalculate($tour);
@@ -107,10 +112,52 @@ final readonly class UnplanOrderServices
                     null,
                     $context->ipAddress,
                 );
+
+                // La composition a change : l'itineraire connu decrit un ordre
+                // qui n'existe plus. Le calcul part en file, apres la
+                // transaction, pour ne pas faire attendre le depot.
+                RecalculateTourRouteJob::dispatch($tour->id)->afterCommit();
             }
 
             return ['unplanned' => $unplanned, 'rejected' => $rejected];
         });
+    }
+
+    /**
+     * Étend la demande à toute la commande, dans cette tournée.
+     *
+     * **Retirer un service retire ses frères**, règle posée par le propriétaire
+     * du projet le 27 août 2026. C'est la symétrique du §40 : glisser une
+     * commande prend tous ses services éligibles, la retirer les rend tous.
+     *
+     * Sans cela, retirer la livraison laisserait le chargement au dépôt — un
+     * arrêt où le camion charge ce que personne n'ira livrer.
+     *
+     * L'extension s'arrête à **cette** tournée : une commande répartie sur deux
+     * tournées ne perd que sa part ici.
+     *
+     * @param  list<string>  $orderServiceIds
+     * @return list<string>
+     */
+    private function wholeOrders(Tour $tour, array $orderServiceIds): array
+    {
+        $orderIds = OrderService::whereIn('id', $orderServiceIds)->pluck('order_id')->unique();
+
+        if ($orderIds->isEmpty()) {
+            // Aucun service connu : les identifiants restent tels quels, pour
+            // que chacun rende son refus « non planifie ».
+            return array_values($orderServiceIds);
+        }
+
+        $siblings = OrderService::whereIn('order_id', $orderIds)
+            ->whereHas('tourStopServices', fn ($assignments) => $assignments
+                ->where('is_active_assignment', true)
+                ->whereHas('tourStop', fn ($stop) => $stop->where('tour_id', $tour->id)))
+            ->orderBy('sequence')
+            ->pluck('id')
+            ->all();
+
+        return array_values(array_unique(array_merge($orderServiceIds, $siblings)));
     }
 
     /** Rend le service au pool, en gardant ou non la trace de son passage. */
@@ -125,44 +172,5 @@ final readonly class UnplanOrderServices
         $assignment->orderService?->forceFill([
             'status' => OrderServiceStatus::READY_TO_PLAN->value,
         ])->save();
-    }
-
-    /**
-     * Retire les arrêts devenus vides et resserre les rangs. **Brouillons
-     * seulement.**
-     *
-     * Un arrêt sans service actif n'est plus un arrêt : le camion n'y a plus
-     * rien à faire. Le §115 demande de compacter les séquences ensuite, sans
-     * quoi la tournée garderait des trous que l'ordre d'affichage révèle.
-     *
-     * @param  list<string>  $stopIds
-     */
-    private function pruneStops(Tour $tour, array $stopIds): void
-    {
-        $emptied = TourStop::whereIn('id', $stopIds)
-            ->whereDoesntHave('services', fn ($services) => $services->where('is_active_assignment', true))
-            ->get();
-
-        if ($emptied->isEmpty()) {
-            return;
-        }
-
-        foreach ($emptied as $stop) {
-            $stop->delete();
-        }
-
-        $remaining = $tour->stops()->orderBy('sequence')->get();
-
-        // Deux temps, comme a la planification : `unique(tour_id, sequence)`
-        // refuse qu'un rang soit pris deux fois, meme le temps d'une boucle.
-        $offset = (int) $remaining->max('sequence') + 1;
-
-        foreach ($remaining as $index => $stop) {
-            $stop->forceFill(['sequence' => $offset + $index])->save();
-        }
-
-        foreach ($remaining as $index => $stop) {
-            $stop->forceFill(['sequence' => $index + 1])->save();
-        }
     }
 }

@@ -30,7 +30,13 @@ final readonly class TourListQuery
     public function paginate(ListTourRequest $request, string $organizationId): LengthAwarePaginator
     {
         $query = Tour::inOrganization($organizationId)
-            ->with(['agency:id,code,name'])
+            ->with([
+                'agency:id,code,name',
+                // Charges d'emblee : la colonne les montre, et les demander
+                // tournee par tournee ferait une requete par colonne.
+                'driver:id,code,name',
+                'vehicle:id,code,registration_number',
+            ])
             ->withCount(['stops', 'periods']);
 
         // Chargement anticipe, pas une requete par colonne : la vue en
@@ -44,7 +50,12 @@ final readonly class TourListQuery
                 ->orderBy('sequence')
                 ->with(['address', 'services' => fn ($services) => $services
                     ->where('is_active_assignment', true)
-                    ->with('orderService.order:id,order_number')])
+                    ->with([
+                        'orderService:id,order_id,service_id,service_number,weight,volume,package_count,required_time_minutes,status',
+                        'orderService.order:id,order_number,customer_id,customer_reference',
+                        'orderService.order.customer:id,code,name',
+                        'orderService.service:id,code,name',
+                    ])])
                 ->withCount(['services' => fn ($services) => $services->where('is_active_assignment', true)]),
             ]);
         }

@@ -7,6 +7,7 @@ namespace App\Modules\Planning\Actions;
 use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Planning\Jobs\RecalculateTourRouteJob;
 use App\Modules\Planning\Services\PlanningEligibility;
 use App\Modules\Planning\Services\StopGrouping;
 use App\Modules\Tours\Models\Tour;
@@ -100,6 +101,11 @@ final readonly class PlanOrderServices
                     null,
                     $context->ipAddress,
                 );
+
+                // La composition a change : l'itineraire connu decrit un ordre
+                // qui n'existe plus. Le calcul part en file, apres la
+                // transaction, pour ne pas faire attendre le depot.
+                RecalculateTourRouteJob::dispatch($tour->id)->afterCommit();
             }
 
             return ['planned' => $planned, 'rejected' => $rejected];

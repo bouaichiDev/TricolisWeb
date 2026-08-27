@@ -163,7 +163,14 @@ export function TourListPage() {
       />
       )}
 
-      <TourMapDialog tour={mapped} onClose={() => setMapped(null)} />
+      {/* La carte d'une tournee est l'ecran de planification entier : on y vient
+          pour arbitrer entre tournees, pas pour en regarder une seule. */}
+      <TourMapDialog
+        tour={mapped}
+        tours={data?.data ?? []}
+        date={filters.tourDate}
+        onClose={() => setMapped(null)}
+      />
       <TourEditDialog tour={edited} onClose={() => setEdited(null)} />
     </div>
   )

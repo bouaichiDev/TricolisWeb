@@ -451,13 +451,41 @@ describe('commandes d’une tournée', () => {
     expect(within(dialog).getByText('Tournée TR-001 sur la carte')).toBeInTheDocument()
     await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
 
-    // Leaflet mesure son conteneur au montage : dans une fenetre, dont la
-    // hauteur est automatique, un `flex-1` vaut zero pixel et la carte se monte
-    // sans jamais s'afficher. jsdom ne calcule aucune mise en page et ne peut
-    // pas voir ce vide — reste a verifier que la hauteur est bien demandee.
-    const map = document.querySelector('.leaflet-container')
+    // Leaflet mesure son conteneur au montage : sans hauteur contrainte — sur
+    // lui-meme ou sur un ancetre — il se monte sur zero pixel et ne s'affiche
+    // jamais. jsdom ne calcule aucune mise en page et ne peut pas voir ce vide ;
+    // reste a verifier qu'une hauteur est bien demandee quelque part au-dessus.
+    let node = document.querySelector('.leaflet-container')
+    let constrained = false
 
-    expect(map?.className).toMatch(/h-\[[0-9]/)
+    while (node !== null && !constrained) {
+      constrained = /h-\[[0-9]/.test(node.className)
+      node = node.parentElement
+    }
+
+    expect(constrained).toBe(true)
+  })
+
+  /**
+   * Ouvrir « la carte d'une tournée », c'est venir arbitrer : cette commande
+   * ira-t-elle dans celle-ci ou dans la voisine ? Une vue d'une seule tournée
+   * poserait la question sans donner de quoi y répondre.
+   */
+  it('ouvre l’écran de planification entier, pas une vignette', async () => {
+    render()
+
+    await screen.findByText('TR-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Voir la tournée sur la carte' }))
+
+    const dialog = await screen.findByRole('dialog')
+
+    // Le planificateur en haut, ce qui roule a gauche, ce qui attend a droite.
+    expect(within(dialog).getByText('Planification par')).toBeInTheDocument()
+    expect(within(dialog).getByText('Tournées du jour')).toBeInTheDocument()
+    expect(
+      within(dialog).getByLabelText('Rechercher une commande à planifier'),
+    ).toBeInTheDocument()
+    expect(await within(dialog).findByText('CMD-9001')).toBeInTheDocument()
   })
 
   /** Sans arrêt tracé, la carte n'aurait rien à montrer. */

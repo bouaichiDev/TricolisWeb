@@ -1,106 +1,138 @@
-import { Check, IdCard, Package, Truck } from 'lucide-react'
+import { Crosshair, IdCard, Package, Truck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { TourBoardStop } from '@/modules/tours/components/TourBoardStop'
 import type { Tour } from '@/modules/tours/types/tour'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
+import { Button } from '@/shared/components/ui/button'
 
 interface PlannedToursPanelProps {
   tours: Tour[]
-  /** Celle qui recevra : seul un brouillon peut être choisi. */
+  /** Celle qu'on regarde et qui reçoit ; seule elle est détaillée. */
   selectedTourId: string | null
   onSelectTour: (tourId: string) => void
   /** Montre un arrêt sur la carte. */
   onFocusStop: (latitude: number, longitude: number) => void
+  onUnplan?: (tourId: string, orderServiceIds: string[]) => void
 }
 
 /**
- * Ce qui est déjà planifié, tournée par tournée.
+ * La tournée qu'on regarde, dépliée comme dans les colonnes.
  *
- * La carte montre où passent les camions ; ce panneau dit **lesquels**, avec
- * quoi, et dans quel ordre. Cliquer un arrêt l'amène au centre — le chercher à
- * l'œil parmi trente marqueurs ne marche qu'avec trois.
+ * **Une seule à la fois.** Empiler les tournées du jour redonnait la vue en
+ * colonnes en plus étroit, sans rien apporter : ce qu'on vient chercher ici,
+ * c'est le détail de celle qu'on est en train de composer, en face du terrain.
+ * Les autres restent accessibles par leur numéro, au-dessus.
  *
- * Choisir une tournée ne se fait que sur un brouillon : les autres n'acceptent
- * plus de commande, et proposer le choix laisserait croire le contraire.
+ * Les arrêts sont ceux du tableau — même composant, donc même dépliage, mêmes
+ * commandes et même retrait. Deux affichages d'un arrêt finiraient par diverger.
  */
 export function PlannedToursPanel({
   tours,
   selectedTourId,
   onSelectTour,
   onFocusStop,
+  onUnplan,
 }: PlannedToursPanelProps) {
   const { t } = useTranslation()
+
+  const selected = tours.find((tour) => tour.id === selectedTourId) ?? null
+  const others = tours.filter((tour) => tour.id !== selectedTourId)
 
   if (tours.length === 0) {
     return <p className="text-sm text-muted-foreground">{t('planning.noPlannedTour')}</p>
   }
 
   return (
-    <ul className="flex flex-col gap-3">
-      {tours.map((tour) => {
-        const draft = tour.status === 'draft'
-        const selected = tour.id === selectedTourId
+    <div className="flex flex-col gap-3">
+      {others.length === 0 ? null : (
+        <div className="flex flex-col gap-1">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {t('planning.otherTours')}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {others.map((tour) => (
+              <Button
+                key={tour.id}
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={tour.status !== 'draft'}
+                title={tour.status === 'draft' ? undefined : t('planning.onlyDraftReceives')}
+                onClick={() => onSelectTour(tour.id)}
+              >
+                {tour.tourNumber}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
-        return (
-          <li
-            key={tour.id}
-            className={`rounded-lg border p-2 ${selected ? 'border-primary bg-primary/5' : ''}`}
-          >
-            <button
-              type="button"
-              disabled={!draft}
-              onClick={() => onSelectTour(tour.id)}
-              className="flex w-full items-center justify-between gap-2 text-left disabled:cursor-default"
-            >
-              <span className="flex min-w-0 items-center gap-1.5 font-medium">
-                {selected ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
-                <span className="truncate">{tour.tourNumber}</span>
-              </span>
-              <StatusBadge status={tour.status} source="tour" />
-            </button>
+      {selected === null ? (
+        <p className="text-sm text-muted-foreground">{t('planning.pickTour')}</p>
+      ) : (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate font-medium">{selected.tourNumber}</span>
+            <StatusBadge status={selected.status} source="tour" />
+          </div>
 
-            <p className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1" title={t('tours.fields.driver')}>
-                <IdCard className="size-3" aria-hidden />
-                {tour.driverName ?? t('tours.unassigned')}
-              </span>
-              <span className="flex items-center gap-1" title={t('tours.fields.vehicle')}>
-                <Truck className="size-3" aria-hidden />
-                {tour.vehicleRegistration ?? t('tours.unassigned')}
-              </span>
-              <span className="flex items-center gap-1" title={t('tours.fields.packages')}>
-                <Package className="size-3" aria-hidden />
-                {tour.totalPackages}
-              </span>
-            </p>
+          <p className="flex flex-wrap gap-x-3 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1" title={t('tours.fields.driver')}>
+              <IdCard className="size-3" aria-hidden />
+              {selected.driverName ?? t('tours.unassigned')}
+            </span>
+            <span className="flex items-center gap-1" title={t('tours.fields.vehicle')}>
+              <Truck className="size-3" aria-hidden />
+              {selected.vehicleRegistration ?? t('tours.unassigned')}
+            </span>
+            <span className="flex items-center gap-1" title={t('tours.fields.packages')}>
+              <Package className="size-3" aria-hidden />
+              {selected.totalPackages}
+            </span>
+          </p>
 
-            <ol className="mt-1.5 flex flex-col gap-0.5">
-              {(tour.stops ?? []).map((stop) => (
-                <li key={stop.id}>
-                  <button
-                    type="button"
-                    disabled={
-                      stop.latitude === null ||
-                      stop.latitude === undefined ||
-                      stop.longitude === null ||
-                      stop.longitude === undefined
-                    }
-                    onClick={() =>
-                      onFocusStop(stop.latitude as number, stop.longitude as number)
-                    }
-                    className="flex w-full items-center gap-1.5 rounded px-1 py-0.5 text-left text-[11px] hover:bg-muted disabled:opacity-50"
-                  >
-                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium">
-                      {stop.sequence}
-                    </span>
-                    <span className="truncate">{stop.addressLabel ?? stop.addressId}</span>
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </li>
-        )
-      })}
-    </ul>
+          <div className="flex flex-col gap-1">
+            {(selected.stops ?? []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t('tours.noStop')}</p>
+            ) : (
+              (selected.stops ?? []).map((stop) => {
+                const placed =
+                  stop.latitude !== null &&
+                  stop.latitude !== undefined &&
+                  stop.longitude !== null &&
+                  stop.longitude !== undefined
+
+                return (
+                  <div key={stop.id} className="flex items-start gap-1">
+                    <div className="min-w-0 flex-1">
+                      <TourBoardStop
+                        stop={stop}
+                        onUnplan={
+                          onUnplan === undefined ? undefined : (ids) => onUnplan(selected.id, ids)
+                        }
+                      />
+                    </div>
+
+                    {/* Un bouton, pas un double-clic : le second ne se devine
+                        pas, et le clic simple deplie deja l'arret. */}
+                    <button
+                      type="button"
+                      disabled={!placed}
+                      title={placed ? t('planning.showOnMap') : t('planning.notPlaceable')}
+                      aria-label={t('planning.showOnMap')}
+                      className="mt-1.5 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+                      onClick={() => onFocusStop(stop.latitude as number, stop.longitude as number)}
+                    >
+                      <Crosshair className="size-3.5" aria-hidden />
+                    </button>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </section>
+      )}
+    </div>
   )
 }

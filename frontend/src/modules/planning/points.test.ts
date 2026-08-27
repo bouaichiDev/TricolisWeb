@@ -11,6 +11,7 @@ const service = (overrides: Partial<PoolService> = {}): PoolService => ({
   serviceCode: 'DEL',
   serviceName: 'Livraison',
   status: 'pending',
+  isLoading: false,
   addressId: 'addr-1',
   addressLabel: 'Rabat',
   latitude: 34,

@@ -30,6 +30,7 @@ const poolOrder = (overrides: Record<string, unknown> = {}) => ({
       id: SERVICE_ID,
       serviceNumber: 'SRV-1',
       serviceCode: 'LOAD',
+      isLoading: true,
       serviceName: 'Chargement',
       status: 'ready_to_plan',
       addressId: '01JQZ0000000000000ADDR01',
@@ -244,13 +245,14 @@ describe('vue carte', () => {
 
     await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
 
-    // La tournee confirmee apparait deux fois : dans le panneau de gauche, qui
-    // dit ce qui roule deja, et dans la legende de la carte.
+    // Le panneau de gauche ne detaille que la tournee choisie ; les autres
+    // restent accessibles par leur numero. TR-DEJA apparait donc en bouton et
+    // dans la legende de la carte.
     expect(await screen.findAllByText('TR-DEJA')).toHaveLength(2)
 
     // Le planificateur est nomme en haut : une brouillon n'appartient qu'a qui
     // l'a ouverte.
-    expect(screen.getByText('Planification par')).toBeInTheDocument()
+    expect(screen.getByText('Connecté comme')).toBeInTheDocument()
   })
 
   /** Les arrêts ne sont demandés que par la vue qui les trace. */
@@ -312,7 +314,7 @@ describe('panneaux de la vue carte', () => {
     await screen.findByText('CMD-42')
     await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
 
-    await screen.findByText('Planification par')
+    await screen.findByText('Connecté comme')
     expect(screen.queryByRole('button', { name: 'Planifier la commande' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))

@@ -1588,7 +1588,11 @@
     "noPlannedTour": "Aucune tournée pour ce filtre.",
     "receiving": "Les commandes iront dans {{number}}.",
     "showOnMap": "Montrer sur la carte",
-    "notPlaceable": "Adresse non géocodée : impossible à placer."
+    "notPlaceable": "Adresse non géocodée : impossible à placer.",
+    "currentUser": "Connecté comme",
+    "otherTours": "Autres tournées du jour",
+    "selectedTour": "Tournée sélectionnée",
+    "onlyDraftReceives": "Seule une tournée brouillon peut recevoir."
   },
   "tours": {
     "title": "Tournées",

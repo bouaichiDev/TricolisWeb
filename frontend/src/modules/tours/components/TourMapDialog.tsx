@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { PlanningMapScreen } from '@/modules/planning/components/map/PlanningMapScreen'
-import { usePlanIntoTour, usePlanningPool } from '@/modules/planning/hooks/usePlanning'
+import {
+  usePlanIntoTour,
+  usePlanningPool,
+  useUnplanFromTour,
+} from '@/modules/planning/hooks/usePlanning'
 import type { PlanningRejection } from '@/modules/planning/types/pool'
 import {
   Dialog,
@@ -73,6 +77,7 @@ function MapBody({ tour, tours, date }: { tour: Tour; tours: Tour[]; date?: stri
   })
 
   const plan = usePlanIntoTour()
+  const unplan = useUnplanFromTour()
 
   const report = (planned: string[], rejected: PlanningRejection[]) => {
     if (planned.length > 0) {
@@ -100,6 +105,20 @@ function MapBody({ tour, tours, date }: { tour: Tour; tours: Tour[]; date?: stri
           selectedTourId={selectedTourId}
           onSelectTour={setSelectedTourId}
           isPending={plan.isPending}
+          onUnplan={(tourId, orderServiceIds) =>
+            unplan.mutate(
+              { tourId, orderServiceIds },
+              {
+                onSuccess: (result) => {
+                  if (result.unplanned.length > 0) {
+                    toast.success(t('planning.unplanned', { count: result.unplanned.length }))
+                  }
+
+                  report([], result.rejected)
+                },
+              },
+            )
+          }
           onPlanOrder={(orderId) => {
             if (selectedTourId === null) return
 

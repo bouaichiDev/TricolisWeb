@@ -6,6 +6,7 @@ import type { Tour } from '@/modules/tours/types/tour'
 import { useAuth } from '@/shared/hooks/useAuth'
 
 import type { MapTarget } from './MapFocus'
+import { deliveryPoint } from '../../focus'
 import { PlannedToursPanel } from './PlannedToursPanel'
 import { PoolMapPanel } from './PoolMapPanel'
 import { PlanningMap } from '../PlanningMap'
@@ -19,6 +20,8 @@ interface PlanningMapScreenProps {
   selectedTourId: string | null
   onSelectTour: (tourId: string) => void
   onPlanOrder: (orderId: string) => void
+  /** Absent quand la vue est en lecture seule. */
+  onUnplan?: (tourId: string, orderServiceIds: string[]) => void
   isPending: boolean
 }
 
@@ -45,6 +48,7 @@ export function PlanningMapScreen({
   selectedTourId,
   onSelectTour,
   onPlanOrder,
+  onUnplan,
   isPending,
 }: PlanningMapScreenProps) {
   const { t } = useTranslation()
@@ -57,13 +61,9 @@ export function PlanningMapScreen({
     setFocus({ latitude, longitude, token: Date.now() })
 
   const aimAtOrder = (order: PoolOrder) => {
-    const placed = order.services.find(
-      (service) => service.latitude !== null && service.longitude !== null,
-    )
+    const point = deliveryPoint(order)
 
-    if (placed !== undefined) {
-      aim(placed.latitude as number, placed.longitude as number)
-    }
+    if (point !== null) aim(point.latitude, point.longitude)
   }
 
   const drafts = tours.filter((tour) => tour.status === 'draft')
@@ -73,7 +73,7 @@ export function PlanningMapScreen({
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2">
         <p className="flex items-center gap-2 text-sm">
           <UserRound className="size-4 text-muted-foreground" aria-hidden />
-          <span className="text-muted-foreground">{t('planning.plannedBy')}</span>
+          <span className="text-muted-foreground">{t('planning.currentUser')}</span>
           <span className="font-medium">
             {user === null ? '—' : `${user.firstName} ${user.lastName}`}
           </span>
@@ -97,6 +97,7 @@ export function PlanningMapScreen({
             selectedTourId={selectedTourId}
             onSelectTour={onSelectTour}
             onFocusStop={aim}
+            onUnplan={onUnplan}
           />
         </section>
 

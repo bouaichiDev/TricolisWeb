@@ -19,10 +19,22 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Les totaux portent sur ces seuls services : une commande à moitié planifiée
  * n'apporte à la tournée que ce qui reste.
  *
+ * Les identifiants des services de chargement sont **résolus une fois** par le
+ * contrôleur et passés ici : les redemander commande par commande poserait la
+ * même question cinquante fois.
+ *
  * @mixin Order
  */
 class PlanningPoolResource extends JsonResource
 {
+    /**
+     * @param  list<string>  $loadingServiceIds  résolus une fois par le contrôleur
+     */
+    public function __construct($resource, private readonly array $loadingServiceIds = [])
+    {
+        parent::__construct($resource);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -48,6 +60,10 @@ class PlanningPoolResource extends JsonResource
                 'id' => $service->id,
                 'serviceNumber' => $service->service_number,
                 'serviceCode' => $service->relationLoaded('service') ? $service->service?->code : null,
+                // Le chargement se fait au depot : toutes les commandes y
+                // pointent le meme lieu. L'ecran a besoin de le distinguer pour
+                // centrer la carte sur la livraison, la ou le camion va.
+                'isLoading' => in_array($service->service_id, $this->loadingServiceIds, true),
                 'serviceName' => $service->relationLoaded('service') ? $service->service?->name : null,
                 'status' => $service->status?->value ?? $service->status,
                 'addressId' => $service->address_id,

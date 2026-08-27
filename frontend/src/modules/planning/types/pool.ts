@@ -5,6 +5,14 @@ export interface PoolService {
   serviceCode: string | null
   serviceName: string | null
   status: string
+  /**
+   * Ce service est-il un chargement ?
+   *
+   * Le serveur tranche, d'après les codes réglés de l'organisation. L'écran s'en
+   * sert pour centrer la carte sur la livraison : tous les chargements pointent
+   * le même dépôt, et y aller n'apprend rien.
+   */
+  isLoading: boolean
   addressId: string | null
   addressLabel: string | null
   /** Nuls tant que l'adresse n'est pas géocodée : la carte ne peut alors la poser. */

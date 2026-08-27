@@ -13,7 +13,7 @@ import { PlanningMapScreen } from '../components/map/PlanningMapScreen'
 import { PlanningModeSwitcher, type PlanningMode } from '../components/PlanningModeSwitcher'
 import { PlanningPanels } from '../components/PlanningPanels'
 import { planPayloadOf, type PlanningDragPayload } from '../dnd'
-import { usePlanIntoTour, usePlanningPool } from '../hooks/usePlanning'
+import { usePlanIntoTour, usePlanningPool, useUnplanFromTour } from '../hooks/usePlanning'
 import type { PlanningRejection, PoolFilters } from '../types/pool'
 
 /**
@@ -60,6 +60,7 @@ export function PlanningPage() {
     withStops: mode === 'map',
   })
   const plan = usePlanIntoTour()
+  const unplan = useUnplanFromTour()
 
   const orders = pool.data?.data ?? []
   const visible = tours.data?.data ?? []
@@ -128,6 +129,20 @@ export function PlanningPage() {
           onSelectTour={setSelectedTourId}
           onPlanOrder={(orderId) => send({ orderIds: [orderId] })}
           isPending={plan.isPending}
+          onUnplan={(tourId, orderServiceIds) =>
+            unplan.mutate(
+              { tourId, orderServiceIds },
+              {
+                onSuccess: (result) => {
+                  if (result.unplanned.length > 0) {
+                    toast.success(t('planning.unplanned', { count: result.unplanned.length }))
+                  }
+
+                  report([], result.rejected)
+                },
+              },
+            )
+          }
         />
       ) : (
         <PlanningPanels

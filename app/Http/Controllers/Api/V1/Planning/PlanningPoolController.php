@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Planning\ListPlanningPoolRequest;
 use App\Http\Resources\Api\V1\Planning\PlanningPoolResource;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Organizations\Models\Organization;
+use App\Modules\Planning\Services\LoadingServices;
 use App\Modules\Planning\Services\PlanningEligibility;
 use App\Modules\Tours\Models\Tour;
 use App\Shared\Http\Responses\ApiResponse;
@@ -80,8 +82,14 @@ class PlanningPoolController extends Controller
         // proche pour que l'ecran sache ce qui presse.
         $paginator = $query->orderBy('order_number')->paginate($request->getPerPage());
 
+        // Une seule fois pour toute la page : la reconnaissance passe par les
+        // codes regles de l'organisation, pas par une constante ecrite ici.
+        $loadingIds = app(LoadingServices::class)->serviceIds(
+            Organization::findOrFail($organizationId),
+        );
+
         return ApiResponse::paginated(
-            $paginator->through(fn (Order $order) => new PlanningPoolResource($order)),
+            $paginator->through(fn (Order $order) => new PlanningPoolResource($order, $loadingIds)),
         );
     }
 }

@@ -124,6 +124,7 @@ const poolOrder = {
       id: '01JQZ000000000000000SVC1',
       serviceNumber: 'S-1',
       serviceCode: 'DEL',
+      isLoading: false,
       serviceName: 'Livraison',
       status: 'pending',
       addressId: '01JQZ0000000000000ADDR03',
@@ -480,7 +481,7 @@ describe('commandes d’une tournée', () => {
     const dialog = await screen.findByRole('dialog')
 
     // Le planificateur en haut, ce qui roule a gauche, ce qui attend a droite.
-    expect(within(dialog).getByText('Planification par')).toBeInTheDocument()
+    expect(within(dialog).getByText('Connecté comme')).toBeInTheDocument()
     expect(within(dialog).getByText('Tournées du jour')).toBeInTheDocument()
     expect(
       within(dialog).getByLabelText('Rechercher une commande à planifier'),

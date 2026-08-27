@@ -450,6 +450,14 @@ describe('commandes d’une tournée', () => {
 
     expect(within(dialog).getByText('Tournée TR-001 sur la carte')).toBeInTheDocument()
     await waitFor(() => expect(document.querySelector('.leaflet-container')).not.toBeNull())
+
+    // Leaflet mesure son conteneur au montage : dans une fenetre, dont la
+    // hauteur est automatique, un `flex-1` vaut zero pixel et la carte se monte
+    // sans jamais s'afficher. jsdom ne calcule aucune mise en page et ne peut
+    // pas voir ce vide — reste a verifier que la hauteur est bien demandee.
+    const map = document.querySelector('.leaflet-container')
+
+    expect(map?.className).toMatch(/h-\[[0-9]/)
   })
 
   /** Sans arrêt tracé, la carte n'aurait rien à montrer. */

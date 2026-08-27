@@ -100,11 +100,14 @@ export function PlanningMapScreen({
           />
         </section>
 
+        {/* La hauteur vient d'ici : Leaflet mesure son conteneur au montage, et
+            un parent de hauteur automatique le laisserait a zero pixel. */}
         <div className="h-[70vh]">
           <PlanningMap
             orders={orders}
             tours={tours}
             focus={focus}
+            className="min-h-0 w-full flex-1 rounded-lg border"
             onPlanOrder={selectedTourId === null ? undefined : onPlanOrder}
           />
         </div>

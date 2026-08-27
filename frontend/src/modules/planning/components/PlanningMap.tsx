@@ -18,6 +18,15 @@ interface PlanningMapProps {
   onPlanOrder?: (orderId: string) => void
   /** Point à rejoindre, désigné depuis une liste. */
   focus?: MapTarget | null
+  /**
+   * Hauteur du fond de plan.
+   *
+   * **Une hauteur explicite, jamais `flex-1` par défaut.** Leaflet mesure son
+   * conteneur au montage : dans un parent de hauteur automatique — une fenêtre,
+   * par exemple — un `flex-1` vaut zéro pixel, et la carte se monte sans
+   * jamais s'afficher. L'appelant qui dispose d'une hauteur, lui, peut la
+   * passer.
+   */
   className?: string
 }
 
@@ -63,7 +72,7 @@ export function PlanningMap({ orders, tours, onPlanOrder, focus, className }: Pl
 
   if (anchor === undefined) {
     return (
-      <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
+      <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
         <p className="font-medium">{t('planning.mapEmpty')}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t('planning.mapEmptyHint')}</p>
       </div>
@@ -71,12 +80,12 @@ export function PlanningMap({ orders, tours, onPlanOrder, focus, className }: Pl
   }
 
   return (
-    <div className="flex h-full flex-col gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       <MapContainer
         center={[anchor.latitude, anchor.longitude]}
         zoom={11}
         scrollWheelZoom
-        className={className ?? 'min-h-0 flex-1 w-full rounded-lg border'}
+        className={className ?? 'h-[28rem] w-full rounded-lg border'}
       >
         <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
         <MapFocus target={focus ?? null} />

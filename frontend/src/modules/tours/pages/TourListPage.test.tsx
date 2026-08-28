@@ -158,6 +158,10 @@ function render(overrides: Record<string, unknown> = {}, statuses: unknown[] = [
     http.get(`${API}/vehicles`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder]))),
     http.post(`${API}/tours/:id/unplan`, async ({ request, params }) => {
+      // Differee, pour que l'etat bloquant soit observable : sans cela la
+      // mutation se resout avant qu'un rendu ait eu lieu.
+      await new Promise((resolve) => setTimeout(resolve, 40))
+
       unplans.push({
         url: String(params.id),
         body: (await request.json()) as Record<string, unknown>,
@@ -166,6 +170,10 @@ function render(overrides: Record<string, unknown> = {}, statuses: unknown[] = [
       return HttpResponse.json({ data: { unplanned: ['x'], rejected: [] } })
     }),
     http.post(`${API}/tours/:id/plan`, async ({ request, params }) => {
+      // Une reponse differee : sans elle, la mutation se resout avant meme
+      // qu'un rendu ait eu lieu, et l'etat bloquant reste invisible au test.
+      await new Promise((resolve) => setTimeout(resolve, 40))
+
       plans.push({
         url: String(params.id),
         body: (await request.json()) as Record<string, unknown>,
@@ -615,5 +623,30 @@ describe('modifier une tournée sans quitter le plan', () => {
     // fois — en sous-titre et dans le rappel du formulaire.
     expect(within(dialog).getAllByText('TR-001').length).toBeGreaterThan(0)
     expect(within(dialog).queryByLabelText(/Numéro/)).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * Planifier n'est pas instantané : le serveur regroupe les arrêts, promeut le
+ * chargement au dépôt et recalcule. Un écran muet invite à recliquer, et un
+ * second clic verse la commande deux fois.
+ */
+describe('attente pendant la planification', () => {
+  it('bloque les colonnes le temps de l’opération', async () => {
+    const { unplans } = render()
+
+    await screen.findByText('TR-001')
+
+    const buttons = await screen.findAllByRole('button', {
+      name: 'Retirer cet arrêt de la tournée',
+    })
+
+    await userEvent.click(buttons[0])
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Planification en cours')
+
+    await waitFor(() => expect(unplans).toHaveLength(1))
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
   })
 })

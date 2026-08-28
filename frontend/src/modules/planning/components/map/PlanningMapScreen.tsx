@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Tour } from '@/modules/tours/types/tour'
 import { useReserveTour, useTourRoute } from '@/modules/tours/hooks/useTours'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
+import { BusyOverlay } from '@/shared/components/feedback/BusyOverlay'
 import { useAuth } from '@/shared/hooks/useAuth'
 
 import type { MapTarget } from './MapFocus'
@@ -116,8 +117,14 @@ export function PlanningMapScreen({
 
   const drafts = tours.filter((tour) => tour.status === 'draft')
 
+  // Reserver, verser, retirer, conclure : tant que l'un de ces gestes est en
+  // vol, l'ecran ne repond plus. Un second clic verserait deux fois.
+  const busy = isPending || reserve.isPending || conclude.isPending
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="relative flex flex-col gap-3">
+      <BusyOverlay active={busy} label={t('planning.working')} />
+
       <PlanningSessionBar
         userName={user === null ? '—' : `${user.firstName} ${user.lastName}`}
         selected={selected}
@@ -194,7 +201,7 @@ export function PlanningMapScreen({
             onSearchChange={onSearchChange}
             onFocus={aimAtOrder}
             onPlan={receiving ? plan : undefined}
-            isPending={isPending}
+            isPending={busy}
           />
         </section>
       </div>

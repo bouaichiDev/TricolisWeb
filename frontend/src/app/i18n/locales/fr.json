@@ -40,7 +40,8 @@
     "detail": "Détail",
     "createdAt": "Créé le",
     "updatedAt": "Modifié le",
-    "open": "Ouvrir"
+    "open": "Ouvrir",
+    "working": "Traitement en cours…"
   },
   "auth": {
     "login": "Connexion",
@@ -1614,7 +1615,8 @@
     "abandonPlanTitle": "Abandonner les modifications ?",
     "abandonPlanBody": "Les {{count}} services reviennent dans les commandes à planifier, et la tournée est rendue. Son statut ne change pas.",
     "planConfirmed": "Modifications confirmées. La tournée est rendue.",
-    "planAbandoned": "Modifications abandonnées. Les commandes sont revenues à planifier."
+    "planAbandoned": "Modifications abandonnées. Les commandes sont revenues à planifier.",
+    "working": "Planification en cours…"
   },
   "tours": {
     "title": "Tournées",

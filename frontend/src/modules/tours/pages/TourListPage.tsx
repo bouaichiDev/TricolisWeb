@@ -7,6 +7,7 @@ import { LayoutGrid, List, Plus } from 'lucide-react'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { PlanningPoolSidebar } from '@/modules/planning/components/PlanningPoolSidebar'
 import { DataTable } from '@/shared/components/data/DataTable'
+import { BusyOverlay } from '@/shared/components/feedback/BusyOverlay'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 
@@ -122,7 +123,12 @@ export function TourListPage() {
       />
 
       {view === 'board' ? (
-        <div className="flex gap-4">
+        <div className="relative flex gap-4">
+          {/* Planifier n'est pas instantane : le serveur regroupe, promeut le
+              chargement au depot et recalcule. Un second clic verserait deux
+              fois. */}
+          <BusyOverlay active={planning.isPending} label={t('planning.working')} />
+
           <div className="min-w-0 flex-1">
             {error ? (
               <ErrorState error={error} onRetry={() => void refetch()} />

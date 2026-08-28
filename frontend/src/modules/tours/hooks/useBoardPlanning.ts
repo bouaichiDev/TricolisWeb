@@ -39,7 +39,9 @@ export function useBoardPlanning() {
     )
 
   return {
-    isPending: plan.isPending,
+    // Les deux gestes : l'ecran se bloque pour l'un comme pour l'autre, le
+    // temps que le serveur reponde ou echoue.
+    isPending: plan.isPending || unplan.isPending,
     send,
     drop: (tourId: string, drag: PlanningDragPayload) => send(tourId, planPayloadOf(drag)),
     release: (tourId: string, orderServiceIds: string[]) =>

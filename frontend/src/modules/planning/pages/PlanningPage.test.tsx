@@ -99,6 +99,9 @@ function render(
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder()]))),
     http.get(`${API}/tours`, () => HttpResponse.json(paginated(tours))),
     http.post(`${API}/tours/${TOUR_ID}/plan`, async ({ request }) => {
+      // Differee, pour que l'etat bloquant soit observable.
+      await new Promise((resolve) => setTimeout(resolve, 40))
+
       sent.push(await request.json())
 
       return HttpResponse.json({ data: { tour: tour(), ...result }, meta: [] })
@@ -391,7 +394,28 @@ describe('panneaux de la vue carte', () => {
     await waitFor(() => expect(sent).toHaveLength(1))
     expect(reserved).toEqual(['reserve'])
   })
+
+  /**
+   * Verser depuis la carte enchaîne deux appels — réserver, puis planifier.
+   * L'écran doit le dire, et se fermer : un second clic verserait deux fois.
+   */
+  it('bloque la carte le temps de l’opération', async () => {
+    const sent = render()
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+    await screen.findByText('Connecté comme')
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Planifier la commande' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Planification en cours')
+
+    await waitFor(() => expect(sent).toHaveLength(1))
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+  })
 })
+
 
 
 /**

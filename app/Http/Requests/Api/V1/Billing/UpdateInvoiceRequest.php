@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Billing;
 
+use App\Modules\Billing\Services\InvoiceClosure;
+use App\Shared\Database\MorphMap;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use App\Shared\Organizations\CurrentOrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,6 +22,17 @@ class UpdateInvoiceRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'status.not_in' => 'La clôture passe par « Clôturer la facture » : '
+                .'elle fige le document et déclenche ses envois.',
+        ];
     }
 
     /**
@@ -40,7 +54,13 @@ class UpdateInvoiceRequest extends FormRequest
             'currencyCode' => ['sometimes', 'string', 'size:3'],
             'externalReference' => ['sometimes', 'nullable', 'string', 'max:255'],
             'remark' => ['sometimes', 'nullable', 'string'],
-            'status' => ['sometimes', 'string', 'max:32'],
+            // Le referentiel gouverne les codes ; la cloture, elle, ne passe
+            // pas par ici.
+            'status' => [
+                'sometimes', 'string', 'max:32',
+                new ExistsInStatusReferential(MorphMap::INVOICE),
+                Rule::notIn([InvoiceClosure::CLOSED]),
+            ],
         ];
     }
 }

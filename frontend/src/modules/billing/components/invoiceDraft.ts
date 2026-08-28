@@ -12,13 +12,18 @@ export const BILLABLE_LINE_STATUS = 'billable'
  * second calcul à maintenir, et deux calculs finissent toujours par différer.
  *
  * La numérotation suit l'ordre de sélection : c'est celui que le facturier a
- * en tête, et il doit se retrouver sur le document.
+ * en tête, et il doit se retrouver sur le document. Elle démarre où on le lui
+ * dit — en ajoutant à une facture existante, repartir de 1 entrerait en
+ * collision avec les lignes déjà posées, uniques par facture.
  */
-export function linesFromServices(services: BillableService[]): InvoiceLinePayload[] {
+export function linesFromServices(
+  services: BillableService[],
+  firstNumber = 1,
+): InvoiceLinePayload[] {
   return services.map((service, index) => ({
     orderServiceId: service.id,
     orderId: service.orderId,
-    lineNumber: index + 1,
+    lineNumber: firstNumber + index,
     serviceCode: service.serviceCode ?? null,
     description: describe(service),
     customerOrderReference: service.customerReference ?? null,

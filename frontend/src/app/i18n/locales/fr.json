@@ -1786,7 +1786,16 @@
         "notClosable": "Cette facture ne peut pas être clôturée : elle doit porter au moins une ligne.",
         "confirm": "Clôturer et envoyer"
       },
-      "currencyMismatch": "Cette prestation est en {{currency}} : une facture ne porte qu’une devise."
+      "currencyMismatch": "Cette prestation est en {{currency}} : une facture ne porte qu’une devise.",
+      "edit": {
+        "title": "Modifier la facture",
+        "hint": "Tant qu’elle n’est pas clôturée. Le client ne se change pas : ses commandes portent les lignes."
+      },
+      "addLines": {
+        "action": "Ajouter des prestations",
+        "title": "Ajouter des prestations à la facture",
+        "confirm": "Ajouter les prestations retenues"
+      }
     }
   },
   "settlements": {

@@ -1,9 +1,9 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { withPermissions } from '@/test/fixtures'
+import { paginated, withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
@@ -66,6 +66,8 @@ function render(
   closable = true,
 ) {
   const closes: string[] = []
+  const updates: Record<string, unknown>[] = []
+  const addedLines: Record<string, unknown>[] = []
 
   server.use(
     http.get(`${API}/invoices/:id`, () => HttpResponse.json({ data: invoice(overrides) })),
@@ -79,15 +81,60 @@ function render(
         data: { invoice: invoice({ status: 'closed' }), exportJobs: [] },
       })
     }),
+    http.patch(`${API}/invoices/:id`, async ({ request }) => {
+      updates.push((await request.json()) as Record<string, unknown>)
+
+      return HttpResponse.json({ data: invoice(overrides) })
+    }),
+    http.post(`${API}/invoices/:id/lines`, async ({ request }) => {
+      addedLines.push((await request.json()) as Record<string, unknown>)
+
+      return HttpResponse.json({ data: {} }, { status: 201 })
+    }),
+    http.get(`${API}/customers/:id/billable-services`, () =>
+      HttpResponse.json(
+        paginated([
+          {
+            id: '01JQZ000000000000OSRV09',
+            serviceNumber: 'S-009',
+            orderId: '01JQZ00000000000000ORD9',
+            orderNumber: 'CMD-900',
+            customerReference: 'REF-9',
+            currencyCode: 'CHF',
+            serviceCode: 'DEL',
+            serviceName: 'Livraison',
+            requestedDate: '2026-08-20',
+            quantity: 1,
+            unit: 'commande',
+            customerUnitPrice: 145,
+            customerTotalPrice: 145,
+            weight: 12,
+            volume: 0.5,
+            packageCount: 2,
+            status: 'completed',
+            address: null,
+          },
+        ]),
+      ),
+    ),
+    http.get(`${API}/customers/:id/billable-services/suggestions`, () =>
+      HttpResponse.json({ data: [] }),
+    ),
+    http.get(`${API}/customers`, () => HttpResponse.json(paginated([]))),
   )
 
   renderWithProviders(<InvoiceDetailPage />, {
-    membership: withPermissions(['invoices.view', 'invoices.update', 'invoices.close']),
+    membership: withPermissions([
+      'invoices.view',
+      'invoices.update',
+      'invoices.close',
+      'customers.view',
+    ]),
     route: `/billing/invoices/${INVOICE_ID}`,
     routePath: '/billing/invoices/:id',
   })
 
-  return { closes }
+  return { closes, updates, addedLines }
 }
 
 describe('fiche facture', () => {
@@ -146,5 +193,52 @@ describe('clôture', () => {
 
     expect(await screen.findByText(/au moins une ligne/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clôturer et envoyer' })).toBeDisabled()
+  })
+
+})
+
+describe('modification d’un brouillon', () => {
+  /** Au brouillon, l'en-tête se corrige : la facture n'engage encore personne. */
+  it('corrige l’en-tête d’un brouillon', async () => {
+    const { updates } = render()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.clear(within(dialog).getByLabelText('Remarque'))
+    await userEvent.type(within(dialog).getByLabelText('Remarque'), 'Refacturée')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(updates).toHaveLength(1))
+    expect(updates[0].remark).toBe('Refacturée')
+  })
+
+  /**
+   * Les numéros reprennent après le dernier : repartir de 1 entrerait en
+   * collision avec les lignes déjà posées, uniques par facture.
+   */
+  it('verse d’autres prestations à la suite des lignes existantes', async () => {
+    const { addedLines } = render()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajouter des prestations' }))
+
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Retenir la prestation S-009' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter les prestations retenues' }))
+
+    await waitFor(() => expect(addedLines).toHaveLength(1))
+    expect(addedLines[0].orderServiceId).toBe('01JQZ000000000000OSRV09')
+    expect(addedLines[0].lineNumber).toBe(2)
+  })
+
+  /** Clôturée, la facture ne s'édite plus : les actions disparaîssent. */
+  it('n’offre ni modification ni ajout sur une facture clôturée', async () => {
+    render({ status: 'closed' })
+
+    await screen.findByText('Livraison Genève')
+
+    expect(screen.queryByRole('button', { name: 'Modifier' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ajouter des prestations' }),
+    ).not.toBeInTheDocument()
   })
 })

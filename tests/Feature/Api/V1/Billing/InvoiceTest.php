@@ -179,8 +179,8 @@ describe('invoices read, update and delete', function (): void {
             ->assertJsonPath('data.id', $invoice->id);
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->patchJson("/api/v1/invoices/{$invoice->id}", ['status' => 'issued'])
-            ->assertOk()->assertJsonPath('data.status', 'issued');
+            ->patchJson("/api/v1/invoices/{$invoice->id}", ['remark' => 'Corrigée'])
+            ->assertOk()->assertJsonPath('data.remark', 'Corrigée');
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->deleteJson("/api/v1/invoices/{$invoice->id}")->assertNoContent();
@@ -196,7 +196,10 @@ describe('invoices read, update and delete', function (): void {
             ->getJson("/api/v1/invoices/{$foreign->id}")->assertNotFound();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->patchJson("/api/v1/invoices/{$foreign->id}", ['status' => 'x'])->assertNotFound();
+            // Charge valide : c'est l'appartenance qu'on veut voir refusee, et
+            // une validation qui echoue d'abord repondrait 422 sans rien dire de
+            // la portee.
+            ->patchJson("/api/v1/invoices/{$foreign->id}", ['remark' => 'x'])->assertNotFound();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->deleteJson("/api/v1/invoices/{$foreign->id}")->assertNotFound();

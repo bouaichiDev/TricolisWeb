@@ -30,6 +30,20 @@ export const invoicesApi = {
   addLine: (invoiceId: string, payload: InvoiceLinePayload) =>
     api.post<ApiResource<unknown>>(`/invoices/${invoiceId}/lines`, payload),
 
+  /**
+   * Verser plusieurs prestations d'un coup.
+   *
+   * L'API n'expose pas d'ajout groupé : les lignes partent l'une après l'autre,
+   * **en séquence**. En parallèle, deux numéros de ligne pourraient être
+   * attribués avant qu'aucun ne soit écrit, et l'unicité par facture ferait
+   * échouer la seconde.
+   */
+  addLines: async (invoiceId: string, payloads: InvoiceLinePayload[]) => {
+    for (const payload of payloads) {
+      await api.post<ApiResource<unknown>>(`/invoices/${invoiceId}/lines`, payload)
+    }
+  },
+
   removeLine: (invoiceId: string, lineId: string) =>
     api.delete<void>(`/invoices/${invoiceId}/lines/${lineId}`),
 

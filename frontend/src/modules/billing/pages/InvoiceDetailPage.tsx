@@ -1,9 +1,11 @@
-import { Lock } from 'lucide-react'
+import { Lock, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 
+import { InvoiceAddLinesDialog } from '../components/InvoiceAddLinesDialog'
 import { InvoiceCloseDialog } from '../components/InvoiceCloseDialog'
+import { InvoiceEditDialog } from '../components/InvoiceEditDialog'
 import { InvoiceLinesTable } from '../components/InvoiceLinesTable'
 import { useInvoice, useRemoveInvoiceLine } from '../hooks/useInvoices'
 import type { InvoiceLine } from '../types/invoice'
@@ -21,14 +23,25 @@ import { formatDate, formatMoney } from '@/shared/utils/format'
 /**
  * Une facture, telle qu'elle est et telle qu'elle partira.
  *
+ * **Au brouillon, tout se corrige** : l'en-tête, les lignes qu'on retire, celles
+ * qu'on ajoute. C'est l'état où la facture n'engage encore personne.
+ *
  * **Clôturée, elle ne s'édite plus.** Le §22 la fige : le document est peut-être
  * déjà chez le client, et le contredire en base laisserait deux vérités. Les
  * actions d'écriture disparaissent alors plutôt que d'échouer au clic.
+ *
+ * **Le seul changement d'état est la clôture**, et il ne se fait pas par un
+ * menu de statuts : le référentiel ne connaît que `draft → closed`, et ce
+ * passage déclenche les envois. Le proposer comme un statut ordinaire laisserait
+ * croire qu'on peut le poser sans conséquence — le serveur le refuse d'ailleurs
+ * sur la route de mise à jour.
  */
 export function InvoiceDetailPage() {
   const { t } = useTranslation()
   const { id = '' } = useParams<{ id: string }>()
   const [closing, setClosing] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [adding, setAdding] = useState(false)
   const [toRemove, setToRemove] = useState<InvoiceLine | null>(null)
 
   const { data: invoice, isPending, error, refetch } = useInvoice(id)
@@ -47,12 +60,20 @@ export function InvoiceDetailPage() {
         description={invoice.customer?.name ?? ''}
         actions={
           editable ? (
-            <PermissionGuard permission="invoices.close">
-              <Button onClick={() => setClosing(true)}>
-                <Lock className="size-4" aria-hidden />
-                {t('billing.invoices.close.action')}
-              </Button>
-            </PermissionGuard>
+            <span className="flex flex-wrap items-center gap-2">
+              <PermissionGuard permission="invoices.update">
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  <Pencil className="size-4" aria-hidden />
+                  {t('common.edit')}
+                </Button>
+              </PermissionGuard>
+              <PermissionGuard permission="invoices.close">
+                <Button onClick={() => setClosing(true)}>
+                  <Lock className="size-4" aria-hidden />
+                  {t('billing.invoices.close.action')}
+                </Button>
+              </PermissionGuard>
+            </span>
           ) : (
             <StatusBadge status={invoice.status} />
           )
@@ -93,6 +114,16 @@ export function InvoiceDetailPage() {
       <SectionCard
         title={t('billing.invoices.sections.lines')}
         description={editable ? undefined : t('billing.invoices.closedHint')}
+        actions={
+          editable ? (
+            <PermissionGuard permission="invoices.update">
+              <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
+                <Plus className="size-4" aria-hidden />
+                {t('billing.invoices.addLines.action')}
+              </Button>
+            </PermissionGuard>
+          ) : null
+        }
       >
         <InvoiceLinesTable
           lines={invoice.lines ?? []}
@@ -101,6 +132,14 @@ export function InvoiceDetailPage() {
           onRemove={setToRemove}
         />
       </SectionCard>
+
+      {editing ? (
+        <InvoiceEditDialog invoice={invoice} open onOpenChange={setEditing} />
+      ) : null}
+
+      {adding ? (
+        <InvoiceAddLinesDialog invoice={invoice} open onOpenChange={setAdding} />
+      ) : null}
 
       <InvoiceCloseDialog
         invoiceId={id}

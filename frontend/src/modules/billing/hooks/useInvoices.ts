@@ -119,6 +119,40 @@ export function useDeleteInvoice() {
   })
 }
 
+/**
+ * Corriger l'en-tête d'une facture au brouillon.
+ *
+ * Le détail **et** la liste sont invalidés : le numéro et la date s'affichent
+ * dans les deux, et n'en rafraîchir qu'un laisserait deux vérités à l'écran.
+ */
+export function useUpdateInvoice(id: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: (payload: Partial<InvoicePayload>) => invoicesApi.update(id, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: invoiceKeys.all })
+      toast.success(t('toast.updated'))
+    },
+  })
+}
+
+/** Verser plusieurs prestations dans une facture existante. */
+export function useAddInvoiceLines(invoiceId: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: (payloads: InvoiceLinePayload[]) => invoicesApi.addLines(invoiceId, payloads),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: invoiceKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['billable-services'] })
+      toast.success(t('toast.created'))
+    },
+  })
+}
+
 export function useAddInvoiceLine(invoiceId: string) {
   const queryClient = useQueryClient()
   const { t } = useTranslation()

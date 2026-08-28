@@ -219,3 +219,31 @@ describe('aperçu avant clôture', function (): void {
             ->assertJsonPath('data.closable', false);
     });
 });
+
+describe('la clôture ne se contourne pas', function (): void {
+    /**
+     * **Le trou que cette phase a ouvert.** `PATCH` acceptait n'importe quel
+     * statut : poser `closed` à la main figeait la facture sans créer le
+     * moindre envoi. Le client n'aurait rien reçu, et rien ne l'aurait dit.
+     */
+    it('refuse de clôturer par une mise à jour', function (): void {
+        $invoice = ($this->invoice)();
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->patchJson("/api/v1/invoices/{$invoice->id}", ['status' => 'closed'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
+
+        expect($invoice->fresh()->status)->toBe('draft');
+    });
+
+    /** Le référentiel gouverne les codes : un statut inventé n'entre pas. */
+    it('refuse un statut absent du référentiel', function (): void {
+        $invoice = ($this->invoice)();
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->patchJson("/api/v1/invoices/{$invoice->id}", ['status' => 'issued'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('status');
+    });
+});

@@ -30,6 +30,9 @@ class BillableServiceResource extends JsonResource
             'orderId' => $this->order_id,
             'orderNumber' => $this->whenLoaded('order', fn () => $this->order->order_number),
             'customerReference' => $this->whenLoaded('order', fn () => $this->order->customer_reference),
+            // La devise vit sur la commande : une facture n'en porte qu'une, et
+            // l'ecran doit reprendre celle du travail plutot que d'en supposer.
+            'currencyCode' => $this->whenLoaded('order', fn () => $this->order->currency_code),
             'serviceCode' => $this->whenLoaded('service', fn () => $this->service?->code),
             'serviceName' => $this->whenLoaded('service', fn () => $this->service?->name),
             'requestedDate' => $this->requested_date?->toDateString(),

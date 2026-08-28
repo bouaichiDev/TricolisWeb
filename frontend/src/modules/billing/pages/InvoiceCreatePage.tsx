@@ -25,6 +25,11 @@ const TODAY = new Date().toISOString().slice(0, 10)
  * document mêlant deux destinataires. Le champ se verrouille dès la première
  * prestation retenue, et le dit.
  *
+ * **La devise vient du travail, pas d'un réglage par défaut.** Elle est portée
+ * par la commande ; la première prestation retenue l'impose à la facture, et une
+ * prestation d'une autre devise est refusée — un document à deux monnaies
+ * n'aurait pas de total.
+ *
  * Le brouillon n'est **pas** enregistré au fil de l'eau : la facture naît en une
  * fois, avec ses lignes, parce que le serveur exige au moins une ligne (§8) —
  * une facture vide n'aurait rien à clôturer.
@@ -50,14 +55,34 @@ export function InvoiceCreatePage() {
   const failure = useApiMessage(create.error)
   const chosen = [...selected.values()]
 
-  const toggle = (service: BillableService) => {
-    setSelected((current) => {
-      const next = new Map(current)
-      if (next.has(service.id)) next.delete(service.id)
-      else next.set(service.id, service)
+  const [mismatch, setMismatch] = useState<string | null>(null)
 
-      return next
-    })
+  const toggle = (service: BillableService) => {
+    setMismatch(null)
+
+    if (selected.has(service.id)) {
+      setSelected((current) => {
+        const next = new Map(current)
+        next.delete(service.id)
+
+        return next
+      })
+
+      return
+    }
+
+    const currency = service.currencyCode ?? header.currencyCode
+
+    // Une facture n'a qu'une devise : melanger deux monnaies ne donnerait
+    // aucun total. La premiere prestation retenue impose la sienne.
+    if (chosen.length > 0 && currency !== header.currencyCode) {
+      setMismatch(t('billing.invoices.currencyMismatch', { currency }))
+
+      return
+    }
+
+    setHeader((current) => ({ ...current, currencyCode: currency }))
+    setSelected((current) => new Map(current).set(service.id, service))
   }
 
   const ready =
@@ -94,7 +119,7 @@ export function InvoiceCreatePage() {
         description={t('billing.invoices.createSubtitle')}
       />
 
-      <FormErrorSummary message={failure} />
+      <FormErrorSummary message={failure ?? mismatch} />
 
       <SectionCard title={t('billing.invoices.sections.header')}>
         <InvoiceHeaderFields

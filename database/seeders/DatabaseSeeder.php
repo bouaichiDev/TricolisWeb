@@ -31,6 +31,10 @@ class DatabaseSeeder extends Seeder
             // les commandes s'y accrochent.
             SwissDepotSeeder::class,
             SwissOrderSeeder::class,
+            // Et l'autre bout du parcours : un mois deja livre, sur lequel la
+            // facturation a prise. Apres les commandes a planifier, dont il
+            // reutilise le depot et le carnet d'adresses.
+            DeliveredOrderSeeder::class,
         ]);
     }
 }

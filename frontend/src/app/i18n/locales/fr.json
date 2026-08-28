@@ -1773,7 +1773,8 @@
         "noDestination": "Aucune destination active : la facture sera clôturée sans envoi.",
         "notClosable": "Cette facture ne peut pas être clôturée : elle doit porter au moins une ligne.",
         "confirm": "Clôturer et envoyer"
-      }
+      },
+      "currencyMismatch": "Cette prestation est en {{currency}} : une facture ne porte qu’une devise."
     }
   },
   "settlements": {

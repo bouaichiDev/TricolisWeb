@@ -138,6 +138,8 @@ export interface BillableService {
   orderId: string
   orderNumber?: string
   customerReference?: string | null
+  /** Celle de la commande : une facture n'en porte qu'une. */
+  currencyCode?: string | null
   serviceCode?: string | null
   serviceName?: string | null
   requestedDate: string | null

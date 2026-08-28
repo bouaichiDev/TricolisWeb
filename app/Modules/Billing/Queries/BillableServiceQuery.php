@@ -40,7 +40,7 @@ final readonly class BillableServiceQuery
                 ->where('customer_id', $customerId)
                 ->where('organization_id', $organizationId))
             ->with([
-                'order:id,order_number,customer_reference,customer_id',
+                'order:id,order_number,customer_reference,customer_id,currency_code',
                 'service:id,code,name',
                 'address',
             ]);

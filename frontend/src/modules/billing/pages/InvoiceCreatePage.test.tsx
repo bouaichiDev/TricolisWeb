@@ -26,6 +26,7 @@ const service = (overrides: Record<string, unknown> = {}) => ({
   orderId: '01JQZ00000000000000ORD1',
   orderNumber: 'CMD-100',
   customerReference: 'REF-1',
+  currencyCode: 'CHF',
   serviceCode: 'DEL',
   serviceName: 'Livraison',
   requestedDate: '2026-08-12',
@@ -201,5 +202,39 @@ describe('composition d’une facture', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
 
     expect(await screen.findByText(/existe déjà/)).toBeInTheDocument()
+  })
+
+  /**
+   * La devise vient du travail. Sans cela, une livraison suisse partirait
+   * facturée en dirhams parce que l'écran propose MAD par défaut.
+   */
+  it('reprend la devise de la prestation retenue', async () => {
+    const { created } = render()
+
+    await chooseCustomer('Migros')
+    await userEvent.click(await screen.findByRole('checkbox'))
+
+    await userEvent.type(screen.getByLabelText('Numéro'), 'INV-2026-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
+
+    await waitFor(() => expect(created).toHaveLength(1))
+    expect(created[0].currencyCode).toBe('CHF')
+  })
+
+  /** Un document à deux monnaies n'aurait pas de total. */
+  it('refuse une prestation d’une autre devise', async () => {
+    render([
+      service(),
+      service({ id: '01JQZ000000000000OSRV02', serviceNumber: 'S-002', currencyCode: 'EUR' }),
+    ])
+
+    await chooseCustomer('Migros')
+
+    const boxes = await screen.findAllByRole('checkbox')
+    await userEvent.click(boxes[0])
+    await userEvent.click(boxes[1])
+
+    expect(await screen.findByText(/ne porte qu’une devise/)).toBeInTheDocument()
+    expect(screen.getByText('1 prestation retenue')).toBeInTheDocument()
   })
 })

@@ -1,0 +1,151 @@
+<?php
+
+use App\Modules\Billing\Models\Invoice;
+use App\Modules\Billing\Models\InvoiceLine;
+use App\Modules\Billing\Models\InvoiceLineAddressSnapshot;
+use App\Modules\Exports\DTOs\InvoiceExportData;
+use App\Modules\Exports\Services\ExportFieldMapping;
+use App\Modules\Exports\Services\Formats\InvoiceJsonFormatter;
+use App\Modules\Exports\Services\Formats\InvoiceXmlFormatter;
+use Illuminate\Database\Eloquent\Collection;
+use Tests\TestCase;
+
+/**
+ * Le fichier tel que le client le reçoit.
+ *
+ * Ces cas ne touchent pas la base : la forme canonique se construit depuis des
+ * modèles en mémoire, ce qui laisse voir le rendu sans le bruit d'un jeu de
+ * données.
+ *
+ * Le conteneur reste nécessaire : un modèle Laravel a besoin de l'application
+ * pour caster ses dates, même sans jamais interroger la base.
+ */
+uses(TestCase::class);
+
+beforeEach(function (): void {
+    $this->mapping = new ExportFieldMapping;
+    $this->json = new InvoiceJsonFormatter($this->mapping);
+    $this->xml = new InvoiceXmlFormatter($this->mapping);
+
+    $this->data = function (array $invoice = [], array $line = []): InvoiceExportData {
+        $model = new Invoice(array_merge([
+            'invoice_number' => 'INV-2026-00042',
+            'invoice_date' => '2026-08-31',
+            'currency_code' => 'CHF',
+            'subtotal' => '100',
+            'tax_total' => '8.1',
+            'total' => '108.1',
+        ], $invoice));
+
+        $row = new InvoiceLine(array_merge([
+            'line_number' => 1,
+            'service_code' => 'DEL',
+            'description' => 'Livraison Genève & retour <urgent>',
+            'quantity' => '2',
+            'unit_price' => '50',
+            'total_excluding_tax' => '100',
+            'total_including_tax' => '108.1',
+        ], $line));
+
+        $row->setRelation('addressSnapshot', new InvoiceLineAddressSnapshot([
+            'name' => 'Migros & Cie',
+            'address_line1' => 'Rue du Rhône 12',
+            'postal_code' => '1204',
+            'city' => 'Genève',
+            'country' => 'CH',
+        ]));
+
+        $model->setRelation('lines', new Collection([$row]));
+
+        return InvoiceExportData::from($model);
+    };
+});
+
+describe('JSON', function (): void {
+    it('rend les montants en chaînes à deux décimales', function (): void {
+        $payload = json_decode($this->json->render(($this->data)(), [], 'UTF-8'), true);
+
+        expect($payload['total'])->toBe('108.10')
+            ->and($payload['subtotal'])->toBe('100.00')
+            ->and($payload['lines'][0]['unitPrice'])->toBe('50.00')
+            // Une quantite se dit au millieme : un demi-palette existe.
+            ->and($payload['lines'][0]['quantity'])->toBe('2.000');
+    });
+
+    /** §13 : la facture d'août garde l'adresse d'août. */
+    it('reprend l’adresse du cliché', function (): void {
+        $payload = json_decode($this->json->render(($this->data)(), [], 'UTF-8'), true);
+
+        expect($payload['lines'][0]['address']['city'])->toBe('Genève');
+    });
+
+    /** §66 : le mapping renomme, il n'évalue rien. */
+    it('renomme selon le vocabulaire du client', function (): void {
+        $settings = [
+            'fieldMapping' => ['invoiceNumber' => 'numero', 'lines' => 'postes', 'lines.serviceCode' => 'code'],
+            'staticValues' => ['source' => 'TRICOLIS'],
+        ];
+
+        $payload = json_decode($this->json->render(($this->data)(), $settings, 'UTF-8'), true);
+
+        expect($payload)->toHaveKey('numero')
+            ->and($payload)->not->toHaveKey('invoiceNumber')
+            ->and($payload['postes'][0]['code'])->toBe('DEL')
+            ->and($payload['source'])->toBe('TRICOLIS');
+    });
+
+    /** §67 : la liste blanche tient — un chemin inventé ne sert à rien. */
+    it('ignore un champ que la facture ne connaît pas', function (): void {
+        $settings = ['fieldMapping' => ['organizationId' => 'org', 'lines.costPrice' => 'achat']];
+
+        $payload = json_decode($this->json->render(($this->data)(), $settings, 'UTF-8'), true);
+
+        expect($payload)->not->toHaveKey('org')
+            ->and($payload['lines'][0])->not->toHaveKey('achat');
+    });
+
+    /** Les identifiants internes ne regardent pas le client (§64). */
+    it('n’expose aucun identifiant interne', function (): void {
+        $rendered = $this->json->render(($this->data)(), [], 'UTF-8');
+
+        expect($rendered)->not->toContain('"id"')
+            ->and($rendered)->not->toContain('customer_id')
+            ->and($rendered)->not->toContain('organization_id');
+    });
+});
+
+describe('XML', function (): void {
+    /** §83 : une esperluette dans une raison sociale ne casse pas le document. */
+    it('échappe ce qui casserait le document', function (): void {
+        $rendered = $this->xml->render(($this->data)(), [], 'UTF-8');
+
+        expect($rendered)->toContain('Livraison Genève &amp; retour &lt;urgent&gt;');
+
+        $document = new DOMDocument;
+
+        expect($document->loadXML($rendered))->toBeTrue();
+    });
+
+    it('nomme la racine et les lignes selon la configuration', function (): void {
+        $settings = ['rootName' => 'Facture', 'lineNodeName' => 'Poste'];
+
+        $rendered = $this->xml->render(($this->data)(), $settings, 'UTF-8');
+
+        expect($rendered)->toContain('<Facture>')->toContain('<Poste>');
+    });
+
+    /** Un nom de balise inutilisable produirait un document rejeté à l'arrivée. */
+    it('retombe sur un nom valable si la configuration en propose un mauvais', function (): void {
+        $rendered = $this->xml->render(($this->data)(), ['rootName' => '3 factures !'], 'UTF-8');
+
+        $document = new DOMDocument;
+
+        expect($document->loadXML($rendered))->toBeTrue()
+            ->and($document->documentElement->nodeName)->toBe('invoice');
+    });
+
+    it('déclare l’encodage demandé', function (): void {
+        expect($this->xml->render(($this->data)(), [], 'ISO-8859-1'))
+            ->toContain('encoding="ISO-8859-1"');
+    });
+});

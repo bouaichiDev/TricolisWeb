@@ -96,7 +96,9 @@
     "vehicles": "Véhicules",
     "transport": "Transport",
     "planning": "Planification",
-    "tours": "Tournées"
+    "tours": "Tournées",
+    "billing": "Facturation",
+    "invoices": "Factures clients"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1692,5 +1694,82 @@
     "changeStatus": "Changer le statut",
     "changeStatusTitle": "Changer le statut de la tournée ?",
     "changeStatusBody": "La tournée {{number}} passera à « {{status}} »."
+  },
+  "billing": {
+    "invoices": {
+      "title": "Factures clients",
+      "subtitle": "Ce qui a été réalisé, et ce qui a été facturé",
+      "create": "Nouvelle facture",
+      "createTitle": "Composer une facture",
+      "createSubtitle": "Choisissez un client, puis les prestations à facturer",
+      "createAction": "Créer la facture",
+      "empty": "Aucune facture",
+      "closed": "Facture clôturée",
+      "closedHint": "Une facture clôturée ne se modifie plus : le client la détient peut-être déjà.",
+      "customerLocked": "Le client est figé tant que des prestations sont retenues",
+      "selectedCount_one": "{{count}} prestation retenue",
+      "selectedCount_other": "{{count}} prestations retenues",
+      "fields": {
+        "invoiceNumber": "Numéro",
+        "customer": "Client",
+        "invoiceDate": "Date",
+        "period": "Période",
+        "currency": "Devise",
+        "subtotal": "Total HT",
+        "taxTotal": "TVA",
+        "total": "Total TTC",
+        "externalReference": "Référence externe",
+        "remark": "Remarque",
+        "status": "Statut"
+      },
+      "filters": {
+        "customer": "Client",
+        "allCustomers": "Tous les clients",
+        "dateFrom": "Du",
+        "dateTo": "Au"
+      },
+      "sections": {
+        "header": "En-tête",
+        "lines": "Lignes",
+        "services": "Prestations à facturer",
+        "servicesHint": "Seules les prestations réalisées et non encore facturées sont proposées"
+      },
+      "picker": {
+        "select": "Retenir la prestation {{number}}",
+        "service": "Prestation",
+        "order": "Commande",
+        "date": "Date demandée",
+        "address": "Adresse",
+        "quantity": "Quantité",
+        "unitPrice": "Prix unitaire",
+        "periodFrom": "Période du",
+        "periodTo": "Période au",
+        "empty": "Aucune prestation à facturer pour cette période",
+        "chooseCustomerTitle": "Choisissez un client",
+        "chooseCustomer": "Les prestations facturables se consultent client par client."
+      },
+      "lines": {
+        "number": "N°",
+        "description": "Libellé",
+        "address": "Adresse",
+        "quantity": "Quantité",
+        "unitPrice": "Prix unitaire",
+        "totalExcludingTax": "Total HT",
+        "order": "Commande",
+        "empty": "Aucune ligne",
+        "confirmRemove": "Retirer la ligne « {{description}} » de la facture ?"
+      },
+      "close": {
+        "action": "Clôturer",
+        "title": "Clôturer la facture {{number}}",
+        "irreversible": "La clôture fige la facture et déclenche son envoi. Elle est définitive.",
+        "lineCount_one": "{{count}} ligne sera figée",
+        "lineCount_other": "{{count}} lignes seront figées",
+        "willSend": "La facture partira vers :",
+        "noDestination": "Aucune destination active : la facture sera clôturée sans envoi.",
+        "notClosable": "Cette facture ne peut pas être clôturée : elle doit porter au moins une ligne.",
+        "confirm": "Clôturer et envoyer"
+      }
+    }
   }
 }

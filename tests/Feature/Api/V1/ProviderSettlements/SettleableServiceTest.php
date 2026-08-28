@@ -128,7 +128,7 @@ it('montre le client servi et le prix client, à titre indicatif', function (): 
     ($this->assign)(($this->service)(), $this->provider, true);
 
     ($this->list)()->assertOk()->assertJsonStructure(['data' => [[
-        'id', 'serviceNumber', 'orderNumber', 'customerName', 'customerUnitPrice', 'alreadySettled',
+        'id', 'serviceNumber', 'orderNumber', 'customerName', 'customerUnitPrice', 'address',
     ]]]);
 });
 

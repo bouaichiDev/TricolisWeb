@@ -15,10 +15,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * la référence du client, le service, sa date, sa quantité, son prix et son
  * adresse. Un identifiant ne suffit pas à reconnaître une prestation.
  *
- * `alreadyInvoiced` est toujours faux : la requête ne rend que ce qui reste à
- * facturer. Le champ existe parce que le §44 le nomme, et parce qu'il rend
- * l'invariant lisible dans la réponse.
- *
  * @mixin OrderService
  */
 class BillableServiceResource extends JsonResource
@@ -45,7 +41,6 @@ class BillableServiceResource extends JsonResource
             'volume' => (float) $this->volume,
             'packageCount' => (int) $this->package_count,
             'status' => $this->status?->value ?? $this->status,
-            'alreadyInvoiced' => false,
             'address' => $this->whenLoaded('address', fn (): ?array => $this->address === null ? null : [
                 'id' => $this->address->id,
                 'code' => $this->address->code,

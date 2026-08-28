@@ -47,7 +47,6 @@ class SettleableServiceResource extends JsonResource
             'packageCount' => (int) $this->package_count,
             'status' => $this->status?->value ?? $this->status,
             'customerName' => $this->whenLoaded('order', fn () => $this->order->customer?->name),
-            'alreadySettled' => false,
             'address' => $this->whenLoaded('address', fn (): ?array => $this->address === null ? null : [
                 'id' => $this->address->id,
                 'code' => $this->address->code,

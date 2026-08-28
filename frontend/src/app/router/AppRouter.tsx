@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { adminRoutes } from './routes/adminRoutes'
+import { billingRoutes } from './routes/billingRoutes'
 import { customerRoutes } from './routes/customerRoutes'
 import { guarded } from './routes/guarded'
 import { operationsRoutes } from './routes/operationsRoutes'
@@ -50,6 +51,7 @@ export function AppRouter() {
         {fleetRoutes}
         {transportRoutes}
         {operationsRoutes}
+        {billingRoutes}
         {stockRoutes}
         {adminRoutes}
 

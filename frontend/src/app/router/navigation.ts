@@ -1,6 +1,7 @@
 import {
   Route,
   Boxes,
+  ReceiptText,
   Building2,
   ClipboardList,
   LayoutDashboard,
@@ -81,6 +82,13 @@ export const organizationNavigation: NavEntry[] = [
     children: [
       { labelKey: 'nav.planning', to: '/planning', permission: 'tours.view' },
       { labelKey: 'nav.tours', to: '/tours', permission: 'tours.view' },
+    ],
+  },
+  {
+    labelKey: 'nav.billing',
+    icon: ReceiptText,
+    children: [
+      { labelKey: 'nav.invoices', to: '/billing/invoices', permission: 'invoices.view' },
     ],
   },
   {

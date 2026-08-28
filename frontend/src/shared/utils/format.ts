@@ -37,3 +37,25 @@ export function formatBytes(size: number): string {
 
   return `${(size / (1024 * 1024)).toFixed(1)} Mo`
 }
+
+/**
+ * Montants.
+ *
+ * L'API rend les décimaux en chaînes, et c'est voulu : un `2108.10` passé en
+ * flottant se relit `2108.1000000000001`. La conversion n'a lieu qu'ici, pour
+ * l'affichage — jamais avant de renvoyer une valeur au serveur.
+ *
+ * Une devise inconnue retombe sur un simple nombre : mieux vaut un montant nu
+ * qu'un symbole faux sur une facture.
+ */
+export function formatMoney(value: string | number, currency?: string | null): string {
+  const amount = typeof value === 'number' ? value : Number.parseFloat(value)
+  if (Number.isNaN(amount)) return ''
+
+  const options: Intl.NumberFormatOptions =
+    currency && /^[A-Za-z]{3}$/.test(currency)
+      ? { style: 'currency', currency: currency.toUpperCase() }
+      : { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+
+  return new Intl.NumberFormat(i18n.language, options).format(amount)
+}

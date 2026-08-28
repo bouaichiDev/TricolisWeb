@@ -1,0 +1,151 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+
+import { BillableServicePicker, type BillablePeriod } from '../components/BillableServicePicker'
+import { InvoiceHeaderFields, type InvoiceHeaderState } from '../components/InvoiceHeaderFields'
+import { linesFromServices, previewTotal } from '../components/invoiceDraft'
+import { useCreateInvoice } from '../hooks/useInvoices'
+import type { BillableService } from '../types/invoice'
+import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { SectionCard } from '@/shared/components/layout/SectionCard'
+import { Button } from '@/shared/components/ui/button'
+import { formatMoney } from '@/shared/utils/format'
+
+const TODAY = new Date().toISOString().slice(0, 10)
+
+/**
+ * Composer une facture à partir de prestations réalisées.
+ *
+ * **Le client se choisit d'abord, et se fige ensuite.** Les prestations
+ * facturables ne se demandent que sous un client (§112), et une facture ne
+ * porte qu'un client : changer d'avis en cours de sélection produirait un
+ * document mêlant deux destinataires. Le champ se verrouille dès la première
+ * prestation retenue, et le dit.
+ *
+ * Le brouillon n'est **pas** enregistré au fil de l'eau : la facture naît en une
+ * fois, avec ses lignes, parce que le serveur exige au moins une ligne (§8) —
+ * une facture vide n'aurait rien à clôturer.
+ */
+export function InvoiceCreatePage() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+
+  const [header, setHeader] = useState<InvoiceHeaderState>({
+    customerId: '',
+    invoiceNumber: '',
+    invoiceDate: TODAY,
+    currencyCode: 'MAD',
+    externalReference: '',
+    remark: '',
+  })
+  const [period, setPeriod] = useState<BillablePeriod>({ from: '', to: '' })
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<Map<string, BillableService>>(new Map())
+
+  const create = useCreateInvoice()
+  const chosen = [...selected.values()]
+
+  const toggle = (service: BillableService) => {
+    setSelected((current) => {
+      const next = new Map(current)
+      if (next.has(service.id)) next.delete(service.id)
+      else next.set(service.id, service)
+
+      return next
+    })
+  }
+
+  const ready =
+    header.customerId !== '' &&
+    header.invoiceNumber.trim() !== '' &&
+    header.invoiceDate !== '' &&
+    header.currencyCode.length === 3 &&
+    chosen.length > 0
+
+  const submit = () => {
+    create.mutate(
+      {
+        customerId: header.customerId,
+        invoiceNumber: header.invoiceNumber.trim(),
+        invoiceDate: header.invoiceDate,
+        periodFrom: period.from || null,
+        periodTo: period.to || null,
+        currencyCode: header.currencyCode,
+        externalReference: header.externalReference || null,
+        remark: header.remark || null,
+        // Une facture nait au brouillon : c'est le seul etat depuis lequel on
+        // peut encore corriger ses lignes.
+        status: 'draft',
+        lines: linesFromServices(chosen),
+      },
+      { onSuccess: (invoice) => void navigate(`/billing/invoices/${invoice.id}`) },
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={t('billing.invoices.createTitle')}
+        description={t('billing.invoices.createSubtitle')}
+      />
+
+      <SectionCard title={t('billing.invoices.sections.header')}>
+        <InvoiceHeaderFields
+          value={header}
+          onChange={(next) => {
+            // Changer de client viderait la selection sans le dire : le champ
+            // est verrouille des la premiere prestation retenue.
+            setHeader(next)
+            setPage(1)
+          }}
+          customerLocked={chosen.length > 0}
+        />
+      </SectionCard>
+
+      <SectionCard
+        title={t('billing.invoices.sections.services')}
+        description={t('billing.invoices.sections.servicesHint')}
+      >
+        <BillableServicePicker
+          customerId={header.customerId}
+          currencyCode={header.currencyCode}
+          period={period}
+          onPeriodChange={(next) => {
+            setPeriod(next)
+            setPage(1)
+          }}
+          search={search}
+          onSearchChange={(next) => {
+            setSearch(next)
+            setPage(1)
+          }}
+          page={page}
+          onPageChange={setPage}
+          selected={selected}
+          onToggle={toggle}
+        />
+      </SectionCard>
+
+      <div className="flex flex-col gap-3 rounded-md border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm">
+          {t('billing.invoices.selectedCount', { count: chosen.length })}
+          {chosen.length > 0 ? (
+            <span className="ml-2 font-medium tabular-nums">
+              {formatMoney(previewTotal(chosen), header.currencyCode)}
+            </span>
+          ) : null}
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => void navigate('/billing/invoices')}>
+            {t('common.cancel')}
+          </Button>
+          <Button disabled={!ready || create.isPending} onClick={submit}>
+            {t('billing.invoices.createAction')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}

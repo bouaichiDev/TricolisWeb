@@ -65,9 +65,15 @@ function render(services = [service()], failure: { status: number; body: { messa
       ),
     ),
     http.get(`${API}/customers/:id/billable-services/suggestions`, ({ request }) => {
-      suggestionCalls.push(new URL(request.url))
+      const url = new URL(request.url)
+      suggestionCalls.push(url)
 
-      return HttpResponse.json({ data: ['ORD-2026-000907', 'ORD-2026-000937'] })
+      return HttpResponse.json({
+        data:
+          url.searchParams.get('field') === 'service'
+            ? ['Chargement', 'Livraison']
+            : ['ORD-2026-000907', 'ORD-2026-000937'],
+      })
     }),
     http.get(`${API}/customers/:id/billable-services`, ({ request }) => {
       billableCalls.push(new URL(request.url))
@@ -365,5 +371,64 @@ describe('composition d’une facture', () => {
       expect(last.searchParams.get('reference')).toBe('REF-1')
       expect(last.searchParams.has('order')).toBe(false)
     })
+  })
+
+  /**
+   * **Plusieurs prestations à la fois.** Facturer les livraisons *et* les
+   * chargements est une seule question : le serveur cumule les valeurs en
+   * « ou », les additionner en « et » ne rendrait jamais rien.
+   */
+  it('retient plusieurs prestations dans le filtre', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.click(screen.getByLabelText('Filtrer par prestation'))
+    await userEvent.click(await screen.findByRole('button', { name: 'Livraison' }))
+
+    await userEvent.click(screen.getByLabelText('Filtrer par prestation'))
+    await userEvent.click(await screen.findByRole('button', { name: 'Chargement' }))
+
+    await waitFor(() => {
+      const last = billableCalls[billableCalls.length - 1]
+      expect(last.searchParams.getAll('service[]')).toEqual(['Livraison', 'Chargement'])
+    })
+  })
+
+  /** Une valeur qu'aucune suggestion ne propose reste saisissable : les
+   *  propositions accelerent la saisie, elles ne l'enferment pas. */
+  it('accepte une valeur tapée puis validée', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.type(screen.getByLabelText('Filtrer par prestation'), 'Manutention{Enter}')
+
+    await waitFor(() =>
+      expect(billableCalls[billableCalls.length - 1].searchParams.getAll('service[]')).toEqual([
+        'Manutention',
+      ]),
+    )
+  })
+
+  /** Un jeton se retire d'un clic, sans vider le reste. */
+  it('retire une prestation retenue', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.type(screen.getByLabelText('Filtrer par prestation'), 'Livraison{Enter}')
+    await userEvent.type(screen.getByLabelText('Filtrer par prestation'), 'Chargement{Enter}')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirer « Livraison »' }))
+
+    await waitFor(() =>
+      expect(billableCalls[billableCalls.length - 1].searchParams.getAll('service[]')).toEqual([
+        'Chargement',
+      ]),
+    )
   })
 })

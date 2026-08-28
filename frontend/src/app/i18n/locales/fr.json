@@ -41,7 +41,8 @@
     "createdAt": "Créé le",
     "updatedAt": "Modifié le",
     "open": "Ouvrir",
-    "working": "Traitement en cours…"
+    "working": "Traitement en cours…",
+    "removeFilter": "Retirer « {{value}} »"
   },
   "auth": {
     "login": "Connexion",
@@ -1753,7 +1754,7 @@
         "chooseCustomer": "Les prestations facturables se consultent client par client.",
         "selectPage": "Retenir toutes les prestations de la page",
         "clearFilters": "Effacer les filtres",
-        "filterService": "Filtrer par n° de prestation",
+        "filterService": "Filtrer par prestation",
         "filterOrder": "Filtrer par n° de commande",
         "filterAddress": "Filtrer par adresse",
         "filterQuantityMin": "Quantité minimale",

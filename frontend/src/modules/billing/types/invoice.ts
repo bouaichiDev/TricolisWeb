@@ -171,7 +171,8 @@ export interface BillableService {
 export interface BillableServiceFilters extends ListParams {
   periodFrom?: string
   periodTo?: string
-  service?: string
+  /** Plusieurs valeurs, cumulees en « ou » par le serveur. */
+  service?: string[]
   order?: string
   reference?: string
   address?: string

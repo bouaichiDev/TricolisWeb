@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { BillableColumnFilters } from './billableFilters'
 import { useBillableSuggestions } from '../hooks/useInvoices'
 import { AutocompleteInput } from '@/shared/components/form/AutocompleteInput'
+import { MultiAutocompleteInput } from '@/shared/components/form/MultiAutocompleteInput'
 import { Input } from '@/shared/components/ui/input'
 
 interface FieldProps {
@@ -20,20 +22,49 @@ interface FieldProps {
  * visible, et sans lui il resterait muet pour un lecteur d'écran.
  */
 
-/** Numéro de prestation ou de commande, complété par ce qui existe. */
-export function NumberFilter({
+/**
+ * La colonne « Prestation » : plusieurs valeurs, complétées par ce qui existe.
+ *
+ * La saisie en cours vit ici et non dans l'état des filtres : elle ne filtre
+ * rien tant qu'elle n'est pas retenue, et la remonter ferait repartir une
+ * requête de liste à chaque frappe.
+ */
+export function ServiceFilter({
   customerId,
-  field,
   label,
   value,
   onChange,
-}: FieldProps & { customerId: string; field: 'service' | 'order'; label: string }) {
-  const { data, isFetching } = useBillableSuggestions(customerId, field, value[field])
+}: FieldProps & { customerId: string; label: string }) {
+  const [term, setTerm] = useState('')
+  const { data, isFetching } = useBillableSuggestions(customerId, 'service', term)
+
+  return (
+    <MultiAutocompleteInput
+      values={value.service}
+      onChange={(next) => onChange({ service: next })}
+      term={term}
+      onTermChange={setTerm}
+      suggestions={data ?? []}
+      isLoading={isFetching}
+      label={label}
+      className="h-8 min-w-36"
+    />
+  )
+}
+
+/** Numéro de commande, complété par ce qui existe. */
+export function NumberFilter({
+  customerId,
+  label,
+  value,
+  onChange,
+}: FieldProps & { customerId: string; label: string }) {
+  const { data, isFetching } = useBillableSuggestions(customerId, 'order', value.order)
 
   return (
     <AutocompleteInput
-      value={value[field]}
-      onChange={(next) => onChange({ [field]: next })}
+      value={value.order}
+      onChange={(next) => onChange({ order: next })}
       suggestions={data ?? []}
       isLoading={isFetching}
       label={label}

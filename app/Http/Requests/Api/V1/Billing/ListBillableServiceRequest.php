@@ -20,6 +20,20 @@ use App\Shared\Http\Requests\ListRequest;
 class ListBillableServiceRequest extends ListRequest
 {
     /**
+     * Une valeur seule reste acceptée.
+     *
+     * Le filtre en admet plusieurs, mais exiger un tableau ferait échouer un
+     * appel qui n'en cherche qu'une — la forme la plus évidente pour qui lit la
+     * documentation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('service'))) {
+            $this->merge(['service' => [$this->input('service')]]);
+        }
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
@@ -29,7 +43,10 @@ class ListBillableServiceRequest extends ListRequest
             'periodTo' => ['sometimes', 'date', 'after_or_equal:periodFrom'],
 
             // Colonne « Prestation » : son numero, son code, son libelle.
-            'service' => ['sometimes', 'string', 'max:255'],
+            // Plusieurs valeurs se cumulent en « ou » : facturer les livraisons
+            // *et* les chargements est une seule question, pas deux passages.
+            'service' => ['sometimes', 'array', 'max:20'],
+            'service.*' => ['string', 'max:255'],
             // Colonne « Commande » : son numero seul, la reference ayant
             // desormais sa propre colonne et son propre filtre.
             'order' => ['sometimes', 'string', 'max:255'],

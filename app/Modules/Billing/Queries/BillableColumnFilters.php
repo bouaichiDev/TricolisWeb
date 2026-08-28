@@ -26,15 +26,7 @@ final readonly class BillableColumnFilters
      */
     public function apply(Builder $query, ListRequest $request): void
     {
-        // « Prestation » montre un numero et un libelle de service : ne
-        // chercher que dans le numero rendrait le champ inutile a qui tape
-        // « Livraison ».
-        $this->term($query, $request, 'service', fn (Builder $builder, string $term) => $builder
-            ->where(fn (Builder $nested) => $nested
-                ->where('service_number', 'like', "%{$term}%")
-                ->orWhereHas('service', fn ($service) => $service
-                    ->where('code', 'like', "%{$term}%")
-                    ->orWhere('name', 'like', "%{$term}%"))));
+        $this->services($query, $request);
 
         $this->term($query, $request, 'order', fn (Builder $builder, string $term) => $builder
             ->whereHas('order', fn ($order) => $order->where('order_number', 'like', "%{$term}%")));
@@ -50,6 +42,43 @@ final readonly class BillableColumnFilters
                 ->orWhere('name', 'like', "%{$term}%")));
 
         $this->bounds($query, $request);
+    }
+
+    /**
+     * La colonne « Prestation », qui admet plusieurs valeurs.
+     *
+     * **Elles se cumulent en « ou ».** Retenir les livraisons *et* les
+     * chargements est une seule question ; les additionner en « et » ne
+     * rendrait jamais rien, aucune prestation n'étant les deux à la fois.
+     *
+     * Chaque valeur cherche dans le numéro comme dans le libellé : la colonne
+     * montre les deux, et ne chercher que dans le numéro rendrait le champ
+     * inutile à qui choisit « Livraison ».
+     *
+     * @param  Builder<OrderService>  $query
+     */
+    private function services(Builder $query, ListRequest $request): void
+    {
+        if (! $request->filled('service')) {
+            return;
+        }
+
+        /** @var list<string> $terms */
+        $terms = array_filter((array) $request->validated('service'));
+
+        if ($terms === []) {
+            return;
+        }
+
+        $query->where(function (Builder $group) use ($terms): void {
+            foreach ($terms as $term) {
+                $group->orWhere(fn (Builder $nested) => $nested
+                    ->where('service_number', 'like', "%{$term}%")
+                    ->orWhereHas('service', fn ($service) => $service
+                        ->where('code', 'like', "%{$term}%")
+                        ->orWhere('name', 'like', "%{$term}%")));
+            }
+        });
     }
 
     /**

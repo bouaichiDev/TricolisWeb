@@ -149,6 +149,68 @@ describe('filtres de colonne', function (): void {
             ->assertJsonPath('data.0.id', $wanted->id);
     });
 
+    /**
+     * **Plusieurs valeurs se cumulent en « ou ».** Les additionner en « et »
+     * ne rendrait jamais rien : aucune prestation n'est à la fois un
+     * chargement et une livraison.
+     */
+    it('retient plusieurs prestations à la fois', function (): void {
+        $loading = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Chargement',
+        ]);
+
+        $delivery = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Livraison',
+        ]);
+
+        $kept = [
+            ($this->serviceFor)($this->customer, 'completed', ['service_id' => $loading->id])->id,
+            ($this->serviceFor)($this->customer, 'completed', ['service_id' => $delivery->id])->id,
+        ];
+
+        // Une troisieme, hors du choix : elle ne doit pas remonter. Son nom est
+        // explicite — la fabrique tire dans une liste qui contient
+        // « Livraison », et un temoin nomme au hasard rendrait ce test
+        // intermittent.
+        $other = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Stockage',
+        ]);
+
+        ($this->serviceFor)($this->customer, 'completed', ['service_id' => $other->id]);
+
+        $response = ($this->list)(['service' => ['Chargement', 'Livraison']])
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        expect(collect($response->json('data'))->pluck('id')->sort()->values()->all())
+            ->toBe(collect($kept)->sort()->values()->all());
+    });
+
+    /** Une valeur seule reste acceptée : exiger un tableau ferait échouer
+     *  l'appel le plus évident. */
+    it('accepte encore une valeur unique', function (): void {
+        $service = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Manutention',
+        ]);
+
+        $other = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Stockage',
+        ]);
+
+        $wanted = ($this->serviceFor)($this->customer, 'completed', ['service_id' => $service->id]);
+        ($this->serviceFor)($this->customer, 'completed', ['service_id' => $other->id]);
+
+        ($this->list)(['service' => 'Manutention'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    });
+
     it('borne le prix unitaire', function (): void {
         ($this->serviceFor)($this->customer, 'completed', ['customer_unit_price' => 40]);
         $wanted = ($this->serviceFor)($this->customer, 'completed', ['customer_unit_price' => 145]);

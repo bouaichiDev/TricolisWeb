@@ -15,7 +15,7 @@ import { session } from './session'
  */
 const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/v1`
 
-type Query = Record<string, string | number | boolean | null | undefined>
+type Query = Record<string, string | number | boolean | string[] | null | undefined>
 
 interface RequestOptions {
   /** Paramètres d'URL ; les valeurs nulles ou vides sont omises. */
@@ -50,6 +50,18 @@ function buildUrl(path: string, query?: Query): string {
     // `false` est un filtre en soi — « les inactifs » — et doit passer ; seuls
     // l'absence et la chaîne vide sont omises.
     if (value === null || value === undefined || value === '') continue
+
+    // Un filtre à plusieurs valeurs part en `cle[]=a&cle[]=b`, la seule forme
+    // que Laravel relit comme un tableau. `String(value)` en aurait fait
+    // « a,b », soit une valeur unique que rien ne trouve.
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        if (entry !== '') url.searchParams.append(`${key}[]`, entry)
+      }
+
+      continue
+    }
+
     url.searchParams.set(key, queryValue(value))
   }
 

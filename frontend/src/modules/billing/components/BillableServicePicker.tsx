@@ -1,6 +1,12 @@
 import { useTranslation } from 'react-i18next'
 
-import { NumberFilter, PeriodFilter, RangeFilter, TextFilter } from './BillableFilterFields'
+import {
+  NumberFilter,
+  PeriodFilter,
+  RangeFilter,
+  ServiceFilter,
+  TextFilter,
+} from './BillableFilterFields'
 import {
   hasBillableFilter,
   toBillableQuery,
@@ -92,9 +98,8 @@ export function BillableServicePicker({
       key: 'serviceNumber',
       header: t('billing.invoices.picker.service'),
       filter: (
-        <NumberFilter
+        <ServiceFilter
           customerId={customerId}
-          field="service"
           label={t('billing.invoices.picker.filterService')}
           value={filters}
           onChange={onFiltersChange}
@@ -113,7 +118,6 @@ export function BillableServicePicker({
       filter: (
         <NumberFilter
           customerId={customerId}
-          field="order"
           label={t('billing.invoices.picker.filterOrder')}
           value={filters}
           onChange={onFiltersChange}

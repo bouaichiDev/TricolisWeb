@@ -7,7 +7,8 @@ import type { BillableServiceFilters } from '../types/invoice'
  * vide, et `NaN` ou `0` s'y glisseraient en changeant le sens du filtre.
  */
 export interface BillableColumnFilters {
-  service: string
+  /** Plusieurs prestations à la fois : elles se cumulent en « ou ». */
+  service: string[]
   order: string
   reference: string
   periodFrom: string
@@ -20,7 +21,7 @@ export interface BillableColumnFilters {
 }
 
 export const EMPTY_BILLABLE_FILTERS: BillableColumnFilters = {
-  service: '',
+  service: [],
   order: '',
   reference: '',
   periodFrom: '',
@@ -41,7 +42,7 @@ export const EMPTY_BILLABLE_FILTERS: BillableColumnFilters = {
 export function toBillableQuery(filters: BillableColumnFilters): BillableServiceFilters {
   const query: BillableServiceFilters = {}
 
-  if (filters.service.trim() !== '') query.service = filters.service.trim()
+  if (filters.service.length > 0) query.service = filters.service
   if (filters.order.trim() !== '') query.order = filters.order.trim()
   if (filters.reference.trim() !== '') query.reference = filters.reference.trim()
   if (filters.address.trim() !== '') query.address = filters.address.trim()
@@ -58,5 +59,7 @@ export function toBillableQuery(filters: BillableColumnFilters): BillableService
 
 /** Un filtre est-il posé ? Sert à proposer de tout effacer, et pas avant. */
 export function hasBillableFilter(filters: BillableColumnFilters): boolean {
-  return Object.values(filters).some((value) => value !== '')
+  return Object.values(filters).some((value) =>
+    Array.isArray(value) ? value.length > 0 : value !== '',
+  )
 }

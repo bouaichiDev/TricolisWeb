@@ -89,6 +89,17 @@ export const organizationNavigation: NavEntry[] = [
     icon: ReceiptText,
     children: [
       { labelKey: 'nav.invoices', to: '/billing/invoices', permission: 'invoices.view' },
+      {
+        labelKey: 'nav.settlements',
+        to: '/billing/settlements',
+        permission: 'provider_settlements.view',
+      },
+      {
+        labelKey: 'nav.exportConfigurations',
+        to: '/billing/export-configurations',
+        permission: 'customer_export_configurations.view',
+      },
+      { labelKey: 'nav.exports', to: '/billing/exports', permission: 'export_jobs.view' },
     ],
   },
   {

@@ -123,12 +123,12 @@ it('écarte ce qui n’est pas terminé', function (): void {
     ($this->list)()->assertOk()->assertJsonCount(0, 'data');
 });
 
-/** §103 : le prix client est montré, mais il n'est pas un coût. */
+/** §103 : le coût est celui de la commande ; le prix client n'en est pas un. */
 it('montre le client servi et le prix client, à titre indicatif', function (): void {
     ($this->assign)(($this->service)(), $this->provider, true);
 
     ($this->list)()->assertOk()->assertJsonStructure(['data' => [[
-        'id', 'serviceNumber', 'orderNumber', 'customerName', 'customerUnitPrice', 'address',
+        'id', 'serviceNumber', 'orderNumber', 'customerName', 'customerUnitPrice', 'providerUnitCost', 'address',
     ]]]);
 });
 

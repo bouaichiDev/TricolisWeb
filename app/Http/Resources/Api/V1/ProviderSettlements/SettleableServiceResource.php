@@ -42,6 +42,11 @@ class SettleableServiceResource extends JsonResource
             'unit' => $this->unit,
             'customerUnitPrice' => (float) $this->customer_unit_price,
             'customerTotalPrice' => (float) $this->customer_total_price,
+            // Ce qu'on doit au fournisseur, tel que la commande l'a fixe. Le
+            // prix client est a cote, a titre de reperage : il ne dit pas le
+            // cout, et confondre les deux facturerait la marge au fournisseur.
+            'providerUnitCost' => (float) $this->provider_unit_cost,
+            'providerTotalCost' => (float) $this->provider_total_cost,
             'weight' => (float) $this->weight,
             'volume' => (float) $this->volume,
             'packageCount' => (int) $this->package_count,

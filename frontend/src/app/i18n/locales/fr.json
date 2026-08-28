@@ -98,7 +98,10 @@
     "planning": "Planification",
     "tours": "Tournées",
     "billing": "Facturation",
-    "invoices": "Factures clients"
+    "invoices": "Factures clients",
+    "settlements": "Décomptes fournisseurs",
+    "exportConfigurations": "Destinations d’export",
+    "exports": "Exports / Envois"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1769,6 +1772,107 @@
         "noDestination": "Aucune destination active : la facture sera clôturée sans envoi.",
         "notClosable": "Cette facture ne peut pas être clôturée : elle doit porter au moins une ligne.",
         "confirm": "Clôturer et envoyer"
+      }
+    }
+  },
+  "settlements": {
+    "title": "Décomptes fournisseurs",
+    "subtitle": "Ce que les transporteurs partenaires ont exécuté, et ce qu’on leur doit",
+    "create": "Nouveau décompte",
+    "createTitle": "Composer un décompte",
+    "createSubtitle": "Choisissez un fournisseur, puis les prestations à régler",
+    "createAction": "Créer le décompte",
+    "empty": "Aucun décompte",
+    "providerLocked": "Le fournisseur est figé tant que des prestations sont retenues",
+    "selectedCount_one": "{{count}} prestation retenue",
+    "selectedCount_other": "{{count}} prestations retenues",
+    "fields": {
+      "settlementNumber": "Numéro",
+      "provider": "Fournisseur",
+      "period": "Période",
+      "subtotal": "Total HT",
+      "taxTotal": "TVA",
+      "total": "Total",
+      "status": "Statut"
+    },
+    "sections": {
+      "header": "En-tête",
+      "lines": "Lignes",
+      "services": "Prestations à régler",
+      "servicesHint": "Seules les prestations que ce fournisseur a réellement exécutées, et non encore réglées, sont proposées"
+    },
+    "picker": {
+      "select": "Retenir la prestation {{number}}",
+      "service": "Prestation",
+      "customer": "Client servi",
+      "date": "Date demandée",
+      "quantity": "Quantité",
+      "unitCost": "Coût unitaire",
+      "customerPrice": "Prix client",
+      "periodFrom": "Période du",
+      "periodTo": "Période au",
+      "empty": "Aucune prestation à régler pour cette période",
+      "chooseProviderTitle": "Choisissez un fournisseur",
+      "chooseProvider": "Les prestations à régler se consultent fournisseur par fournisseur."
+    },
+    "lines": {
+      "description": "Libellé",
+      "quantity": "Quantité",
+      "unitCost": "Coût unitaire",
+      "totalCost": "Total",
+      "empty": "Aucune ligne",
+      "confirmRemove": "Retirer la ligne « {{description}} » du décompte ?"
+    }
+  },
+  "exports": {
+    "transports": {
+      "rest_api": "API REST",
+      "ftp": "FTP",
+      "sftp": "SFTP",
+      "email": "E-mail",
+      "manual": "Manuel"
+    },
+    "configurations": {
+      "title": "Destinations d’export",
+      "subtitle": "Où partent les factures d’un client, une fois clôturées",
+      "create": "Nouvelle destination",
+      "edit": "Modifier la destination",
+      "hint": "La facture partira ici dès sa clôture, si la destination est active.",
+      "empty": "Aucune destination pour ce client",
+      "chooseCustomerTitle": "Choisissez un client",
+      "chooseCustomer": "Les destinations d’export appartiennent à un client, et ne servent jamais à un autre.",
+      "passwordSet": "Un secret est enregistré",
+      "passwordEmpty": "Aucun secret enregistré",
+      "passwordHint": "Le secret ne se relit pas. Laissez le champ vide pour le conserver.",
+      "fields": {
+        "customer": "Client",
+        "name": "Nom",
+        "transport": "Transport",
+        "format": "Format",
+        "host": "Hôte",
+        "port": "Port",
+        "username": "Identifiant",
+        "password": "Secret",
+        "directory": "Répertoire distant",
+        "pattern": "Gabarit du nom de fichier",
+        "isActive": "Active"
+      }
+    },
+    "jobs": {
+      "title": "Exports / Envois",
+      "subtitle": "Ce qui est parti chez les clients, et ce qui a échoué",
+      "empty": "Aucun envoi",
+      "retry": "Relancer l’envoi",
+      "retried": "Envoi remis en file",
+      "allCustomers": "Tous les clients",
+      "fields": {
+        "customer": "Client",
+        "file": "Fichier",
+        "status": "Statut",
+        "attempts": "Tentatives",
+        "generatedAt": "Généré le",
+        "sentAt": "Envoyé le",
+        "error": "Erreur"
       }
     }
   }

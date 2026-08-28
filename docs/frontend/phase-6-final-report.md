@@ -13,7 +13,7 @@ clôturées. Rédigé le 28 août 2026.
 | Git Committer | `Badr <bouaichibadr@gmail.com>` |
 
 Aucun commit ne porte `Claude`, `Anthropic`, `Co-authored-by` ni `Generated-by`,
-ni comme auteur, ni comme committer, ni dans le message. Vérifié sur les six
+ni comme auteur, ni comme committer, ni dans le message. Vérifié sur les huit
 commits de la branche.
 
 Rien n'a été fusionné vers `main`, rien n'a été poussé.
@@ -207,10 +207,11 @@ technique.
 | Backend — sélecteurs (`BillableServiceTest`, `SettleableServiceTest`) | 14 tests, verts |
 | Backend — clôture (`InvoiceClosureTest`) | 15 tests, verts |
 | Backend — moteur d'export (dispatch, reprise, formats, garde, transport) | 37 tests, verts |
-| Backend — suite complète | voir §5 |
+| Backend — suite complète (`php artisan test`) | **1087 tests, 3561 assertions, verts** |
 | Frontend — `npm test` | 451 tests avant la phase, 466 après, verts |
 | Frontend — `npm run build` (`tsc -b`) | vert |
 | Frontend — `npm run lint` (oxlint) | aucune erreur |
+| Backend — `pint --test` | vert |
 
 Le test du §17 a été vérifié par mutation : en retirant le filtre
 `is_active_assignment`, le fournisseur dont la tentative avait échoué réapparaît

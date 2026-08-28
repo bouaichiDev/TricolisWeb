@@ -17,6 +17,12 @@ export const settlementsApi = {
   get: (id: string) =>
     api.get<ApiResource<ProviderSettlementDetail>>(`/provider-settlements/${id}`).then((r) => r.data),
 
+  /** Les décomptes d'un fournisseur, pour sa fiche. */
+  byProvider: (providerId: string, filters: SettlementFilters) =>
+    api.get<ApiCollection<ProviderSettlement>>(`/providers/${providerId}/settlements`, {
+      query: { ...filters },
+    }),
+
   /**
    * Créer le décompte sous son fournisseur.
    *

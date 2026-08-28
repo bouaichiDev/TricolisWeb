@@ -1454,7 +1454,8 @@
       "information": "Informations",
       "drivers": "Chauffeurs",
       "vehicles": "Véhicules",
-      "documents": "Documents"
+      "documents": "Documents",
+      "settlements": "Décomptes"
     },
     "fields": {
       "code": "Code",

@@ -13,6 +13,8 @@ export const settlementKeys = {
   all: ['provider-settlements'] as const,
   list: (filters: SettlementFilters) => [...settlementKeys.all, 'list', filters] as const,
   detail: (id: string) => [...settlementKeys.all, 'detail', id] as const,
+  byProvider: (providerId: string, filters: SettlementFilters) =>
+    [...settlementKeys.all, 'provider', providerId, filters] as const,
   settleable: (providerId: string, filters: SettleableServiceFilters) =>
     ['settleable-services', providerId, filters] as const,
 }
@@ -21,6 +23,20 @@ export function useSettlementList(filters: SettlementFilters) {
   return useQuery({
     queryKey: settlementKeys.list(filters),
     queryFn: () => settlementsApi.list(filters),
+    placeholderData: (previous) => previous,
+  })
+}
+
+/** Les décomptes d'un fournisseur, chargés seulement quand l'onglet s'ouvre. */
+export function useProviderSettlements(
+  providerId: string,
+  filters: SettlementFilters,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: settlementKeys.byProvider(providerId, filters),
+    queryFn: () => settlementsApi.byProvider(providerId, filters),
+    enabled: enabled && providerId !== '',
     placeholderData: (previous) => previous,
   })
 }

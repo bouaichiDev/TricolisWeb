@@ -3,7 +3,8 @@
 Relevé sur la base réelle le 26 août 2026. La liste n'est pas écrite à la main :
 elle vient de `StatusSources::all()`, qui parcourt la morph map et retient les
 entités dont la table porte réellement une colonne `status`. **38 entités** sont
-concernées ; 13 disposent d'entrées au référentiel, 25 n'en ont pas encore.
+concernées ; 13 disposaient d'entrées au référentiel au 26 août, 17 après les
+phases 4 et 6.
 
 Toutes les colonnes sont des `varchar` en `utf8mb4` — aucune n'est un entier,
 aucune n'est une clé étrangère. C'est ce que demande la règle projet : le code
@@ -13,6 +14,8 @@ textuel reste la valeur métier persistée.
 
 - **Phase 4** — statuts créés au référentiel et validation backend activée dans
   cette phase.
+- **Phase 6** — statuts créés au référentiel avec la facturation : `invoice`,
+  `invoice_line`, `provider_settlement` et `export_job`.
 - **À sa phase** — l'entité relève d'un domaine non encore repris ; la règle §56
   s'y appliquera quand cette phase arrivera. Le statut reste accepté en chaîne
   libre d'ici là, comme aujourd'hui.
@@ -44,12 +47,12 @@ textuel reste la valeur métier persistée.
 | `customer_site` | `customer_sites` | `varchar(20)` | `active` | non | À sa phase |
 | `depot` | `depots` | `varchar(20)` | `active` | non | À sa phase |
 | `document` | `documents` | `varchar(20)` | `active`, `received` | non | À sa phase |
-| `export_job` | `export_jobs` | `varchar(32)` | — | non | À sa phase |
-| `invoice` | `invoices` | `varchar(32)` | — | non | À sa phase |
-| `invoice_line` | `invoice_lines` | `varchar(32)` | — | non | À sa phase |
+| `export_job` | `export_jobs` | `varchar(32)` | `pending`, `processing`, `sent`, `failed` | oui | **Phase 6** |
+| `invoice` | `invoices` | `varchar(32)` | `draft`, `closed` | oui | **Phase 6** |
+| `invoice_line` | `invoice_lines` | `varchar(32)` | `billable` | oui | **Phase 6** |
 | `order_service_package` | `order_service_packages` | `varchar(32)` | `pending` | non | À sa phase |
 | `organization_user` | `organization_users` | `varchar(20)` | `active` | non | À sa phase |
-| `provider_settlement` | `provider_settlements` | `varchar(32)` | — | non | À sa phase |
+| `provider_settlement` | `provider_settlements` | `varchar(32)` | `draft`, `closed` | oui | **Phase 6** |
 | `role` | `roles` | `varchar(20)` | `active` | non | À sa phase |
 | `stock_item` | `stock_items` | `varchar(32)` | `active` | non | À sa phase |
 | `stock_location` | `stock_locations` | `varchar(32)` | `active` | non | À sa phase |
@@ -105,3 +108,61 @@ ci-dessus, qui raisonne par source, ne suffit pas à conclure.
 Aucune de ces lignes n'est modifiée : ce sont des données réelles, et leur
 arbitrage — ajouter le code au référentiel ou corriger la donnée — appartient à
 la phase qui reprendra ce domaine.
+
+## Ce que la phase 6 a ajouté — 28 août 2026
+
+Quatre sources rejoignent le référentiel avec la facturation.
+
+| Source | Codes | Transitions |
+|---|---|---|
+| `invoice` | `draft`, `closed` | `draft → closed` |
+| `invoice_line` | `billable` | aucune |
+| `provider_settlement` | `draft`, `closed` | `draft → closed` |
+| `export_job` | `pending`, `processing`, `sent`, `failed` | aucune |
+
+**Un seul passage pour la facture, et il ne revient pas.** Le §22 fige un
+document clôturé : le client le détient peut-être déjà, et un retour au
+brouillon laisserait deux vérités. La table des transitions dit donc `draft →
+closed`, et rien d'autre — c'est le référentiel, non le code, qui refuse la
+réouverture.
+
+**Une ligne de facture n'a qu'un état.** `billable` décrit ce qu'elle est ; le
+diagramme n'en énumère pas d'autre, et en inventer un — `invoiced`, `paid` —
+aurait créé un cycle de vie que rien ne fait avancer.
+
+**Les états d'un envoi ne se décrivent pas par des transitions.** Un envoi passe
+de `pending` à `processing`, puis à `sent` ou `failed` — mais une relance le
+ramène à `pending` depuis `failed`, et le rejeu d'un envoi bloqué depuis
+`processing`. Les décrire comme un cycle contraint aurait interdit la reprise
+que le §147 exige. L'état est donc au référentiel pour être nommé et filtré,
+sans machine qui le gouverne.
+
+**`provider_settlement` porte `closed` sans qu'aucune action ne l'y mène.** Le
+statut existe au référentiel, et la mise à jour générique l'accepte ; aucun
+écran ne le propose, la phase 6 ne décrivant pas de clôture de décompte. Le
+noter vaut mieux que d'inventer une action que la spécification ne demande pas.
+
+### Le code exact de « Clôturée »
+
+Le §174 demande qu'il soit écrit noir sur blanc, parce que tout le mécanisme
+d'envoi en dépend :
+
+```text
+source = invoice
+code   = closed
+label  = Clôturée
+```
+
+`closed` est la valeur **stockée** dans `invoices.status` ; « Clôturée » n'est
+que son libellé d'affichage, porté par la table `statuses`. Le code applicatif
+ne connaît que `closed` — `InvoiceClosure::CLOSED` — et jamais le libellé, qui
+peut être traduit ou réécrit sans rien casser.
+
+### Aucun `status_id`
+
+Vérifié sur les quatre tables de cette phase : `invoices`, `invoice_lines`,
+`provider_settlements` et `export_jobs` portent chacune une colonne `status` en
+`varchar(32)`, et **aucune** ne porte de clé étrangère vers `statuses`. Le
+référentiel décrit les codes, il ne les héberge pas : une facture reste lisible
+si le référentiel change, et le §170 l'interdit explicitement.
+

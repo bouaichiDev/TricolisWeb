@@ -9,6 +9,7 @@ import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { ProviderSettlementsTab } from '@/modules/providerSettlements/components/ProviderSettlementsTab'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -60,6 +61,7 @@ export function ProviderDetailPage() {
           <TabsTrigger value="information">{t('providers.tabs.information')}</TabsTrigger>
           <TabsTrigger value="drivers">{t('providers.tabs.drivers')}</TabsTrigger>
           <TabsTrigger value="vehicles">{t('providers.tabs.vehicles')}</TabsTrigger>
+          <TabsTrigger value="settlements">{t('providers.tabs.settlements')}</TabsTrigger>
           <TabsTrigger value="documents">{t('providers.tabs.documents')}</TabsTrigger>
         </TabsList>
 
@@ -138,6 +140,10 @@ export function ProviderDetailPage() {
             kind="vehicles"
             active={tab === 'vehicles'}
           />
+        </TabsContent>
+
+        <TabsContent value="settlements" className="mt-6">
+          <ProviderSettlementsTab providerId={provider.id} active={tab === 'settlements'} />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">

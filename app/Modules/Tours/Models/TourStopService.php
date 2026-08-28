@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'order_service_id',
     'sequence_within_stop',
     'is_active_assignment',
+    'confirmed_at',
     'status',
 ])]
 class TourStopService extends Model
@@ -51,6 +52,7 @@ class TourStopService extends Model
         return [
             'sequence_within_stop' => 'integer',
             'is_active_assignment' => 'boolean',
+            'confirmed_at' => 'datetime',
         ];
     }
 

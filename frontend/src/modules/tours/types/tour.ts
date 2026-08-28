@@ -37,6 +37,14 @@ export interface Tour {
    * annulée, et afficher un nom laisserait croire le contraire.
    */
   plannedBy?: { id: string; name: string } | null
+  /**
+   * Qui compose la tournée en ce moment.
+   *
+   * Distinct du créateur : la réservation se prend au premier geste et se rend
+   * quand on a fini, **sans que le statut bouge**.
+   */
+  lockedBy?: { id: string; name: string } | null
+  lockedAt?: string | null
   /** Rendu seulement sur `?withStops=1` : la vue en colonnes les montre. */
   stops?: TourStop[]
 }

@@ -7,16 +7,19 @@ namespace App\Http\Controllers\Api\V1\Tours;
 use App\Http\Controllers\Api\V1\Concerns\BuildsAuditContext;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesTourScope;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\Tours\ChangeTourStatusRequest;
 use App\Http\Requests\Api\V1\Tours\PlanServicesRequest;
 use App\Http\Resources\Api\V1\Tours\TourDetailResource;
 use App\Modules\Orders\Models\OrderService;
-use App\Modules\Planning\Actions\ChangeTourStatus;
 use App\Modules\Planning\Actions\PlanOrderServices;
+use App\Modules\Planning\Actions\TourTotals;
 use App\Modules\Planning\Actions\UnplanOrderServices;
+use App\Modules\Planning\Jobs\RecalculateTourRouteJob;
+use App\Modules\Planning\Services\StopSequence;
+use App\Modules\Planning\Services\TourReservation;
 use App\Modules\Tours\Models\Tour;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Ce qu'on fait à une tournée sans la modifier elle-même : y verser des
@@ -30,35 +33,6 @@ class TourPlanningController extends Controller
 {
     use BuildsAuditContext;
     use ResolvesTourScope;
-
-    /**
-     * Faire passer une tournée d'un état à un autre.
-     *
-     * Permission requise : `tours.update`. C'est par ici que se valide un
-     * brouillon et qu'il s'annule : le référentiel dit quels passages
-     * existent, et l'action les applique dans une transaction, tournée
-     * verrouillée.
-     *
-     * Un brouillon reste réservé à celui qui le prépare, comme toute autre
-     * écriture.
-     */
-    public function changeStatus(
-        ChangeTourStatusRequest $request,
-        Tour $tour,
-        ChangeTourStatus $action,
-    ): JsonResponse {
-        $organizationId = $this->guardTour($tour);
-        $this->guardDraftOwner($tour);
-        $this->authorize('update', $tour);
-
-        $updated = $action->execute(
-            $tour,
-            $request->validated('status'),
-            $this->auditContext($request, $organizationId),
-        );
-
-        return ApiResponse::ok(new TourDetailResource($updated));
-    }
 
     /**
      * Planifier une commande, ou certains de ses services, dans la tournée.
@@ -77,6 +51,7 @@ class TourPlanningController extends Controller
     ): JsonResponse {
         $organizationId = $this->guardTour($tour);
         $this->guardDraftOwner($tour);
+        $this->guardReservation($tour);
         $this->authorize('update', $tour);
 
         $serviceIds = $this->serviceIdsFrom($request, $organizationId);
@@ -92,6 +67,65 @@ class TourPlanningController extends Controller
             'planned' => $result['planned'],
             'rejected' => $result['rejected'],
         ]);
+    }
+
+    /**
+     * Réserver la tournée pour la composer.
+     *
+     * Permission requise : `tours.update`.
+     *
+     * **Explicite, et non prise à chaque planification.** C'est la carte qui
+     * réserve, parce que c'est elle qui cache son travail jusqu'à confirmation.
+     * Un glisser-déposer depuis les colonnes, lui, agit tout de suite et n'a
+     * rien à confirmer : le réserver aurait caché son propre résultat.
+     *
+     * @response 204
+     */
+    public function reserve(Request $request, Tour $tour): JsonResponse
+    {
+        $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
+        $this->guardReservation($tour);
+        $this->authorize('update', $tour);
+
+        app(TourReservation::class)->acquire($tour, (string) $request->user()->id);
+
+        return ApiResponse::noContent();
+    }
+
+    /**
+     * Rendre la tournée : la composition est terminée.
+     *
+     * Permission requise : `tours.update`.
+     *
+     * **Le statut n'est pas touché.** Confirmer ses modifications dans la carte
+     * ne veut pas dire confirmer la tournée : décision du 28 août 2026. La
+     * tournée reste au brouillon, avec ce qu'on y a mis, et cesse simplement
+     * d'être retenue.
+     *
+     * @response 204
+     */
+    public function release(Tour $tour): JsonResponse
+    {
+        $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
+        $this->guardReservation($tour);
+        $this->authorize('update', $tour);
+
+        app(TourReservation::class)->release($tour);
+
+        // Rendue, la tournée redevient visible telle qu'elle est : ce qui était
+        // figé pendant la composition se reprend maintenant, en une fois.
+        app(StopSequence::class)->pruneAndCompact(
+            $tour,
+            $tour->stops()->pluck('id')->all(),
+        );
+
+        app(TourTotals::class)->recalculate($tour->fresh());
+
+        RecalculateTourRouteJob::dispatch($tour->id)->afterCommit();
+
+        return ApiResponse::noContent();
     }
 
     /**
@@ -114,6 +148,7 @@ class TourPlanningController extends Controller
     ): JsonResponse {
         $organizationId = $this->guardTour($tour);
         $this->guardDraftOwner($tour);
+        $this->guardReservation($tour);
         $this->authorize('update', $tour);
 
         abort_if(

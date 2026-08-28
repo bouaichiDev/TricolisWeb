@@ -17,10 +17,13 @@ interface PlanningSessionBarProps {
 /**
  * Où en est la session de planification, et comment en sortir.
  *
- * Un brouillon qui porte des arrêts est un plan commencé : il reste réservé et
- * ferme les autres tant qu'on ne l'a pas conclu. La barre le dit et offre les
- * deux seules sorties que nomme le §26 — valider ou annuler — lesquelles font
- * toutes deux sortir la tournée du brouillon, où l'exclusivité cesse d'elle-même.
+ * Une tournée réservée ferme les autres tant qu'on ne l'a pas rendue. La barre
+ * le dit et offre les deux sorties : confirmer ce qu'on a composé, ou
+ * l'abandonner.
+ *
+ * **Aucune des deux ne change le statut.** Confirmer sur la carte ne confirme
+ * pas la tournée : elle reste au brouillon, et c'est depuis sa colonne ou sa
+ * fiche qu'on décide de la faire changer d'état.
  *
  * **L'état vient des données, pas d'une variable.** Une réservation qui
  * disparaîtrait en fermant la fenêtre n'en serait pas une.
@@ -66,7 +69,7 @@ export function PlanningSessionBar({
 
             <Button type="button" size="sm" disabled={isPending} onClick={onValidate}>
               <Check className="size-4" aria-hidden />
-              {t('planning.validate')}
+              {t('planning.confirmPlan')}
             </Button>
 
             <Button
@@ -77,7 +80,7 @@ export function PlanningSessionBar({
               onClick={onCancel}
             >
               <X className="size-4" aria-hidden />
-              {t('planning.cancelPlan')}
+              {t('planning.abandonPlan')}
             </Button>
           </span>
         ) : (

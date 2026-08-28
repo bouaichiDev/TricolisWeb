@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Tours;
 
+use App\Modules\Planning\Services\ConfirmedContent;
 use App\Modules\Tours\Models\Tour;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,11 +26,34 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class TourListResource extends JsonResource
 {
     /**
-     * @param  array<string, array{id: string, name: string}>  $planners  par tournée
+     * @param  array<string, array{id: string, name: string}>  $planners  créateurs
+     * @param  array<string, array{id: string, name: string}>  $holders  réservations en cours
      */
-    public function __construct($resource, private readonly array $planners = [])
-    {
+    public function __construct(
+        $resource,
+        private readonly array $planners = [],
+        private readonly array $holders = [],
+    ) {
         parent::__construct($resource);
+    }
+
+    /**
+     * Les arrêts visibles, ceux qui portent encore quelque chose de confirmé.
+     *
+     * Un arrêt né pendant la composition n'a que des services non confirmés :
+     * le montrer vide dirait qu'il se passe quelque chose sans dire quoi.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function visibleStops(): array
+    {
+        return $this->stops
+            ->map(fn ($stop) => new TourStopResource($stop, $this->resource))
+            ->filter(fn (TourStopResource $resource): bool => $this->locked_at === null
+                || $resource->toArray(request())['serviceCount'] > 0)
+            ->map(fn (TourStopResource $resource) => $resource->toArray(request()))
+            ->values()
+            ->all();
     }
 
     /**
@@ -41,9 +65,10 @@ class TourListResource extends JsonResource
      */
     private function distinctOrderCount(): int
     {
+        $confirmed = app(ConfirmedContent::class);
+
         return $this->stops
-            ->flatMap(fn ($stop) => $stop->relationLoaded('services') ? $stop->services : [])
-            ->filter(fn ($assignment): bool => (bool) $assignment->is_active_assignment)
+            ->flatMap(fn ($stop) => $confirmed->servicesOf($this->resource, $stop))
             ->map(fn ($assignment) => $assignment->orderService?->order_id)
             ->filter()
             ->unique()
@@ -88,8 +113,21 @@ class TourListResource extends JsonResource
             // planificateur qui trouve la tournée en lecture seule doit savoir
             // à qui demander de la libérer.
             'plannedBy' => $this->planners[$this->id] ?? null,
+            // Qui la compose en ce moment. Distinct du créateur : la
+            // réservation se prend au premier geste et se rend quand on a fini,
+            // sans que le statut bouge.
+            'lockedBy' => $this->holders[$this->id] ?? null,
+            'lockedAt' => $this->locked_at?->toIso8601String(),
             'stopCount' => $this->whenCounted('stops'),
-            'stops' => TourStopResource::collection($this->whenLoaded('stops')),
+            // Les arrêts sont rendus **par la tournée** : c'est elle qui sait
+            // si une composition est en cours, donc ce qui doit rester caché.
+            'stops' => $this->whenLoaded('stops', fn () => $this->visibleStops()),
+            // Dire ce qui attend plutôt que le taire : une tournée dont le
+            // contenu semble figé alors qu'on la compose ailleurs inquiéterait.
+            'pendingChanges' => $this->whenLoaded(
+                'stops',
+                fn (): int => app(ConfirmedContent::class)->pendingCount($this->resource),
+            ),
             'periodCount' => $this->whenCounted('periods'),
         ];
     }

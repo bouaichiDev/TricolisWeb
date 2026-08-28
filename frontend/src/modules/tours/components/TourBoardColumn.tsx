@@ -12,6 +12,7 @@ import { StatusBadge } from '@/shared/components/data/StatusBadge'
 
 import { TourBoardStop } from './TourBoardStop'
 import { TourColumnHeader } from './TourColumnHeader'
+import { TourStatusMenu } from './TourStatusMenu'
 import type { Tour } from '../types/tour'
 
 interface TourBoardColumnProps {
@@ -87,6 +88,10 @@ export function TourBoardColumn({
         </Link>
         <span className="flex shrink-0 items-center gap-1">
           <StatusBadge status={tour.status} source="tour" />
+
+          {/* Le changement d'etat depuis la colonne : c'est la tournee reelle
+              qu'on fait avancer, pas la composition sur carte. */}
+          <TourStatusMenu tour={tour} />
 
           {onEdit === undefined ? null : (
             <button

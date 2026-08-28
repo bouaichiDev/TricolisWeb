@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { Tour } from '@/modules/tours/types/tour'
-import { useTourRoute } from '@/modules/tours/hooks/useTours'
+import { useReserveTour, useTourRoute } from '@/modules/tours/hooks/useTours'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { useAuth } from '@/shared/hooks/useAuth'
 
@@ -83,10 +83,36 @@ export function PlanningMapScreen({
 
   const conclude = useConcludePlan()
 
-  // Les deux issues sont irreversibles : la tournee quitte le brouillon dans
-  // les deux cas, et l'annulation rend les commandes au pool.
-  const [deciding, setDeciding] = useState<'validate' | 'cancel' | null>(null)
-  const receiving = selected !== null && session.canReceive(selected, selected)
+  // Aucune des deux ne change le statut : confirmer rend la tournee telle
+  // quelle, abandonner rend les commandes au pool. Elle reste au brouillon.
+  const [deciding, setDeciding] = useState<'confirm' | 'abandon' | null>(null)
+  // La tournee que je retiens, quelle qu'elle soit : c'est elle qui ferme les
+  // autres, qu'on la regarde ou non. Une composition laissee ouverte ailleurs
+  // doit se conclure avant d'en commencer une seconde.
+  const held = tours.find((tour) => session.awaitsConclusion(tour)) ?? null
+
+  const receiving = selected !== null && session.canReceive(selected, held)
+
+  const reserve = useReserveTour()
+
+  /**
+   * Verser depuis la carte reserve d'abord la tournee.
+   *
+   * La reservation est ce qui cache le travail aux colonnes jusqu'a
+   * confirmation : sans elle, le versement y apparaitrait aussitot. Elle n'est
+   * demandee qu'une fois, tant qu'on ne l'a pas rendue.
+   */
+  const plan = (orderId: string) => {
+    if (selected === null) return
+
+    if (session.awaitsConclusion(selected)) {
+      onPlanOrder(orderId)
+
+      return
+    }
+
+    reserve.mutate(selected.id, { onSuccess: () => onPlanOrder(orderId) })
+  }
 
   const drafts = tours.filter((tour) => tour.status === 'draft')
 
@@ -97,28 +123,28 @@ export function PlanningMapScreen({
         selected={selected}
         awaitsConclusion={awaits}
         isPending={isPending || conclude.isPending}
-        onValidate={() => setDeciding('validate')}
-        onCancel={() => setDeciding('cancel')}
+        onValidate={() => setDeciding('confirm')}
+        onCancel={() => setDeciding('abandon')}
       />
 
       <ConfirmDialog
         open={deciding !== null}
         onOpenChange={(open) => (open ? undefined : setDeciding(null))}
-        title={t(deciding === 'cancel' ? 'planning.cancelPlanTitle' : 'planning.validatePlanTitle')}
+        title={t(deciding === 'abandon' ? 'planning.abandonPlanTitle' : 'planning.confirmPlanTitle')}
         description={
-          deciding === 'cancel'
-            ? t('planning.cancelPlanBody', {
+          deciding === 'abandon'
+            ? t('planning.abandonPlanBody', {
                 count: (selected?.stops ?? []).flatMap((stop) => stop.orderServiceIds ?? []).length,
               })
-            : t('planning.validatePlanBody')
+            : t('planning.confirmPlanBody')
         }
-        confirmLabel={t(deciding === 'cancel' ? 'planning.cancelPlan' : 'planning.validate')}
-        variant={deciding === 'cancel' ? 'destructive' : 'default'}
+        confirmLabel={t(deciding === 'abandon' ? 'planning.abandonPlan' : 'planning.confirmPlan')}
+        variant={deciding === 'abandon' ? 'destructive' : 'default'}
         isPending={conclude.isPending}
         onConfirm={() => {
           if (selected !== null) {
-            if (deciding === 'cancel') conclude.cancel(selected)
-            else conclude.validate(selected)
+            if (deciding === 'abandon') conclude.abandon(selected)
+            else conclude.confirm(selected)
           }
 
           setDeciding(null)
@@ -135,9 +161,9 @@ export function PlanningMapScreen({
             onSelectTour={onSelectTour}
             onFocusStop={aim}
             onUnplan={receiving ? onUnplan : undefined}
-            // Tant que la tournee ouverte attend sa conclusion, les autres
-            // sont fermees : deux plans en parallele se confondent.
-            lockedTourId={awaits ? selectedTourId : null}
+            // Tant qu'une tournee est retenue, les autres sont fermees : deux
+            // plans en parallele se confondent.
+            lockedTourId={held?.id ?? null}
             isHeldByOther={session.heldByOther}
           />
         </section>
@@ -152,7 +178,7 @@ export function PlanningMapScreen({
             routeTrace={route.data ?? []}
             routeTourId={selectedTourId}
             className="min-h-0 w-full flex-1 rounded-lg border"
-            onPlanOrder={receiving ? onPlanOrder : undefined}
+            onPlanOrder={receiving ? plan : undefined}
           />
         </div>
 
@@ -167,7 +193,7 @@ export function PlanningMapScreen({
             search={search}
             onSearchChange={onSearchChange}
             onFocus={aimAtOrder}
-            onPlan={receiving ? onPlanOrder : undefined}
+            onPlan={receiving ? plan : undefined}
             isPending={isPending}
           />
         </section>

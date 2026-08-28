@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Modules\Integrations\Models\OrganizationApiConfiguration;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Planning\Services\GeocodingService;
+use App\Modules\Planning\Services\RouteGeometryService;
 use App\Modules\Planning\Services\RoutingService;
 use Illuminate\Database\Seeder;
 
@@ -89,6 +90,43 @@ class GpsApiConfigurationSeeder extends Seeder
                     'profile' => 'truckfast',
                 ],
                 'timeout_seconds' => 15,
+                'is_active' => true,
+            ],
+        );
+
+        $this->declareGeometry($organization);
+    }
+
+    /**
+     * Le tracé routier, rendu par un **autre** fournisseur.
+     *
+     * Le service du projet ne rend aucune polyligne : ni `format=geojson`, ni
+     * `geometry=true`, ni `getRoute` — vérifié le 28 août 2026. Le §101 prévoit
+     * ce cas et autorise un fournisseur qui, lui, sait dessiner.
+     *
+     * **Le serveur public d'OSRM est un tiers.** Il reçoit les coordonnées des
+     * arrêts — donc, indirectement, les adresses des clients. Il convient pour
+     * essayer ; une mise en production demande sa propre instance, et il suffit
+     * alors de changer `base_url` depuis l'écran « API externes ». Sa politique
+     * d'usage interdit par ailleurs un trafic soutenu.
+     *
+     * Les **distances restent celles du service du projet** : celui-ci ne sert
+     * qu'à dessiner. Mêler deux sources ferait diverger le tracé du chiffre
+     * affiché, et c'est le chiffre qui engage.
+     */
+    private function declareGeometry(Organization $organization): void
+    {
+        OrganizationApiConfiguration::firstOrCreate(
+            ['organization_id' => $organization->id, 'code' => RouteGeometryService::CONFIGURATION_CODE],
+            [
+                'name' => 'Tracé routier (OSRM public)',
+                'base_url' => 'https://router.project-osrm.org',
+                'auth_type' => 'none',
+                'settings' => [
+                    'path' => '/route/v1/driving/{coordinates}',
+                    'query' => ['overview' => 'full', 'geometries' => 'geojson'],
+                ],
+                'timeout_seconds' => 20,
                 'is_active' => true,
             ],
         );

@@ -13,6 +13,7 @@ use App\Http\Requests\Api\V1\Tours\UpdateTourRequest;
 use App\Http\Resources\Api\V1\Tours\TourDetailResource;
 use App\Http\Resources\Api\V1\Tours\TourListResource;
 use App\Modules\Planning\Services\DraftOwnership;
+use App\Modules\Planning\Services\TourReservation;
 use App\Modules\Tours\Actions\CreateTourAction;
 use App\Modules\Tours\Actions\DeleteTourAction;
 use App\Modules\Tours\Actions\UpdateTourAction;
@@ -51,9 +52,10 @@ class TourController extends Controller
         // `lockedBy`, et poser la question tournee par tournee ferait ce que le
         // budget de requetes de la phase 4 avait deja fait echouer une fois.
         $planners = app(DraftOwnership::class)->namedFor($paginator->items());
+        $holders = app(TourReservation::class)->holdersOf($paginator->items());
 
         return ApiResponse::paginated(
-            $paginator->through(fn (Tour $t) => new TourListResource($t, $planners)),
+            $paginator->through(fn (Tour $t) => new TourListResource($t, $planners, $holders)),
         );
     }
 

@@ -72,10 +72,15 @@ const tour = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+/** Ce que la carte a demandé au serveur, dans l'ordre. */
+const reserved: string[] = []
+
 function render(
   result: { planned: string[]; rejected: unknown[] } = { planned: [SERVICE_ID], rejected: [] },
   tours = [tour()],
 ) {
+  reserved.length = 0
+
   const sent: unknown[] = []
 
   server.use(
@@ -83,6 +88,14 @@ function render(
     http.get(`${API}/tours/:id/route-geometry`, () =>
       HttpResponse.json({ data: { points: [] } }),
     ),
+    // Verser depuis la carte reserve d'abord la tournee : c'est ce qui cache
+    // le travail aux colonnes jusqu'a confirmation.
+    http.post(`${API}/tours/:id/reserve`, () => {
+      reserved.push('reserve')
+
+      return new HttpResponse(null, { status: 204 })
+    }),
+    http.post(`${API}/tours/:id/release`, () => new HttpResponse(null, { status: 204 })),
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder()]))),
     http.get(`${API}/tours`, () => HttpResponse.json(paginated(tours))),
     http.post(`${API}/tours/${TOUR_ID}/plan`, async ({ request }) => {
@@ -360,7 +373,26 @@ describe('panneaux de la vue carte', () => {
 
     expect(await screen.findByText(/Tracé routier réel/)).toBeInTheDocument()
   })
+
+  /**
+   * C'est la réservation qui cache le travail aux colonnes : sans elle, verser
+   * depuis la carte y apparaîtrait aussitôt.
+   */
+  it('réserve la tournée avant d’y verser', async () => {
+    const sent = render()
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+    await screen.findByText('Connecté comme')
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Planifier la commande' }))
+
+    await waitFor(() => expect(sent).toHaveLength(1))
+    expect(reserved).toEqual(['reserve'])
+  })
 })
+
 
 /**
  * L'exclusivité d'un brouillon, telle que les §22 à §26 la définissent : elle
@@ -372,6 +404,7 @@ describe('réservation d’un brouillon dans la carte', () => {
   })
   const started = tour({
     plannedBy: { id: '01JQZ0000000000000000USR1', name: 'Badr Ouali' },
+    lockedBy: { id: '01JQZ0000000000000000USR1', name: 'Badr Ouali' },
     stopCount: 1,
     stops: [
       {
@@ -394,6 +427,7 @@ describe('réservation d’un brouillon dans la carte', () => {
     id: '01JQZ0000000000000TOUR09',
     tourNumber: 'TR-AUTRE',
     plannedBy: { id: '01JQZ00000000000000AUTR1', name: 'Sara Amrani' },
+    lockedBy: { id: '01JQZ00000000000000AUTR1', name: 'Sara Amrani' },
   })
 
   const openMap = async () => {
@@ -420,27 +454,27 @@ describe('réservation d’un brouillon dans la carte', () => {
    * conclure alors qu'elle était toujours réservée. Ils se déduisent maintenant
    * du contenu, qui survit à tout.
    */
-  it('propose de conclure dès l’ouverture d’un plan commencé', async () => {
+  it('propose de conclure dès l’ouverture d’une tournée réservée', async () => {
     render(undefined, [started])
     await openMap()
 
     await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
 
     expect(
-      await screen.findByRole('button', { name: /Valider la planification/ }),
+      await screen.findByRole('button', { name: /Confirmer les modifications/ }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Annuler la planification/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abandonner les modifications/ })).toBeInTheDocument()
   })
 
-  /** Un brouillon vide n'attend rien : ni à valider, ni à annuler. */
-  it('ne propose rien sur un brouillon vide', async () => {
+  /** Une tournée libre n'attend rien : ni à confirmer, ni à abandonner. */
+  it('ne propose rien sur une tournée non réservée', async () => {
     render(undefined, [mine])
     await openMap()
 
     await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
 
     expect(
-      screen.queryByRole('button', { name: /Valider la planification/ }),
+      screen.queryByRole('button', { name: /Confirmer les modifications/ }),
     ).not.toBeInTheDocument()
   })
 
@@ -453,7 +487,7 @@ describe('réservation d’un brouillon dans la carte', () => {
     await openMap()
 
     await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
-    await screen.findByRole('button', { name: /Valider la planification/ })
+    await screen.findByRole('button', { name: /Confirmer les modifications/ })
 
     expect(screen.getByRole('button', { name: 'TR-AUTRE' })).toBeDisabled()
   })
@@ -465,10 +499,10 @@ describe('réservation d’un brouillon dans la carte', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
     await userEvent.click(
-      await screen.findByRole('button', { name: /Annuler la planification/ }),
+      await screen.findByRole('button', { name: /Abandonner les modifications/ }),
     )
 
-    expect(await screen.findByText('Annuler cette planification ?')).toBeInTheDocument()
+    expect(await screen.findByText('Abandonner les modifications ?')).toBeInTheDocument()
     expect(screen.getByText(/reviennent dans les commandes à planifier/)).toBeInTheDocument()
   })
 })

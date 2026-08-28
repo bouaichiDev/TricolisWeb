@@ -125,6 +125,9 @@ final readonly class PlanOrderServices
             'order_service_id' => $service->id,
             'sequence_within_stop' => $position,
             'is_active_assignment' => true,
+            // Pendant une composition, l'affectation attend d'etre confirmee :
+            // les colonnes ne doivent pas montrer un plan a moitie fait.
+            'confirmed_at' => $tour->locked_by === null ? now() : null,
             'status' => 'planned',
         ]);
 

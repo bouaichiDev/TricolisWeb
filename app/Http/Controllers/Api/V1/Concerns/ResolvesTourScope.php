@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Concerns;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Planning\Services\DraftOwnership;
+use App\Modules\Planning\Services\TourReservation;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -58,6 +60,33 @@ trait ResolvesTourScope
             : trim($creator->first_name.' '.$creator->last_name);
 
         abort(403, sprintf('Planification en cours par %s. Cette tournée est en lecture seule.', $name));
+    }
+
+    /**
+     * Refuse la tournée retenue par un autre planificateur.
+     *
+     * Distinct de {@see guardDraftOwner} : celui-là protege le brouillon de son
+     * créateur, celui-ci une composition en cours. Une tournée peut appartenir
+     * à Sara et être composée par elle depuis la carte — les deux gardes disent
+     * alors la même chose — mais une tournée sans créateur connu peut très bien
+     * être retenue.
+     */
+    protected function guardReservation(Tour $tour): void
+    {
+        /** @var TourReservation $reservation */
+        $reservation = app(TourReservation::class);
+        $userId = (string) request()->user()?->id;
+
+        if ($reservation->allows($tour, $userId)) {
+            return;
+        }
+
+        $holder = User::find($tour->locked_by);
+        $name = $holder === null
+            ? 'un autre utilisateur'
+            : trim($holder->first_name.' '.$holder->last_name);
+
+        abort(403, sprintf('Tournée réservée par %s. Demandez-lui de la libérer.', $name));
     }
 
     protected function guardStop(Tour $tour, TourStop $stop): string

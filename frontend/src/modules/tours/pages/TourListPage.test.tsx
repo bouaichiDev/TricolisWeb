@@ -141,13 +141,13 @@ const poolOrder = {
   ],
 }
 
-function render(overrides: Record<string, unknown> = {}) {
+function render(overrides: Record<string, unknown> = {}, statuses: unknown[] = []) {
   const calls: URL[] = []
   const plans: { url: string; body: Record<string, unknown> }[] = []
   const unplans: { url: string; body: Record<string, unknown> }[] = []
 
   server.use(
-    http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/statuses`, () => HttpResponse.json(paginated(statuses))),
     http.get(`${API}/tours/:id/route-geometry`, () =>
       HttpResponse.json({ data: { points: [] } }),
     ),
@@ -490,6 +490,44 @@ describe('commandes d’une tournée', () => {
       within(dialog).getByLabelText('Rechercher une commande à planifier'),
     ).toBeInTheDocument()
     expect(await within(dialog).findByText('CMD-9001')).toBeInTheDocument()
+  })
+
+  /**
+   * **Régression.** La fenêtre ne sélectionnait la tournée que si elle était au
+   * brouillon. Une tournée confirmée s'ouvrait donc sans sélection, et sans
+   * sélection la carte ne demande aucun tracé : il ne restait que des traits
+   * entre les arrêts.
+   */
+  it('trace la route d’une tournée même confirmée', async () => {
+    render({ status: 'confirmed' })
+
+    await screen.findByText('TR-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Voir la tournée sur la carte' }))
+
+    const dialog = await screen.findByRole('dialog')
+
+    // La tournee est bien celle qu'on regarde : c'est cette selection qui fait
+    // demander son trace.
+    expect(await within(dialog).findByText(/Les commandes iront dans TR-001/)).toBeInTheDocument()
+  })
+
+  /** Faire avancer la tournée réelle se fait depuis sa colonne. */
+  it('propose de changer le statut depuis la colonne', async () => {
+    // Les statuts passent par `render` : declares apres, ils arriveraient trop
+    // tard — React Query aurait deja mis la liste vide en cache pour dix
+    // minutes, et ne la redemanderait pas.
+    render({}, [
+      { id: 's1', source: 'tour', code: 'draft', label: 'Brouillon', isActive: true },
+      { id: 's2', source: 'tour', code: 'confirmed', label: 'Confirmée', isActive: true },
+    ])
+
+    await screen.findByText('TR-001')
+    await userEvent.click(await screen.findByRole('button', { name: 'Changer le statut' }))
+
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Confirmée' }))
+
+    expect(await screen.findByText('Changer le statut de la tournée ?')).toBeInTheDocument()
+    expect(screen.getByText(/passera à « Confirmée »/)).toBeInTheDocument()
   })
 
   /** Sans arrêt tracé, la carte n'aurait rien à montrer. */

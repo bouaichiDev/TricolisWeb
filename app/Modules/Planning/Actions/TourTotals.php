@@ -22,11 +22,24 @@ use Illuminate\Support\Facades\DB;
  *
  * Les distances ne sont pas touchées ici : elles viennent du calcul
  * d'itinéraire, qui a son propre déclencheur.
+ *
+ * **Rien n'est recalculé tant que la tournée est réservée.** C'est ce qui
+ * empêche une composition en cours de transparaître dans les colonnes : le
+ * contenu y est filtré sur `locked_at`, et les totaux, eux, restent à leur
+ * dernière valeur confirmée.
  */
 final readonly class TourTotals
 {
     public function recalculate(Tour $tour): Tour
     {
+        // Figés pendant la composition : les colonnes montrent la tournée telle
+        // qu'elle était avant qu'on la prenne, et un total qui bougerait
+        // trahirait un plan que personne n'a encore confirmé. Ils sont repris
+        // au moment où la tournée est rendue.
+        if ($tour->locked_by !== null) {
+            return $tour;
+        }
+
         $serviceIds = DB::table('tour_stop_services')
             ->join('tour_stops', 'tour_stops.id', '=', 'tour_stop_services.tour_stop_id')
             ->where('tour_stops.tour_id', $tour->id)

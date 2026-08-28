@@ -2,51 +2,56 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { useUnplanFromTour } from '@/modules/planning/hooks/usePlanning'
+import { useReleaseTour } from '@/modules/tours/hooks/useTours'
 import type { Tour } from '@/modules/tours/types/tour'
-import { useChangeTourStatus } from '@/modules/tours/hooks/useTours'
 
 /**
- * Conclure un plan commencé : le valider, ou l'annuler.
+ * Conclure une composition sur carte : la confirmer, ou l'abandonner.
  *
- * Le §26 ne connaît que ces deux issues, et toutes deux font **sortir la
- * tournée du brouillon** — c'est là que l'exclusivité cesse d'elle-même. Une
- * troisième issue « je rends la main sans rien changer » n'aurait aucun effet
- * durable : la tournée resterait au brouillon, donc encore réservée, et les
- * boutons reviendraient à la réouverture. C'est exactement ce qui s'est produit
- * à la première version.
+ * **Ni l'une ni l'autre ne touche au statut.** Décision du 28 août 2026 :
+ * confirmer ses modifications dans la carte ne veut pas dire confirmer la
+ * tournée. Elle reste au brouillon, avec ce qu'on y a mis, et l'on décide plus
+ * tard — depuis la fiche ou la colonne — de la confirmer pour de bon.
  *
- * **Annuler rend tout au pool avant d'annuler la tournée.** Sans cela, les
- * commandes resteraient prisonnières d'une tournée annulée : ni livrées, ni
- * replanifiables. Le geste est destructeur, et l'écran le fait confirmer.
+ * C'est cette exigence qui a rendu nécessaire une réservation explicite : tant
+ * que la fin de l'exclusivité coïncidait avec la sortie du brouillon, elle se
+ * déduisait du statut. Elle se rend maintenant à part.
  */
 export function useConcludePlan() {
   const { t } = useTranslation()
   const unplan = useUnplanFromTour()
-  const changeStatus = useChangeTourStatus()
+  const release = useReleaseTour()
 
   return {
-    isPending: unplan.isPending || changeStatus.isPending,
+    isPending: unplan.isPending || release.isPending,
 
-    validate: (tour: Tour) => changeStatus.mutate({ id: tour.id, status: 'confirmed' }),
+    /** La composition est bonne : on rend la tournée telle quelle. */
+    confirm: (tour: Tour) =>
+      release.mutate(tour.id, {
+        onSuccess: () => toast.success(t('planning.planConfirmed')),
+      }),
 
-    cancel: (tour: Tour) => {
+    /**
+     * On abandonne : tout revient au pool, puis la tournée est rendue.
+     *
+     * Le retrait d'abord — une tournée rendue qui garde des commandes les
+     * laisserait planifiées sans que personne ne s'en occupe.
+     */
+    abandon: (tour: Tour) => {
       const serviceIds = (tour.stops ?? []).flatMap((stop) => stop.orderServiceIds ?? [])
 
-      const abandon = () =>
-        changeStatus.mutate(
-          { id: tour.id, status: 'cancelled' },
-          { onSuccess: () => toast.success(t('planning.planCancelled')) },
-        )
+      const giveBack = () =>
+        release.mutate(tour.id, {
+          onSuccess: () => toast.success(t('planning.planAbandoned')),
+        })
 
       if (serviceIds.length === 0) {
-        abandon()
+        giveBack()
 
         return
       }
 
-      // Le retrait d'abord : une tournee annulee qui garde ses commandes les
-      // rend introuvables pour la planification suivante.
-      unplan.mutate({ tourId: tour.id, orderServiceIds: serviceIds }, { onSuccess: abandon })
+      unplan.mutate({ tourId: tour.id, orderServiceIds: serviceIds }, { onSuccess: giveBack })
     },
   }
 }

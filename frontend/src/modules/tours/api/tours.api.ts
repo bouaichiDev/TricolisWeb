@@ -18,6 +18,23 @@ export const toursApi = {
   remove: (id: string) => api.delete<void>(`/tours/${id}`),
 
   /**
+   * Réserver la tournée pour la composer.
+   *
+   * **Explicite, et non prise à chaque planification.** C'est la carte qui
+   * réserve, parce que c'est elle qui cache son travail jusqu'à confirmation ;
+   * un glisser-déposé depuis les colonnes agit tout de suite.
+   */
+  reserve: (id: string) => api.post<void>(`/tours/${id}/reserve`),
+
+  /**
+   * Rendre la tournée : la composition est terminée.
+   *
+   * **Le statut n'est pas touché.** Confirmer ses modifications dans la carte
+   * ne confirme pas la tournée : elle reste au brouillon, avec ce qu'on y a mis.
+   */
+  release: (id: string) => api.post<void>(`/tours/${id}/release`),
+
+  /**
    * Le tracé routier entre les arrêts.
    *
    * Rendu vide quand aucun fournisseur de géométrie n'est déclaré ou qu'un

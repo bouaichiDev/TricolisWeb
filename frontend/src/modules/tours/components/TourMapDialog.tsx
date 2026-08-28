@@ -63,11 +63,14 @@ function MapBody({ tour, tours, date }: { tour: Tour; tours: Tour[]; date?: stri
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
 
-  // La tournee cliquee recoit d'emblee, si elle le peut encore : une tournee
-  // confirmee n'accepte plus rien, et la designer laisserait croire l'inverse.
-  const [selectedTourId, setSelectedTourId] = useState<string | null>(
-    tour.status === 'draft' ? tour.id : null,
-  )
+  // La tournee cliquee est toujours celle qu'on regarde, quel que soit son
+  // etat : c'est elle qu'on est venu voir, et c'est cette selection qui fait
+  // tracer sa route. Ne la designer que si elle etait brouillon laissait une
+  // tournee confirmee sans trace, avec seulement des traits entre ses arrets.
+  //
+  // Recevoir est une autre question, tranchee ailleurs : une tournee confirmee
+  // n'accepte rien, et l'ecran ne le propose pas.
+  const [selectedTourId, setSelectedTourId] = useState<string | null>(tour.id)
 
   const pool = usePlanningPool({
     page: 1,

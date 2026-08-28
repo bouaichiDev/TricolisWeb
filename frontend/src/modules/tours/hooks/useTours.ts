@@ -73,6 +73,30 @@ export function useUpdateTour(id: string) {
   })
 }
 
+/** Réserver la tournée le temps de la composer sur la carte. */
+export function useReserveTour() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => toursApi.reserve(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tourKeys.all })
+    },
+  })
+}
+
+/** Rendre la tournée après l'avoir composée ; le statut ne bouge pas. */
+export function useReleaseTour() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => toursApi.release(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tourKeys.all })
+    },
+  })
+}
+
 export function useChangeTourStatus() {
   const queryClient = useQueryClient()
   const { t } = useTranslation()

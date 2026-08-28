@@ -1597,7 +1597,7 @@
     "heldBy": "Réservée par",
     "heldByOther": "Planification en cours par {{name}} — lecture seule.",
     "readOnlyHere": "Lecture seule : concluez la tournée en cours pour modifier celle-ci.",
-    "mustConclude": "À conclure :",
+    "mustConclude": "Tournée réservée :",
     "validate": "Valider la planification",
     "abandon": "Libérer sans valider",
     "concludeFirst": "Validez ou libérez la tournée en cours avant d’en ouvrir une autre.",
@@ -1606,7 +1606,15 @@
     "cancelPlanTitle": "Annuler cette planification ?",
     "cancelPlanBody": "Les {{count}} services reviennent dans les commandes à planifier, et la tournée passe à « annulée ». Elle ne pourra plus recevoir.",
     "validatePlanTitle": "Valider cette planification ?",
-    "validatePlanBody": "La tournée quitte le brouillon et passe à « confirmée ». Elle cesse alors de vous être réservée."
+    "validatePlanBody": "La tournée quitte le brouillon et passe à « confirmée ». Elle cesse alors de vous être réservée.",
+    "confirmPlan": "Confirmer les modifications",
+    "abandonPlan": "Abandonner les modifications",
+    "confirmPlanTitle": "Confirmer les modifications ?",
+    "confirmPlanBody": "La tournée est rendue et cesse de vous être réservée. Elle reste au brouillon : son statut ne change pas.",
+    "abandonPlanTitle": "Abandonner les modifications ?",
+    "abandonPlanBody": "Les {{count}} services reviennent dans les commandes à planifier, et la tournée est rendue. Son statut ne change pas.",
+    "planConfirmed": "Modifications confirmées. La tournée est rendue.",
+    "planAbandoned": "Modifications abandonnées. Les commandes sont revenues à planifier."
   },
   "tours": {
     "title": "Tournées",
@@ -1678,6 +1686,9 @@
     "fromTo": "Du {{from}} au {{to}}",
     "from": "Début",
     "to": "Fin",
-    "editPlan": "Modifier la tournée"
+    "editPlan": "Modifier la tournée",
+    "changeStatus": "Changer le statut",
+    "changeStatusTitle": "Changer le statut de la tournée ?",
+    "changeStatusBody": "La tournée {{number}} passera à « {{status}} »."
   }
 }

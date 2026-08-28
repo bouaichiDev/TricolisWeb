@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Resources\Api\V1\Tours;
 
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Planning\Services\ConfirmedContent;
+use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourStop;
+use App\Modules\Tours\Models\TourStopService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -17,6 +20,53 @@ use Illuminate\Support\Collection;
  */
 class TourStopResource extends JsonResource
 {
+    /**
+     * @param  Tour|null  $tour  la tournée porteuse, quand elle filtre son contenu
+     */
+    public function __construct($resource, private readonly ?Tour $tour = null)
+    {
+        parent::__construct($resource);
+    }
+
+    /**
+     * Collection d'arrêts, sans tournée porteuse.
+     *
+     * `mapInto` passe l'index en second argument, ce qui viendrait heurter
+     * `$tour`. La fabrique par défaut du framework ne connaît pas ce second
+     * paramètre : elle est donc réécrite pour l'ignorer.
+     *
+     * Les appelants qui filtrent une composition en cours instancient la
+     * ressource eux-mêmes, en passant la tournée.
+     */
+    public static function collection($resource)
+    {
+        return parent::collection(collect($resource)->map(
+            static fn ($stop) => new self($stop),
+        ));
+    }
+
+    /**
+     * Les services que cet arrêt doit montrer.
+     *
+     * Sans tournée passée, tous les actifs : c'est la carte, qui compose et voit
+     * tout. Avec, le filtre de {@see ConfirmedContent} s'applique — une
+     * composition en cours ne transparaît pas dans les colonnes.
+     *
+     * @return Collection<int, TourStopService>
+     */
+    private function visibleServices()
+    {
+        if (! $this->relationLoaded('services')) {
+            return collect();
+        }
+
+        if ($this->tour === null) {
+            return $this->services->where('is_active_assignment', true)->values();
+        }
+
+        return app(ConfirmedContent::class)->servicesOf($this->tour, $this->resource);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -36,12 +86,13 @@ class TourStopResource extends JsonResource
             'waitingMinutes' => $this->waiting_minutes,
             'serviceMinutes' => $this->service_minutes,
             'status' => $this->status->value,
-            'serviceCount' => $this->whenCounted('services'),
+            'serviceCount' => $this->relationLoaded('services')
+                ? $this->visibleServices()->count()
+                : $this->whenCounted('services'),
             // Le temps total sur place, somme des services actifs de l'arret.
             'totalServiceMinutes' => $this->whenLoaded(
                 'services',
-                fn (): int => (int) $this->services
-                    ->where('is_active_assignment', true)
+                fn (): int => (int) $this->visibleServices()
                     ->sum(fn ($assignment): int => (int) ($assignment->orderService?->required_time_minutes ?? 0)),
             ),
             // Ce que l'arret porte reellement, pour pouvoir le retirer d'un
@@ -50,10 +101,7 @@ class TourStopResource extends JsonResource
             // qu'il reste a faire.
             'orderServiceIds' => $this->whenLoaded(
                 'services',
-                fn () => $this->services
-                    ->where('is_active_assignment', true)
-                    ->pluck('order_service_id')
-                    ->values(),
+                fn () => $this->visibleServices()->pluck('order_service_id')->values(),
             ),
             'orders' => $this->whenLoaded('services', fn () => $this->plannedOrders()),
             // L'adresse en une ligne : la vue en colonnes montre ou le camion
@@ -82,8 +130,7 @@ class TourStopResource extends JsonResource
      */
     private function plannedOrders(): array
     {
-        return $this->services
-            ->where('is_active_assignment', true)
+        return $this->visibleServices()
             ->map(fn ($assignment) => $assignment->orderService)
             ->filter(fn ($service): bool => $service?->order !== null)
             ->groupBy(fn ($service): string => $service->order_id)

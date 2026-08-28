@@ -59,7 +59,10 @@ export function PlannedToursPanel({
           <div className="flex flex-wrap gap-1">
             {others.map((tour) => {
               const held = isHeldByOther?.(tour) ?? false
-              const engagedElsewhere = lockedTourId !== null && lockedTourId !== undefined
+              // « Ailleurs » veut dire une autre : la tournee qu'on retient
+              // reste ouverte, sans quoi on ne pourrait plus la conclure.
+              const engagedElsewhere =
+                lockedTourId !== null && lockedTourId !== undefined && lockedTourId !== tour.id
 
               return (
                 <Button

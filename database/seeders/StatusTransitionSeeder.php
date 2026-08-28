@@ -52,9 +52,23 @@ class StatusTransitionSeeder extends Seeder
         'in_progress' => ['completed', 'cancelled'],
     ];
 
+    /**
+     * Cycle de vie d'une facture, et d'un décompte fournisseur.
+     *
+     * Une seule transition, et elle ne revient pas : le §23 refuse la
+     * réouverture, et une facture transmise à un système externe doit rester
+     * historiquement stable. Ce qu'on veut défaire se corrige par un avoir, que
+     * le §168 renvoie à une évolution de conception.
+     *
+     * @var array<string, list<string>>
+     */
+    private const array BILLING_LIFECYCLE = ['draft' => ['closed']];
+
     public function run(): void
     {
         $this->seedTours();
+        $this->seedLifecycle(MorphMap::INVOICE, self::BILLING_LIFECYCLE);
+        $this->seedLifecycle(MorphMap::PROVIDER_SETTLEMENT, self::BILLING_LIFECYCLE);
 
         $statuses = Status::where('source', MorphMap::ORDER)->get()->keyBy('code');
 
@@ -99,13 +113,27 @@ class StatusTransitionSeeder extends Seeder
      */
     private function seedTours(): void
     {
-        $statuses = Status::where('source', MorphMap::TOUR)->get()->keyBy('code');
+        $this->seedLifecycle(MorphMap::TOUR, self::TOUR_LIFECYCLE);
+    }
+
+    /**
+     * Sème un cycle de vie pour une source du référentiel.
+     *
+     * Les codes absents sont ignorés : un cycle qui nomme un statut non semé
+     * décrit une intention, pas une erreur — il prendra effet le jour où le code
+     * existera.
+     *
+     * @param  array<string, list<string>>  $lifecycle
+     */
+    private function seedLifecycle(string $source, array $lifecycle): void
+    {
+        $statuses = Status::where('source', $source)->get()->keyBy('code');
 
         if ($statuses->isEmpty()) {
             return;
         }
 
-        foreach (self::TOUR_LIFECYCLE as $from => $targets) {
+        foreach ($lifecycle as $from => $targets) {
             $source = $statuses->get($from);
 
             if ($source === null) {

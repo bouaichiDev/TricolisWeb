@@ -201,6 +201,10 @@ class PermissionSeeder extends Seeder
         ['code' => 'invoices.create', 'name' => 'Créer une facture', 'module' => 'invoices', 'action' => 'create'],
         ['code' => 'invoices.update', 'name' => 'Modifier une facture', 'module' => 'invoices', 'action' => 'update'],
         ['code' => 'invoices.delete', 'name' => 'Supprimer une facture', 'module' => 'invoices', 'action' => 'delete'],
+        // La clôture est à part, comme le §111 le demande : elle fige la facture
+        // et déclenche son envoi chez le client. Qui corrige une ligne ne devrait
+        // pas, du même droit, transmettre un document irréversible.
+        ['code' => 'invoices.close', 'name' => 'Clôturer une facture', 'module' => 'invoices', 'action' => 'close'],
 
         ['code' => 'invoice_lines.view', 'name' => 'Voir les lignes de facture', 'module' => 'invoice_lines', 'action' => 'view'],
         ['code' => 'invoice_lines.create', 'name' => 'Ajouter une ligne de facture', 'module' => 'invoice_lines', 'action' => 'create'],

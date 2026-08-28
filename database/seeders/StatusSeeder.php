@@ -85,6 +85,29 @@ class StatusSeeder extends Seeder
             'planned' => 'Planifié',
             'done' => 'Effectué',
         ],
+        // Facturation. Aucun de ces codes n'était déclaré : seules les fabriques
+        // de test les employaient, ce qui en faisait la convention réelle du
+        // projet sans que le référentiel ne la connaisse. Ils sont en minuscules
+        // comme partout ailleurs, contrairement aux exemples du document.
+        MorphMap::INVOICE => [
+            'draft' => 'Brouillon',
+            // Le code de la clôture, celui qui déclenche les exports client.
+            'closed' => 'Clôturée',
+        ],
+        MorphMap::INVOICE_LINE => ['billable' => 'Facturable'],
+        MorphMap::PROVIDER_SETTLEMENT => [
+            'draft' => 'Brouillon',
+            'closed' => 'Clôturé',
+        ],
+        // `processing` s'ajoute aux trois codes des fabriques : sans lui, une
+        // reprise ne saurait pas distinguer un envoi en vol d'un envoi jamais
+        // tenté.
+        MorphMap::EXPORT_JOB => [
+            'pending' => 'En attente',
+            'processing' => 'En cours d’envoi',
+            'sent' => 'Envoyé',
+            'failed' => 'Échoué',
+        ],
     ];
 
     public function run(): void

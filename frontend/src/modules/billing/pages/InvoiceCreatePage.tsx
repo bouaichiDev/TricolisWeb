@@ -88,9 +88,9 @@ export function InvoiceCreatePage() {
     setSelected((current) => new Map(current).set(service.id, service))
   }
 
+  // Le numero n'est pas exige : laisse vide, le serveur l'attribue.
   const ready =
     header.customerId !== '' &&
-    header.invoiceNumber.trim() !== '' &&
     header.invoiceDate !== '' &&
     header.currencyCode.length === 3 &&
     chosen.length > 0
@@ -99,7 +99,7 @@ export function InvoiceCreatePage() {
     create.mutate(
       {
         customerId: header.customerId,
-        invoiceNumber: header.invoiceNumber.trim(),
+        invoiceNumber: header.invoiceNumber.trim() || undefined,
         invoiceDate: header.invoiceDate,
         periodFrom: filters.periodFrom || null,
         periodTo: filters.periodTo || null,

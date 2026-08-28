@@ -115,7 +115,8 @@ export interface InvoiceLinePayload {
 
 export interface InvoicePayload {
   customerId: string
-  invoiceNumber: string
+  /** Omis : le serveur l'attribue, et la reference externe le reprend. */
+  invoiceNumber?: string
   invoiceDate: string
   periodFrom?: string | null
   periodTo?: string | null

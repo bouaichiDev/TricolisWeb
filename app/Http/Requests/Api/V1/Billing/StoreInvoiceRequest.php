@@ -35,8 +35,11 @@ class StoreInvoiceRequest extends FormRequest
 
         return [
             'customerId' => ['required', 'ulid'],
+            // Facultatif : laisse vide, il s'attribue tout seul. Fourni, il est
+            // conserve — une organisation qui reprend une serie existante doit
+            // pouvoir la continuer.
             'invoiceNumber' => [
-                'required', 'string', 'max:255',
+                'sometimes', 'nullable', 'string', 'max:255',
                 Rule::unique('invoices', 'invoice_number')->where('organization_id', $organizationId),
             ],
             'invoiceDate' => ['required', 'date'],

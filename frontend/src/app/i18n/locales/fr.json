@@ -1795,7 +1795,8 @@
         "action": "Ajouter des prestations",
         "title": "Ajouter des prestations à la facture",
         "confirm": "Ajouter les prestations retenues"
-      }
+      },
+      "autoNumber": "Attribué automatiquement si vide"
     }
   },
   "settlements": {

@@ -19,7 +19,7 @@ final readonly class CreateInvoiceData
      */
     public function __construct(
         public string $customerId,
-        public string $invoiceNumber,
+        public ?string $invoiceNumber,
         public string $invoiceDate,
         public string $currencyCode,
         public string $status,
@@ -37,7 +37,7 @@ final readonly class CreateInvoiceData
     {
         return new self(
             customerId: $validated['customerId'],
-            invoiceNumber: $validated['invoiceNumber'],
+            invoiceNumber: $validated['invoiceNumber'] ?? null,
             invoiceDate: $validated['invoiceDate'],
             currencyCode: $validated['currencyCode'],
             status: $validated['status'],

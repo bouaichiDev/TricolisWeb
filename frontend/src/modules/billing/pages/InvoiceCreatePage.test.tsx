@@ -210,6 +210,22 @@ describe('composition d’une facture', () => {
   })
 
   /**
+   * Le numéro n'est plus exigé : l'inventer à chaque facture était un travail
+   * de greffier, et son unicité ne se découvrait qu'à l'enregistrement.
+   */
+  it('crée sans numéro, le serveur l’attribuant', async () => {
+    const { created } = render()
+
+    await chooseCustomer('Migros')
+    await retain('S-001')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
+
+    await waitFor(() => expect(created).toHaveLength(1))
+    expect(created[0]).not.toHaveProperty('invoiceNumber')
+  })
+
+  /**
    * Un numéro déjà pris est le refus le plus courant. Sans relais, le bouton se
    * réactive et rien n’explique pourquoi : l’écran aurait l’air cassé.
    */

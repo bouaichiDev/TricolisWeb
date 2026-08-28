@@ -272,3 +272,85 @@ describe('invoices audit', function (): void {
         $this->assertDatabaseHas('audit_logs', ['action' => 'invoice.deleted', 'entity_id' => $id]);
     });
 });
+
+describe('numérotation automatique', function (): void {
+    beforeEach(function (): void {
+        $this->payload = fn (array $overrides = []): array => array_merge([
+            'customerId' => $this->customer->id,
+            'invoiceDate' => '2026-08-29',
+            'currencyCode' => 'CHF',
+            'status' => 'draft',
+            'lines' => [[
+                'lineNumber' => 1,
+                'description' => 'Livraison',
+                'quantity' => 1,
+                'unitPrice' => 100,
+                'status' => 'billable',
+            ]],
+        ], $overrides);
+
+        $this->post = fn (array $payload) => $this->actingAs($this->user, 'sanctum')
+            ->withHeaders($this->headers)
+            ->postJson('/api/v1/invoices', $payload);
+    });
+
+    /**
+     * Un numéro tapé à la main produit doublons et trous, et l'unicité ne
+     * l'apprend qu'à l'enregistrement — après avoir composé la facture entière.
+     */
+    it('attribue le numéro quand il n’est pas fourni', function (): void {
+        ($this->post)(($this->payload)())
+            ->assertCreated()
+            ->assertJsonPath('data.invoiceNumber', 'INV-2026-000001');
+    });
+
+    it('avance d’une facture à l’autre', function (): void {
+        ($this->post)(($this->payload)())->assertCreated();
+
+        ($this->post)(($this->payload)())
+            ->assertCreated()
+            ->assertJsonPath('data.invoiceNumber', 'INV-2026-000002');
+    });
+
+    /** Une organisation qui tient sa propre série doit pouvoir la continuer. */
+    it('conserve le numéro fourni', function (): void {
+        ($this->post)(($this->payload)(['invoiceNumber' => 'FA-2026-777']))
+            ->assertCreated()
+            ->assertJsonPath('data.invoiceNumber', 'FA-2026-777');
+    });
+
+    /** Un numéro déjà pris est contourné, pas écrasé. */
+    it('saute un numéro déjà pris', function (): void {
+        Invoice::factory()->forCustomer($this->customer)->create([
+            'invoice_number' => 'INV-2026-000001',
+        ]);
+
+        ($this->post)(($this->payload)())
+            ->assertCreated()
+            ->assertJsonPath('data.invoiceNumber', 'INV-2026-000002');
+    });
+
+    /**
+     * La référence externe désigne le document chez le destinataire : lui
+     * inventer un code différent créerait un second nom pour la même chose.
+     */
+    it('reprend le numéro comme référence externe', function (): void {
+        ($this->post)(($this->payload)())
+            ->assertCreated()
+            ->assertJsonPath('data.externalReference', 'INV-2026-000001');
+    });
+
+    it('conserve la référence externe fournie', function (): void {
+        ($this->post)(($this->payload)(['externalReference' => 'COMPTA-42']))
+            ->assertCreated()
+            ->assertJsonPath('data.externalReference', 'COMPTA-42');
+    });
+
+    /** L'année vient de la date de facture : une facture de décembre passée en
+     *  janvier appartient à l'exercice qu'elle porte. */
+    it('numérote selon l’année de la facture', function (): void {
+        ($this->post)(($this->payload)(['invoiceDate' => '2025-12-31']))
+            ->assertCreated()
+            ->assertJsonPath('data.invoiceNumber', 'INV-2025-000001');
+    });
+});

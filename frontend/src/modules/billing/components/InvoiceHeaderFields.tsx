@@ -25,8 +25,13 @@ interface InvoiceHeaderFieldsProps {
 /**
  * L'en-tête d'une facture en préparation.
  *
- * Le numéro est saisi : le serveur ne le génère pas, et il doit être unique
- * dans l'organisation — la contrainte est en base, l'écran ne la devine pas.
+ * **Les deux numéros sont facultatifs.** Laissés vides, le serveur les
+ * attribue : `INV-2026-000001`, et la référence externe reprend le même. Les
+ * exiger obligeait à inventer un numéro unique à chaque facture, et l'unicité
+ * ne se découvrait qu'à l'enregistrement, la facture déjà composée.
+ *
+ * Un numéro saisi est conservé : une organisation qui tient sa propre série
+ * doit pouvoir la continuer.
  *
  * La devise est celle de la facture entière ; le diagramme n'en porte qu'une,
  * et mélanger deux monnaies sur un même document n'aurait pas de total.
@@ -59,7 +64,7 @@ export function InvoiceHeaderFields({ value, onChange, customerLocked }: Invoice
           id="invoice-number"
           value={value.invoiceNumber}
           onChange={(event) => set({ invoiceNumber: event.target.value })}
-          required
+          placeholder={t('billing.invoices.autoNumber')}
         />
       </div>
 
@@ -92,6 +97,7 @@ export function InvoiceHeaderFields({ value, onChange, customerLocked }: Invoice
           id="invoice-external"
           value={value.externalReference}
           onChange={(event) => set({ externalReference: event.target.value })}
+          placeholder={t('billing.invoices.autoNumber')}
         />
       </div>
 

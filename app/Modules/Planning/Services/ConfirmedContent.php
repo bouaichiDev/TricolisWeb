@@ -33,15 +33,31 @@ final readonly class ConfirmedContent
      *
      * @return Collection<int, TourStopService>
      */
-    public function servicesOf(Tour $tour, TourStop $stop): Collection
+    public function servicesOf(Tour $tour, TourStop $stop, bool $includePending = false): Collection
     {
         /** @var Collection<int, TourStopService> $services */
         $services = $stop->relationLoaded('services') ? $stop->services : collect();
 
-        return $services
-            ->where('is_active_assignment', true)
+        $active = $services->where('is_active_assignment', true);
+
+        if ($includePending) {
+            return $active->values();
+        }
+
+        return $active
             ->filter(fn (TourStopService $service): bool => $service->confirmed_at !== null)
             ->values();
+    }
+
+    /**
+     * L'appelant a-t-il le droit de voir la composition en cours ?
+     *
+     * Seul celui qui retient la tournée la voit : c'est son travail, et le
+     * montrer à d'autres reviendrait à ne rien avoir caché.
+     */
+    public function revealsTo(Tour $tour, ?string $viewerId, bool $wanted): bool
+    {
+        return $wanted && $viewerId !== null && $tour->locked_by === $viewerId;
     }
 
     /**

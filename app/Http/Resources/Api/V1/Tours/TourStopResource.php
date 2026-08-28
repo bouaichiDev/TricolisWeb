@@ -23,8 +23,11 @@ class TourStopResource extends JsonResource
     /**
      * @param  Tour|null  $tour  la tournée porteuse, quand elle filtre son contenu
      */
-    public function __construct($resource, private readonly ?Tour $tour = null)
-    {
+    public function __construct(
+        $resource,
+        private readonly ?Tour $tour = null,
+        private readonly bool $includePending = false,
+    ) {
         parent::__construct($resource);
     }
 
@@ -64,7 +67,8 @@ class TourStopResource extends JsonResource
             return $this->services->where('is_active_assignment', true)->values();
         }
 
-        return app(ConfirmedContent::class)->servicesOf($this->tour, $this->resource);
+        return app(ConfirmedContent::class)
+            ->servicesOf($this->tour, $this->resource, $this->includePending);
     }
 
     /**

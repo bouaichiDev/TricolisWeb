@@ -33,6 +33,8 @@ class TourListResource extends JsonResource
         $resource,
         private readonly array $planners = [],
         private readonly array $holders = [],
+        /** Montrer la composition en cours — seulement à celui qui la mène. */
+        private readonly bool $includePending = false,
     ) {
         parent::__construct($resource);
     }
@@ -48,8 +50,9 @@ class TourListResource extends JsonResource
     private function visibleStops(): array
     {
         return $this->stops
-            ->map(fn ($stop) => new TourStopResource($stop, $this->resource))
+            ->map(fn ($stop) => new TourStopResource($stop, $this->resource, $this->includePending))
             ->filter(fn (TourStopResource $resource): bool => $this->locked_at === null
+                || $this->includePending
                 || $resource->toArray(request())['serviceCount'] > 0)
             ->map(fn (TourStopResource $resource) => $resource->toArray(request()))
             ->values()
@@ -68,7 +71,7 @@ class TourListResource extends JsonResource
         $confirmed = app(ConfirmedContent::class);
 
         return $this->stops
-            ->flatMap(fn ($stop) => $confirmed->servicesOf($this->resource, $stop))
+            ->flatMap(fn ($stop) => $confirmed->servicesOf($this->resource, $stop, $this->includePending))
             ->map(fn ($assignment) => $assignment->orderService?->order_id)
             ->filter()
             ->unique()

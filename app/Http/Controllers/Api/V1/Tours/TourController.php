@@ -12,6 +12,7 @@ use App\Http\Requests\Api\V1\Tours\StoreTourRequest;
 use App\Http\Requests\Api\V1\Tours\UpdateTourRequest;
 use App\Http\Resources\Api\V1\Tours\TourDetailResource;
 use App\Http\Resources\Api\V1\Tours\TourListResource;
+use App\Modules\Planning\Services\ConfirmedContent;
 use App\Modules\Planning\Services\DraftOwnership;
 use App\Modules\Planning\Services\TourReservation;
 use App\Modules\Tours\Actions\CreateTourAction;
@@ -54,9 +55,18 @@ class TourController extends Controller
         $planners = app(DraftOwnership::class)->namedFor($paginator->items());
         $holders = app(TourReservation::class)->holdersOf($paginator->items());
 
-        return ApiResponse::paginated(
-            $paginator->through(fn (Tour $t) => new TourListResource($t, $planners, $holders)),
-        );
+        $confirmed = app(ConfirmedContent::class);
+        $wanted = $request->boolean('includePending');
+        $viewerId = $request->user()?->id;
+
+        return ApiResponse::paginated($paginator->through(
+            fn (Tour $t) => new TourListResource(
+                $t,
+                $planners,
+                $holders,
+                $confirmed->revealsTo($t, $viewerId, $wanted),
+            ),
+        ));
     }
 
     /**

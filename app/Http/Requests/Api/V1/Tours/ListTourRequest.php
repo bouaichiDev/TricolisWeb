@@ -33,6 +33,10 @@ class ListTourRequest extends ListRequest
             // charger toujours couterait une jointure a qui ne veut qu'une
             // liste.
             'withStops' => ['sometimes', 'boolean'],
+            // La carte compose : elle doit voir son propre travail avant
+            // confirmation. Les colonnes, non. Le serveur ne l'accorde que
+            // pour les tournees que l'appelant retient lui-meme.
+            'includePending' => ['sometimes', 'boolean'],
         ]);
     }
 }

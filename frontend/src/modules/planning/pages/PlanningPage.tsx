@@ -58,6 +58,8 @@ export function PlanningPage() {
     // La carte trace l'ordre des arrets : sans eux, une tournee n'y est qu'un
     // nom. Les panneaux, eux, n'en ont pas l'usage.
     withStops: mode === 'map',
+    // La carte voit sa propre composition ; les panneaux, non.
+    includePending: mode === 'map',
   })
   const plan = usePlanIntoTour()
   const unplan = useUnplanFromTour()

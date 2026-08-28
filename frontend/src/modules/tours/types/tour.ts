@@ -127,6 +127,14 @@ export interface TourFilters {
   tourDateTo?: string
   /** Charge les arrêts sous chaque tournée, pour la vue en colonnes. */
   withStops?: boolean
+  /**
+   * Montre aussi la composition en cours.
+   *
+   * Réservé à la carte : c'est elle qui compose, et se cacher son propre
+   * travail lui ôterait toute utilité. Le serveur ne l'accorde que pour les
+   * tournées que l'appelant retient lui-même.
+   */
+  includePending?: boolean
   sort?: string
   direction?: 'asc' | 'desc'
 }

@@ -164,3 +164,35 @@ it('montre tout une fois la tournée rendue', function (): void {
         // Les totaux sont repris au moment où la tournée est rendue.
         ->and($this->tour->fresh()->total_customers)->toBe(1);
 });
+
+/**
+ * La carte, elle, doit voir ce qu'elle compose.
+ *
+ * Cacher le travail aux colonnes est une chose ; le cacher à celui qui le fait
+ * en serait une autre — il ne saurait plus ce qu'il vient de poser.
+ */
+it('montre la composition à celui qui la mène', function (): void {
+    ($this->reserve)()->assertNoContent();
+    ($this->plan)(['orderIds' => [($this->order)()->id]])->assertOk();
+
+    $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/tours?withStops=1&includePending=1')->assertOk();
+
+    expect($response->json('data.0.stops'))->toHaveCount(1);
+});
+
+/** Mais à lui seul : le montrer aux autres reviendrait à n'avoir rien caché. */
+it('refuse la composition d’un autre, même demandée', function (): void {
+    ($this->reserve)()->assertNoContent();
+    ($this->plan)(['orderIds' => [($this->order)()->id]])->assertOk();
+
+    // La tournee passe entre d'autres mains : le drapeau ne vaut plus rien
+    // pour nous, et son contenu redevient invisible.
+    $other = User::factory()->create();
+    $this->tour->forceFill(['locked_by' => $other->id])->save();
+
+    $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/tours?withStops=1&includePending=1')->assertOk();
+
+    expect($response->json('data.0.stops'))->toBe([]);
+});

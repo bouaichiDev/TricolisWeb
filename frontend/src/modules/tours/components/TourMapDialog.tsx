@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 
+import { useTourList } from '../hooks/useTours'
 import type { Tour } from '../types/tour'
 
 interface TourMapDialogProps {
@@ -72,6 +73,16 @@ function MapBody({ tour, tours, date }: { tour: Tour; tours: Tour[]; date?: stri
   // n'accepte rien, et l'ecran ne le propose pas.
   const [selectedTourId, setSelectedTourId] = useState<string | null>(tour.id)
 
+  // La carte demande sa propre liste : celle des colonnes cache la composition
+  // en cours, ce qui priverait le planificateur de ce qu'il vient de poser.
+  const visible = useTourList({
+    page: 1,
+    perPage: 50,
+    tourDate: date,
+    withStops: true,
+    includePending: true,
+  })
+
   const pool = usePlanningPool({
     page: 1,
     perPage: 50,
@@ -102,7 +113,7 @@ function MapBody({ tour, tours, date }: { tour: Tour; tours: Tour[]; date?: stri
       <div className="min-h-0 flex-1 overflow-y-auto">
         <PlanningMapScreen
           orders={pool.data?.data ?? []}
-          tours={tours}
+          tours={visible.data?.data ?? tours}
           search={search}
           onSearchChange={setSearch}
           selectedTourId={selectedTourId}

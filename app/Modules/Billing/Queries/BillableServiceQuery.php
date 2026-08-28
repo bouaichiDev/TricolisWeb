@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Billing\Queries;
 
 use App\Modules\Orders\Enums\OrderServiceStatus;
+use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Orders\Models\Service;
 use App\Shared\Http\Requests\ListRequest;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * Les prestations qu'on peut encore facturer à un client.
@@ -95,32 +98,69 @@ final readonly class BillableServiceQuery
      */
     public function suggest(string $field, ?string $term, string $customerId, string $organizationId): array
     {
-        $query = $this->eligible($customerId, $organizationId);
+        $eligible = $this->eligible($customerId, $organizationId);
         $term = $term === null ? '' : trim($term);
 
-        if ($field === 'order') {
-            $values = $query
-                ->when($term !== '', fn (Builder $builder) => $builder->whereHas(
-                    'order',
-                    fn ($order) => $order->where('order_number', 'like', "%{$term}%"),
-                ))
-                ->with('order:id,order_number')
-                ->get()
-                ->map(fn (OrderService $service): ?string => $service->order?->order_number);
-        } else {
-            $values = $query
-                ->when($term !== '', fn (Builder $builder) => $builder
-                    ->where('service_number', 'like', "%{$term}%"))
-                ->pluck('service_number');
+        $values = $field === 'order'
+            ? $this->orderNumbers($eligible, $term)
+            : $this->serviceLabels($eligible, $term);
+
+        return $values->filter()->unique()->take(self::SUGGESTIONS)->values()->all();
+    }
+
+    /**
+     * Les numéros de commande à proposer.
+     *
+     * @param  Builder<OrderService>  $eligible
+     * @return Collection<int, string>
+     */
+    private function orderNumbers(Builder $eligible, string $term): Collection
+    {
+        return Order::query()
+            ->whereIn('id', $eligible->clone()->select('order_id'))
+            ->when($term !== '', fn ($query) => $query->where('order_number', 'like', "%{$term}%"))
+            ->orderBy('order_number')
+            ->limit(self::SUGGESTIONS)
+            ->pluck('order_number');
+    }
+
+    /**
+     * Ce qu'on peut proposer pour la colonne « Prestation ».
+     *
+     * **Le libellé du service d'abord, son numéro ensuite.** La colonne montre
+     * les deux, et le filtre cherche dans les deux : ne suggérer que des
+     * numéros laissait sans réponse celui qui tape « livraison », alors que la
+     * liste répondait. Une complétion muette là où le filtre fonctionne se lit
+     * comme une panne.
+     *
+     * Les libellés sont peu nombreux et se retiennent ; les numéros sont
+     * innombrables et ne servent qu'une fois la saisie commencée.
+     *
+     * @param  Builder<OrderService>  $eligible
+     * @return Collection<int, string>
+     */
+    private function serviceLabels(Builder $eligible, string $term): Collection
+    {
+        $labels = Service::query()
+            ->whereIn('id', $eligible->clone()->select('service_id'))
+            ->when($term !== '', fn ($query) => $query
+                ->where('name', 'like', "%{$term}%")
+                ->orWhere('code', 'like', "%{$term}%"))
+            ->orderBy('name')
+            ->limit(self::SUGGESTIONS)
+            ->pluck('name');
+
+        if ($term === '') {
+            return $labels;
         }
 
-        return $values
-            ->filter()
-            ->unique()
-            ->sort()
-            ->take(self::SUGGESTIONS)
-            ->values()
-            ->all();
+        $numbers = $eligible->clone()
+            ->where('service_number', 'like', "%{$term}%")
+            ->orderBy('service_number')
+            ->limit(self::SUGGESTIONS)
+            ->pluck('service_number');
+
+        return $labels->concat($numbers);
     }
 
     /**

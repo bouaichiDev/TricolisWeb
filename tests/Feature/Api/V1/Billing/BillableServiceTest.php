@@ -206,6 +206,39 @@ describe('suggestions', function (): void {
             ->assertJsonPath('data.0', $wanted->service_number);
     });
 
+    /**
+     * **Le cas qui manquait.** La colonne montre un libellé, le filtre le
+     * cherche, la liste répond — mais la complétion restait muette. Une
+     * complétion silencieuse là où le filtre fonctionne se lit comme une panne.
+     */
+    it('propose le libellé du service, pas seulement son numéro', function (): void {
+        $service = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Livraison express',
+        ]);
+
+        ($this->serviceFor)($this->customer, 'completed', ['service_id' => $service->id]);
+
+        ($this->suggest)(['field' => 'service', 'term' => 'livrai'])
+            ->assertOk()
+            ->assertJsonPath('data.0', 'Livraison express');
+    });
+
+    /** Sans saisie, les libellés suffisent : ils se retiennent, les numéros
+     *  sont innombrables et ne servent qu'une fois la recherche engagée. */
+    it('propose les libellés disponibles avant toute saisie', function (): void {
+        $service = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Chargement',
+        ]);
+
+        ($this->serviceFor)($this->customer, 'completed', ['service_id' => $service->id]);
+
+        ($this->suggest)(['field' => 'service'])
+            ->assertOk()
+            ->assertJsonPath('data.0', 'Chargement');
+    });
+
     /** Une suggestion doit pouvoir être collée dans le filtre et rendre la
      *  ligne visée : proposer un numéro déjà facturé romprait ce contrat. */
     it('ne propose pas ce qui n’est plus facturable', function (): void {

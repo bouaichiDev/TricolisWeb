@@ -227,6 +227,58 @@ final class MenuCatalogue
                 parent: 'stock',
             ),
 
+            // Facturation — Phase 6. Les factures clients et les décomptes
+            // fournisseurs sont deux comptes opposés du même transport : ce
+            // qu'on encaisse, ce qu'on reverse. Les envois les suivent, parce
+            // qu'une facture clôturée part chez le client.
+            new MenuEntry(
+                code: 'billing',
+                labelKey: 'nav.billing',
+                icon: 'ReceiptText',
+                section: MenuSection::BILLING,
+                position: 50,
+            ),
+            new MenuEntry(
+                code: 'invoices',
+                labelKey: 'nav.invoices',
+                icon: 'ReceiptText',
+                section: MenuSection::BILLING,
+                position: 51,
+                route: '/billing/invoices',
+                permission: 'invoices.view',
+                parent: 'billing',
+            ),
+            new MenuEntry(
+                code: 'provider-settlements',
+                labelKey: 'nav.settlements',
+                icon: 'HandCoins',
+                section: MenuSection::BILLING,
+                position: 52,
+                route: '/billing/settlements',
+                permission: 'provider_settlements.view',
+                parent: 'billing',
+            ),
+            new MenuEntry(
+                code: 'export-configurations',
+                labelKey: 'nav.exportConfigurations',
+                icon: 'Send',
+                section: MenuSection::BILLING,
+                position: 53,
+                route: '/billing/export-configurations',
+                permission: 'customer_export_configurations.view',
+                parent: 'billing',
+            ),
+            new MenuEntry(
+                code: 'export-jobs',
+                labelKey: 'nav.exports',
+                icon: 'FileOutput',
+                section: MenuSection::BILLING,
+                position: 54,
+                route: '/billing/exports',
+                permission: 'export_jobs.view',
+                parent: 'billing',
+            ),
+
             // Configuration des messages. Les *regles* de communication ne
             // figurent pas ici : elles sont hors perimetre de la Phase 3.
             new MenuEntry(

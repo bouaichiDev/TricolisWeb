@@ -3,6 +3,8 @@ import {
   Building2,
   CalendarRange,
   ClipboardList,
+  FileOutput,
+  HandCoins,
   IdCard,
   Layers,
   LayoutDashboard,
@@ -10,8 +12,10 @@ import {
   MessageSquareWarning,
   Network,
   Plug,
+  ReceiptText,
   Route,
   Package,
+  Send,
   Settings,
   Shield,
   Tags,
@@ -54,6 +58,10 @@ const ICONS: Record<string, LucideIcon> = {
   Mail,
   Plug,
   Route,
+  ReceiptText,
+  HandCoins,
+  Send,
+  FileOutput,
 }
 
 export function menuIcon(name: string): LucideIcon {

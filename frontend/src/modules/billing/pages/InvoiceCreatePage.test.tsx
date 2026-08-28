@@ -76,9 +76,16 @@ function render(services = [service()], failure: { status: number; body: { messa
       })
     }),
     http.get(`${API}/customers/:id/billable-services`, ({ request }) => {
-      billableCalls.push(new URL(request.url))
+      const url = new URL(request.url)
+      billableCalls.push(url)
 
-      return HttpResponse.json(paginated(services))
+      // Le serveur pagine ce qu'il a filtre : sans filtre, plusieurs pages ;
+      // filtre, une seule. C'est ce que l'ecran doit croire.
+      const filtered = url.searchParams.has('service[]') || url.searchParams.has('order')
+
+      return HttpResponse.json(
+        paginated(services, filtered ? {} : { lastPage: 3, total: 12, currentPage: 1 }),
+      )
     }),
     http.post(`${API}/invoices`, async ({ request }) => {
       created.push((await request.json()) as Record<string, unknown>)
@@ -430,5 +437,31 @@ describe('composition d’une facture', () => {
         'Chargement',
       ]),
     )
+  })
+
+  /**
+   * **Le piège de la pagination.** Filtrer depuis la page 3 laisserait l'écran
+   * sur une page que le résultat filtré n'a plus : la table paraîtrait vide
+   * alors que des lignes existent.
+   */
+  it('revient à la première page quand un filtre change', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Suivant' }))
+
+    await waitFor(() =>
+      expect(billableCalls[billableCalls.length - 1].searchParams.get('page')).toBe('2'),
+    )
+
+    await userEvent.type(screen.getByLabelText('Filtrer par prestation'), 'Livraison{Enter}')
+
+    await waitFor(() => {
+      const last = billableCalls[billableCalls.length - 1]
+      expect(last.searchParams.getAll('service[]')).toEqual(['Livraison'])
+      expect(last.searchParams.get('page')).toBe('1')
+    })
   })
 })

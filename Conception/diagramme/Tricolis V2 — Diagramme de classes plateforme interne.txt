@@ -827,6 +827,102 @@ package "Facturation client et fournisseur" {
     +totalCost: decimal
   }
 }
+package "Tarification client" {
+
+  class PriceList {
+    +id: ULID
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +scope: string
+    +validFrom: date
+    +validTo: date
+    +isActive: boolean
+  }
+
+  class CustomerPriceList {
+    +id: ULID
+    +priceListId: ULID
+    +customerId: ULID
+  }
+
+  class PriceRule {
+    +id: ULID
+    +priceListId: ULID
+    +serviceId: ULID
+    +code: string
+    +name: string
+    +formula: text
+    +priority: int
+    +isActive: boolean
+  }
+
+  class PriceRuleCondition {
+    +id: ULID
+    +priceRuleId: ULID
+    +variable: string
+    +operator: string
+    +valueFrom: string
+    +valueTo: string
+  }
+
+  class PriceMatrix {
+    +id: ULID
+    +priceListId: ULID
+    +serviceId: ULID
+    +code: string
+    +name: string
+    +dimension: string
+    +isActive: boolean
+  }
+
+  class PriceMatrixRow {
+    +id: ULID
+    +priceMatrixId: ULID
+    +priceRuleId: ULID
+    +label: string
+    +matchMode: string
+    +rangeFrom: string
+    +rangeTo: string
+    +priority: int
+  }
+
+  class PricingCalculation {
+    +id: ULID
+    +organizationId: ULID
+    +orderServiceId: ULID
+    +customerId: ULID
+    +priceListId: ULID
+    +priceRuleId: ULID
+    +priceMatrixId: ULID
+    +priceMatrixRowId: ULID
+    +scope: string
+    +serviceCode: string
+    +formulaSnapshot: text
+    +variablesSnapshot: JSON
+    +result: decimal
+    +currencyCode: string
+    +calculatedAt: datetime
+  }
+}
+
+Organization "1" -- "0..*" PriceList
+PriceList "1" -- "0..*" CustomerPriceList
+Customer "1" -- "0..*" CustomerPriceList
+PriceList "1" *-- "0..*" PriceRule
+PriceList "1" *-- "0..*" PriceMatrix
+Service "0..1" -- "0..*" PriceRule
+Service "0..1" -- "0..*" PriceMatrix
+PriceRule "1" *-- "0..*" PriceRuleCondition
+PriceMatrix "1" *-- "1..*" PriceMatrixRow
+PriceRule "1" -- "0..*" PriceMatrixRow
+OrderService "1" -- "0..*" PricingCalculation
+Customer "1" -- "0..*" PricingCalculation
+PriceList "0..1" -- "0..*" PricingCalculation
+PriceRule "0..1" -- "0..*" PricingCalculation
+PriceMatrix "0..1" -- "0..*" PricingCalculation
+PriceMatrixRow "0..1" -- "0..*" PricingCalculation
+
 Organization "1" -- "0..*" CommunicationTemplate
 Organization "1" -- "0..*" CommunicationRule
 Organization "1" -- "0..*" OrderCommunication

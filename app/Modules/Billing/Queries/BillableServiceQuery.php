@@ -8,6 +8,7 @@ use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Orders\Models\OrderService;
 use App\Shared\Http\Requests\ListRequest;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Les prestations qu'on peut encore facturer à un client.
@@ -28,6 +29,10 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  * L'unicité de `invoice_lines.order_service_id` protège de toute façon le §10.
  * Ce filtre évite seulement de proposer ce qui sera refusé — un écran qui offre
  * un choix impossible use la confiance.
+ *
+ * **Les filtres de colonne sont ici, pas dans l'écran.** Une liste est paginée :
+ * filtrer les vingt-cinq lignes affichées cacherait tout ce qui se trouve sur
+ * les pages suivantes, et le facturier croirait avoir tout vu.
  */
 final readonly class BillableServiceQuery
 {
@@ -56,6 +61,8 @@ final readonly class BillableServiceQuery
             $query->whereDate('requested_date', '<=', $request->validated('periodTo'));
         }
 
+        $this->filterColumns($query, $request);
+
         if ($request->filled('search')) {
             $search = $request->validated('search');
 
@@ -70,5 +77,55 @@ final readonly class BillableServiceQuery
             ->orderBy('requested_date')
             ->orderBy('service_number')
             ->paginate($request->getPerPage());
+    }
+
+    /**
+     * Les filtres posés colonne par colonne.
+     *
+     * Chacun suit ce que la colonne montre : « Prestation » affiche un numéro
+     * et un libellé de service, on cherche donc dans les deux. Ne chercher que
+     * dans le numéro rendrait le champ inutile pour qui tape « Livraison ».
+     *
+     * @param  Builder<OrderService>  $query
+     */
+    private function filterColumns(Builder $query, ListRequest $request): void
+    {
+        if ($request->filled('service')) {
+            $term = $request->validated('service');
+
+            $query->where(fn (Builder $builder) => $builder
+                ->where('service_number', 'like', "%{$term}%")
+                ->orWhereHas('service', fn ($service) => $service
+                    ->where('code', 'like', "%{$term}%")
+                    ->orWhere('name', 'like', "%{$term}%")));
+        }
+
+        if ($request->filled('order')) {
+            $term = $request->validated('order');
+
+            $query->whereHas('order', fn ($order) => $order
+                ->where('order_number', 'like', "%{$term}%")
+                ->orWhere('customer_reference', 'like', "%{$term}%"));
+        }
+
+        if ($request->filled('address')) {
+            $term = $request->validated('address');
+
+            $query->whereHas('address', fn ($address) => $address
+                ->where('city', 'like', "%{$term}%")
+                ->orWhere('postal_code', 'like', "%{$term}%")
+                ->orWhere('name', 'like', "%{$term}%"));
+        }
+
+        foreach ([
+            'quantityMin' => ['quantity', '>='],
+            'quantityMax' => ['quantity', '<='],
+            'priceMin' => ['customer_unit_price', '>='],
+            'priceMax' => ['customer_unit_price', '<='],
+        ] as $input => [$column, $operator]) {
+            if ($request->filled($input)) {
+                $query->where($column, $operator, $request->validated($input));
+            }
+        }
     }
 }

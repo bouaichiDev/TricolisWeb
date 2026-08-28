@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import { BillableServicePicker, type BillablePeriod } from '../components/BillableServicePicker'
+import { BillableServicePicker } from '../components/BillableServicePicker'
+import {
+  EMPTY_BILLABLE_FILTERS,
+  type BillableColumnFilters,
+} from '../components/billableFilters'
 import { InvoiceHeaderFields, type InvoiceHeaderState } from '../components/InvoiceHeaderFields'
 import { linesFromServices, previewTotal } from '../components/invoiceDraft'
 import { useCreateInvoice } from '../hooks/useInvoices'
@@ -46,8 +50,7 @@ export function InvoiceCreatePage() {
     externalReference: '',
     remark: '',
   })
-  const [period, setPeriod] = useState<BillablePeriod>({ from: '', to: '' })
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<BillableColumnFilters>(EMPTY_BILLABLE_FILTERS)
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Map<string, BillableService>>(new Map())
 
@@ -98,8 +101,8 @@ export function InvoiceCreatePage() {
         customerId: header.customerId,
         invoiceNumber: header.invoiceNumber.trim(),
         invoiceDate: header.invoiceDate,
-        periodFrom: period.from || null,
-        periodTo: period.to || null,
+        periodFrom: filters.periodFrom || null,
+        periodTo: filters.periodTo || null,
         currencyCode: header.currencyCode,
         externalReference: header.externalReference || null,
         remark: header.remark || null,
@@ -141,14 +144,15 @@ export function InvoiceCreatePage() {
         <BillableServicePicker
           customerId={header.customerId}
           currencyCode={header.currencyCode}
-          period={period}
-          onPeriodChange={(next) => {
-            setPeriod(next)
+          filters={filters}
+          onFiltersChange={(patch) => {
+            // Toute page au-dela de la premiere n'a plus de sens des que le
+            // filtre change : le resultat n'a plus la meme taille.
+            setFilters((current) => ({ ...current, ...patch }))
             setPage(1)
           }}
-          search={search}
-          onSearchChange={(next) => {
-            setSearch(next)
+          onFiltersReset={() => {
+            setFilters(EMPTY_BILLABLE_FILTERS)
             setPage(1)
           }}
           page={page}

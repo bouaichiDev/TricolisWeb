@@ -1,27 +1,25 @@
 import { useTranslation } from 'react-i18next'
 
+import { PeriodFilter, RangeFilter, TextFilter } from './BillableFilterFields'
+import {
+  hasBillableFilter,
+  toBillableQuery,
+  type BillableColumnFilters,
+} from './billableFilters'
 import { useBillableServices } from '../hooks/useInvoices'
 import type { BillableService } from '../types/invoice'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
-import { SearchInput } from '@/shared/components/data/SearchInput'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
+import { Button } from '@/shared/components/ui/button'
 import { Checkbox } from '@/shared/components/ui/checkbox'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
 import { formatDate, formatMoney } from '@/shared/utils/format'
-
-export interface BillablePeriod {
-  from: string
-  to: string
-}
 
 interface BillableServicePickerProps {
   customerId: string
   currencyCode: string
-  period: BillablePeriod
-  onPeriodChange: (period: BillablePeriod) => void
-  search: string
-  onSearchChange: (search: string) => void
+  filters: BillableColumnFilters
+  onFiltersChange: (patch: Partial<BillableColumnFilters>) => void
+  onFiltersReset: () => void
   page: number
   onPageChange: (page: number) => void
   selected: Map<string, BillableService>
@@ -33,19 +31,20 @@ interface BillableServicePickerProps {
  *
  * **L'éligibilité vient du serveur.** Le §42 l'exige : rejouer la règle ici la
  * ferait diverger, et l'écran proposerait des prestations que la création
- * refuserait. La liste affiche ce qu'on lui répond, sans filtrer davantage.
+ * refuserait. Les filtres de colonne partent au serveur pour la même raison —
+ * la liste est paginée, et filtrer les vingt-cinq lignes affichées cacherait
+ * tout ce qui suit.
  *
  * La sélection survit à la pagination et aux filtres : elle est portée par la
  * page, pas par la table. Un facturier compose souvent sur deux pages, et
- * perdre son choix en changeant de page l'obligerait à tout reprendre.
+ * perdre son choix en changeant de filtre l'obligerait à tout reprendre.
  */
 export function BillableServicePicker({
   customerId,
   currencyCode,
-  period,
-  onPeriodChange,
-  search,
-  onSearchChange,
+  filters,
+  onFiltersChange,
+  onFiltersReset,
   page,
   onPageChange,
   selected,
@@ -55,16 +54,32 @@ export function BillableServicePicker({
 
   const { data, isPending, error, refetch } = useBillableServices(customerId, {
     page,
-    search: search || undefined,
-    periodFrom: period.from || undefined,
-    periodTo: period.to || undefined,
+    ...toBillableQuery(filters),
   })
+
+  const rows = data?.data ?? []
+  const allChosen = rows.length > 0 && rows.every((row) => selected.has(row.id))
+
+  /** Coche ou décoche la page entière, sans toucher aux autres pages. */
+  const togglePage = () => {
+    for (const row of rows) {
+      if (allChosen === selected.has(row.id)) onToggle(row)
+    }
+  }
 
   const columns: Column<BillableService>[] = [
     {
       key: 'select',
       header: '',
       className: 'w-10',
+      filter: (
+        <Checkbox
+          checked={allChosen}
+          disabled={rows.length === 0}
+          onCheckedChange={togglePage}
+          aria-label={t('billing.invoices.picker.selectPage')}
+        />
+      ),
       cell: (row) => (
         <Checkbox
           checked={selected.has(row.id)}
@@ -76,6 +91,14 @@ export function BillableServicePicker({
     {
       key: 'serviceNumber',
       header: t('billing.invoices.picker.service'),
+      filter: (
+        <TextFilter
+          field="service"
+          label={t('billing.invoices.picker.filterService')}
+          value={filters}
+          onChange={onFiltersChange}
+        />
+      ),
       cell: (row) => (
         <span className="flex flex-col">
           <span className="font-medium">{row.serviceNumber}</span>
@@ -86,6 +109,14 @@ export function BillableServicePicker({
     {
       key: 'orderNumber',
       header: t('billing.invoices.picker.order'),
+      filter: (
+        <TextFilter
+          field="order"
+          label={t('billing.invoices.picker.filterOrder')}
+          value={filters}
+          onChange={onFiltersChange}
+        />
+      ),
       cell: (row) => (
         <span className="flex flex-col">
           <span>{row.orderNumber}</span>
@@ -96,25 +127,62 @@ export function BillableServicePicker({
     {
       key: 'requestedDate',
       header: t('billing.invoices.picker.date'),
+      filter: <PeriodFilter value={filters} onChange={onFiltersChange} />,
       cell: (row) => formatDate(row.requestedDate),
     },
     {
       key: 'address',
       header: t('billing.invoices.picker.address'),
+      filter: (
+        <TextFilter
+          field="address"
+          label={t('billing.invoices.picker.filterAddress')}
+          value={filters}
+          onChange={onFiltersChange}
+        />
+      ),
       cell: (row) => (row.address ? `${row.address.postalCode ?? ''} ${row.address.city ?? ''}` : ''),
     },
     {
       key: 'quantity',
       header: t('billing.invoices.picker.quantity'),
       className: 'text-right',
+      filter: (
+        <RangeFilter
+          value={filters}
+          onChange={onFiltersChange}
+          min="quantityMin"
+          max="quantityMax"
+          labels={{
+            min: t('billing.invoices.picker.filterQuantityMin'),
+            max: t('billing.invoices.picker.filterQuantityMax'),
+          }}
+        />
+      ),
       cell: (row) => <span className="tabular-nums">{row.quantity}</span>,
     },
     {
       key: 'customerUnitPrice',
       header: t('billing.invoices.picker.unitPrice'),
       className: 'text-right',
+      filter: (
+        <RangeFilter
+          value={filters}
+          onChange={onFiltersChange}
+          min="priceMin"
+          max="priceMax"
+          labels={{
+            min: t('billing.invoices.picker.filterPriceMin'),
+            max: t('billing.invoices.picker.filterPriceMax'),
+          }}
+        />
+      ),
+      // La devise est celle de la commande : l'afficher dans celle de la
+      // facture avant tout choix montrerait un montant qui n'existe pas.
       cell: (row) => (
-        <span className="tabular-nums">{formatMoney(row.customerUnitPrice, currencyCode)}</span>
+        <span className="tabular-nums">
+          {formatMoney(row.customerUnitPrice, row.currencyCode ?? currencyCode)}
+        </span>
       ),
     },
   ]
@@ -129,34 +197,18 @@ export function BillableServicePicker({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="billable-from">{t('billing.invoices.picker.periodFrom')}</Label>
-          <Input
-            id="billable-from"
-            type="date"
-            value={period.from}
-            onChange={(event) => onPeriodChange({ ...period, from: event.target.value })}
-            className="w-44"
-          />
+    <div className="flex flex-col gap-3">
+      {hasBillableFilter(filters) ? (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={onFiltersReset}>
+            {t('billing.invoices.picker.clearFilters')}
+          </Button>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="billable-to">{t('billing.invoices.picker.periodTo')}</Label>
-          <Input
-            id="billable-to"
-            type="date"
-            value={period.to}
-            onChange={(event) => onPeriodChange({ ...period, to: event.target.value })}
-            className="w-44"
-          />
-        </div>
-        <SearchInput value={search} onChange={onSearchChange} />
-      </div>
+      ) : null}
 
       <DataTable
         columns={columns}
-        rows={data?.data ?? []}
+        rows={rows}
         rowKey={(row) => row.id}
         meta={data?.meta}
         isLoading={isPending}

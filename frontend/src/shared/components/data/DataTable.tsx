@@ -20,6 +20,14 @@ export interface Column<T> {
   /** Nom de colonne accepté par le tri serveur. Absent = non triable. */
   sortKey?: string
   cell: (row: T) => ReactNode
+  /**
+   * Champ de filtre posé sous l'en-tête.
+   *
+   * Il ne filtre rien lui-même : c'est un contrôle, dont l'écran envoie la
+   * valeur au serveur. Filtrer ici ne porterait que sur la page affichée, et
+   * donnerait un résultat faux dès la deuxième page.
+   */
+  filter?: ReactNode
   className?: string
   /** Masquée sous `md` : garde la table lisible sur petit écran. */
   hideOnMobile?: boolean
@@ -50,6 +58,10 @@ interface DataTableProps<T> {
  *
  * Les colonnes triables sont déclarées par `sortKey`, qui doit correspondre à
  * la liste blanche du module côté serveur ; toute autre valeur renvoie 422.
+ *
+ * Une colonne peut aussi porter un `filter` : il s'affiche sur une seconde
+ * ligne d'en-tête, et l'écran qui le fournit reste responsable de transmettre
+ * sa valeur au serveur — pour la même raison que le tri.
  */
 export function DataTable<T>({
   columns,
@@ -101,6 +113,23 @@ export function DataTable<T>({
                 </TableHead>
               ))}
             </TableRow>
+
+            {columns.some((column) => column.filter !== undefined) ? (
+              <TableRow className="hover:bg-transparent">
+                {columns.map((column) => (
+                  <TableHead
+                    key={`${column.key}-filter`}
+                    className={cn(
+                      'pt-0 pb-2 align-top font-normal',
+                      column.className,
+                      column.hideOnMobile && 'hidden md:table-cell',
+                    )}
+                  >
+                    {column.filter}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ) : null}
           </TableHeader>
 
           <TableBody>

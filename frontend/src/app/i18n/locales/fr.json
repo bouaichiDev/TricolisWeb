@@ -1750,7 +1750,16 @@
         "periodTo": "Période au",
         "empty": "Aucune prestation à facturer pour cette période",
         "chooseCustomerTitle": "Choisissez un client",
-        "chooseCustomer": "Les prestations facturables se consultent client par client."
+        "chooseCustomer": "Les prestations facturables se consultent client par client.",
+        "selectPage": "Retenir toutes les prestations de la page",
+        "clearFilters": "Effacer les filtres",
+        "filterService": "Filtrer par prestation",
+        "filterOrder": "Filtrer par commande",
+        "filterAddress": "Filtrer par adresse",
+        "filterQuantityMin": "Quantité minimale",
+        "filterQuantityMax": "Quantité maximale",
+        "filterPriceMin": "Prix minimal",
+        "filterPriceMax": "Prix maximal"
       },
       "lines": {
         "number": "N°",

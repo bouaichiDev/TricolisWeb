@@ -162,9 +162,22 @@ export interface BillableService {
   } | null
 }
 
+/**
+ * Les filtres du sélecteur, colonne par colonne.
+ *
+ * Ils partent au serveur : une liste paginée filtrée dans le navigateur ne
+ * porterait que sur la page affichée.
+ */
 export interface BillableServiceFilters extends ListParams {
   periodFrom?: string
   periodTo?: string
+  service?: string
+  order?: string
+  address?: string
+  quantityMin?: number
+  quantityMax?: number
+  priceMin?: number
+  priceMax?: number
 }
 
 /** Ce que la clôture ferait, avant de la déclencher. */

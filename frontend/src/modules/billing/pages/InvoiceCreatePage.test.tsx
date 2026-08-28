@@ -85,6 +85,14 @@ function render(services = [service()], failure: { status: number; body: { messa
 }
 
 /** Choisit un client dans la liste déroulante de l'en-tête. */
+/** Retient une prestation par son numéro : la page porte aussi une case
+ *  « toute la page », et viser « la » case serait ambigu. */
+async function retain(serviceNumber: string) {
+  await userEvent.click(
+    await screen.findByRole('checkbox', { name: `Retenir la prestation ${serviceNumber}` }),
+  )
+}
+
 async function chooseCustomer(name: string) {
   await userEvent.click(screen.getAllByRole('combobox')[0])
   await userEvent.click(await screen.findByRole('option', { name: new RegExp(name) }))
@@ -138,7 +146,7 @@ describe('composition d’une facture', () => {
     render()
 
     await chooseCustomer('Migros')
-    await userEvent.click(await screen.findByRole('checkbox'))
+    await retain('S-001')
 
     await waitFor(() => expect(screen.getAllByRole('combobox')[0]).toBeDisabled())
   })
@@ -147,7 +155,7 @@ describe('composition d’une facture', () => {
     const { created } = render()
 
     await chooseCustomer('Migros')
-    await userEvent.click(await screen.findByRole('checkbox'))
+    await retain('S-001')
 
     await userEvent.type(screen.getByLabelText('Numéro'), 'INV-2026-001')
     await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
@@ -196,7 +204,7 @@ describe('composition d’une facture', () => {
     })
 
     await chooseCustomer('Migros')
-    await userEvent.click(await screen.findByRole('checkbox'))
+    await retain('S-001')
 
     await userEvent.type(screen.getByLabelText('Numéro'), 'INV-2026-001')
     await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
@@ -212,7 +220,7 @@ describe('composition d’une facture', () => {
     const { created } = render()
 
     await chooseCustomer('Migros')
-    await userEvent.click(await screen.findByRole('checkbox'))
+    await retain('S-001')
 
     await userEvent.type(screen.getByLabelText('Numéro'), 'INV-2026-001')
     await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
@@ -230,11 +238,80 @@ describe('composition d’une facture', () => {
 
     await chooseCustomer('Migros')
 
-    const boxes = await screen.findAllByRole('checkbox')
-    await userEvent.click(boxes[0])
-    await userEvent.click(boxes[1])
+    await retain('S-001')
+    await retain('S-002')
 
     expect(await screen.findByText(/ne porte qu’une devise/)).toBeInTheDocument()
     expect(screen.getByText('1 prestation retenue')).toBeInTheDocument()
+  })
+
+  /**
+   * Les filtres partent au serveur. Une liste paginée filtrée dans le
+   * navigateur ne porterait que sur la page affichée, et le facturier croirait
+   * avoir tout vu.
+   */
+  it('filtre colonne par colonne, côté serveur', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.type(screen.getByLabelText('Filtrer par commande'), 'CMD-100')
+
+    await waitFor(() => {
+      const last = billableCalls[billableCalls.length - 1]
+      expect(last.searchParams.get('order')).toBe('CMD-100')
+    })
+
+    await userEvent.type(screen.getByLabelText('Filtrer par adresse'), 'Genève')
+    await userEvent.type(screen.getByLabelText('Prix minimal'), '100')
+
+    await waitFor(() => {
+      const last = billableCalls[billableCalls.length - 1]
+      expect(last.searchParams.get('address')).toBe('Genève')
+      expect(last.searchParams.get('priceMin')).toBe('100')
+    })
+  })
+
+  /** Un champ vidé doit disparaître de la requête : `priceMin=` n'est pas un
+   *  nombre, et le serveur le refuserait. */
+  it('n’envoie pas un filtre vide', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.type(screen.getByLabelText('Quantité minimale'), '2')
+    await waitFor(() =>
+      expect(billableCalls[billableCalls.length - 1].searchParams.get('quantityMin')).toBe('2'),
+    )
+
+    await userEvent.clear(screen.getByLabelText('Quantité minimale'))
+
+    await waitFor(() =>
+      expect(billableCalls[billableCalls.length - 1].searchParams.has('quantityMin')).toBe(false),
+    )
+  })
+
+  /** Retenir la page entière : composer une facture de vingt-cinq lignes une
+   *  case à la fois est un travail de copiste. */
+  it('retient et relâche toute la page', async () => {
+    render([
+      service(),
+      service({ id: '01JQZ000000000000OSRV02', serviceNumber: 'S-002' }),
+    ])
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    const all = screen.getByRole('checkbox', {
+      name: 'Retenir toutes les prestations de la page',
+    })
+
+    await userEvent.click(all)
+    expect(await screen.findByText('2 prestations retenues')).toBeInTheDocument()
+
+    await userEvent.click(all)
+    expect(await screen.findByText('0 prestation retenue')).toBeInTheDocument()
   })
 })

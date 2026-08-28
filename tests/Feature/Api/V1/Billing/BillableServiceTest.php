@@ -1,10 +1,12 @@
 <?php
 
+use App\Modules\Addresses\Models\Address;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Orders\Models\Service;
 
 /**
  * Ce qu'on peut encore facturer à un client.
@@ -101,4 +103,77 @@ it('cache le client d’une autre organisation', function (): void {
     $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
         ->getJson("/api/v1/customers/{$foreign->id}/billable-services")
         ->assertNotFound();
+});
+
+describe('filtres de colonne', function (): void {
+    /**
+     * Le §42 : c'est le serveur qui filtre. Une liste paginée filtrée dans
+     * l'écran ne porterait que sur les vingt-cinq lignes affichées.
+     */
+    it('filtre sur le numéro de commande', function (): void {
+        $wanted = ($this->serviceFor)($this->customer);
+        ($this->serviceFor)($this->customer);
+
+        ($this->list)(['order' => $wanted->order->order_number])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    });
+
+    /** La colonne montre un numéro et un libellé : chercher dans le seul
+     *  numéro rendrait le champ inutile à qui tape « Livraison ». */
+    it('filtre sur le libellé du service, pas seulement son numéro', function (): void {
+        $service = Service::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Livraison express',
+        ]);
+
+        $wanted = ($this->serviceFor)($this->customer, 'completed', ['service_id' => $service->id]);
+        ($this->serviceFor)($this->customer);
+
+        ($this->list)(['service' => 'express'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    });
+
+    it('filtre sur la localité de l’adresse', function (): void {
+        $address = Address::factory()->create(['city' => 'Genève']);
+
+        $wanted = ($this->serviceFor)($this->customer, 'completed', ['address_id' => $address->id]);
+        ($this->serviceFor)($this->customer);
+
+        ($this->list)(['address' => 'Genè'])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    });
+
+    it('borne le prix unitaire', function (): void {
+        ($this->serviceFor)($this->customer, 'completed', ['customer_unit_price' => 40]);
+        $wanted = ($this->serviceFor)($this->customer, 'completed', ['customer_unit_price' => 145]);
+
+        ($this->list)(['priceMin' => 100])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    });
+
+    it('borne la quantité', function (): void {
+        ($this->serviceFor)($this->customer, 'completed', ['quantity' => 1]);
+        $wanted = ($this->serviceFor)($this->customer, 'completed', ['quantity' => 8]);
+
+        ($this->list)(['quantityMin' => 5])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $wanted->id);
+    });
+
+    /** Une borne haute sous la borne basse ne décrit aucun intervalle : mieux
+     *  vaut le refuser que rendre une liste vide sans raison visible. */
+    it('refuse un intervalle inversé', function (): void {
+        ($this->list)(['priceMin' => 100, 'priceMax' => 10])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('priceMax');
+    });
 });

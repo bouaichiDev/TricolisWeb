@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\Billing\InvoiceClosureController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceLineController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
@@ -255,6 +256,11 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('invoices.lines', InvoiceLineController::class)
             ->parameters(['lines' => 'line'])
             ->except(['create', 'edit']);
+        // La cloture est une action metier, pas une mutation du CRUD : elle
+        // fige la facture et declenche son envoi. Le §24 refuse un `/send`
+        // generique — l'envoi suit la cloture, il ne se commande pas.
+        Route::get('invoices/{invoice}/closure', [InvoiceClosureController::class, 'show'])->name('invoices.closure.show');
+        Route::post('invoices/{invoice}/close', [InvoiceClosureController::class, 'store'])->name('invoices.close');
         Route::apiResource('invoices', InvoiceController::class)->except(['create', 'edit']);
 
         // Decomptes fournisseurs

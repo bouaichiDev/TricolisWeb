@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Billing;
 
 use App\Http\Controllers\Api\V1\Concerns\BuildsAuditContext;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesInvoiceScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Billing\ListInvoiceRequest;
 use App\Http\Requests\Api\V1\Billing\StoreInvoiceRequest;
@@ -28,6 +29,7 @@ use Illuminate\Http\Request;
 class InvoiceController extends Controller
 {
     use BuildsAuditContext;
+    use ResolvesInvoiceScope;
 
     /**
      * Lister les factures.
@@ -84,11 +86,12 @@ class InvoiceController extends Controller
      * Modifier l'en-tête d'une facture.
      *
      * Permission requise : `invoices.update`. Ni le client ni les totaux ne sont
-     * modifiables.
+     * modifiables, et une facture clôturée ne l'est plus du tout.
      */
     public function update(UpdateInvoiceRequest $request, Invoice $invoice, UpdateInvoiceAction $action): JsonResponse
     {
         $organizationId = $this->guardInvoice($invoice);
+        $this->guardOpenInvoice($invoice);
         $this->authorize('update', $invoice);
 
         $updated = $action->execute(
@@ -110,18 +113,13 @@ class InvoiceController extends Controller
     public function destroy(Request $request, Invoice $invoice, DeleteInvoiceAction $action): JsonResponse
     {
         $organizationId = $this->guardInvoice($invoice);
+        // Le §22 : une facture cloturee ne se supprime pas. Elle est peut-etre
+        // deja chez le client.
+        $this->guardOpenInvoice($invoice);
         $this->authorize('delete', $invoice);
 
         $action->execute($invoice, $this->auditContext($request, $organizationId));
 
         return ApiResponse::noContent();
-    }
-
-    private function guardInvoice(Invoice $invoice): string
-    {
-        $organizationId = $this->requireOrganizationId();
-        abort_unless($invoice->organization_id === $organizationId, 404, 'Facture introuvable.');
-
-        return $organizationId;
     }
 }

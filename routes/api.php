@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
 use App\Http\Controllers\Api\V1\Auth\ProfileController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\Billing\BillableServiceController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceClosureController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceLineController;
@@ -57,6 +58,7 @@ use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
+use App\Http\Controllers\Api\V1\ProviderSettlements\SettleableServiceController;
 use App\Http\Controllers\Api\V1\Statuses\StatusController;
 use App\Http\Controllers\Api\V1\Statuses\StatusTransitionController;
 use App\Http\Controllers\Api\V1\Stock\StockBalanceController;
@@ -256,6 +258,14 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('invoices.lines', InvoiceLineController::class)
             ->parameters(['lines' => 'line'])
             ->except(['create', 'edit']);
+        // Les selecteurs de prestations : ce qui reste a facturer chez un
+        // client, ce qui reste a regler a un fournisseur. Le serveur decide de
+        // l'eligibilite — le §42 refuse que l'ecran en juge seul.
+        Route::get('customers/{customer}/billable-services', [BillableServiceController::class, 'index'])
+            ->name('customers.billable-services');
+        Route::get('providers/{provider}/settleable-services', [SettleableServiceController::class, 'index'])
+            ->name('providers.settleable-services');
+
         // La cloture est une action metier, pas une mutation du CRUD : elle
         // fige la facture et declenche son envoi. Le §24 refuse un `/send`
         // generique — l'envoi suit la cloture, il ne se commande pas.

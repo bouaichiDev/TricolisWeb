@@ -1,0 +1,104 @@
+<?php
+
+use App\Modules\Billing\Models\Invoice;
+use App\Modules\Billing\Models\InvoiceLine;
+use App\Modules\Customers\Models\Customer;
+use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\Models\OrderService;
+
+/**
+ * Ce qu'on peut encore facturer à un client.
+ *
+ * La règle vient du statut du service, vérifié et non supposé : le §43 défend de
+ * coder en dur `COMPLETED` sans regarder. Est facturable ce qui a été **fait** et
+ * ne l'est pas encore — on ne facture pas ce qu'on n'a pas livré.
+ */
+beforeEach(function (): void {
+    $this->seed();
+    $this->user = authUser();
+    $this->organization = authOrganization();
+    $this->headers = ['X-Organization-Id' => $this->organization->id];
+    $this->customer = Customer::factory()->create(['organization_id' => $this->organization->id]);
+
+    $this->serviceFor = function (Customer $customer, string $status = 'completed', array $o = []): OrderService {
+        $order = Order::factory()->forOrganization($this->organization)
+            ->create(['customer_id' => $customer->id]);
+
+        return OrderService::factory()->create(array_merge([
+            'order_id' => $order->id,
+            'status' => $status,
+        ], $o));
+    };
+
+    $this->list = fn (array $query = []) => $this->actingAs($this->user, 'sanctum')
+        ->withHeaders($this->headers)
+        ->getJson("/api/v1/customers/{$this->customer->id}/billable-services?".http_build_query($query));
+});
+
+it('propose une prestation terminée', function (): void {
+    $service = ($this->serviceFor)($this->customer);
+
+    ($this->list)()->assertOk()->assertJsonPath('data.0.id', $service->id);
+});
+
+/** On ne facture pas ce qu'on n'a pas livré. */
+it('écarte ce qui n’est pas terminé', function (): void {
+    foreach (['pending', 'planned', 'in_progress', 'failed', 'cancelled'] as $status) {
+        ($this->serviceFor)($this->customer, $status);
+    }
+
+    ($this->list)()->assertOk()->assertJsonCount(0, 'data');
+});
+
+/**
+ * §10 : un service ne se facture qu'une fois. L'unicité en base le garantit ;
+ * ce filtre évite de proposer un choix que la création refuserait.
+ */
+it('écarte ce qui est déjà facturé', function (): void {
+    $service = ($this->serviceFor)($this->customer);
+
+    $invoice = Invoice::factory()->create([
+        'organization_id' => $this->organization->id,
+        'customer_id' => $this->customer->id,
+    ]);
+
+    InvoiceLine::factory()->create([
+        'invoice_id' => $invoice->id,
+        'order_service_id' => $service->id,
+    ]);
+
+    ($this->list)()->assertOk()->assertJsonCount(0, 'data');
+});
+
+it('n’expose pas les prestations d’un autre client', function (): void {
+    $other = Customer::factory()->create(['organization_id' => $this->organization->id]);
+    ($this->serviceFor)($other);
+
+    ($this->list)()->assertOk()->assertJsonCount(0, 'data');
+});
+
+it('borne la période sur la date demandée', function (): void {
+    ($this->serviceFor)($this->customer, 'completed', ['requested_date' => '2026-08-15']);
+    ($this->serviceFor)($this->customer, 'completed', ['requested_date' => '2026-09-15']);
+
+    ($this->list)(['periodFrom' => '2026-09-01', 'periodTo' => '2026-09-30'])
+        ->assertOk()->assertJsonCount(1, 'data');
+});
+
+/** §44 : un identifiant ne suffit pas à reconnaître une prestation. */
+it('montre de quoi décider', function (): void {
+    ($this->serviceFor)($this->customer);
+
+    ($this->list)()->assertOk()->assertJsonStructure(['data' => [[
+        'id', 'serviceNumber', 'orderNumber', 'customerReference',
+        'serviceCode', 'requestedDate', 'quantity', 'customerUnitPrice', 'address',
+    ]]]);
+});
+
+it('cache le client d’une autre organisation', function (): void {
+    $foreign = Customer::factory()->create();
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson("/api/v1/customers/{$foreign->id}/billable-services")
+        ->assertNotFound();
+});

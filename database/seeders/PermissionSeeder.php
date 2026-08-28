@@ -261,6 +261,17 @@ class PermissionSeeder extends Seeder
         ['code' => 'export_jobs.create', 'name' => 'Déclencher un export', 'module' => 'export_jobs', 'action' => 'create'],
         ['code' => 'export_jobs.retry', 'name' => 'Relancer un export', 'module' => 'export_jobs', 'action' => 'retry'],
 
+        // Tarification — phase 6 V2. Les listes, regles et matrices se
+        // gouvernent ensemble : separer leurs droits obligerait a en accorder
+        // trois pour composer un seul bareme.
+        ['code' => 'price_lists.view', 'name' => 'Voir les tarifs', 'module' => 'price_lists', 'action' => 'view'],
+        ['code' => 'price_lists.create', 'name' => 'Créer un tarif', 'module' => 'price_lists', 'action' => 'create'],
+        ['code' => 'price_lists.update', 'name' => 'Modifier un tarif', 'module' => 'price_lists', 'action' => 'update'],
+        ['code' => 'price_lists.delete', 'name' => 'Supprimer un tarif', 'module' => 'price_lists', 'action' => 'delete'],
+
+        ['code' => 'pricing_calculations.view', 'name' => 'Historique des calculs tarifaires', 'module' => 'pricing_calculations', 'action' => 'view'],
+        ['code' => 'pricing_calculations.calculate', 'name' => 'Calculer un tarif', 'module' => 'pricing_calculations', 'action' => 'calculate'],
+
         ['code' => 'communication_templates.view', 'name' => 'Voir les modèles de message', 'module' => 'communication_templates', 'action' => 'view'],
         ['code' => 'communication_templates.create', 'name' => 'Créer un modèle de message', 'module' => 'communication_templates', 'action' => 'create'],
         ['code' => 'communication_templates.update', 'name' => 'Modifier un modèle de message', 'module' => 'communication_templates', 'action' => 'update'],

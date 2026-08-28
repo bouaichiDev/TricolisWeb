@@ -66,6 +66,8 @@ final class PermissionMenuMap
         'stock_movements' => MenuSection::STOCK,
         'stock_reservations' => MenuSection::STOCK,
 
+        'price_lists' => MenuSection::BILLING,
+        'pricing_calculations' => MenuSection::BILLING,
         'invoices' => MenuSection::BILLING,
         'invoice_lines' => MenuSection::BILLING,
         'provider_settlements' => MenuSection::BILLING,

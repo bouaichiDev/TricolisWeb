@@ -54,6 +54,8 @@ use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Planning\PlanningPoolController;
+use App\Http\Controllers\Api\V1\Pricing\FormulaController;
+use App\Http\Controllers\Api\V1\Pricing\PriceListController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
@@ -274,6 +276,15 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('invoices/{invoice}/closure', [InvoiceClosureController::class, 'show'])->name('invoices.closure.show');
         Route::post('invoices/{invoice}/close', [InvoiceClosureController::class, 'store'])->name('invoices.close');
         Route::apiResource('invoices', InvoiceController::class)->except(['create', 'edit']);
+
+        // Tarification. La validation de formule precede la ressource :
+        // `pricing/formulas/validate` ne doit pas etre lu comme un identifiant
+        // de bareme.
+        Route::post('pricing/formulas/validate', [FormulaController::class, 'validateFormula'])
+            ->name('pricing.formulas.validate');
+        Route::apiResource('price-lists', PriceListController::class)
+            ->parameters(['price-lists' => 'priceList'])
+            ->except(['create', 'edit']);
 
         // Decomptes fournisseurs
         Route::get('providers/{provider}/settlements', [ProviderSettlementController::class, 'byProvider'])->name('providers.settlements.index');

@@ -148,6 +148,9 @@ function render(overrides: Record<string, unknown> = {}) {
 
   server.use(
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/tours/:id/route-geometry`, () =>
+      HttpResponse.json({ data: { points: [] } }),
+    ),
     http.get(`${API}/customers`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/agencies`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/providers`, () => HttpResponse.json(paginated([]))),

@@ -18,6 +18,18 @@ export const toursApi = {
   remove: (id: string) => api.delete<void>(`/tours/${id}`),
 
   /**
+   * Le tracé routier entre les arrêts.
+   *
+   * Rendu vide quand aucun fournisseur de géométrie n'est déclaré ou qu'un
+   * arrêt n'est pas géocodé : la carte retombe alors sur ses segments à vol
+   * d'oiseau, et le dit.
+   */
+  routeGeometry: (id: string) =>
+    api
+      .get<ApiResource<{ points: [number, number][] }>>(`/tours/${id}/route-geometry`)
+      .then((response) => response.data.points),
+
+  /**
    * Faire passer la tournée d'un état à un autre.
    *
    * C'est par là que se valide un brouillon et qu'il s'annule : le référentiel

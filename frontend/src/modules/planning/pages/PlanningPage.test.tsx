@@ -80,6 +80,9 @@ function render(
 
   server.use(
     http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/tours/:id/route-geometry`, () =>
+      HttpResponse.json({ data: { points: [] } }),
+    ),
     http.get(`${API}/planning/pool`, () => HttpResponse.json(paginated([poolOrder()]))),
     http.get(`${API}/tours`, () => HttpResponse.json(paginated(tours))),
     http.post(`${API}/tours/${TOUR_ID}/plan`, async ({ request }) => {
@@ -325,9 +328,8 @@ describe('panneaux de la vue carte', () => {
   })
 
   /**
-   * Le service de routage rend des distances, pas de tracé : les traits sont
-   * des vols d'oiseau, et la carte le dit plutôt que de les laisser passer pour
-   * des routes.
+   * Sans fournisseur de géométrie, les traits sont des vols d'oiseau. La carte
+   * le dit plutôt que de les laisser passer pour des routes.
    */
   it('annonce que les traits ne sont pas des routes', async () => {
     render()
@@ -336,5 +338,137 @@ describe('panneaux de la vue carte', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
 
     expect(await screen.findByText(/vol d’oiseau/)).toBeInTheDocument()
+  })
+
+  /** Quand un fournisseur rend un tracé, la légende change de discours. */
+  it('annonce le tracé réel quand il en a un', async () => {
+    render()
+
+    // Apres `render` : le dernier gestionnaire declare l'emporte, et celui de
+    // `render` rend un trace vide.
+    server.use(
+      http.get(`${API}/tours/:id/route-geometry`, () =>
+        HttpResponse.json({
+          data: { points: [[46.2333, 6.0833], [46.2044, 6.1432]] },
+        }),
+      ),
+    )
+
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+    await userEvent.click(await screen.findByRole('button', { name: /TR-001/ }))
+
+    expect(await screen.findByText(/Tracé routier réel/)).toBeInTheDocument()
+  })
+})
+
+/**
+ * L'exclusivité d'un brouillon, telle que les §22 à §26 la définissent : elle
+ * appartient à son créateur et cesse à la validation ou à la libération.
+ */
+describe('réservation d’un brouillon dans la carte', () => {
+  const mine = tour({
+    plannedBy: { id: '01JQZ0000000000000000USR1', name: 'Badr Ouali' },
+  })
+  const started = tour({
+    plannedBy: { id: '01JQZ0000000000000000USR1', name: 'Badr Ouali' },
+    stopCount: 1,
+    stops: [
+      {
+        id: '01JQZ0000000000000STOP07',
+        tourId: TOUR_ID,
+        addressId: '01JQZ0000000000000ADDR07',
+        sequence: 1,
+        status: 'pending',
+        addressLabel: 'Client · 1200 Genève',
+        latitude: 46.2044,
+        longitude: 6.1432,
+        serviceCount: 2,
+        orderServiceIds: ['01JQZ000000000000OSRV07', '01JQZ000000000000OSRV08'],
+        orders: [],
+      },
+    ],
+  })
+
+  const hers = tour({
+    id: '01JQZ0000000000000TOUR09',
+    tourNumber: 'TR-AUTRE',
+    plannedBy: { id: '01JQZ00000000000000AUTR1', name: 'Sara Amrani' },
+  })
+
+  const openMap = async () => {
+    await screen.findByText('CMD-42')
+    await userEvent.click(screen.getByRole('button', { name: 'Vue carte' }))
+    await screen.findByText('Connecté comme')
+  }
+
+  /** §25 : nommer qui tient le brouillon, pour pouvoir le lui demander. */
+  it('nomme le planificateur qui tient le brouillon', async () => {
+    render(undefined, [hers])
+    await openMap()
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-AUTRE/ }))
+
+    expect(
+      await screen.findByText(/Planification en cours par Sara Amrani/),
+    ).toBeInTheDocument()
+  })
+
+  /**
+   * **Régression.** Les boutons se déduisaient d'une variable de composant :
+   * fermer la fenêtre l'effaçait, et rouvrir la tournée ne proposait plus de
+   * conclure alors qu'elle était toujours réservée. Ils se déduisent maintenant
+   * du contenu, qui survit à tout.
+   */
+  it('propose de conclure dès l’ouverture d’un plan commencé', async () => {
+    render(undefined, [started])
+    await openMap()
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+
+    expect(
+      await screen.findByRole('button', { name: /Valider la planification/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Annuler la planification/ })).toBeInTheDocument()
+  })
+
+  /** Un brouillon vide n'attend rien : ni à valider, ni à annuler. */
+  it('ne propose rien sur un brouillon vide', async () => {
+    render(undefined, [mine])
+    await openMap()
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+
+    expect(
+      screen.queryByRole('button', { name: /Valider la planification/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  /**
+   * Une tournée à la fois : deux plans ouverts en parallèle sur un même fond de
+   * carte se confondent.
+   */
+  it('ferme les autres tournées tant qu’on n’a pas conclu', async () => {
+    render(undefined, [started, hers])
+    await openMap()
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+    await screen.findByRole('button', { name: /Valider la planification/ })
+
+    expect(screen.getByRole('button', { name: 'TR-AUTRE' })).toBeDisabled()
+  })
+
+  /** Annuler rend les commandes au pool : le geste s'annonce avant d'agir. */
+  it('annonce ce que l’annulation rend au pool', async () => {
+    render(undefined, [started])
+    await openMap()
+
+    await userEvent.click(screen.getByRole('button', { name: /TR-001/ }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Annuler la planification/ }),
+    )
+
+    expect(await screen.findByText('Annuler cette planification ?')).toBeInTheDocument()
+    expect(screen.getByText(/reviennent dans les commandes à planifier/)).toBeInTheDocument()
   })
 })

@@ -12,6 +12,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Tournée vue depuis une liste : ni période ni affectation chargée, seulement
  * leurs compteurs.
  *
+ * `plannedBy` nomme celui qui réserve le brouillon. Il n'est pas une colonne :
+ * le §23 l'interdit, et il se lit dans le journal d'audit — résolu en une
+ * requête pour toute la page, jamais tournée par tournée.
+ *
  * Les arrêts font exception, et seulement sur demande — `?withStops=1`. La vue
  * en colonnes les montre sous chaque tournée ; les charger toujours coûterait
  * une jointure à qui ne veut qu'une liste.
@@ -20,6 +24,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class TourListResource extends JsonResource
 {
+    /**
+     * @param  array<string, array{id: string, name: string}>  $planners  par tournée
+     */
+    public function __construct($resource, private readonly array $planners = [])
+    {
+        parent::__construct($resource);
+    }
+
     /**
      * Commandes distinctes portées par la tournée.
      *
@@ -72,6 +84,10 @@ class TourListResource extends JsonResource
             // charges : `tours` n'en porte pas le compte, et l'ajouter en base
             // donnerait un total de plus a tenir a jour a chaque mouvement.
             'orderCount' => $this->whenLoaded('stops', fn (): int => $this->distinctOrderCount()),
+            // Qui réserve ce brouillon. Nommé plutôt que tu : un autre
+            // planificateur qui trouve la tournée en lecture seule doit savoir
+            // à qui demander de la libérer.
+            'plannedBy' => $this->planners[$this->id] ?? null,
             'stopCount' => $this->whenCounted('stops'),
             'stops' => TourStopResource::collection($this->whenLoaded('stops')),
             'periodCount' => $this->whenCounted('periods'),

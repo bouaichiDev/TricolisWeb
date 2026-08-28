@@ -5,9 +5,10 @@ import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
 import { Link } from 'react-router-dom'
 
 import type { Tour } from '@/modules/tours/types/tour'
-import { ATTRIBUTION, TILE_URL, pinIcon, sequenceIcon } from '@/shared/components/map/tiles'
+import { ATTRIBUTION, TILE_URL, sequenceIcon } from '@/shared/components/map/tiles'
 
 import { MapFocus, type MapTarget } from './map/MapFocus'
+import { PoolMarker } from './map/PoolMarker'
 import { isDeparture, poolPoints, stopPoints, tourColor, unplottableCount } from '../points'
 import type { PoolOrder } from '../types/pool'
 
@@ -16,6 +17,15 @@ interface PlanningMapProps {
   /** Toutes les tournées du filtre, pas seulement les brouillons. */
   tours: Tour[]
   onPlanOrder?: (orderId: string) => void
+  /**
+   * Tracé routier de la tournée sélectionnée, en `[latitude, longitude]`.
+   *
+   * Vide quand aucun fournisseur de géométrie n'est déclaré : les segments à
+   * vol d'oiseau prennent le relais, et la légende le dit.
+   */
+  routeTrace?: [number, number][]
+  /** Tournée à laquelle ce tracé appartient. */
+  routeTourId?: string | null
   /** Point à rejoindre, désigné depuis une liste. */
   focus?: MapTarget | null
   /**
@@ -29,8 +39,6 @@ interface PlanningMapProps {
    */
   className?: string
 }
-
-const WAITING = pinIcon('text-amber-500')
 
 /** Le départ au dépôt garde sa teinte propre, quelle que soit la tournée. */
 const DEPARTURE_COLOR = '#059669'
@@ -46,17 +54,26 @@ const DEPARTURE_COLOR = '#059669'
  * tournée confirmée occupe le terrain, et planifier sans la voir reviendrait à
  * envoyer deux camions dans la même rue.
  *
- * **Les traits sont en pointillé, et c'est délibéré.** Le service de routage
- * rend une distance et des durées — `Distance`, `TravelTime` — mais **aucune
- * géométrie** : rien ne décrit le chemin suivi. Un trait plein se lirait comme
- * une route ; le pointillé dit ce qu'il est, un vol d'oiseau entre deux arrêts.
- * Le §101 prévoyait ce cas : le jour où un fournisseur rend une géométrie, elle
- * prendra la place de ces segments.
+ * **Trait plein = route réelle, pointillé = vol d'oiseau.** Le service de
+ * routage du projet rend `Distance` et `TravelTime`, mais aucune géométrie :
+ * rien n'y décrit le chemin suivi. Un second fournisseur, déclaré à part, sait
+ * le dessiner — le §101 l'autorise expressément. Quand il répond, la tournée
+ * sélectionnée porte son vrai tracé ; sinon les segments reviennent, en
+ * pointillé, et la légende dit lequel des deux on regarde. Jamais les deux à la
+ * fois : superposés, on ne saurait plus lequel dit la vérité.
  *
  * **On ne glisse pas ici.** Sur un fond de plan, lâcher « sur une tournée » ne
  * veut rien dire : une tournée n'y est pas une zone mais une ligne brisée.
  */
-export function PlanningMap({ orders, tours, onPlanOrder, focus, className }: PlanningMapProps) {
+export function PlanningMap({
+  orders,
+  tours,
+  onPlanOrder,
+  routeTrace,
+  routeTourId,
+  focus,
+  className,
+}: PlanningMapProps) {
   const { t } = useTranslation()
 
   const waiting = poolPoints(orders)
@@ -92,7 +109,12 @@ export function PlanningMap({ orders, tours, onPlanOrder, focus, className }: Pl
 
         {routes.map(({ tour, stops, color }) => (
           <div key={tour.id}>
-            {stops.length > 1 ? (
+            {/* Le trace routier quand on l'a, les segments a vol d'oiseau
+                sinon. Jamais les deux : superposes, on ne saurait plus lequel
+                dit la verite. */}
+            {tour.id === routeTourId && (routeTrace ?? []).length > 1 ? (
+              <Polyline positions={routeTrace ?? []} pathOptions={{ color, weight: 4 }} />
+            ) : stops.length > 1 ? (
               <Polyline
                 positions={stops.map((stop) => [stop.latitude, stop.longitude])}
                 pathOptions={{ color, dashArray: '6 8', weight: 3 }}
@@ -133,34 +155,7 @@ export function PlanningMap({ orders, tours, onPlanOrder, focus, className }: Pl
         ))}
 
         {waiting.map((point) => (
-          <Marker key={point.key} position={[point.latitude, point.longitude]} icon={WAITING}>
-            <Popup>
-              <span className="block font-medium">{point.label}</span>
-
-              {/* Une adresse peut réunir plusieurs commandes : chacune se
-                  planifie séparément, sinon le clic en emporterait d'autres. */}
-              <ul className="mt-1 flex flex-col gap-1">
-                {point.orders.map((order) => (
-                  <li key={order.id} className="flex flex-col gap-0.5 border-t pt-1 first:border-0">
-                    <Link to={`/orders/${order.id}`} className="font-medium underline">
-                      {order.orderNumber}
-                    </Link>
-                    <span>{order.summary}</span>
-
-                    {onPlanOrder === undefined ? null : (
-                      <button
-                        type="button"
-                        className="self-start rounded bg-primary px-2 py-0.5 font-medium text-primary-foreground"
-                        onClick={() => onPlanOrder(order.id)}
-                      >
-                        {t('planning.planOrder')}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </Popup>
-          </Marker>
+          <PoolMarker key={point.key} point={point} onPlanOrder={onPlanOrder} />
         ))}
       </MapContainer>
 
@@ -175,7 +170,9 @@ export function PlanningMap({ orders, tours, onPlanOrder, focus, className }: Pl
           </span>
         ))}
 
-        <span className="text-muted-foreground">{t('planning.straightLines')}</span>
+        <span className="text-muted-foreground">
+          {(routeTrace ?? []).length > 1 ? t('planning.realRoute') : t('planning.straightLines')}
+        </span>
 
         {missing > 0 ? (
           <span className="text-muted-foreground">{t('planning.notGeocoded', { count: missing })}</span>

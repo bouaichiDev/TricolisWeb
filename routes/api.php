@@ -66,6 +66,8 @@ use App\Http\Controllers\Api\V1\Stock\StockReservationController;
 use App\Http\Controllers\Api\V1\Tours\TourController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
+use App\Http\Controllers\Api\V1\Tours\TourPlanningController;
+use App\Http\Controllers\Api\V1\Tours\TourRouteController;
 use App\Http\Controllers\Api\V1\Tours\TourStopController;
 use App\Http\Controllers\Api\V1\Tours\TourStopServiceController;
 use App\Http\Controllers\Api\V1\Tracking\OrderPositionController;
@@ -216,10 +218,11 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // Ce qui attend d'etre planifie : une lecture des commandes, pas une
         // table de plus a tenir a jour.
         Route::get('planning/pool', [PlanningPoolController::class, 'index'])->name('planning.pool');
-        Route::post('tours/{tour}/status', [TourController::class, 'changeStatus'])->name('tours.status');
+        Route::post('tours/{tour}/status', [TourPlanningController::class, 'changeStatus'])->name('tours.status');
         // Glisser une commande ou des services : un seul appel, une transaction.
-        Route::post('tours/{tour}/plan', [TourController::class, 'plan'])->name('tours.plan');
-        Route::post('tours/{tour}/unplan', [TourController::class, 'unplan'])->name('tours.unplan');
+        Route::post('tours/{tour}/plan', [TourPlanningController::class, 'plan'])->name('tours.plan');
+        Route::post('tours/{tour}/unplan', [TourPlanningController::class, 'unplan'])->name('tours.unplan');
+        Route::get('tours/{tour}/route-geometry', [TourRouteController::class, 'routeGeometry'])->name('tours.route-geometry');
         Route::apiResource('tours', TourController::class)->except(['create', 'edit']);
 
         // Suivi — pas de PATCH ni de DELETE : un evenement est historique.

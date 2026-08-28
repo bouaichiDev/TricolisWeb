@@ -1,11 +1,15 @@
-import { UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { Tour } from '@/modules/tours/types/tour'
+import { useTourRoute } from '@/modules/tours/hooks/useTours'
+import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { useAuth } from '@/shared/hooks/useAuth'
 
 import type { MapTarget } from './MapFocus'
+import { PlanningSessionBar } from './PlanningSessionBar'
+import { useConcludePlan } from './useConcludePlan'
+import { usePlanningSession } from './usePlanningSession'
 import { deliveryPoint } from '../../focus'
 import { PlannedToursPanel } from './PlannedToursPanel'
 import { PoolMapPanel } from './PoolMapPanel'
@@ -66,27 +70,60 @@ export function PlanningMapScreen({
     if (point !== null) aim(point.latitude, point.longitude)
   }
 
+  // Le trace de la seule tournee regardee : dessiner celui de toutes ferait
+  // autant d'appels distants, pour un enchevetrement illisible.
+  const route = useTourRoute(selectedTourId)
+
+  const session = usePlanningSession(user?.id ?? null)
+  const selected = tours.find((tour) => tour.id === selectedTourId) ?? null
+
+  // Tout se deduit des donnees : un brouillon qui porte des arrets est un plan
+  // commence, et le reste apres fermeture de la fenetre.
+  const awaits = selected !== null && session.awaitsConclusion(selected)
+
+  const conclude = useConcludePlan()
+
+  // Les deux issues sont irreversibles : la tournee quitte le brouillon dans
+  // les deux cas, et l'annulation rend les commandes au pool.
+  const [deciding, setDeciding] = useState<'validate' | 'cancel' | null>(null)
+  const receiving = selected !== null && session.canReceive(selected, selected)
+
   const drafts = tours.filter((tour) => tour.status === 'draft')
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2">
-        <p className="flex items-center gap-2 text-sm">
-          <UserRound className="size-4 text-muted-foreground" aria-hidden />
-          <span className="text-muted-foreground">{t('planning.currentUser')}</span>
-          <span className="font-medium">
-            {user === null ? '—' : `${user.firstName} ${user.lastName}`}
-          </span>
-        </p>
+      <PlanningSessionBar
+        userName={user === null ? '—' : `${user.firstName} ${user.lastName}`}
+        selected={selected}
+        awaitsConclusion={awaits}
+        isPending={isPending || conclude.isPending}
+        onValidate={() => setDeciding('validate')}
+        onCancel={() => setDeciding('cancel')}
+      />
 
-        <p className="text-sm text-muted-foreground">
-          {selectedTourId === null
-            ? t('planning.pickTour')
-            : t('planning.receiving', {
-                number: tours.find((tour) => tour.id === selectedTourId)?.tourNumber ?? '',
-              })}
-        </p>
-      </div>
+      <ConfirmDialog
+        open={deciding !== null}
+        onOpenChange={(open) => (open ? undefined : setDeciding(null))}
+        title={t(deciding === 'cancel' ? 'planning.cancelPlanTitle' : 'planning.validatePlanTitle')}
+        description={
+          deciding === 'cancel'
+            ? t('planning.cancelPlanBody', {
+                count: (selected?.stops ?? []).flatMap((stop) => stop.orderServiceIds ?? []).length,
+              })
+            : t('planning.validatePlanBody')
+        }
+        confirmLabel={t(deciding === 'cancel' ? 'planning.cancelPlan' : 'planning.validate')}
+        variant={deciding === 'cancel' ? 'destructive' : 'default'}
+        isPending={conclude.isPending}
+        onConfirm={() => {
+          if (selected !== null) {
+            if (deciding === 'cancel') conclude.cancel(selected)
+            else conclude.validate(selected)
+          }
+
+          setDeciding(null)
+        }}
+      />
 
       <div className="grid gap-3 xl:grid-cols-[16rem_minmax(0,1fr)_18rem]">
         <section className="flex max-h-[70vh] flex-col gap-2 overflow-y-auto rounded-lg border bg-card p-2">
@@ -97,7 +134,11 @@ export function PlanningMapScreen({
             selectedTourId={selectedTourId}
             onSelectTour={onSelectTour}
             onFocusStop={aim}
-            onUnplan={onUnplan}
+            onUnplan={receiving ? onUnplan : undefined}
+            // Tant que la tournee ouverte attend sa conclusion, les autres
+            // sont fermees : deux plans en parallele se confondent.
+            lockedTourId={awaits ? selectedTourId : null}
+            isHeldByOther={session.heldByOther}
           />
         </section>
 
@@ -108,8 +149,10 @@ export function PlanningMapScreen({
             orders={orders}
             tours={tours}
             focus={focus}
+            routeTrace={route.data ?? []}
+            routeTourId={selectedTourId}
             className="min-h-0 w-full flex-1 rounded-lg border"
-            onPlanOrder={selectedTourId === null ? undefined : onPlanOrder}
+            onPlanOrder={receiving ? onPlanOrder : undefined}
           />
         </div>
 
@@ -124,7 +167,7 @@ export function PlanningMapScreen({
             search={search}
             onSearchChange={onSearchChange}
             onFocus={aimAtOrder}
-            onPlan={selectedTourId === null ? undefined : onPlanOrder}
+            onPlan={receiving ? onPlanOrder : undefined}
             isPending={isPending}
           />
         </section>

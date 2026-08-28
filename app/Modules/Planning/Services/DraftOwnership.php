@@ -66,6 +66,50 @@ final readonly class DraftOwnership
             ->all();
     }
 
+    /**
+     * Qui réserve chacun de ces brouillons, nommé.
+     *
+     * Seuls les brouillons sont interrogés : hors brouillon l'exclusivité a
+     * cessé, et afficher un nom laisserait croire le contraire.
+     *
+     * Deux requêtes pour toute une page — les créateurs, puis leurs noms. Poser
+     * la question tournée par tournée ferait ce que le budget de requêtes de la
+     * phase 4 a déjà fait échouer une fois.
+     *
+     * @param  iterable<Tour>  $tours
+     * @return array<string, array{id: string, name: string}>
+     */
+    public function namedFor(iterable $tours): array
+    {
+        $draftIds = [];
+
+        foreach ($tours as $tour) {
+            if ($tour->status === TourStatus::DRAFT) {
+                $draftIds[] = $tour->id;
+            }
+        }
+
+        $creators = $this->creatorsOf($draftIds);
+
+        if ($creators === []) {
+            return [];
+        }
+
+        $names = User::whereIn('id', array_values($creators))
+            ->get(['id', 'first_name', 'last_name'])
+            ->mapWithKeys(fn (User $user): array => [
+                $user->id => trim($user->first_name.' '.$user->last_name),
+            ]);
+
+        $planners = [];
+
+        foreach ($creators as $tourId => $userId) {
+            $planners[$tourId] = ['id' => $userId, 'name' => $names[$userId] ?? $userId];
+        }
+
+        return $planners;
+    }
+
     /** Le créateur, chargé, quand le journal le nomme. */
     public function creatorOf(Tour $tour): ?User
     {

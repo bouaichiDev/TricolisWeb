@@ -1592,7 +1592,21 @@
     "currentUser": "Connecté comme",
     "otherTours": "Autres tournées du jour",
     "selectedTour": "Tournée sélectionnée",
-    "onlyDraftReceives": "Seule une tournée brouillon peut recevoir."
+    "onlyDraftReceives": "Seule une tournée brouillon peut recevoir.",
+    "realRoute": "Tracé routier réel de la tournée sélectionnée.",
+    "heldBy": "Réservée par",
+    "heldByOther": "Planification en cours par {{name}} — lecture seule.",
+    "readOnlyHere": "Lecture seule : concluez la tournée en cours pour modifier celle-ci.",
+    "mustConclude": "À conclure :",
+    "validate": "Valider la planification",
+    "abandon": "Libérer sans valider",
+    "concludeFirst": "Validez ou libérez la tournée en cours avant d’en ouvrir une autre.",
+    "cancelPlan": "Annuler la planification",
+    "planCancelled": "Plan annulé : les commandes sont revenues à planifier.",
+    "cancelPlanTitle": "Annuler cette planification ?",
+    "cancelPlanBody": "Les {{count}} services reviennent dans les commandes à planifier, et la tournée passe à « annulée ». Elle ne pourra plus recevoir.",
+    "validatePlanTitle": "Valider cette planification ?",
+    "validatePlanBody": "La tournée quitte le brouillon et passe à « confirmée ». Elle cesse alors de vous être réservée."
   },
   "tours": {
     "title": "Tournées",

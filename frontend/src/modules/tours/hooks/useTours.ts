@@ -9,6 +9,24 @@ export const tourKeys = {
   all: ['tours'] as const,
   list: (filters: TourFilters) => [...tourKeys.all, 'list', filters] as const,
   detail: (id: string) => [...tourKeys.all, 'detail', id] as const,
+  route: (id: string) => [...tourKeys.all, 'route', id] as const,
+}
+
+/**
+ * Le tracé routier d'une tournée.
+ *
+ * Le serveur le recalcule et le garde en cache une heure sous une clé qui
+ * dépend des points : réordonner les arrêts donne un autre tracé sans qu'on
+ * ait à l'invalider. Côté écran, une minute suffit à éviter de le redemander à
+ * chaque ouverture de la carte.
+ */
+export function useTourRoute(id: string | null) {
+  return useQuery({
+    queryKey: tourKeys.route(id ?? ''),
+    queryFn: () => toursApi.routeGeometry(id as string),
+    enabled: id !== null && id !== '',
+    staleTime: 60 * 1000,
+  })
 }
 
 export function useTourList(filters: TourFilters) {

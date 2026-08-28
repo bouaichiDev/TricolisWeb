@@ -30,6 +30,13 @@ export interface Tour {
   vehicleRegistration?: string | null
   /** Commandes distinctes de la tournée ; rendu seulement avec les arrêts. */
   orderCount?: number
+  /**
+   * Qui réserve ce brouillon, nommé.
+   *
+   * Nul hors brouillon : l'exclusivité cesse dès que la tournée est validée ou
+   * annulée, et afficher un nom laisserait croire le contraire.
+   */
+  plannedBy?: { id: string; name: string } | null
   /** Rendu seulement sur `?withStops=1` : la vue en colonnes les montre. */
   stops?: TourStop[]
 }

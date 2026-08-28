@@ -14,6 +14,10 @@ interface PlannedToursPanelProps {
   /** Montre un arrêt sur la carte. */
   onFocusStop: (latitude: number, longitude: number) => void
   onUnplan?: (tourId: string, orderServiceIds: string[]) => void
+  /** Tournée engagée : tant qu'elle n'est pas conclue, on n'en change pas. */
+  lockedTourId?: string | null
+  /** Ce brouillon est-il tenu par un autre planificateur ? */
+  isHeldByOther?: (tour: Tour) => boolean
 }
 
 /**
@@ -33,6 +37,8 @@ export function PlannedToursPanel({
   onSelectTour,
   onFocusStop,
   onUnplan,
+  lockedTourId,
+  isHeldByOther,
 }: PlannedToursPanelProps) {
   const { t } = useTranslation()
 
@@ -51,19 +57,35 @@ export function PlannedToursPanel({
             {t('planning.otherTours')}
           </p>
           <div className="flex flex-wrap gap-1">
-            {others.map((tour) => (
-              <Button
-                key={tour.id}
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={tour.status !== 'draft'}
-                title={tour.status === 'draft' ? undefined : t('planning.onlyDraftReceives')}
-                onClick={() => onSelectTour(tour.id)}
-              >
-                {tour.tourNumber}
-              </Button>
-            ))}
+            {others.map((tour) => {
+              const held = isHeldByOther?.(tour) ?? false
+              const engagedElsewhere = lockedTourId !== null && lockedTourId !== undefined
+
+              return (
+                <Button
+                  key={tour.id}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  // Ouvrir une tournee tenue par un autre reste permis : le
+                  // §25 veut qu'on la voie en lecture seule, avec le nom de qui
+                  // la tient. Seul l'engagement ailleurs ferme le passage.
+                  disabled={engagedElsewhere}
+                  title={
+                    engagedElsewhere
+                      ? t('planning.concludeFirst')
+                      : held
+                        ? t('planning.heldByOther', { name: tour.plannedBy?.name ?? '' })
+                        : tour.status === 'draft'
+                          ? undefined
+                          : t('planning.onlyDraftReceives')
+                  }
+                  onClick={() => onSelectTour(tour.id)}
+                >
+                  {tour.tourNumber}
+                </Button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -76,6 +98,16 @@ export function PlannedToursPanel({
             <span className="truncate font-medium">{selected.tourNumber}</span>
             <StatusBadge status={selected.status} source="tour" />
           </div>
+
+          {/* Le §25 l'exige mot pour mot : qui tient le brouillon, et que l'on
+              n'est ici qu'en lecture. */}
+          {onUnplan === undefined && selected.status === 'draft' ? (
+            <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
+              {selected.plannedBy === null || selected.plannedBy === undefined
+                ? t('planning.readOnlyHere')
+                : t('planning.heldByOther', { name: selected.plannedBy.name })}
+            </p>
+          ) : null}
 
           <p className="flex flex-wrap gap-x-3 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1" title={t('tours.fields.driver')}>

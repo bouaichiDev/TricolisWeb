@@ -36,14 +36,14 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final readonly class BillableServiceQuery
 {
+    public function __construct(private BillableColumnFilters $filters) {}
+
+    /** Au-dela, une liste de suggestions ne se lit plus : elle se refiltre. */
+    private const int SUGGESTIONS = 15;
+
     public function paginate(ListRequest $request, string $customerId, string $organizationId): LengthAwarePaginator
     {
-        $query = OrderService::query()
-            ->where('status', OrderServiceStatus::COMPLETED->value)
-            ->whereDoesntHave('invoiceLine')
-            ->whereHas('order', fn ($order) => $order
-                ->where('customer_id', $customerId)
-                ->where('organization_id', $organizationId))
+        $query = $this->eligible($customerId, $organizationId)
             ->with([
                 'order:id,order_number,customer_reference,customer_id,currency_code',
                 'service:id,code,name',
@@ -61,7 +61,7 @@ final readonly class BillableServiceQuery
             $query->whereDate('requested_date', '<=', $request->validated('periodTo'));
         }
 
-        $this->filterColumns($query, $request);
+        $this->filters->apply($query, $request);
 
         if ($request->filled('search')) {
             $search = $request->validated('search');
@@ -80,52 +80,65 @@ final readonly class BillableServiceQuery
     }
 
     /**
-     * Les filtres posés colonne par colonne.
+     * Les valeurs qui existent vraiment, pour compléter une saisie.
      *
-     * Chacun suit ce que la colonne montre : « Prestation » affiche un numéro
-     * et un libellé de service, on cherche donc dans les deux. Ne chercher que
-     * dans le numéro rendrait le champ inutile pour qui tape « Livraison ».
+     * **Elles se cherchent dans l'ensemble éligible, pas dans la page.** C'est
+     * tout l'intérêt : un facturier qui tape « 000907 » veut savoir si ce
+     * numéro existe quelque part, pas s'il figure parmi les vingt-cinq lignes
+     * sous ses yeux.
      *
-     * @param  Builder<OrderService>  $query
+     * Rien d'autre que des numéros n'est proposé : une suggestion doit pouvoir
+     * être collée telle quelle dans le filtre et rendre exactement la ligne
+     * qu'on visait.
+     *
+     * @return list<string>
      */
-    private function filterColumns(Builder $query, ListRequest $request): void
+    public function suggest(string $field, ?string $term, string $customerId, string $organizationId): array
     {
-        if ($request->filled('service')) {
-            $term = $request->validated('service');
+        $query = $this->eligible($customerId, $organizationId);
+        $term = $term === null ? '' : trim($term);
 
-            $query->where(fn (Builder $builder) => $builder
-                ->where('service_number', 'like', "%{$term}%")
-                ->orWhereHas('service', fn ($service) => $service
-                    ->where('code', 'like', "%{$term}%")
-                    ->orWhere('name', 'like', "%{$term}%")));
+        if ($field === 'order') {
+            $values = $query
+                ->when($term !== '', fn (Builder $builder) => $builder->whereHas(
+                    'order',
+                    fn ($order) => $order->where('order_number', 'like', "%{$term}%"),
+                ))
+                ->with('order:id,order_number')
+                ->get()
+                ->map(fn (OrderService $service): ?string => $service->order?->order_number);
+        } else {
+            $values = $query
+                ->when($term !== '', fn (Builder $builder) => $builder
+                    ->where('service_number', 'like', "%{$term}%"))
+                ->pluck('service_number');
         }
 
-        if ($request->filled('order')) {
-            $term = $request->validated('order');
+        return $values
+            ->filter()
+            ->unique()
+            ->sort()
+            ->take(self::SUGGESTIONS)
+            ->values()
+            ->all();
+    }
 
-            $query->whereHas('order', fn ($order) => $order
-                ->where('order_number', 'like', "%{$term}%")
-                ->orWhere('customer_reference', 'like', "%{$term}%"));
-        }
-
-        if ($request->filled('address')) {
-            $term = $request->validated('address');
-
-            $query->whereHas('address', fn ($address) => $address
-                ->where('city', 'like', "%{$term}%")
-                ->orWhere('postal_code', 'like', "%{$term}%")
-                ->orWhere('name', 'like', "%{$term}%"));
-        }
-
-        foreach ([
-            'quantityMin' => ['quantity', '>='],
-            'quantityMax' => ['quantity', '<='],
-            'priceMin' => ['customer_unit_price', '>='],
-            'priceMax' => ['customer_unit_price', '<='],
-        ] as $input => [$column, $operator]) {
-            if ($request->filled($input)) {
-                $query->where($column, $operator, $request->validated($input));
-            }
-        }
+    /**
+     * Ce qui reste à facturer chez ce client, avant tout filtre.
+     *
+     * Une seule définition de l'éligibilité : la liste et les suggestions
+     * doivent s'accorder, sans quoi l'écran proposerait de compléter avec un
+     * numéro qu'il refuserait ensuite d'afficher.
+     *
+     * @return Builder<OrderService>
+     */
+    private function eligible(string $customerId, string $organizationId): Builder
+    {
+        return OrderService::query()
+            ->where('status', OrderServiceStatus::COMPLETED->value)
+            ->whereDoesntHave('invoiceLine')
+            ->whereHas('order', fn ($order) => $order
+                ->where('customer_id', $customerId)
+                ->where('organization_id', $organizationId));
     }
 }

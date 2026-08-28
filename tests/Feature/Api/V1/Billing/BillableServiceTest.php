@@ -177,3 +177,65 @@ describe('filtres de colonne', function (): void {
             ->assertJsonValidationErrors('priceMax');
     });
 });
+
+describe('suggestions', function (): void {
+    beforeEach(function (): void {
+        $this->suggest = fn (array $query) => $this->actingAs($this->user, 'sanctum')
+            ->withHeaders($this->headers)
+            ->getJson("/api/v1/customers/{$this->customer->id}/billable-services/suggestions?"
+                .http_build_query($query));
+    });
+
+    /**
+     * Les suggestions se cherchent dans tout l'éligible, pas dans une page :
+     * c'est leur seule raison d'être.
+     */
+    it('propose les numéros de commande qui existent', function (): void {
+        $wanted = ($this->serviceFor)($this->customer);
+
+        ($this->suggest)(['field' => 'order', 'term' => $wanted->order->order_number])
+            ->assertOk()
+            ->assertJsonPath('data.0', $wanted->order->order_number);
+    });
+
+    it('propose les numéros de prestation', function (): void {
+        $wanted = ($this->serviceFor)($this->customer);
+
+        ($this->suggest)(['field' => 'service', 'term' => $wanted->service_number])
+            ->assertOk()
+            ->assertJsonPath('data.0', $wanted->service_number);
+    });
+
+    /** Une suggestion doit pouvoir être collée dans le filtre et rendre la
+     *  ligne visée : proposer un numéro déjà facturé romprait ce contrat. */
+    it('ne propose pas ce qui n’est plus facturable', function (): void {
+        $service = ($this->serviceFor)($this->customer);
+
+        $invoice = Invoice::factory()->create([
+            'organization_id' => $this->organization->id,
+            'customer_id' => $this->customer->id,
+        ]);
+
+        InvoiceLine::factory()->create([
+            'invoice_id' => $invoice->id,
+            'order_service_id' => $service->id,
+        ]);
+
+        ($this->suggest)(['field' => 'order'])->assertOk()->assertJsonCount(0, 'data');
+    });
+
+    it('ne propose pas les commandes d’un autre client', function (): void {
+        $other = Customer::factory()->create(['organization_id' => $this->organization->id]);
+        ($this->serviceFor)($other);
+
+        ($this->suggest)(['field' => 'order'])->assertOk()->assertJsonCount(0, 'data');
+    });
+
+    /** Le champ vient d'une liste fermee : sans elle, l'appelant choisirait la
+     *  colonne a parcourir. */
+    it('refuse un champ inconnu', function (): void {
+        ($this->suggest)(['field' => 'customer_unit_price'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('field');
+    });
+});

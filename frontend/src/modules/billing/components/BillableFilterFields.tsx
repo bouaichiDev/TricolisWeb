@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 
 import type { BillableColumnFilters } from './billableFilters'
+import { useBillableSuggestions } from '../hooks/useInvoices'
+import { AutocompleteInput } from '@/shared/components/form/AutocompleteInput'
 import { Input } from '@/shared/components/ui/input'
 
 interface FieldProps {
@@ -11,17 +13,41 @@ interface FieldProps {
 /**
  * Les champs de filtre posés sous les en-têtes du sélecteur.
  *
- * Ils sont ici plutôt que dans le tableau : une colonne déclare son contrôle,
- * et le tableau ne fait que le placer. Chacun porte un `aria-label` — un champ
- * sous un en-tête n'a pas d'étiquette visible, et sans lui il resterait muet
- * pour un lecteur d'écran comme pour un test.
+ * Ils tiennent sur **une seule ligne**, alignés avec leur colonne : empilés,
+ * ils décalaient le tableau et l'on ne savait plus quel champ filtrait quoi.
+ *
+ * Chacun porte un `aria-label` : sous un en-tête, un champ n'a pas d'étiquette
+ * visible, et sans lui il resterait muet pour un lecteur d'écran.
  */
+
+/** Numéro de prestation ou de commande, complété par ce qui existe. */
+export function NumberFilter({
+  customerId,
+  field,
+  label,
+  value,
+  onChange,
+}: FieldProps & { customerId: string; field: 'service' | 'order'; label: string }) {
+  const { data, isFetching } = useBillableSuggestions(customerId, field, value[field])
+
+  return (
+    <AutocompleteInput
+      value={value[field]}
+      onChange={(next) => onChange({ [field]: next })}
+      suggestions={data ?? []}
+      isLoading={isFetching}
+      label={label}
+      className="h-8 min-w-32"
+    />
+  )
+}
+
 export function TextFilter({
   field,
   label,
   value,
   onChange,
-}: FieldProps & { field: 'service' | 'order' | 'address'; label: string }) {
+}: FieldProps & { field: 'reference' | 'address'; label: string }) {
   return (
     <Input
       value={value[field]}
@@ -37,27 +63,29 @@ export function PeriodFilter({ value, onChange }: FieldProps) {
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex items-center gap-1">
       <Input
         type="date"
         value={value.periodFrom}
         onChange={(event) => onChange({ periodFrom: event.target.value })}
         aria-label={t('billing.invoices.picker.periodFrom')}
-        className="h-8 min-w-36"
+        className="h-8 w-36"
       />
       <Input
         type="date"
         value={value.periodTo}
         onChange={(event) => onChange({ periodTo: event.target.value })}
         aria-label={t('billing.invoices.picker.periodTo')}
-        className="h-8 min-w-36"
+        className="h-8 w-36"
       />
     </div>
   )
 }
 
-/** Un intervalle : « au moins » et « au plus », plutôt qu'une égalité exacte
- *  qu'on ne saurait pas saisir sur un décimal. */
+/**
+ * Un intervalle plutôt qu'une égalité : un prix décimal ne se saisit pas
+ * exactement, et « au moins 100 » est la question qu'on se pose vraiment.
+ */
 export function RangeFilter({
   value,
   onChange,
@@ -70,7 +98,7 @@ export function RangeFilter({
   labels: { min: string; max: string }
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex items-center gap-1">
       <Input
         type="number"
         min={0}
@@ -78,7 +106,7 @@ export function RangeFilter({
         value={value[min]}
         onChange={(event) => onChange({ [min]: event.target.value })}
         aria-label={labels.min}
-        className="h-8 min-w-20"
+        className="h-8 w-20"
       />
       <Input
         type="number"
@@ -87,7 +115,7 @@ export function RangeFilter({
         value={value[max]}
         onChange={(event) => onChange({ [max]: event.target.value })}
         aria-label={labels.max}
-        className="h-8 min-w-20"
+        className="h-8 w-20"
       />
     </div>
   )

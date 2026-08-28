@@ -17,6 +17,8 @@ export const invoiceKeys = {
   closure: (id: string) => [...invoiceKeys.all, 'closure', id] as const,
   billable: (customerId: string, filters: BillableServiceFilters) =>
     ['billable-services', customerId, filters] as const,
+  suggestions: (customerId: string, field: string, term: string) =>
+    ['billable-suggestions', customerId, field, term] as const,
 }
 
 export function useInvoiceList(filters: InvoiceFilters) {
@@ -62,6 +64,27 @@ export function useBillableServices(customerId: string, filters: BillableService
     queryKey: invoiceKeys.billable(customerId, filters),
     queryFn: () => invoicesApi.billableServices(customerId, filters),
     enabled: customerId !== '',
+    placeholderData: (previous) => previous,
+  })
+}
+
+/**
+ * Les valeurs proposées pour compléter un filtre.
+ *
+ * Gardées une minute : la liste des numéros facturables ne bouge qu'à la
+ * création d'une facture, et retourner au serveur à chaque frappe ferait dix
+ * requêtes pour un numéro de commande.
+ */
+export function useBillableSuggestions(
+  customerId: string,
+  field: 'service' | 'order',
+  term: string,
+) {
+  return useQuery({
+    queryKey: invoiceKeys.suggestions(customerId, field, term),
+    queryFn: () => invoicesApi.billableSuggestions(customerId, field, term),
+    enabled: customerId !== '',
+    staleTime: 60 * 1000,
     placeholderData: (previous) => previous,
   })
 }

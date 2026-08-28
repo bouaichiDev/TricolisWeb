@@ -52,6 +52,7 @@ const service = (overrides: Record<string, unknown> = {}) => ({
 
 function render(services = [service()], failure: { status: number; body: { message: string; errors: Record<string, string[]> } } | null = null) {
   const billableCalls: URL[] = []
+  const suggestionCalls: URL[] = []
   const created: Record<string, unknown>[] = []
 
   server.use(
@@ -63,6 +64,11 @@ function render(services = [service()], failure: { status: number; body: { messa
         ]),
       ),
     ),
+    http.get(`${API}/customers/:id/billable-services/suggestions`, ({ request }) => {
+      suggestionCalls.push(new URL(request.url))
+
+      return HttpResponse.json({ data: ['ORD-2026-000907', 'ORD-2026-000937'] })
+    }),
     http.get(`${API}/customers/:id/billable-services`, ({ request }) => {
       billableCalls.push(new URL(request.url))
 
@@ -81,7 +87,7 @@ function render(services = [service()], failure: { status: number; body: { messa
     membership: withPermissions(['invoices.create', 'invoices.view', 'customers.view']),
   })
 
-  return { billableCalls, created }
+  return { billableCalls, suggestionCalls, created }
 }
 
 /** Choisit un client dans la liste déroulante de l'en-tête. */
@@ -256,7 +262,7 @@ describe('composition d’une facture', () => {
     await chooseCustomer('Migros')
     await screen.findByText('S-001')
 
-    await userEvent.type(screen.getByLabelText('Filtrer par commande'), 'CMD-100')
+    await userEvent.type(screen.getByLabelText('Filtrer par n° de commande'), 'CMD-100')
 
     await waitFor(() => {
       const last = billableCalls[billableCalls.length - 1]
@@ -313,5 +319,51 @@ describe('composition d’une facture', () => {
 
     await userEvent.click(all)
     expect(await screen.findByText('0 prestation retenue')).toBeInTheDocument()
+  })
+
+  /**
+   * **Les suggestions viennent du serveur, pas du tableau.** C'est toute leur
+   * utilité : un numéro absent des vingt-cinq lignes visibles peut exister
+   * trois pages plus loin.
+   */
+  it('complète le numéro de commande depuis le serveur', async () => {
+    const { suggestionCalls, billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.type(screen.getByLabelText('Filtrer par n° de commande'), '0009')
+
+    await waitFor(() => {
+      const last = suggestionCalls[suggestionCalls.length - 1]
+      expect(last.searchParams.get('field')).toBe('order')
+      expect(last.searchParams.get('term')).toBe('0009')
+    })
+
+    // Choisir une suggestion remplit le filtre, et la liste se redemande.
+    await userEvent.click(await screen.findByRole('button', { name: 'ORD-2026-000937' }))
+
+    await waitFor(() =>
+      expect(billableCalls[billableCalls.length - 1].searchParams.get('order')).toBe(
+        'ORD-2026-000937',
+      ),
+    )
+  })
+
+  /** La référence client a sa colonne : glissée sous le numéro de commande,
+   *  elle n'avait pas de filtre à elle. */
+  it('filtre séparément sur la référence client', async () => {
+    const { billableCalls } = render()
+
+    await chooseCustomer('Migros')
+    await screen.findByText('S-001')
+
+    await userEvent.type(screen.getByLabelText('Filtrer par référence client'), 'REF-1')
+
+    await waitFor(() => {
+      const last = billableCalls[billableCalls.length - 1]
+      expect(last.searchParams.get('reference')).toBe('REF-1')
+      expect(last.searchParams.has('order')).toBe(false)
+    })
   })
 })

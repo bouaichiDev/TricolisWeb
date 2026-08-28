@@ -261,6 +261,8 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // Les selecteurs de prestations : ce qui reste a facturer chez un
         // client, ce qui reste a regler a un fournisseur. Le serveur decide de
         // l'eligibilite — le §42 refuse que l'ecran en juge seul.
+        Route::get('customers/{customer}/billable-services/suggestions', [BillableServiceController::class, 'suggestions'])
+            ->name('customers.billable-services.suggestions');
         Route::get('customers/{customer}/billable-services', [BillableServiceController::class, 'index'])
             ->name('customers.billable-services');
         Route::get('providers/{provider}/settleable-services', [SettleableServiceController::class, 'index'])

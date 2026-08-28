@@ -9,6 +9,7 @@ import type { BillableServiceFilters } from '../types/invoice'
 export interface BillableColumnFilters {
   service: string
   order: string
+  reference: string
   periodFrom: string
   periodTo: string
   address: string
@@ -21,6 +22,7 @@ export interface BillableColumnFilters {
 export const EMPTY_BILLABLE_FILTERS: BillableColumnFilters = {
   service: '',
   order: '',
+  reference: '',
   periodFrom: '',
   periodTo: '',
   address: '',
@@ -41,6 +43,7 @@ export function toBillableQuery(filters: BillableColumnFilters): BillableService
 
   if (filters.service.trim() !== '') query.service = filters.service.trim()
   if (filters.order.trim() !== '') query.order = filters.order.trim()
+  if (filters.reference.trim() !== '') query.reference = filters.reference.trim()
   if (filters.address.trim() !== '') query.address = filters.address.trim()
   if (filters.periodFrom !== '') query.periodFrom = filters.periodFrom
   if (filters.periodTo !== '') query.periodTo = filters.periodTo

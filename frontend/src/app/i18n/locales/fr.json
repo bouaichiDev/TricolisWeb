@@ -1753,13 +1753,15 @@
         "chooseCustomer": "Les prestations facturables se consultent client par client.",
         "selectPage": "Retenir toutes les prestations de la page",
         "clearFilters": "Effacer les filtres",
-        "filterService": "Filtrer par prestation",
-        "filterOrder": "Filtrer par commande",
+        "filterService": "Filtrer par n° de prestation",
+        "filterOrder": "Filtrer par n° de commande",
         "filterAddress": "Filtrer par adresse",
         "filterQuantityMin": "Quantité minimale",
         "filterQuantityMax": "Quantité maximale",
         "filterPriceMin": "Prix minimal",
-        "filterPriceMax": "Prix maximal"
+        "filterPriceMax": "Prix maximal",
+        "reference": "Référence client",
+        "filterReference": "Filtrer par référence client"
       },
       "lines": {
         "number": "N°",

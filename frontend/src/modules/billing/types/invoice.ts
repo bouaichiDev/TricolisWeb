@@ -173,6 +173,7 @@ export interface BillableServiceFilters extends ListParams {
   periodTo?: string
   service?: string
   order?: string
+  reference?: string
   address?: string
   quantityMin?: number
   quantityMax?: number

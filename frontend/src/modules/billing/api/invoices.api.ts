@@ -61,4 +61,17 @@ export const invoicesApi = {
     api.get<ApiCollection<BillableService>>(`/customers/${customerId}/billable-services`, {
       query: { ...filters },
     }),
+
+  /**
+   * Les valeurs qui existent, pour compléter un filtre.
+   *
+   * Cherchées dans tout l'éligible : un numéro absent de la page affichée peut
+   * exister trois pages plus loin, et c'est précisément ce qu'on veut savoir.
+   */
+  billableSuggestions: (customerId: string, field: 'service' | 'order', term: string) =>
+    api
+      .get<ApiResource<string[]>>(`/customers/${customerId}/billable-services/suggestions`, {
+        query: { field, term: term || undefined },
+      })
+      .then((response) => response.data),
 }

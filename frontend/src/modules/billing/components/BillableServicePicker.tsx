@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import { PeriodFilter, RangeFilter, TextFilter } from './BillableFilterFields'
+import { NumberFilter, PeriodFilter, RangeFilter, TextFilter } from './BillableFilterFields'
 import {
   hasBillableFilter,
   toBillableQuery,
@@ -92,7 +92,8 @@ export function BillableServicePicker({
       key: 'serviceNumber',
       header: t('billing.invoices.picker.service'),
       filter: (
-        <TextFilter
+        <NumberFilter
+          customerId={customerId}
           field="service"
           label={t('billing.invoices.picker.filterService')}
           value={filters}
@@ -110,19 +111,31 @@ export function BillableServicePicker({
       key: 'orderNumber',
       header: t('billing.invoices.picker.order'),
       filter: (
-        <TextFilter
+        <NumberFilter
+          customerId={customerId}
           field="order"
           label={t('billing.invoices.picker.filterOrder')}
           value={filters}
           onChange={onFiltersChange}
         />
       ),
-      cell: (row) => (
-        <span className="flex flex-col">
-          <span>{row.orderNumber}</span>
-          <span className="text-xs text-muted-foreground">{row.customerReference ?? ''}</span>
-        </span>
+      cell: (row) => row.orderNumber,
+    },
+    {
+      // La reference du client a sa propre colonne : glissee sous le numero de
+      // commande, elle n'avait pas de filtre a elle et se cherchait par
+      // accident.
+      key: 'customerReference',
+      header: t('billing.invoices.picker.reference'),
+      filter: (
+        <TextFilter
+          field="reference"
+          label={t('billing.invoices.picker.filterReference')}
+          value={filters}
+          onChange={onFiltersChange}
+        />
       ),
+      cell: (row) => row.customerReference ?? '',
     },
     {
       key: 'requestedDate',

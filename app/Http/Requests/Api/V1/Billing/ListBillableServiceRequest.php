@@ -30,8 +30,10 @@ class ListBillableServiceRequest extends ListRequest
 
             // Colonne « Prestation » : son numero, son code, son libelle.
             'service' => ['sometimes', 'string', 'max:255'],
-            // Colonne « Commande » : son numero ou la reference du client.
+            // Colonne « Commande » : son numero seul, la reference ayant
+            // desormais sa propre colonne et son propre filtre.
             'order' => ['sometimes', 'string', 'max:255'],
+            'reference' => ['sometimes', 'string', 'max:255'],
             // Colonne « Adresse » : localite, code postal ou nom du lieu.
             'address' => ['sometimes', 'string', 'max:255'],
 

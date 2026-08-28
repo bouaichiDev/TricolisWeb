@@ -56,6 +56,8 @@ use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Planning\PlanningPoolController;
 use App\Http\Controllers\Api\V1\Pricing\FormulaController;
 use App\Http\Controllers\Api\V1\Pricing\PriceListController;
+use App\Http\Controllers\Api\V1\Pricing\PriceMatrixController;
+use App\Http\Controllers\Api\V1\Pricing\PriceRuleController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
@@ -285,6 +287,22 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('price-lists', PriceListController::class)
             ->parameters(['price-lists' => 'priceList'])
             ->except(['create', 'edit']);
+
+        // Regles et matrices vivent sous leur bareme : hors de lui, elles ne
+        // s'appliquent a personne.
+        Route::post('price-lists/{priceList}/rules', [PriceRuleController::class, 'store'])
+            ->name('price-lists.rules.store');
+        Route::patch('price-rules/{priceRule}', [PriceRuleController::class, 'update'])
+            ->name('price-rules.update');
+        Route::delete('price-rules/{priceRule}', [PriceRuleController::class, 'destroy'])
+            ->name('price-rules.destroy');
+
+        Route::post('price-lists/{priceList}/matrices', [PriceMatrixController::class, 'store'])
+            ->name('price-lists.matrices.store');
+        Route::patch('price-matrices/{priceMatrix}', [PriceMatrixController::class, 'update'])
+            ->name('price-matrices.update');
+        Route::delete('price-matrices/{priceMatrix}', [PriceMatrixController::class, 'destroy'])
+            ->name('price-matrices.destroy');
 
         // Decomptes fournisseurs
         Route::get('providers/{provider}/settlements', [ProviderSettlementController::class, 'byProvider'])->name('providers.settlements.index');

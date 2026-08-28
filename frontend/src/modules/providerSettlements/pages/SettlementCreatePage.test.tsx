@@ -52,7 +52,7 @@ const service = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-function render(services = [service()]) {
+function render(services = [service()], failure: { status: number; body: { message: string; errors: Record<string, string[]> } } | null = null) {
   const settleableCalls: URL[] = []
   const created: { url: string; body: Record<string, unknown> }[] = []
 
@@ -75,6 +75,8 @@ function render(services = [service()]) {
         url: String(params.id),
         body: (await request.json()) as Record<string, unknown>,
       })
+
+      if (failure) return HttpResponse.json(failure.body, { status: failure.status })
 
       return HttpResponse.json({ data: { id: '01JQZ00000000000000SET1' } }, { status: 201 })
     }),
@@ -154,5 +156,25 @@ describe('composition d’un décompte', () => {
     await userEvent.type(screen.getByLabelText('Numéro'), 'DEC-2026-001')
 
     expect(screen.getByRole('button', { name: 'Créer le décompte' })).toBeDisabled()
+  })
+
+  /** Sans relais, l’écran aurait l’air cassé : le bouton se réactive, et rien
+   *  n’explique le refus. */
+  it('montre le refus du serveur', async () => {
+    render([service()], {
+      status: 422,
+      body: {
+        message: 'Les données fournies sont invalides.',
+        errors: { settlementNumber: ['Ce numéro de décompte existe déjà.'] },
+      },
+    })
+
+    await chooseProvider('Léman')
+    await userEvent.click(await screen.findByRole('checkbox'))
+
+    await userEvent.type(screen.getByLabelText('Numéro'), 'DEC-2026-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer le décompte' }))
+
+    expect(await screen.findByText(/existe déjà/)).toBeInTheDocument()
   })
 })

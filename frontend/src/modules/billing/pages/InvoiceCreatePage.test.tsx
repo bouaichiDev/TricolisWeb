@@ -49,7 +49,7 @@ const service = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-function render(services = [service()]) {
+function render(services = [service()], failure: { status: number; body: { message: string; errors: Record<string, string[]> } } | null = null) {
   const billableCalls: URL[] = []
   const created: Record<string, unknown>[] = []
 
@@ -69,6 +69,8 @@ function render(services = [service()]) {
     }),
     http.post(`${API}/invoices`, async ({ request }) => {
       created.push((await request.json()) as Record<string, unknown>)
+
+      if (failure) return HttpResponse.json(failure.body, { status: failure.status })
 
       return HttpResponse.json({ data: { id: '01JQZ00000000000000INV1' } }, { status: 201 })
     }),
@@ -177,5 +179,27 @@ describe('composition d’une facture', () => {
     await userEvent.type(screen.getByLabelText('Numéro'), 'INV-2026-001')
 
     expect(screen.getByRole('button', { name: 'Créer la facture' })).toBeDisabled()
+  })
+
+  /**
+   * Un numéro déjà pris est le refus le plus courant. Sans relais, le bouton se
+   * réactive et rien n’explique pourquoi : l’écran aurait l’air cassé.
+   */
+  it('montre le refus du serveur', async () => {
+    render([service()], {
+      status: 422,
+      body: {
+        message: 'Les données fournies sont invalides.',
+        errors: { invoiceNumber: ['Ce numéro de facture existe déjà.'] },
+      },
+    })
+
+    await chooseCustomer('Migros')
+    await userEvent.click(await screen.findByRole('checkbox'))
+
+    await userEvent.type(screen.getByLabelText('Numéro'), 'INV-2026-001')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer la facture' }))
+
+    expect(await screen.findByText(/existe déjà/)).toBeInTheDocument()
   })
 })

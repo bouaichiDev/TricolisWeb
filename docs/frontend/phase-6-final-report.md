@@ -208,7 +208,7 @@ technique.
 | Backend — clôture (`InvoiceClosureTest`) | 15 tests, verts |
 | Backend — moteur d'export (dispatch, reprise, formats, garde, transport) | 37 tests, verts |
 | Backend — suite complète | voir §5 |
-| Frontend — `npm test` | 451 tests avant la phase, 464 après, verts |
+| Frontend — `npm test` | 451 tests avant la phase, 466 après, verts |
 | Frontend — `npm run build` (`tsc -b`) | vert |
 | Frontend — `npm run lint` (oxlint) | aucune erreur |
 

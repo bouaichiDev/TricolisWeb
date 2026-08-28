@@ -7,9 +7,11 @@ import { InvoiceHeaderFields, type InvoiceHeaderState } from '../components/Invo
 import { linesFromServices, previewTotal } from '../components/invoiceDraft'
 import { useCreateInvoice } from '../hooks/useInvoices'
 import type { BillableService } from '../types/invoice'
+import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
+import { useApiMessage } from '@/shared/hooks/useApiMessage'
 import { formatMoney } from '@/shared/utils/format'
 
 const TODAY = new Date().toISOString().slice(0, 10)
@@ -45,6 +47,7 @@ export function InvoiceCreatePage() {
   const [selected, setSelected] = useState<Map<string, BillableService>>(new Map())
 
   const create = useCreateInvoice()
+  const failure = useApiMessage(create.error)
   const chosen = [...selected.values()]
 
   const toggle = (service: BillableService) => {
@@ -90,6 +93,8 @@ export function InvoiceCreatePage() {
         title={t('billing.invoices.createTitle')}
         description={t('billing.invoices.createSubtitle')}
       />
+
+      <FormErrorSummary message={failure} />
 
       <SectionCard title={t('billing.invoices.sections.header')}>
         <InvoiceHeaderFields

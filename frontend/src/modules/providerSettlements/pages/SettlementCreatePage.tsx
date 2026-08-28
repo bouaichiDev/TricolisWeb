@@ -11,11 +11,13 @@ import { useCreateSettlement } from '../hooks/useSettlements'
 import type { SettleableService } from '../types/settlement'
 import { useProviderList } from '@/modules/providers/hooks/useProviders'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
+import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { useApiMessage } from '@/shared/hooks/useApiMessage'
 import { formatMoney } from '@/shared/utils/format'
 
 /**
@@ -49,6 +51,7 @@ export function SettlementCreatePage() {
 
   const providers = useProviderList({ page: 1, perPage: 100 })
   const create = useCreateSettlement(providerId)
+  const failure = useApiMessage(create.error)
   const chosen = [...selected.values()]
 
   const toggle = (service: SettleableService) => {
@@ -86,6 +89,8 @@ export function SettlementCreatePage() {
         title={t('settlements.createTitle')}
         description={t('settlements.createSubtitle')}
       />
+
+      <FormErrorSummary message={failure} />
 
       <SectionCard title={t('settlements.sections.header')}>
         <div className="grid gap-4 sm:grid-cols-3">

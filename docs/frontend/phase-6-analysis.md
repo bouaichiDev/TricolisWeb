@@ -318,3 +318,199 @@ Chaque tranche est vérifiable seule.
 7. Frontend exports : configurations par client, historique des envois, reprise.
 8. Décomptes fournisseur : services réglables, écrans, tests.
 9. Menu, rapport final.
+
+---
+
+# 13. Tarification — analyse (§169CA)
+
+La V2 de la phase lève l'exclusion du moteur tarifaire. Cette section relève ce
+qui existait, ce qui a été conçu, et pourquoi.
+
+## 13.1 Tarifs existants
+
+**Aucun.** Ni table, ni code : `SHOW TABLES` ne rend rien sur `pric|tarif|rate|
+matrix`, et aucune classe du projet ne mentionne un barème. Les prix vivaient
+sur `order_services.customer_unit_price`, saisis à la commande.
+
+Il n'y a donc pas de reprise de données à faire, ni de compatibilité à tenir
+avec un ancien mécanisme.
+
+## 13.2 Mise à jour de la conception (§169A)
+
+Le diagramme interne — `Conception/diagramme/Tricolis V2 — Diagramme de classes
+plateforme interne.txt` — porte désormais un paquet **Tarification client**
+avec les sept classes et leurs relations. Il a été écrit **avant** les
+migrations, comme le §169A l'impose.
+
+**Un écart de nomenclature :** la spécification cite
+`Conception/diagramme/01-diagramme-plateforme-interne.puml`. Ce fichier n'existe
+pas ; les diagrammes de classes du projet sont deux `.txt` PlantUML. Le paquet a
+été ajouté au fichier réel, sans renommage — renommer des sources de conception
+au passage aurait cassé les références des phases précédentes.
+
+## 13.3 → 13.9 Schémas
+
+| Table | Ce qu'elle porte |
+|---|---|
+| `price_lists` | code, nom, `scope` (`global`/`customer`), validité, `is_active` |
+| `customer_price_lists` | le rattachement d'une liste à un client |
+| `price_rules` | `service_id` facultatif, **formule obligatoire**, priorité, `is_active` |
+| `price_rule_conditions` | variable, opérateur, deux bornes |
+| `price_matrices` | dimension (`postal_code`), service facultatif |
+| `price_matrix_rows` | zone, `match_mode`, bornes, règle désignée, priorité |
+| `pricing_calculations` | l'historique : formule et variables recopiées, résultat |
+
+**`is_active` plutôt qu'un `status`.** Ces tables n'ont pas de cycle de vie
+métier — pas de transitions, pas d'états intermédiaires. Le §169BK refuse
+justement d'ajouter un `status` artificiel : il aurait fallu le décrire au
+référentiel sans qu'aucune machine ne l'anime.
+
+**Une liste peut servir plusieurs clients.** D'où la table de liaison plutôt
+qu'un `customer_id` sur la liste : un groupe qui négocie pour ses enseignes ne
+duplique pas ses règles.
+
+**Les références tarifaires d'un calcul passent à nul, jamais en cascade.**
+Supprimer une règle ne doit pas effacer l'explication d'un prix déjà facturé.
+
+## 13.10 Repli global (§169P)
+
+`PricingResolver` cherche d'abord les listes `customer` rattachées au client,
+puis les listes `global`. Dans chaque ensemble : les matrices d'abord, les
+règles nues ensuite.
+
+## 13.11 Surcharge client
+
+Une règle client l'emporte sur son équivalent global. **Le repli reste
+partiel** : un client qui a négocié la livraison garde le barème général pour le
+chargement. Le §169CC l'exige, et un test le verrouille.
+
+## 13.12 Correspondance du service
+
+`service_id` nul vaut « toute prestation que mes conditions acceptent ». À
+priorité égale, la règle qui **nomme** le service passe avant la générique, puis
+le code départage — aucune « première ligne SQL » (§169AE), et deux calculs
+identiques rendent le même prix.
+
+## 13.13 Grammaire des formules
+
+```
+formule   := terme (('+' | '-') terme)*
+terme     := facteur (('*' | '/') facteur)*
+facteur   := nombre | '{P:nom}' | '{V:nombre}' | '(' formule ')' | '-' facteur
+```
+
+Un nombre nu (`25`) est accepté en plus de `{V:25}` : refuser la forme que tout
+le monde écrit n'aurait servi à rien.
+
+## 13.14 Liste blanche des variables
+
+`poids`, `volume`, `quantite`, `nombre_colis`, `duree`, `distance`.
+
+Les dimensions `code_postal`, `ville`, `pays`, `service` servent aux conditions
+et aux matrices — on ne multiplie pas un code postal.
+
+**`distance` n'a aucune source par prestation.** La tournée porte une distance,
+mais elle vaut pour le trajet entier, pas pour un arrêt. Une formule qui la
+nomme échoue clairement plutôt que de rendre un prix bâti sur la mauvaise
+valeur.
+
+## 13.15 Sécurité de la formule (§169G)
+
+Le tokenizer **n'accepte que ce qu'il connaît** : nombres, `{P:}`, `{V:}`,
+quatre opérateurs, parenthèses. C'est l'inverse d'une liste noire — une liste de
+motifs dangereux s'oublie toujours quelque part.
+
+L'arbre ne porte que trois formes de nœud : nombre, variable, opération binaire.
+**Il n'y a pas de nœud « appel de fonction »**, donc rien à appeler. Le §169G
+tient par construction, pas par vigilance.
+
+Bornes explicites : 500 caractères, 20 niveaux d'imbrication, division par zéro,
+variable absente, montant hors de portée. Chacune rend une erreur métier — le
+§169I refuse un tarif approximatif.
+
+## 13.16 Précision monétaire (§169J)
+
+BCMath, déjà présent : aucune dépendance ajoutée.
+
+- **scale de travail** : 6 décimales ;
+- **arrondi final** : 2 décimales, au plus proche, la moitié vers le haut ;
+- **une seule fois, à la fin** : arrondir entre une division et une
+  multiplication fausserait « par tranche de 100 kg ».
+
+`0.1 + 0.2` rend `0.30`, là où un flottant donnerait `0.30000000000000004`.
+
+## 13.17 Matrice facultative (§169Z)
+
+Un tarif au poids n'a besoin d'aucune matrice. Le résolveur consulte les
+matrices d'abord, puis les règles nues.
+
+**Une règle citée par une matrice ne s'applique que par elle.** Un test l'a
+imposé : sans cette règle, un code postal hors de toute zone retombait sur la
+même règle par la porte d'à côté, et les bornes du barème ne voulaient plus rien
+dire. Le lien se lit dans les données — aucune colonne à tenir à jour.
+
+## 13.18 Codes postaux (§169AB)
+
+`match_mode` par zone :
+
+- `numeric` — bornes comparées comme des nombres (`1144 → 4000`) ; borne haute
+  absente vaut « et au-delà » ;
+- `prefix` — commence par, ce qui préserve `01234` ;
+- `exact` — valeur unique, lettres comprises.
+
+Les bornes sont stockées en `varchar` : les convertir en entier perdrait les
+zéros de tête.
+
+## 13.19 Chevauchements et priorité (§169AE)
+
+Ordre déterministe, jamais « la première ligne » :
+
+1. portée — client avant global ;
+2. matrice avant règle nue ;
+3. `priority` croissante ;
+4. règle nommant le service avant règle générique ;
+5. `code`, stable.
+
+Les plages chevauchantes ne sont pas interdites : elles sont **départagées**, ce
+qui évite d'imposer une contrainte que les barèmes réels violent souvent.
+
+## 13.20 Instantané du calcul (§169N)
+
+`pricing_calculations` recopie la formule et les variables. Si la formule change
+demain, la facture d'hier continue de s'expliquer par celle qui l'a produite.
+
+Un aperçu — préfacturation, testeur — n'écrit rien : le §169AH l'interdit, et
+une table d'historique remplie d'essais n'expliquerait plus rien.
+
+## 13.21 Préfacturation
+
+`GET /pricing/prebilling` rend les prestations facturables avec le tarif que le
+barème donnerait, sa portée, sa formule et sa zone. C'est la page qui sert à
+**trouver les trous** : une prestation sans tarif s'y voit avant la facture,
+pas devant le client.
+
+## 13.22 Intégration à la facture
+
+- **Le barème décide** (§169AK) : dès qu'une ligne porte une prestation, le prix
+  envoyé par l'écran est ignoré et le calcul est historisé.
+- **Sans barème, la ligne est refusée** (§169AJ), en nommant la prestation.
+- **`priceOverride`** est la seule sortie : une décision portée par la requête,
+  la « règle explicite » du §169BO. Elle ne contourne rien quand un barème
+  existe.
+- **Recalcul explicite** (§169AM) : `GET repricing` montre l'écart, `POST
+  reprice` l'applique. Une facture clôturée est refusée (§169AN).
+
+## 13.23 Tests
+
+| Sujet | Cas |
+|---|---|
+| Moteur de formule | 19 unitaires — calcul, refus de code, bornes, précision |
+| Résolution | 13 — repli, matrices, absence de tarif, historique |
+| API barèmes et formules | 16 |
+| Règles et matrices | 13 |
+| Prix à la facture | 9 |
+| Recalcul | 8 |
+
+Le test du §169D — `({P:poids}/{V:100})*{V:25}` avec 350 kg — rend **87.50**,
+la valeur de l'énoncé.
+

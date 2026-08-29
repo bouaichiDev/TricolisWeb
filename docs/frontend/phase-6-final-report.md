@@ -180,6 +180,68 @@ ressource hors périmètre : le contraire révélerait son existence.
   règles à maintenir. Les formulaires à champs libres du projet (commandes,
   ressources) continuent d'utiliser `react-hook-form` + Zod.
 
+### Tarification (§169CB)
+
+La V2 de la phase lève l'exclusion du moteur tarifaire. Le diagramme interne a
+été mis à jour **avant** les migrations, comme le §169A l'impose.
+
+| Attendu | Livré |
+|---|---|
+| Tarification globale | `PriceList` de portée `global`, écran *Formules globales* |
+| Tarification client | Portée `customer`, rattachement par client, écran dédié |
+| Repli client → global | `PricingResolver`, repli **partiel** : un service non négocié garde le barème général |
+| Formule obligatoire | `PriceRule.formula`, validée à l'enregistrement par le parseur réel |
+| Matrice facultative | Le résolveur consulte les matrices puis les règles nues |
+| Matrices par zone / code postal | `PriceMatrixRow` avec `match_mode` : `numeric`, `prefix`, `exact` |
+| Règles par service | `service_id` facultatif ; la règle nommant le service passe avant la générique |
+| Parseur de formule | Tokenizer → parseur → AST, sans nœud « appel de fonction » |
+| Validateur | `POST /pricing/formulas/validate` |
+| Testeur | Écran dédié et panneau dans l'éditeur de règle, **même moteur que le calcul** |
+| Historique | `pricing_calculations` : formule et variables recopiées |
+| Préfacturation | `/billing/prebilling` — ce qui reste à facturer, et le tarif que le barème donnerait |
+| Prix à la facture | Le barème décide ; sans barème la ligne est refusée |
+| « Modifier » dans la liste | Colonne d'actions : consulter, modifier, supprimer |
+
+**Ce que la sécurité tient par construction.** Le tokenizer n'accepte que ce
+qu'il connaît — nombres, `{P:}`, `{V:}`, quatre opérateurs, parenthèses — plutôt
+que d'interdire des motifs dangereux, liste qu'on oublie toujours de compléter.
+L'arbre ne porte aucun nœud d'appel : il n'y a rien à appeler. `eval("2+2")`,
+`system("ls")`, `; DROP TABLE`, `` `whoami` `` sont refusés, et un test les
+énumère.
+
+**Décimal, jamais flottant.** BCMath, déjà présent : 6 décimales de travail,
+arrondi commercial à 2 **une seule fois à la fin** — arrondir entre une division
+et une multiplication fausserait « par tranche de 100 kg ».
+
+**Trois décisions que les tests ont imposées :**
+
+1. **Une règle citée par une matrice ne s'applique que par elle.** Sans cela, un
+   code postal hors de toute zone retombait sur la même règle par la porte d'à
+   côté, et les bornes du barème ne voulaient plus rien dire.
+2. **« Pas de tarif » n'est pas zéro.** Zéro reste un prix qu'une formule peut
+   produire ; les confondre ferait partir des factures à zéro sans que personne
+   ne le voie.
+3. **`priceOverride` assume le prix *soumis*, pas celui de la commande.** Le
+   champ s'appelait d'abord `acceptOrderPrice` ; un test de bout en bout l'a
+   corrigé — il soumettait 450 pour une prestation à 0 et se voyait facturer 0.
+
+**Écarts et limites de la tarification :**
+
+1. **`distance` n'a aucune source par prestation.** La tournée en porte une,
+   mais elle vaut pour le trajet entier, pas pour un arrêt. Une formule qui la
+   nomme échoue clairement plutôt que de rendre un prix bâti sur la mauvaise
+   valeur.
+2. **Le fichier de diagramme cité par la spécification n'existe pas.** Le §169A
+   nomme `01-diagramme-plateforme-interne.puml` ; les diagrammes de classes du
+   projet sont deux `.txt`. Le paquet a été ajouté au fichier réel, sans
+   renommage — renommer des sources de conception aurait cassé les références
+   des phases précédentes.
+3. **`ProviderPriceList` reste hors périmètre**, comme le §169 l'autorise : le
+   décompte fournisseur n'en dépend pas.
+4. **Les plages de zones peuvent se chevaucher.** Elles sont départagées par un
+   ordre déterministe plutôt qu'interdites : les barèmes réels chevauchent
+   souvent, et une contrainte les aurait rendus inexprimables.
+
 ### Interdictions du §170 — vérifiées
 
 Aucune des entités prohibées n'existe : `InvoiceExport`, `InvoiceDelivery`,
@@ -195,6 +257,12 @@ modèle.
 Le seul `status_id` du schéma est dans `status_transitions`, qui relie deux
 lignes de `statuses` entre elles — c'est le référentiel lui-même, pas une
 entité métier qui pointerait vers lui.
+
+Les interdictions du §169CC tiennent aussi : aucun `eval`, aucune formule
+exécutable stockée, aucune « première règle trouvée » sans priorité, jamais zéro
+faute de formule, matrice jamais obligatoire, repli global jamais coupé par une
+règle client partielle, facture clôturée jamais recalculée, aucun `status_id`,
+et le moteur de formule n'existe qu'au serveur — React ne fait que l'appeler.
 
 Le résultat d'envoi n'est stocké que sur `ExportJob` : rien n'est écrit dans
 `Invoice`, et `externalReference` reste une référence métier, jamais un journal

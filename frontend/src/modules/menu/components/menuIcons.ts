@@ -1,6 +1,7 @@
 import {
   Boxes,
   Building2,
+  Calculator,
   CalendarRange,
   ClipboardList,
   FileOutput,
@@ -62,6 +63,7 @@ const ICONS: Record<string, LucideIcon> = {
   HandCoins,
   Send,
   FileOutput,
+  Calculator,
 }
 
 export function menuIcon(name: string): LucideIcon {

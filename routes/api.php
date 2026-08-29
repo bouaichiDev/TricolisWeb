@@ -55,6 +55,7 @@ use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Planning\PlanningPoolController;
 use App\Http\Controllers\Api\V1\Pricing\FormulaController;
+use App\Http\Controllers\Api\V1\Pricing\PrebillingController;
 use App\Http\Controllers\Api\V1\Pricing\PriceListController;
 use App\Http\Controllers\Api\V1\Pricing\PriceMatrixController;
 use App\Http\Controllers\Api\V1\Pricing\PriceRuleController;
@@ -284,6 +285,10 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // de bareme.
         Route::post('pricing/formulas/validate', [FormulaController::class, 'validateFormula'])
             ->name('pricing.formulas.validate');
+        // La prefacturation : ce qui reste a facturer, et ce que le bareme
+        // donnerait. Le calcul n'y est pas enregistre.
+        Route::get('pricing/prebilling', [PrebillingController::class, 'index'])
+            ->name('pricing.prebilling');
         Route::apiResource('price-lists', PriceListController::class)
             ->parameters(['price-lists' => 'priceList'])
             ->except(['create', 'edit']);

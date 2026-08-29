@@ -102,7 +102,11 @@
     "invoices": "Factures clients",
     "settlements": "Décomptes fournisseurs",
     "exportConfigurations": "Destinations d’export",
-    "exports": "Exports / Envois"
+    "exports": "Exports / Envois",
+    "prebilling": "Préfacturation",
+    "pricingGlobal": "Formules globales",
+    "pricingCustomers": "Tarification clients",
+    "formulaTester": "Testeur de formule"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -503,7 +507,8 @@
     "created": "Création effectuée.",
     "updated": "Modifications enregistrées.",
     "deleted": "Suppression effectuée.",
-    "uploaded": "Document téléversé."
+    "uploaded": "Document téléversé.",
+    "saved": "Enregistré"
   },
   "auditActions": {
     "created": "Création",
@@ -1897,6 +1902,137 @@
         "generatedAt": "Généré le",
         "sentAt": "Envoyé le",
         "error": "Erreur"
+      }
+    }
+  },
+  "pricing": {
+    "scopes": {
+      "global": "Global",
+      "customer": "Client"
+    },
+    "matchModes": {
+      "numeric": "Plage numérique",
+      "prefix": "Commence par",
+      "exact": "Exact"
+    },
+    "variables": {
+      "poids": "Poids de la prestation, en kilos",
+      "volume": "Volume de la prestation, en mètres cubes",
+      "quantite": "Quantité facturée",
+      "nombre_colis": "Nombre de colis",
+      "duree": "Durée prévue, en minutes",
+      "distance": "Distance — aucune valeur par prestation pour l’instant"
+    },
+    "globalLists": {
+      "title": "Formules globales",
+      "subtitle": "Le socle : ce qui s’applique à tous les clients"
+    },
+    "customerLists": {
+      "title": "Tarification clients",
+      "subtitle": "Les barèmes négociés, qui priment sur le global là où ils s’appliquent"
+    },
+    "lists": {
+      "empty": "Aucun barème",
+      "always": "Sans limite",
+      "counts": "{{rules}} règle(s), {{matrices}} matrice(s)",
+      "create": {
+        "global": "Nouveau barème global",
+        "customer": "Nouveau barème client"
+      },
+      "hint": {
+        "global": "Il s’applique à tous les clients qui n’ont pas de barème propre.",
+        "customer": "Il prime sur le barème global, là où ses règles s’appliquent."
+      },
+      "fields": {
+        "code": "Code",
+        "name": "Nom",
+        "customers": "Clients",
+        "content": "Contenu",
+        "validity": "Validité",
+        "isActive": "Actif",
+        "validFrom": "Valable du",
+        "validTo": "Valable au"
+      }
+    },
+    "rules": {
+      "title": "Règles",
+      "sectionHint": "Chaque règle porte une formule ; les conditions disent quand elle s’applique",
+      "create": "Nouvelle règle",
+      "edit": "Modifier la règle",
+      "hint": "La formule est obligatoire : essayez-la avant d’enregistrer.",
+      "empty": "Aucune règle",
+      "anyService": "Toute prestation",
+      "conditions": "Conditions",
+      "conditionsHint": "Toutes doivent être remplies. Sans condition, la règle s’applique dès que le service correspond.",
+      "addCondition": "Ajouter une condition",
+      "noCondition": "Sans condition",
+      "matrixDriven": "Via matrice",
+      "priorityHint": "Le plus petit nombre passe en premier.",
+      "fields": {
+        "code": "Code",
+        "name": "Nom",
+        "service": "Prestation",
+        "formula": "Formule",
+        "priority": "Priorité",
+        "variable": "Paramètre",
+        "operator": "Opérateur",
+        "valueFrom": "Valeur",
+        "valueTo": "Jusqu’à"
+      }
+    },
+    "matrices": {
+      "title": "Matrices",
+      "sectionHint": "Une matrice ne calcule pas : elle choisit la règle selon le code postal",
+      "create": "Nouvelle matrice",
+      "edit": "Modifier la matrice",
+      "hint": "Chaque zone désigne une règle du même barème.",
+      "empty": "Aucune matrice",
+      "zones": "Zones",
+      "addZone": "Ajouter une zone",
+      "fields": {
+        "code": "Code",
+        "name": "Nom",
+        "label": "Zone",
+        "matchMode": "Correspondance",
+        "rangeFrom": "De",
+        "rangeTo": "À",
+        "rule": "Règle"
+      }
+    },
+    "tester": {
+      "title": "Testeur de formule",
+      "subtitle": "Écrire une formule et voir ce qu’elle donne, sans rien enregistrer",
+      "section": "Formule",
+      "formula": "Formule",
+      "syntax": "{P:nom} pour un paramètre, {V:valeur} pour un nombre. Opérateurs : + - * / et parenthèses.",
+      "run": "Calculer",
+      "valid": "Formule valide",
+      "invalid": "Formule invalide",
+      "result": "Résultat : {{amount}}",
+      "uses": "Paramètres utilisés : {{variables}}",
+      "helpTitle": "Aide",
+      "helpSyntax": "Le calcul se fait sur le serveur, avec le moteur qui produira le prix réel.",
+      "helpExample": "Exemple : 25 francs par tranche de 100 kilos."
+    },
+    "prebilling": {
+      "title": "Préfacturation",
+      "subtitle": "Ce qui reste à facturer, et ce que le barème donnerait",
+      "empty": "Rien à facturer",
+      "allCustomers": "Tous les clients",
+      "periodFrom": "Période du",
+      "periodTo": "Période au",
+      "notConfigured": "Tarif non configuré",
+      "weight": "{{value}} kg",
+      "volume": "{{value}} m3",
+      "missingCount_one": "{{count}} prestation sans tarif sur cette page.",
+      "missingCount_other": "{{count}} prestations sans tarif sur cette page.",
+      "fields": {
+        "service": "Prestation",
+        "customer": "Client",
+        "date": "Date",
+        "measures": "Mesures",
+        "source": "Tarif appliqué",
+        "price": "Prix calculé"
       }
     }
   }

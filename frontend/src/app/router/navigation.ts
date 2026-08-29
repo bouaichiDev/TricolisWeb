@@ -88,7 +88,23 @@ export const organizationNavigation: NavEntry[] = [
     labelKey: 'nav.billing',
     icon: ReceiptText,
     children: [
+      { labelKey: 'nav.prebilling', to: '/billing/prebilling', permission: 'price_lists.view' },
       { labelKey: 'nav.invoices', to: '/billing/invoices', permission: 'invoices.view' },
+      {
+        labelKey: 'nav.pricingGlobal',
+        to: '/billing/pricing/global',
+        permission: 'price_lists.view',
+      },
+      {
+        labelKey: 'nav.pricingCustomers',
+        to: '/billing/pricing/customers',
+        permission: 'price_lists.view',
+      },
+      {
+        labelKey: 'nav.formulaTester',
+        to: '/billing/pricing/tester',
+        permission: 'price_lists.view',
+      },
       {
         labelKey: 'nav.settlements',
         to: '/billing/settlements',

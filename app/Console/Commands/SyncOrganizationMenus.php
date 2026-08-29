@@ -21,7 +21,8 @@ use Illuminate\Console\Command;
 class SyncOrganizationMenus extends Command
 {
     protected $signature = 'tricolis:sync-organization-menus
-                            {--organization= : Limiter à une organisation (identifiant ou code)}';
+                            {--organization= : Limiter à une organisation (identifiant ou code)}
+                            {--reposition : Remettre les entrées existantes au rang du catalogue}';
 
     protected $description = 'Crée les entrées de menu manquantes de chaque organisation';
 
@@ -44,7 +45,7 @@ class SyncOrganizationMenus extends Command
         $total = 0;
 
         foreach ($organizations as $organization) {
-            $created = $sync->execute($organization->id);
+            $created = $sync->execute($organization->id, (bool) $this->option('reposition'));
             $total += $created;
 
             $this->line($created > 0

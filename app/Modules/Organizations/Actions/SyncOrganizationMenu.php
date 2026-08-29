@@ -27,13 +27,19 @@ use App\Shared\Menu\MenuEntry;
  * Le repli du résolveur est conservé : une entrée sans ligne reste visible.
  * C'est le filet de sécurité si la synchronisation est oubliée après une phase
  * — mieux vaut une entrée de trop qu'un écran devenu inatteignable.
+ *
+ * **Le réalignement des positions se demande explicitement.** Une phase qui
+ * insère des entrées au milieu d'une section laisse les lignes existantes sur
+ * leurs anciens rangs, et l'ordre affiché ne suit plus le catalogue. Remettre
+ * les rangs d'office effacerait pourtant l'ordre qu'une organisation s'est
+ * choisi : c'est donc une décision, pas un effet de bord.
  */
 final readonly class SyncOrganizationMenu
 {
     /**
-     * @return int Nombre de lignes créées.
+     * @return int Nombre de lignes créées ou repositionnées.
      */
-    public function execute(string $organizationId): int
+    public function execute(string $organizationId, bool $reposition = false): int
     {
         $existing = OrganizationMenuItem::where('organization_id', $organizationId)
             ->pluck('code')
@@ -43,6 +49,10 @@ final readonly class SyncOrganizationMenu
 
         foreach (MenuCatalogue::forScope(RoleScope::ORGANIZATION) as $entry) {
             if (in_array($entry->code, $existing, true)) {
+                if ($reposition) {
+                    $created += $this->reposition($organizationId, $entry);
+                }
+
                 continue;
             }
 
@@ -66,5 +76,21 @@ final readonly class SyncOrganizationMenu
             'is_visible' => true,
             'position' => $entry->position,
         ]);
+    }
+
+    /**
+     * Remet une ligne existante au rang du catalogue.
+     *
+     * La visibilité n'est jamais touchée : une entrée masquée le reste, seul
+     * son rang change.
+     *
+     * @return int 1 si le rang a bougé, 0 sinon
+     */
+    private function reposition(string $organizationId, MenuEntry $entry): int
+    {
+        return OrganizationMenuItem::where('organization_id', $organizationId)
+            ->where('code', $entry->code)
+            ->where('position', '!=', $entry->position)
+            ->update(['position' => $entry->position]);
     }
 }

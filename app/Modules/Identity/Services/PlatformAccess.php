@@ -43,6 +43,10 @@ class PlatformAccess
         'statuses.create',
         'statuses.update',
         'statuses.delete',
+        // Meme raison pour les variables tarifaires : leur source est un
+        // chemin vers la base, et laisser un organisme la choisir reviendrait
+        // a lui ouvrir les colonnes des autres domaines.
+        'pricing_variables.manage',
     ];
 
     public function isPlatformAdmin(?User $user): bool

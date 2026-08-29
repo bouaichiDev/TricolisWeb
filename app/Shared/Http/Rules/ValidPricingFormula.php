@@ -42,13 +42,14 @@ final readonly class ValidPricingFormula implements ValidationRule
             return;
         }
 
-        $unknown = array_diff($parser->variables($node), PricingContext::VARIABLES);
+        $allowed = Container::getInstance()->make(PricingContext::class)->numericNames();
+        $unknown = array_diff($parser->variables($node), $allowed);
 
         if ($unknown !== []) {
             $fail(sprintf(
                 'Paramètre inconnu : %s. Disponibles : %s.',
                 implode(', ', $unknown),
-                implode(', ', PricingContext::VARIABLES),
+                implode(', ', $allowed),
             ));
         }
     }

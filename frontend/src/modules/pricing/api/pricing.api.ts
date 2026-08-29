@@ -12,6 +12,9 @@ import type {
   PriceMatrixPayload,
   PriceRule,
   PriceRulePayload,
+  PricingVariable,
+  PricingVariablePayload,
+  PricingVariableSource,
 } from '../types/pricing'
 
 export const pricingApi = {
@@ -65,6 +68,27 @@ export const pricingApi = {
     api
       .post<ApiResource<FormulaCheck>>('/pricing/formulas/validate', { formula, variables })
       .then((r) => r.data),
+
+  /**
+   * Le catalogue des variables.
+   *
+   * Lu par tout organisme — impossible d'ecrire une formule sans savoir ce qui
+   * existe — et ecrit par la seule plateforme.
+   */
+  variables: () =>
+    api.get<ApiResource<PricingVariable[]>>('/pricing-variables').then((r) => r.data),
+
+  /** Les sources que le serveur sait lire ; reserve au superadmin. */
+  variableSources: () =>
+    api.get<ApiResource<PricingVariableSource[]>>('/pricing-variables/sources').then((r) => r.data),
+
+  createVariable: (payload: PricingVariablePayload) =>
+    api.post<ApiResource<PricingVariable>>('/pricing-variables', payload).then((r) => r.data),
+
+  updateVariable: (id: string, payload: Partial<PricingVariablePayload>) =>
+    api.patch<ApiResource<PricingVariable>>(`/pricing-variables/${id}`, payload).then((r) => r.data),
+
+  removeVariable: (id: string) => api.delete<void>(`/pricing-variables/${id}`),
 
   /** Ce qui reste à facturer, avec le tarif que le barème donnerait. */
   prebilling: (filters: PrebillingFilters) =>

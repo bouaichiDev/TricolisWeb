@@ -60,6 +60,7 @@ use App\Http\Controllers\Api\V1\Pricing\PrebillingController;
 use App\Http\Controllers\Api\V1\Pricing\PriceListController;
 use App\Http\Controllers\Api\V1\Pricing\PriceMatrixController;
 use App\Http\Controllers\Api\V1\Pricing\PriceRuleController;
+use App\Http\Controllers\Api\V1\Pricing\PricingVariableController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
@@ -290,6 +291,15 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // Tarification. La validation de formule precede la ressource :
         // `pricing/formulas/validate` ne doit pas etre lu comme un identifiant
         // de bareme.
+        // Le catalogue des variables : lu par tout organisme, ecrit par la
+        // seule plateforme. `sources` precede la ressource pour ne pas etre lu
+        // comme un identifiant.
+        Route::get('pricing-variables/sources', [PricingVariableController::class, 'sources'])
+            ->name('pricing-variables.sources');
+        Route::apiResource('pricing-variables', PricingVariableController::class)
+            ->parameters(['pricing-variables' => 'pricingVariable'])
+            ->except(['create', 'edit', 'show']);
+
         Route::post('pricing/formulas/validate', [FormulaController::class, 'validateFormula'])
             ->name('pricing.formulas.validate');
         // La prefacturation : ce qui reste a facturer, et ce que le bareme

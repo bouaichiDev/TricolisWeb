@@ -29,6 +29,7 @@ class StorePriceRuleRequest extends FormRequest
      */
     public function rules(): array
     {
+        $context = app(PricingContext::class);
         $priceListId = $this->route('priceList')?->id ?? $this->route('priceRule')?->price_list_id;
         $ruleId = $this->route('priceRule')?->id;
 
@@ -46,7 +47,9 @@ class StorePriceRuleRequest extends FormRequest
             'conditions' => ['sometimes', 'array', 'max:20'],
             'conditions.*.variable' => [
                 'required',
-                Rule::in(array_merge(PricingContext::VARIABLES, PricingContext::DIMENSIONS)),
+                // Le catalogue de la plateforme fait foi : une condition ne
+                // porte que sur une variable qu'un superadmin a declaree.
+                Rule::in(array_merge($context->numericNames(), $context->dimensionNames())),
             ],
             'conditions.*.operator' => ['required', Rule::in(ConditionMatcher::OPERATORS)],
             'conditions.*.valueFrom' => ['required', 'string', 'max:255'],

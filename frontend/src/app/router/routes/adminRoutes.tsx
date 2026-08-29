@@ -1,6 +1,7 @@
 import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { PricingVariablesPage } from '@/modules/pricing/pages/PricingVariablesPage'
 import { CommunicationTemplateListPage } from '@/modules/communications/pages/CommunicationTemplateListPage'
 import { ApiConfigurationListPage } from '@/modules/integrations/pages/ApiConfigurationListPage'
 import { JourneyConfigurationPage } from '@/modules/tracking/pages/JourneyConfigurationPage'
@@ -133,4 +134,11 @@ export const adminRoutes = [
   />,
 
   <Route key="audit" path="/audit" element={guarded('audit.view', <AuditLogPage />, { organizationOnly: true })} />,
+  // Le catalogue des variables tarifaires : plateforme, comme le referentiel
+  // des statuts. Un organisme le lit par l'API, il ne le regle pas.
+  <Route
+    key="pricing-variables"
+    path="/pricing-variables"
+    element={guarded('pricing_variables.manage', <PricingVariablesPage />)}
+  />,
 ]

@@ -417,6 +417,20 @@ final class MenuCatalogue
     private static function platformEntries(): array
     {
         return [
+            // Le catalogue des variables tarifaires : il decide de ce qu'un
+            // organisme peut ecrire dans une formule, et sa source est un
+            // chemin vers la base. C'est donc une affaire de plateforme.
+            new MenuEntry(
+                code: 'pricing-variables',
+                labelKey: 'nav.pricingVariables',
+                icon: 'Variable',
+                section: MenuSection::PLATFORM,
+                position: 20,
+                route: '/pricing-variables',
+                permission: 'pricing_variables.manage',
+                scope: RoleScope::PLATFORM,
+            ),
+
             new MenuEntry(
                 code: 'organizations',
                 labelKey: 'nav.organizations',

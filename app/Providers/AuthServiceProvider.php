@@ -37,6 +37,7 @@ use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
 use App\Modules\Pricing\Models\PriceList;
+use App\Modules\Pricing\Models\PricingVariable;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
@@ -84,6 +85,7 @@ use App\Policies\OrganizationApiConfigurationPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
 use App\Policies\PriceListPolicy;
+use App\Policies\PricingVariablePolicy;
 use App\Policies\ProofOfDeliveryPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\ProviderSettlementLinePolicy;
@@ -149,6 +151,7 @@ class AuthServiceProvider extends ServiceProvider
         Claim::class => ClaimPolicy::class,
         Invoice::class => InvoicePolicy::class,
         PriceList::class => PriceListPolicy::class,
+        PricingVariable::class => PricingVariablePolicy::class,
         InvoiceLine::class => InvoiceLinePolicy::class,
         ProviderSettlement::class => ProviderSettlementPolicy::class,
         ProviderSettlementLine::class => ProviderSettlementLinePolicy::class,

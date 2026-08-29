@@ -269,6 +269,13 @@ class PermissionSeeder extends Seeder
         ['code' => 'price_lists.update', 'name' => 'Modifier un tarif', 'module' => 'price_lists', 'action' => 'update'],
         ['code' => 'price_lists.delete', 'name' => 'Supprimer un tarif', 'module' => 'price_lists', 'action' => 'delete'],
 
+        // Le catalogue des variables est un referentiel de plateforme, comme
+        // les statuts : un organisme le lit pour ecrire ses baremes, il ne
+        // l'ecrit pas. Sans cela, une formule ne voudrait plus dire la meme
+        // chose d'un organisme a l'autre.
+        ['code' => 'pricing_variables.view', 'name' => 'Voir les variables tarifaires', 'module' => 'pricing_variables', 'action' => 'view'],
+        ['code' => 'pricing_variables.manage', 'name' => 'Gerer les variables tarifaires', 'module' => 'pricing_variables', 'action' => 'manage'],
+
         ['code' => 'pricing_calculations.view', 'name' => 'Historique des calculs tarifaires', 'module' => 'pricing_calculations', 'action' => 'view'],
         ['code' => 'pricing_calculations.calculate', 'name' => 'Calculer un tarif', 'module' => 'pricing_calculations', 'action' => 'calculate'],
 

@@ -1,17 +1,47 @@
 import type { ListParams } from '@/shared/api/types'
 
-/** Les paramètres numériques qu'une formule peut nommer, côté serveur. */
-export const FORMULA_VARIABLES = [
-  'poids',
-  'volume',
-  'quantite',
-  'nombre_colis',
-  'duree',
-  'distance',
-] as const
+/**
+ * Une variable du catalogue de la plateforme.
+ *
+ * Le catalogue n'est plus une constante du frontend : c'est le superadmin qui
+ * decide quelles variables existent et d'ou elles sortent. Un organisme les
+ * emploie, il ne les invente pas.
+ *
+ * `kind` separe ce qui se calcule de ce qui filtre : on multiplie un poids, on
+ * ne multiplie pas un code postal.
+ */
+export interface PricingVariable {
+  id: string
+  code: string
+  label: string
+  description: string | null
+  kind: 'numeric' | 'dimension'
+  sourceKey: string
+  sourceTable: string | null
+  sourceColumn: string | null
+  unit: string | null
+  position: number
+  isActive: boolean
+}
 
-/** Les dimensions qui filtrent — conditions et matrices — sans se multiplier. */
-export const CONDITION_DIMENSIONS = ['code_postal', 'ville', 'pays', 'service'] as const
+/** Une source lisible, telle que le registre du serveur la declare. */
+export interface PricingVariableSource {
+  key: string
+  table: string
+  column: string
+  kind: 'numeric' | 'dimension'
+  label: string
+}
+
+export interface PricingVariablePayload {
+  code: string
+  label: string
+  description?: string | null
+  sourceKey: string
+  unit?: string | null
+  position?: number
+  isActive?: boolean
+}
 
 export const CONDITION_OPERATORS = [
   '=',

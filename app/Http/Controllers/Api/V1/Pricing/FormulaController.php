@@ -30,6 +30,7 @@ class FormulaController extends Controller
     public function __construct(
         private readonly FormulaParser $parser,
         private readonly FormulaEvaluator $evaluator,
+        private readonly PricingContext $context,
     ) {}
 
     /**
@@ -58,7 +59,7 @@ class FormulaController extends Controller
         }
 
         $used = $this->parser->variables($node);
-        $unknown = array_values(array_diff($used, PricingContext::VARIABLES));
+        $unknown = array_values(array_diff($used, $this->context->numericNames()));
 
         return ApiResponse::ok([
             'valid' => $unknown === [],
@@ -102,7 +103,7 @@ class FormulaController extends Controller
         return sprintf(
             'Paramètre inconnu : %s. Disponibles : %s.',
             implode(', ', $unknown),
-            implode(', ', PricingContext::VARIABLES),
+            implode(', ', $this->context->numericNames()),
         );
     }
 }

@@ -2,6 +2,7 @@ import {
   Route,
   Boxes,
   ReceiptText,
+  Tags,
   Building2,
   ClipboardList,
   LayoutDashboard,
@@ -139,6 +140,12 @@ export const organizationNavigation: NavEntry[] = [
  * une, ce qui n'a pas de sens depuis la plateforme.
  */
 export const platformNavigation: NavEntry[] = [
+  {
+    labelKey: 'nav.pricingVariables',
+    icon: Tags,
+    to: '/pricing-variables',
+    permission: 'pricing_variables.manage',
+  },
   {
     labelKey: 'nav.organizations',
     icon: Building2,

@@ -5,74 +5,68 @@ declare(strict_types=1);
 namespace App\Modules\Pricing\Services;
 
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Pricing\Models\PricingVariable;
+use Illuminate\Support\Collection;
 
 /**
  * Ce qu'une prestation apporte au calcul.
  *
  * **Une liste blanche, pas un accès au modèle.** Le §169F et le §67 le
  * demandent : une formule ne doit pas pouvoir descendre dans Eloquent. Le
- * contexte est donc un tableau plat, construit ici et nulle part ailleurs, dont
- * les clés sont exactement celles qu'une formule peut nommer.
+ * contexte est donc un tableau plat dont les clés sont exactement les variables
+ * déclarées au catalogue de la plateforme.
  *
- * Les valeurs viennent de **la prestation**, pas de la commande (§169K) : un
+ * **Le catalogue est une donnée, le chemin reste du code.** Le superadmin
+ * décide quelles sources deviennent des variables et sous quel nom ; c'est
+ * `PricingVariableSources` qui sait aller les chercher. Un administrateur
+ * d'organisme, lui, ne fait que les employer.
+ *
+ * Les valeurs viennent de **la prestation** quand la source le dit (§169K) : un
  * chargement et une livraison n'ont pas le même poids, et prendre le total de
- * la commande facturerait deux fois le même colis.
- *
- * `distance` est celle qui sépare le **dépôt** de l'adresse de la prestation,
- * en kilomètres et à vol d'oiseau — voir `DepotDistance`, qui dit pourquoi. Sans
- * coordonnées des deux côtés elle reste nulle, et une formule qui la nomme
- * échoue clairement plutôt que de facturer sur une distance inventée.
+ * la commande facturerait deux fois le même colis. Les sources au niveau
+ * commande existent, mais elles se choisissent en connaissance de cause.
  */
-final readonly class PricingContext
+final class PricingContext
 {
-    public function __construct(private DepotDistance $distance) {}
+    /** @var Collection<int, PricingVariable>|null */
+    private ?Collection $catalogue = null;
 
-    /**
-     * Les paramètres numériques qu'une formule peut nommer.
-     *
-     * @var list<string>
-     */
-    public const array VARIABLES = [
-        'poids',
-        'volume',
-        'quantite',
-        'nombre_colis',
-        'duree',
-        'distance',
-    ];
-
-    /**
-     * Les dimensions qui filtrent — conditions et matrices — sans se multiplier.
-     *
-     * @var list<string>
-     */
-    public const array DIMENSIONS = [
-        'code_postal',
-        'ville',
-        'pays',
-        'service',
-    ];
+    public function __construct(private readonly PricingVariableSources $sources) {}
 
     /**
      * @return array<string, string|null>
      */
     public function build(OrderService $service): array
     {
-        $address = $service->address;
+        $context = [];
 
-        return [
-            'poids' => $this->number($service->weight),
-            'volume' => $this->number($service->volume),
-            'quantite' => $this->number($service->quantity),
-            'nombre_colis' => $this->number($service->package_count),
-            'duree' => $this->number($service->required_time_minutes),
-            'distance' => $this->distance->kilometres($service),
+        foreach ($this->variables() as $variable) {
+            $context[$variable->code] = $this->sources->value($variable->source_key, $service);
+        }
 
-            'code_postal' => $address?->postal_code,
-            'ville' => $address?->city,
-            'pays' => $address?->country,
-            'service' => $service->service?->code,
-        ];
+        return $context;
+    }
+
+    /**
+     * Les noms qu'une formule peut employer.
+     *
+     * @return list<string>
+     */
+    public function numericNames(): array
+    {
+        return $this->variables()->where('kind', PricingVariableSources::NUMERIC)
+            ->pluck('code')->values()->all();
+    }
+
+    /**
+     * Les dimensions qui filtrent une règle ou une zone.
+     *
+     * @return list<string>
+     */
+    public function dimensionNames(): array
+    {
+        return $this->variables()->where('kind', PricingVariableSources::DIMENSION)
+            ->pluck('code')->values()->all();
     }
 
     /**
@@ -86,15 +80,22 @@ final readonly class PricingContext
      */
     public function numeric(array $context): array
     {
-        return array_intersect_key($context, array_flip(self::VARIABLES));
+        return array_intersect_key($context, array_flip($this->numericNames()));
     }
 
-    private function number(mixed $value): ?string
+    /**
+     * Le catalogue actif, lu une fois par requête.
+     *
+     * Il change rarement et se relit à chaque ligne de facture : le garder sur
+     * l'instance évite une requête par prestation sur une page de
+     * préfacturation. Sur l'instance et non en statique — une mémoire globale
+     * survivrait d'un test à l'autre, et cacherait les variables créées entre
+     * deux.
+     *
+     * @return Collection<int, PricingVariable>
+     */
+    private function variables(): Collection
     {
-        if ($value === null || $value === '' || ! is_numeric($value)) {
-            return null;
-        }
-
-        return (string) $value;
+        return $this->catalogue ??= PricingVariable::query()->usable()->get();
     }
 }

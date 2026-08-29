@@ -67,6 +67,7 @@ final class PermissionMenuMap
         'stock_reservations' => MenuSection::STOCK,
 
         'price_lists' => MenuSection::BILLING,
+        'pricing_variables' => MenuSection::PLATFORM,
         'pricing_calculations' => MenuSection::BILLING,
         'invoices' => MenuSection::BILLING,
         'invoice_lines' => MenuSection::BILLING,

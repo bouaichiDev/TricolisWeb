@@ -3,13 +3,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { FormulaTester } from './FormulaTester'
-import { useSaveRule } from '../hooks/usePricing'
-import {
-  CONDITION_DIMENSIONS,
-  CONDITION_OPERATORS,
-  FORMULA_VARIABLES,
-  type PriceRule,
-} from '../types/pricing'
+import { usePricingVariables, useSaveRule } from '../hooks/usePricing'
+import { CONDITION_OPERATORS, type PriceRule } from '../types/pricing'
 import { useServiceList } from '@/modules/services/hooks/useServices'
 import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
@@ -59,6 +54,10 @@ export function PriceRuleDialog({ priceListId, rule, open, onOpenChange }: Price
   const save = useSaveRule(priceListId)
   const failure = useApiMessage(save.error)
   const services = useServiceList({ page: 1, perPage: 100 })
+  // Le catalogue de la plateforme fait foi : une condition ne porte que sur une
+  // variable qu'un superadmin a declaree.
+  const catalogue = usePricingVariables()
+  const conditionVariables = (catalogue.data ?? []).filter((variable) => variable.isActive)
 
   const [code, setCode] = useState(rule?.code ?? '')
   const [name, setName] = useState(rule?.name ?? '')
@@ -183,9 +182,9 @@ export function PriceRuleDialog({ priceListId, rule, open, onOpenChange }: Price
                 }}
                 className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
               >
-                {[...CONDITION_DIMENSIONS, ...FORMULA_VARIABLES].map((variable) => (
-                  <option key={variable} value={variable}>
-                    {variable}
+                {conditionVariables.map((variable) => (
+                  <option key={variable.code} value={variable.code}>
+                    {variable.code}
                   </option>
                 ))}
               </select>

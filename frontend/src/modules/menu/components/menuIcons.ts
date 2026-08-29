@@ -22,6 +22,7 @@ import {
   Tags,
   Truck,
   Users,
+  Variable,
   Warehouse,
   Wrench,
   type LucideIcon,
@@ -64,6 +65,7 @@ const ICONS: Record<string, LucideIcon> = {
   Send,
   FileOutput,
   Calculator,
+  Variable,
 }
 
 export function menuIcon(name: string): LucideIcon {

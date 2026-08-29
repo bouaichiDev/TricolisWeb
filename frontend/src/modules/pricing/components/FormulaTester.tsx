@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useCheckFormula } from '../hooks/usePricing'
-import { FORMULA_VARIABLES } from '../types/pricing'
+import { useCheckFormula, usePricingVariables } from '../hooks/usePricing'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -22,6 +21,10 @@ interface FormulaTesterProps {
  * finirait par diverger du moteur réel, et l'écran annoncerait un prix que la
  * facture ne confirmerait pas. Chaque essai est un appel.
  *
+ * Les paramètres proposés viennent du **catalogue de la plateforme**, pas d'une
+ * constante du frontend : c'est le superadmin qui décide ce qu'une formule peut
+ * nommer, et une liste figée ici finirait par mentir.
+ *
  * La validité de la formule et le succès de l'essai sont deux choses : une
  * formule juste peut échouer sur des valeurs — une division par zéro — sans
  * être fautive. Les confondre ferait corriger une formule correcte.
@@ -34,6 +37,10 @@ export function FormulaTester({
   const { t } = useTranslation()
   const [values, setValues] = useState<Record<string, string>>({})
   const check = useCheckFormula()
+  const catalogue = usePricingVariables()
+
+  const variables = (catalogue.data ?? [])
+    .filter((variable) => variable.isActive && variable.kind === 'numeric')
 
   const outcome = check.data
 
@@ -64,31 +71,35 @@ export function FormulaTester({
       </div>
 
       <div className="flex flex-wrap gap-1">
-        {FORMULA_VARIABLES.map((name) => (
+        {variables.map((variable) => (
           <button
-            key={name}
+            key={variable.code}
             type="button"
+            title={variable.label}
             disabled={readOnlyFormula || onFormulaChange === undefined}
-            onClick={() => onFormulaChange?.(`${formula}{P:${name}}`)}
+            onClick={() => onFormulaChange?.(`${formula}{P:${variable.code}}`)}
             className="rounded-full border px-2 py-0.5 font-mono text-xs hover:bg-accent disabled:opacity-60"
           >
-            {`{P:${name}}`}
+            {`{P:${variable.code}}`}
           </button>
         ))}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        {FORMULA_VARIABLES.map((name) => (
-          <div key={name} className="flex flex-col gap-1">
-            <Label htmlFor={`var-${name}`} className="text-xs">
-              {name}
+        {variables.map((variable) => (
+          <div key={variable.code} className="flex flex-col gap-1">
+            <Label htmlFor={`var-${variable.code}`} className="text-xs">
+              {variable.code}
+              {variable.unit ? ` (${variable.unit})` : ''}
             </Label>
             <Input
-              id={`var-${name}`}
+              id={`var-${variable.code}`}
               type="number"
               step="0.001"
-              value={values[name] ?? ''}
-              onChange={(event) => setValues({ ...values, [name]: event.target.value })}
+              value={values[variable.code] ?? ''}
+              onChange={(event) =>
+                setValues({ ...values, [variable.code]: event.target.value })
+              }
               className="h-8"
             />
           </div>

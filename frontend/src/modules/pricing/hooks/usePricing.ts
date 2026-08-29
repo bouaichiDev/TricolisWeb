@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { pricingApi } from '../api/pricing.api'
 import type {
   PrebillingFilters,
+  PricingVariablePayload,
   PriceListFilters,
   PriceListPayload,
   PriceMatrixPayload,
@@ -16,6 +17,58 @@ export const pricingKeys = {
   lists: (filters: PriceListFilters) => [...pricingKeys.all, 'lists', filters] as const,
   list: (id: string) => [...pricingKeys.all, 'list', id] as const,
   prebilling: (filters: PrebillingFilters) => [...pricingKeys.all, 'prebilling', filters] as const,
+  variables: () => [...pricingKeys.all, 'variables'] as const,
+  variableSources: () => [...pricingKeys.all, 'variable-sources'] as const,
+}
+
+/**
+ * Le catalogue des variables.
+ *
+ * Garde longtemps : il ne bouge qu'a la main d'un superadmin, et chaque
+ * editeur de formule en a besoin.
+ */
+export function usePricingVariables() {
+  return useQuery({
+    queryKey: pricingKeys.variables(),
+    queryFn: () => pricingApi.variables(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function usePricingVariableSources(enabled: boolean) {
+  return useQuery({
+    queryKey: pricingKeys.variableSources(),
+    queryFn: () => pricingApi.variableSources(),
+    enabled,
+    staleTime: 60 * 60 * 1000,
+  })
+}
+
+export function useSavePricingVariable() {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id?: string; payload: PricingVariablePayload }) =>
+      id ? pricingApi.updateVariable(id, payload) : pricingApi.createVariable(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pricingKeys.all })
+      toast.success(t('toast.saved'))
+    },
+  })
+}
+
+export function useDeletePricingVariable() {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: (id: string) => pricingApi.removeVariable(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: pricingKeys.all })
+      toast.success(t('toast.deleted'))
+    },
+  })
 }
 
 export function usePriceLists(filters: PriceListFilters) {

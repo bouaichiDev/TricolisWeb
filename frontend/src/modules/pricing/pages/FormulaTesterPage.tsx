@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { FormulaTester } from '../components/FormulaTester'
-import { FORMULA_VARIABLES } from '../types/pricing'
+import { usePricingVariables } from '../hooks/usePricing'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 
@@ -16,6 +16,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 export function FormulaTesterPage() {
   const { t } = useTranslation()
   const [formula, setFormula] = useState('({P:poids}/{V:100})*{V:25}')
+  const catalogue = usePricingVariables()
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,12 +31,17 @@ export function FormulaTesterPage() {
           <p>{t('pricing.tester.helpSyntax')}</p>
 
           <ul className="flex flex-col gap-1">
-            {FORMULA_VARIABLES.map((name) => (
-              <li key={name} className="flex gap-2">
-                <code className="font-mono text-xs">{`{P:${name}}`}</code>
-                <span className="text-muted-foreground">{t(`pricing.variables.${name}`)}</span>
-              </li>
-            ))}
+            {(catalogue.data ?? [])
+              .filter((variable) => variable.isActive && variable.kind === 'numeric')
+              .map((variable) => (
+                <li key={variable.code} className="flex gap-2">
+                  <code className="font-mono text-xs">{`{P:${variable.code}}`}</code>
+                  <span className="text-muted-foreground">
+                    {variable.label}
+                    {variable.unit ? ` (${variable.unit})` : ''}
+                  </span>
+                </li>
+              ))}
           </ul>
 
           <p className="text-muted-foreground">{t('pricing.tester.helpExample')}</p>

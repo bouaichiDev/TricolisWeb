@@ -106,7 +106,8 @@
     "prebilling": "Préfacturation",
     "pricingGlobal": "Formules globales",
     "pricingCustomers": "Tarification clients",
-    "formulaTester": "Testeur de formule"
+    "formulaTester": "Testeur de formule",
+    "pricingVariables": "Variables tarifaires"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1926,12 +1927,28 @@
       "exact": "Exact"
     },
     "variables": {
-      "poids": "Poids de la prestation, en kilos",
-      "volume": "Volume de la prestation, en mètres cubes",
-      "quantite": "Quantité facturée",
-      "nombre_colis": "Nombre de colis",
-      "duree": "Durée prévue, en minutes",
-      "distance": "Distance — aucune valeur par prestation pour l’instant"
+      "title": "Variables tarifaires",
+      "subtitle": "Ce qu’un organisme peut écrire dans une formule, et d’où la valeur sort",
+      "create": "Nouvelle variable",
+      "edit": "Modifier la variable",
+      "hint": "La source vient d’une liste fermée : le serveur seul sait aller chercher la valeur.",
+      "empty": "Aucune variable",
+      "codeHint": "Le nom écrit dans les formules : minuscules, chiffres et tirets bas.",
+      "sourceChosen": "Lit {{table}}.{{column}} — {{kind}}",
+      "confirmDelete": "Supprimer la variable « {{code}} » ? Les barèmes qui l’emploient cesseraient de calculer.",
+      "kinds": {
+        "numeric": "Calculable",
+        "dimension": "Filtre"
+      },
+      "fields": {
+        "code": "Code",
+        "label": "Libellé",
+        "kind": "Genre",
+        "source": "Source",
+        "unit": "Unité",
+        "position": "Ordre",
+        "isActive": "Active"
+      }
     },
     "globalLists": {
       "title": "Formules globales",

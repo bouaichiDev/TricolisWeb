@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
             // enumerations existantes, avant toute donnee de demonstration.
             StatusSeeder::class,
             StatusTransitionSeeder::class,
+            // Le catalogue de variables tarifaires : un referentiel de
+            // plateforme, qui doit exister avant le premier bareme.
+            PricingVariableSeeder::class,
             DevelopmentOrganizationSeeder::class,
             RoleSeeder::class,
             // Après RoleSeeder : le compte s'accroche au rôle plateforme que

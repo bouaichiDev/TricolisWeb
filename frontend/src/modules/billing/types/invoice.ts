@@ -190,6 +190,23 @@ export interface BillableServiceFilters extends ListParams {
   priceMax?: number
 }
 
+/**
+ * Ce qu'un recalcul changerait, ligne par ligne.
+ *
+ * `newUnitPrice` nul dit qu'aucun tarif ne couvre plus la prestation : la ligne
+ * gardera son prix, un echec de calcul ne devenant pas un montant.
+ */
+export interface RepricingChange {
+  lineId: string
+  lineNumber: number
+  description: string
+  currentUnitPrice: string
+  newUnitPrice: string | null
+  reason: string | null
+  scope?: string | null
+  formula?: string | null
+}
+
 /** Ce que la clôture ferait, avant de la déclencher. */
 export interface InvoiceClosurePreview {
   closable: boolean

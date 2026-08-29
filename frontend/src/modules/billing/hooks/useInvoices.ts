@@ -15,6 +15,7 @@ export const invoiceKeys = {
   list: (filters: InvoiceFilters) => [...invoiceKeys.all, 'list', filters] as const,
   detail: (id: string) => [...invoiceKeys.all, 'detail', id] as const,
   closure: (id: string) => [...invoiceKeys.all, 'closure', id] as const,
+  repricing: (id: string) => [...invoiceKeys.all, 'repricing', id] as const,
   billable: (customerId: string, filters: BillableServiceFilters) =>
     ['billable-services', customerId, filters] as const,
   suggestions: (customerId: string, field: string, term: string) =>
@@ -177,6 +178,34 @@ export function useRemoveInvoiceLine(invoiceId: string) {
       void queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(invoiceId) })
       void queryClient.invalidateQueries({ queryKey: ['billable-services'] })
       toast.success(t('toast.deleted'))
+    },
+  })
+}
+
+/**
+ * Ce qu'un recalcul changerait.
+ *
+ * Recharge a chaque ouverture : un bareme a pu etre corrige entre-temps, et
+ * annoncer un ecart perime serait pire que de ne rien annoncer.
+ */
+export function useRepricingPreview(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: invoiceKeys.repricing(id),
+    queryFn: () => invoicesApi.repricingPreview(id),
+    enabled: enabled && id !== '',
+    staleTime: 0,
+  })
+}
+
+export function useApplyRepricing(id: string) {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: () => invoicesApi.reprice(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: invoiceKeys.all })
+      toast.success(t('billing.invoices.reprice.done'))
     },
   })
 }

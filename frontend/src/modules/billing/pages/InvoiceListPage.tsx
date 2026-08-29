@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { ALL_CUSTOMERS, InvoiceFilterBar, type InvoiceFilterState } from '../components/InvoiceFilterBar'
+import { InvoiceEditDialog } from '../components/InvoiceEditDialog'
 import { InvoiceTable } from '../components/InvoiceTable'
-import { useDeleteInvoice, useInvoiceList } from '../hooks/useInvoices'
+import { useDeleteInvoice, useInvoice, useInvoiceList } from '../hooks/useInvoices'
 import type { Invoice } from '../types/invoice'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
@@ -26,12 +27,20 @@ const INITIAL: InvoiceFilterState = {
  * Le filtre client est facultatif : contrairement à la création, consulter
  * n'exige pas de désigner un client — un facturier cherche souvent un numéro
  * dont il ne sait plus à qui il appartient.
+ *
+ * Corriger une facture se fait **depuis la ligne** (§169AO), sans passer par la
+ * fiche : on repère ici celle qui cloche, autant pouvoir l'ouvrir tout de
+ * suite.
  */
 export function InvoiceListPage() {
   const { t } = useTranslation()
   const [filters, setFilters] = useState<InvoiceFilterState>(INITIAL)
   const [page, setPage] = useState(1)
   const [toDelete, setToDelete] = useState<Invoice | null>(null)
+  // La liste ne porte pas les lignes : la fiche complete est chargee au moment
+  // d'ouvrir le dialogue, qui en a besoin.
+  const [toEdit, setToEdit] = useState<string | null>(null)
+  const editing = useInvoice(toEdit)
 
   const { data, isPending, error, refetch } = useInvoiceList({
     page,
@@ -77,7 +86,16 @@ export function InvoiceListPage() {
         onPageChange={setPage}
         onRetry={() => void refetch()}
         onDelete={setToDelete}
+        onEdit={(invoice) => setToEdit(invoice.id)}
       />
+
+      {toEdit !== null && editing.data ? (
+        <InvoiceEditDialog
+          invoice={editing.data}
+          open
+          onOpenChange={(open) => !open && setToEdit(null)}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={toDelete !== null}

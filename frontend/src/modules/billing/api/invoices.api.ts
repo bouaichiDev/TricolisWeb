@@ -11,6 +11,7 @@ import type {
   InvoiceFilters,
   InvoiceLinePayload,
   InvoicePayload,
+  RepricingChange,
 } from '../types/invoice'
 
 export const invoicesApi = {
@@ -55,6 +56,21 @@ export const invoicesApi = {
    */
   closurePreview: (id: string) =>
     api.get<ApiResource<InvoiceClosurePreview>>(`/invoices/${id}/closure`).then((r) => r.data),
+
+  /**
+   * Ce qu'un recalcul des tarifs changerait.
+   *
+   * Rien n'est ecrit : le §169AM veut l'ecart visible avant l'application.
+   */
+  repricingPreview: (id: string) =>
+    api
+      .get<ApiResource<{ changes: RepricingChange[] }>>(`/invoices/${id}/repricing`)
+      .then((r) => r.data),
+
+  reprice: (id: string) =>
+    api
+      .post<ApiResource<{ changes: RepricingChange[] }>>(`/invoices/${id}/reprice`)
+      .then((r) => r.data),
 
   /**
    * Clôturer la facture.

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Billing\BillableServiceController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceClosureController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceLineController;
+use App\Http\Controllers\Api\V1\Billing\InvoiceRepricingController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogItemController;
 use App\Http\Controllers\Api\V1\Claims\ClaimController;
@@ -276,6 +277,12 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // La cloture est une action metier, pas une mutation du CRUD : elle
         // fige la facture et declenche son envoi. Le §24 refuse un `/send`
         // generique — l'envoi suit la cloture, il ne se commande pas.
+        // Le recalcul : voir l'ecart, puis l'appliquer. Deux gestes distincts,
+        // le §169AM refusant qu'une facture bouge en silence.
+        Route::get('invoices/{invoice}/repricing', [InvoiceRepricingController::class, 'show'])
+            ->name('invoices.repricing.show');
+        Route::post('invoices/{invoice}/reprice', [InvoiceRepricingController::class, 'store'])
+            ->name('invoices.reprice');
         Route::get('invoices/{invoice}/closure', [InvoiceClosureController::class, 'show'])->name('invoices.closure.show');
         Route::post('invoices/{invoice}/close', [InvoiceClosureController::class, 'store'])->name('invoices.close');
         Route::apiResource('invoices', InvoiceController::class)->except(['create', 'edit']);

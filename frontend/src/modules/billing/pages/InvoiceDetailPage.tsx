@@ -1,4 +1,4 @@
-import { Lock, Pencil, Plus } from 'lucide-react'
+import { Calculator, Lock, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { InvoiceAddLinesDialog } from '../components/InvoiceAddLinesDialog'
 import { InvoiceCloseDialog } from '../components/InvoiceCloseDialog'
 import { InvoiceEditDialog } from '../components/InvoiceEditDialog'
 import { InvoiceLinesTable } from '../components/InvoiceLinesTable'
+import { InvoiceRepriceDialog } from '../components/InvoiceRepriceDialog'
 import { useInvoice, useRemoveInvoiceLine } from '../hooks/useInvoices'
 import type { InvoiceLine } from '../types/invoice'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -42,6 +43,7 @@ export function InvoiceDetailPage() {
   const [closing, setClosing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [repricing, setRepricing] = useState(false)
   const [toRemove, setToRemove] = useState<InvoiceLine | null>(null)
 
   const { data: invoice, isPending, error, refetch } = useInvoice(id)
@@ -65,6 +67,12 @@ export function InvoiceDetailPage() {
                 <Button variant="outline" onClick={() => setEditing(true)}>
                   <Pencil className="size-4" aria-hidden />
                   {t('common.edit')}
+                </Button>
+              </PermissionGuard>
+              <PermissionGuard permission="invoices.update">
+                <Button variant="outline" onClick={() => setRepricing(true)}>
+                  <Calculator className="size-4" aria-hidden />
+                  {t('billing.invoices.reprice.action')}
                 </Button>
               </PermissionGuard>
               <PermissionGuard permission="invoices.close">
@@ -139,6 +147,15 @@ export function InvoiceDetailPage() {
 
       {adding ? (
         <InvoiceAddLinesDialog invoice={invoice} open onOpenChange={setAdding} />
+      ) : null}
+
+      {repricing ? (
+        <InvoiceRepriceDialog
+          invoiceId={id}
+          currencyCode={invoice.currencyCode}
+          open
+          onOpenChange={setRepricing}
+        />
       ) : null}
 
       <InvoiceCloseDialog

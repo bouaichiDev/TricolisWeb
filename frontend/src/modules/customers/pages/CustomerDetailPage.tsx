@@ -11,6 +11,7 @@ import { EntityDocumentsTab } from '@/modules/documents/components/EntityDocumen
 import { CustomerSitesTab } from '@/modules/customerSites/components/CustomerSitesTab'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
+import { CustomerPricingTab } from '@/modules/pricing/components/CustomerPricingTab'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
 /**
@@ -20,9 +21,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
  * contacts à une adresse, pas au client. Un client porte plusieurs adresses —
  * livraison, facturation — et chacune porte les contacts qui la concernent.
  *
- * Les six autres onglets — catalogues, commandes, stock, factures,
- * réclamations, intégrations — sont explicitement réservés aux phases
- * suivantes : les afficher vides annoncerait des fonctionnalités absentes.
+ * L'onglet « Tarification » montre les barèmes propres au client et ceux qui
+ * s'appliquent à défaut : le §169S veut que le repli sur le barème global se
+ * lise, plutôt qu'une liste vide laisse croire à l'absence de tarif.
+ *
+ * Les onglets restants — commandes, stock, réclamations — sont réservés aux
+ * phases suivantes : les afficher vides annoncerait des fonctionnalités
+ * absentes.
  */
 export function CustomerDetailPage() {
   const { t } = useTranslation()
@@ -45,6 +50,7 @@ export function CustomerDetailPage() {
           <TabsTrigger value="addresses">{t('customers.tabs.addresses')}</TabsTrigger>
           <TabsTrigger value="documents">{t('customers.tabs.documents')}</TabsTrigger>
           <TabsTrigger value="catalogs">{t('customers.tabs.catalogs')}</TabsTrigger>
+          <TabsTrigger value="pricing">{t('customers.tabs.pricing')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('customers.tabs.configuration')}</TabsTrigger>
         </TabsList>
 
@@ -72,6 +78,10 @@ export function CustomerDetailPage() {
             customerId={customer.id}
             catalogEnabled={customer.catalogEnabled}
           />
+        </TabsContent>
+
+        <TabsContent value="pricing" className="mt-6">
+          <CustomerPricingTab customerId={customer.id} />
         </TabsContent>
 
         <TabsContent value="configuration" className="mt-6">

@@ -9,6 +9,7 @@ use App\Modules\Billing\DTOs\CreateInvoiceLineData;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Billing\Services\BillingScopeGuard;
+use App\Modules\Billing\Services\InvoiceLinePricing;
 use App\Shared\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
 
@@ -21,12 +22,19 @@ use Illuminate\Support\Facades\DB;
  *
  * Le service et la commande sont contrôlés contre le **client de la facture**,
  * jamais contre celui du payload : le client n'est pas modifiable.
+ *
+ * **Le prix vient du barème, pas de l'écran** (§169AK), dès que la ligne porte
+ * une prestation. Reprendre le montant envoyé par React laisserait deux
+ * calculs vivre en parallèle, et c'est la facture qui aurait tort. Une ligne
+ * libre — sans prestation — garde le prix saisi : elle ne relève d'aucun
+ * barème.
  */
 final readonly class AddInvoiceLineAction
 {
     public function __construct(
         private BillingScopeGuard $guard,
         private CalculateInvoiceLineTotals $calculator,
+        private InvoiceLinePricing $pricing,
         private RecalculateInvoiceTotals $totals,
         private WriteAuditLog $audit,
     ) {}
@@ -51,15 +59,27 @@ final readonly class AddInvoiceLineAction
 
         $this->guard->assertOrderMatchesService($data->orderId, $service, $prefix.'orderId');
 
+        $unitPrice = $service === null
+            ? $data->unitPrice
+            : $this->pricing->unitPrice(
+                $service,
+                $invoice->organization_id,
+                $data->unitPrice,
+                $data->priceOverride,
+                $prefix.'unitPrice',
+            );
+
         $totals = $this->calculator->execute(
             $data->quantity,
-            $data->unitPrice,
+            $unitPrice,
             $data->discountRate,
             $data->taxRate,
         );
 
-        $line = DB::transaction(function () use ($invoice, $data, $totals, $context, $audit): InvoiceLine {
-            $line = InvoiceLine::create($data->toAttributes($invoice->id, $totals));
+        $line = DB::transaction(function () use ($invoice, $data, $unitPrice, $totals, $context, $audit): InvoiceLine {
+            $line = InvoiceLine::create(
+                ['unit_price' => $unitPrice] + $data->toAttributes($invoice->id, $totals),
+            );
 
             if ($data->addressSnapshot !== null) {
                 $line->addressSnapshot()->create($data->addressSnapshot->toAttributes($line->id));

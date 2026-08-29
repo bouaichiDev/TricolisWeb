@@ -30,11 +30,17 @@ beforeEach(function (): void {
 });
 
 describe('invoice lines creation', function (): void {
+    /**
+     * Aucun barème n'existe ici : le prix soumis est assumé, ce qui se
+     * déclare. Sans ce choix, le §169AJ refuse la ligne plutôt que de la
+     * facturer au hasard.
+     */
     it('creates a line linked to a service of the invoiced customer', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson($this->url, ($this->payload)([
                 'orderServiceId' => $this->service->id,
                 'orderId' => $this->order->id,
+                'priceOverride' => true,
             ]))
             ->assertCreated()
             ->assertJsonPath('data.orderServiceId', $this->service->id);
@@ -69,7 +75,10 @@ describe('invoice lines creation', function (): void {
 
     it('refuses to bill the same service twice', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson($this->url, ($this->payload)(['orderServiceId' => $this->service->id]))
+            ->postJson($this->url, ($this->payload)([
+                'orderServiceId' => $this->service->id,
+                'priceOverride' => true,
+            ]))
             ->assertCreated();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)

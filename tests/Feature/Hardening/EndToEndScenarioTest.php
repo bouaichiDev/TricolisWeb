@@ -113,6 +113,9 @@ describe('scenario 1 : de la commande a la facturation', function (): void {
                 'lineNumber' => 1, 'orderServiceId' => $orderServiceId,
                 'description' => 'Livraison Casablanca', 'quantity' => 1,
                 'unitPrice' => 450, 'status' => 'billable',
+                // Le scenario ne configure aucun bareme : la prestation se
+                // facture au prix de la commande, ce qui se declare.
+                'priceOverride' => true,
             ]],
         ])->assertCreated()->json('data.id');
 

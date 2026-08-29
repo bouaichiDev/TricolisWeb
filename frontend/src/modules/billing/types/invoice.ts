@@ -111,6 +111,13 @@ export interface InvoiceLinePayload {
   taxRate?: number
   serviceCompletedAt?: string | null
   status: string
+  /**
+   * Assumer le prix soumis, faute de bareme.
+   *
+   * Sans lui, le serveur refuse une prestation sans tarif plutot que de la
+   * facturer au hasard. Il ne contourne rien quand un bareme existe.
+   */
+  priceOverride?: boolean
 }
 
 export interface InvoicePayload {

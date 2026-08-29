@@ -27,6 +27,14 @@ final readonly class CreateInvoiceLineData
         public ?string $customerOrderReference = null,
         public ?string $serviceCompletedAt = null,
         public ?CreateInvoiceLineAddressSnapshotData $addressSnapshot = null,
+        /**
+         * Assumer le prix soumis, faute de barème.
+         *
+         * Un choix, jamais un défaut : sans lui, une prestation sans tarif est
+         * refusée plutôt que facturée au hasard. Il ne contourne rien quand un
+         * barème existe — le calcul l'emporte alors toujours.
+         */
+        public bool $priceOverride = false,
     ) {}
 
     /**
@@ -50,6 +58,7 @@ final readonly class CreateInvoiceLineData
             addressSnapshot: isset($validated['addressSnapshot'])
                 ? CreateInvoiceLineAddressSnapshotData::fromValidated($validated['addressSnapshot'])
                 : null,
+            priceOverride: (bool) ($validated['priceOverride'] ?? false),
         );
     }
 

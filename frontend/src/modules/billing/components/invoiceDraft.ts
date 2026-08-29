@@ -11,6 +11,11 @@ export const BILLABLE_LINE_STATUS = 'billable'
  * recalculés à l'enregistrement. Les additionner dans l'écran donnerait un
  * second calcul à maintenir, et deux calculs finissent toujours par différer.
  *
+ * **Le prix soumis est assumé.** Le serveur recalcule dès qu'un barème
+ * s'applique et ignore alors ce montant ; sans barème, il refuserait la ligne
+ * si l'écran ne déclarait pas assumer le prix de la prestation. Le facturier
+ * voit ce prix avant d'enregistrer, dans la colonne du sélecteur.
+ *
  * La numérotation suit l'ordre de sélection : c'est celui que le facturier a
  * en tête, et il doit se retrouver sur le document. Elle démarre où on le lui
  * dit — en ajoutant à une facture existante, repartir de 1 entrerait en
@@ -29,6 +34,7 @@ export function linesFromServices(
     customerOrderReference: service.customerReference ?? null,
     quantity: service.quantity,
     unitPrice: service.customerUnitPrice,
+    priceOverride: true,
     status: BILLABLE_LINE_STATUS,
   }))
 }

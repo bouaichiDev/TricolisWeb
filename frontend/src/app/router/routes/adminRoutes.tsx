@@ -135,10 +135,17 @@ export const adminRoutes = [
 
   <Route key="audit" path="/audit" element={guarded('audit.view', <AuditLogPage />, { organizationOnly: true })} />,
   // Le catalogue des variables tarifaires : plateforme, comme le referentiel
-  // des statuts. Un organisme le lit par l'API, il ne le regle pas.
+  // des statuts. Un organisme le lit par l'API pour ecrire ses formules, il ne
+  // le regle pas.
+  //
+  // `platformOnly` et non la seule permission : un proprietaire d'organisme
+  // contourne toute permission — c'est voulu, et c'est ce que fait aussi le
+  // backend — mais l'autorite plateforme, elle, ne se delegue pas.
   <Route
     key="pricing-variables"
     path="/pricing-variables"
-    element={guarded('pricing_variables.manage', <PricingVariablesPage />)}
+    element={guarded('pricing_variables.manage', <PricingVariablesPage />, {
+      platformOnly: true,
+    })}
   />,
 ]

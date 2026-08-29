@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Identity\Models\Permission;
+use App\Shared\Enums\RoleScope;
 use App\Shared\Menu\MenuCatalogue;
 use App\Shared\Menu\MenuEntry;
 
@@ -117,6 +118,58 @@ describe('menu catalogue', function (): void {
         )));
 
         expect(array_diff($routes, $declared))->toBe([]);
+    });
+
+    /**
+     * **Une permission ne suffit pas à fermer une page de plateforme.**
+     *
+     * Un propriétaire d'organisme contourne toute permission — c'est voulu, et
+     * le backend fait de même — si bien qu'une route plateforme gardée par la
+     * seule permission s'ouvre à lui. C'est arrivé pour les variables
+     * tarifaires : le catalogue de la plateforme s'affichait à un organisme.
+     *
+     * Seule la **portée** ferme ces routes. Ce test l'exige pour chaque entrée
+     * de menu déclarée plateforme.
+     */
+    it('guards every platform route with platformOnly', function (): void {
+        $directory = base_path('frontend/src/app/router/routes');
+
+        if (! is_dir($directory)) {
+            $this->markTestSkipped('Le frontend n’est pas présent dans cette copie de travail.');
+        }
+
+        $source = '';
+
+        foreach (glob($directory.'/*.tsx') ?: [] as $file) {
+            $source .= (string) file_get_contents($file);
+        }
+
+        $unguarded = [];
+
+        foreach (MenuCatalogue::forScope(RoleScope::PLATFORM) as $entry) {
+            if ($entry->route === null || $entry->scope !== RoleScope::PLATFORM) {
+                continue;
+            }
+
+            // Un decoupage par bloc plutot qu'une expression : `<Page />`
+            // contient deja `/>`, sur quoi une expression non gourmande
+            // s'arreterait avant la garde.
+            $guarded = false;
+
+            foreach (explode('<Route', $source) as $block) {
+                if (str_contains($block, 'path="'.$entry->route.'"')) {
+                    $guarded = str_contains($block, 'platformOnly');
+
+                    break;
+                }
+            }
+
+            if (! $guarded) {
+                $unguarded[] = $entry->route;
+            }
+        }
+
+        expect($unguarded)->toBe([]);
     });
 
     it('gives every child a parent that exists', function (): void {

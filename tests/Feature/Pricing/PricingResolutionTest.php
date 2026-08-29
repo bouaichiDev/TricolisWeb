@@ -1,6 +1,9 @@
 <?php
 
 use App\Modules\Addresses\Models\Address;
+use App\Modules\Addresses\Models\EntityAddress;
+use App\Modules\Agencies\Models\Agency;
+use App\Modules\Agencies\Models\Depot;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
@@ -278,5 +281,90 @@ describe('historique', function (): void {
         $this->calculate->execute(($this->service)(), $this->organization->id, record: false);
 
         expect(PricingCalculation::count())->toBe(0);
+    });
+});
+
+describe('distance', function (): void {
+    beforeEach(function (): void {
+        /** Une prestation partant d'un dépôt situé, vers une adresse située. */
+        $this->located = function (array $depot, array $delivery): OrderService {
+            $agency = Agency::factory()
+                ->create(['organization_id' => $this->organization->id]);
+
+            $depotModel = Depot::factory()
+                ->create(['agency_id' => $agency->id]);
+
+            $depotAddress = Address::factory()->create($depot);
+
+            EntityAddress::create([
+                'organization_id' => $this->organization->id,
+                'address_id' => $depotAddress->id,
+                'entity_type' => 'depot',
+                'entity_id' => $depotModel->id,
+                'address_type' => 'main',
+                'is_primary' => true,
+            ]);
+
+            $order = Order::factory()->forOrganization($this->organization)->create([
+                'customer_id' => $this->customer->id,
+                'agency_id' => $agency->id,
+                'depot_id' => $depotModel->id,
+                'currency_code' => 'CHF',
+            ]);
+
+            return OrderService::factory()->create([
+                'order_id' => $order->id,
+                'service_id' => $this->delivery->id,
+                'address_id' => Address::factory()->create($delivery)->id,
+                'status' => 'completed',
+                'weight' => 100,
+            ]);
+        };
+    });
+
+    /**
+     * Genève → Lausanne : environ 53 km à vol d'oiseau. Un tarif au kilomètre
+     * doit rendre un montant du même ordre, sans quoi la variable ne dit rien.
+     */
+    it('mesure du dépôt à l’adresse de la prestation', function (): void {
+        ($this->rule)(($this->list)(PriceList::GLOBAL, 'G'), 'KM', '{P:distance}*{V:2}');
+
+        $service = ($this->located)(
+            ['latitude' => 46.2044, 'longitude' => 6.1432],
+            ['latitude' => 46.5197, 'longitude' => 6.6323],
+        );
+
+        $outcome = $this->calculate->execute($service, $this->organization->id);
+
+        expect((float) $outcome->amount)->toBeGreaterThan(100.0)
+            ->and((float) $outcome->amount)->toBeLessThan(115.0);
+    });
+
+    /** Sans coordonnées, on ne facture pas sur une distance inventée. */
+    it('refuse de calculer quand un point manque', function (): void {
+        ($this->rule)(($this->list)(PriceList::GLOBAL, 'G'), 'KM', '{P:distance}*{V:2}');
+
+        $service = ($this->located)(
+            ['latitude' => null, 'longitude' => null],
+            ['latitude' => 46.5197, 'longitude' => 6.6323],
+        );
+
+        $outcome = $this->calculate->execute($service, $this->organization->id);
+
+        expect($outcome->priced)->toBeFalse()
+            ->and($outcome->reason)->toContain('distance');
+    });
+
+    /** Le point (0,0) est en plein golfe de Guinée : une adresse non géocodée,
+     *  pas un lieu de livraison. */
+    it('ne prend pas une adresse non géocodée pour un lieu', function (): void {
+        ($this->rule)(($this->list)(PriceList::GLOBAL, 'G'), 'KM', '{P:distance}*{V:2}');
+
+        $service = ($this->located)(
+            ['latitude' => 0, 'longitude' => 0],
+            ['latitude' => 46.5197, 'longitude' => 6.6323],
+        );
+
+        expect($this->calculate->execute($service, $this->organization->id)->priced)->toBeFalse();
     });
 });

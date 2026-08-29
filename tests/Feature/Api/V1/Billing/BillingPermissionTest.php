@@ -64,7 +64,10 @@ describe('missing permissions', function (): void {
 
     it('forbids updating and deleting without the matching permission', function (): void {
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
-            ->patchJson("/api/v1/invoices/{$this->invoice->id}", ['status' => 'x'])->assertForbidden();
+            // Charge valide : c'est le refus d'autorisation qu'on veut voir, et
+            // une validation qui echoue d'abord repondrait 422 sans rien dire
+            // du droit.
+            ->patchJson("/api/v1/invoices/{$this->invoice->id}", ['remark' => 'x'])->assertForbidden();
 
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
             ->deleteJson("/api/v1/invoices/{$this->invoice->id}/lines/{$this->line->id}")->assertForbidden();

@@ -18,13 +18,15 @@ use App\Modules\Orders\Models\OrderService;
  * chargement et une livraison n'ont pas le même poids, et prendre le total de
  * la commande facturerait deux fois le même colis.
  *
- * `distance` reste nulle tant qu'aucune distance par prestation n'existe : la
- * tournée en porte une, mais elle vaut pour le trajet entier, pas pour un
- * arrêt. Une formule qui la nomme échoue clairement plutôt que de rendre un
- * prix bâti sur la mauvaise valeur.
+ * `distance` est celle qui sépare le **dépôt** de l'adresse de la prestation,
+ * en kilomètres et à vol d'oiseau — voir `DepotDistance`, qui dit pourquoi. Sans
+ * coordonnées des deux côtés elle reste nulle, et une formule qui la nomme
+ * échoue clairement plutôt que de facturer sur une distance inventée.
  */
 final readonly class PricingContext
 {
+    public function __construct(private DepotDistance $distance) {}
+
     /**
      * Les paramètres numériques qu'une formule peut nommer.
      *
@@ -64,9 +66,7 @@ final readonly class PricingContext
             'quantite' => $this->number($service->quantity),
             'nombre_colis' => $this->number($service->package_count),
             'duree' => $this->number($service->required_time_minutes),
-            // Aucune distance n'est portee par une prestation : la laisser
-            // nulle fait echouer clairement une formule qui la reclame.
-            'distance' => null,
+            'distance' => $this->distance->kilometres($service),
 
             'code_postal' => $address?->postal_code,
             'ville' => $address?->city,

@@ -25,6 +25,7 @@ export function PricingCustomerPage() {
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)
   const [toDelete, setToDelete] = useState<PriceList | null>(null)
+  const [toEdit, setToEdit] = useState<PriceList | null>(null)
 
   const { data, isPending, error, refetch } = usePriceLists({
     page,
@@ -65,11 +66,21 @@ export function PricingCustomerPage() {
         onPageChange={setPage}
         onRetry={() => void refetch()}
         onDelete={setToDelete}
+        onEdit={setToEdit}
         showCustomers
       />
 
       {creating ? (
         <PriceListDialog scope="customer" open onOpenChange={setCreating} />
+      ) : null}
+
+      {toEdit ? (
+        <PriceListDialog
+          scope="customer"
+          priceList={toEdit}
+          open
+          onOpenChange={(open) => !open && setToEdit(null)}
+        />
       ) : null}
 
       <ConfirmDialog

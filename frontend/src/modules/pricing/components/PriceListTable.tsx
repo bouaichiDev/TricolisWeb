@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -18,11 +18,18 @@ interface PriceListTableProps {
   onPageChange: (page: number) => void
   onRetry: () => void
   onDelete: (list: PriceList) => void
+  onEdit: (list: PriceList) => void
   /** La colonne clients n'a de sens que sur les barèmes négociés. */
   showCustomers?: boolean
 }
 
-/** Les barèmes, avec ce qu'ils portent et pour qui ils valent. */
+/**
+ * Les barèmes, avec ce qu'ils portent et pour qui ils valent.
+ *
+ * Le nom ouvre le détail — les règles, les matrices ; le crayon corrige
+ * l'en-tête. Les deux gestes sont distincts parce que corriger une date de
+ * validité n'a rien à voir avec écrire une formule.
+ */
 export function PriceListTable({
   rows,
   meta,
@@ -31,6 +38,7 @@ export function PriceListTable({
   onPageChange,
   onRetry,
   onDelete,
+  onEdit,
   showCustomers = false,
 }: PriceListTableProps) {
   const { t } = useTranslation()
@@ -98,18 +106,31 @@ export function PriceListTable({
     {
       key: 'actions',
       header: '',
-      className: 'w-12',
+      className: 'w-24',
       cell: (row) => (
-        <PermissionGuard permission="price_lists.delete">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t('common.delete')}
-            onClick={() => onDelete(row)}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-        </PermissionGuard>
+        <span className="flex gap-1">
+          <PermissionGuard permission="price_lists.update">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('common.edit')}
+              onClick={() => onEdit(row)}
+            >
+              <Pencil className="size-4" aria-hidden />
+            </Button>
+          </PermissionGuard>
+
+          <PermissionGuard permission="price_lists.delete">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('common.delete')}
+              onClick={() => onDelete(row)}
+            >
+              <Trash2 className="size-4" aria-hidden />
+            </Button>
+          </PermissionGuard>
+        </span>
       ),
     },
   ]

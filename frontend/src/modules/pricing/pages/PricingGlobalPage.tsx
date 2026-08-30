@@ -25,6 +25,7 @@ export function PricingGlobalPage() {
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)
   const [toDelete, setToDelete] = useState<PriceList | null>(null)
+  const [toEdit, setToEdit] = useState<PriceList | null>(null)
 
   const { data, isPending, error, refetch } = usePriceLists({
     page,
@@ -65,11 +66,21 @@ export function PricingGlobalPage() {
         onPageChange={setPage}
         onRetry={() => void refetch()}
         onDelete={setToDelete}
+        onEdit={setToEdit}
         showCustomers={false}
       />
 
       {creating ? (
         <PriceListDialog scope="global" open onOpenChange={setCreating} />
+      ) : null}
+
+      {toEdit ? (
+        <PriceListDialog
+          scope="global"
+          priceList={toEdit}
+          open
+          onOpenChange={(open) => !open && setToEdit(null)}
+        />
       ) : null}
 
       <ConfirmDialog

@@ -1979,7 +1979,9 @@
         "isActive": "Actif",
         "validFrom": "Valable du",
         "validTo": "Valable au"
-      }
+      },
+      "edit": "Modifier le barème",
+      "activeHint": "Désactivé, il cesse de s’appliquer sans être supprimé."
     },
     "rules": {
       "title": "Règles",

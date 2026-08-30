@@ -123,14 +123,29 @@ class PriceListController extends Controller
         $this->authorize('update', $priceList);
 
         DB::transaction(function () use ($request, $priceList): void {
-            $priceList->update(array_filter([
-                'code' => $request->validated('code'),
-                'name' => $request->validated('name'),
-                'valid_from' => $request->validated('validFrom'),
-                'valid_to' => $request->validated('validTo'),
-            ], static fn ($value): bool => $value !== null) + ($request->has('isActive')
-                ? ['is_active' => $request->boolean('isActive')]
-                : []));
+            $attributes = [];
+
+            // `has` et non un filtre sur null : effacer une date de validite
+            // est une intention, et un filtre l'aurait confondue avec une
+            // absence de champ.
+            foreach ([
+                'code' => 'code',
+                'name' => 'name',
+                'validFrom' => 'valid_from',
+                'validTo' => 'valid_to',
+            ] as $input => $column) {
+                if ($request->has($input)) {
+                    $attributes[$column] = $request->validated($input);
+                }
+            }
+
+            if ($request->has('isActive')) {
+                $attributes['is_active'] = $request->boolean('isActive');
+            }
+
+            if ($attributes !== []) {
+                $priceList->update($attributes);
+            }
 
             if ($request->has('customerIds')) {
                 $priceList->customers()->sync($request->validated('customerIds') ?? []);

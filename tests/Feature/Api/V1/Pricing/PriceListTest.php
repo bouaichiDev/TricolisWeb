@@ -137,6 +137,41 @@ describe('modification', function (): void {
             ->assertOk()->assertJsonPath('data.scope', 'customer');
     });
 
+    /** Effacer une date de validité est une intention, pas un champ absent. */
+    it('efface une date de validité', function (): void {
+        $list = ($this->list)(['valid_from' => '2026-01-01', 'valid_to' => '2026-12-31']);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->patchJson("/api/v1/price-lists/{$list->id}", ['validTo' => null])
+            ->assertOk()
+            ->assertJsonPath('data.validTo', null)
+            ->assertJsonPath('data.validFrom', '2026-01-01');
+    });
+
+    it('désactive un barème sans le supprimer', function (): void {
+        $list = ($this->list)();
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->patchJson("/api/v1/price-lists/{$list->id}", ['isActive' => false])
+            ->assertOk()->assertJsonPath('data.isActive', false);
+
+        $this->assertDatabaseHas('price_lists', ['id' => $list->id]);
+    });
+
+    /** Un barème client se réaffecte : un contrat se perd, un autre s'ajoute. */
+    it('remplace les clients rattachés', function (): void {
+        $list = ($this->list)(['code' => 'C', 'scope' => PriceList::CUSTOMER]);
+        $list->customers()->attach($this->customer->id);
+
+        $other = Customer::factory()->create(['organization_id' => $this->organization->id]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->patchJson("/api/v1/price-lists/{$list->id}", ['customerIds' => [$other->id]])
+            ->assertOk()
+            ->assertJsonCount(1, 'data.customers')
+            ->assertJsonPath('data.customers.0.id', $other->id);
+    });
+
     it('supprime un barème', function (): void {
         $list = ($this->list)();
 

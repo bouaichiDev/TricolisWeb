@@ -11,7 +11,7 @@ import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 
-import { CustomerFilterSelect } from '../components/CustomerFilterSelect'
+import { CustomerFilterSelect } from '@/modules/customers/components/CustomerFilterSelect'
 import { useStockItems } from '../hooks/useStockItems'
 import type { StockItem } from '../types/stock'
 import type { StockItemFilters } from '../types/stockFilters'

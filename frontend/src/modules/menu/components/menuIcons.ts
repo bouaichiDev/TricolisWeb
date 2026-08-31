@@ -1,6 +1,9 @@
 import {
   ArrowRightLeft,
   Boxes,
+  FileInput,
+  History,
+  KeyRound,
   Building2,
   Calculator,
   CalendarRange,
@@ -42,6 +45,9 @@ import {
  */
 const ICONS: Record<string, LucideIcon> = {
   ArrowRightLeft,
+  FileInput,
+  History,
+  KeyRound,
   LayoutDashboard,
   Building2,
   Boxes,

@@ -202,3 +202,36 @@ et **aucune** ne porte de clé étrangère vers `statuses`.
 `ReleaseStockReservationAction` écrit `status` et `released_at` dans la même
 transaction. Le code figure au référentiel pour être **affiché**, mais aucun
 formulaire de création ne le propose : une réservation ne naît pas libérée.
+
+
+## Ce que la phase 8 a confirmé — 31 août 2026
+
+**Aucune source n'a été ajoutée**, et c'est le résultat attendu.
+
+`export_job` était déjà au référentiel depuis la phase 6, avec ses quatre codes
+`pending`, `processing`, `sent`, `failed`. Le §101 demandait de l'ajouter ou de
+le confirmer : il est confirmé, et le frontend le consomme désormais par
+`StatusBadge source="export_job"` sur les trois écrans d'envoi — liste globale,
+fiche, et historique d'un client. Aucune couleur ni aucun libellé n'est écrit en
+dur.
+
+### La source s'appelle `export_job`, au singulier
+
+Le prompt de la phase 8 écrit `src = export_jobs`. La valeur réelle est
+`export_job` : c'est l'alias de `MorphMap::EXPORT_JOB`, et c'est lui que la
+colonne `statuses.source` porte. Le pluriel est le nom de la table, pas celui de
+la source.
+
+### Les configurations n'entrent pas au référentiel
+
+`customer_import_configurations`, `customer_api_configurations` et
+`customer_export_configurations` portent un booléen `is_active`, **pas** une
+colonne `status`. Elles ne sont donc pas décrites par `statuses`, et le §53
+l'interdit explicitement : un booléen n'a pas de cycle de vie à décrire, et lui
+inventer un statut créerait deux vérités sur la même question.
+
+### Aucun `status_id`
+
+Vérifié sur la seule table de cette phase qui porte un statut : `export_jobs` a
+une colonne `status` en `varchar(32)` et **aucune** clé étrangère vers
+`statuses`.

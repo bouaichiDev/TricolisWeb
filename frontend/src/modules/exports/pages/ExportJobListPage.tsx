@@ -1,9 +1,11 @@
-import { RotateCw } from 'lucide-react'
+import { Plus, RotateCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
+import { GenerateExportDialog } from '../components/GenerateExportDialog'
 import { useExportJobs, useRetryExportJob } from '../hooks/useExports'
-import type { ExportJob } from '../types/export'
+import { isRetryable, type ExportJob } from '../types/export'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { useCustomerList } from '@/modules/customers/hooks/useCustomers'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
@@ -26,10 +28,18 @@ const ALL_CUSTOMERS = 'all'
  * nombre de tentatives, et se reprend depuis ce même écran.
  *
  * Un envoi déjà transmis ne se rejoue pas : le client aurait deux fois la même
- * facture. Le bouton disparaît alors plutôt que d'échouer en 409.
+ * facture. Le bouton disparaît alors plutôt que d'échouer en 409 — mais c'est
+ * bien le serveur qui refuse, sous verrou.
+ *
+ * **Aucun téléchargement.** La route `download` et la permission qui
+ * l'accompagnerait n'existent pas : le §58 interdit par ailleurs de fabriquer
+ * une URL depuis `storagePath`, que le serveur ne renvoie pas. La colonne dit
+ * qu'un fichier existe, sans promettre de le servir.
  */
 export function ExportJobListPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [generating, setGenerating] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | undefined>(undefined)
   const [customerId, setCustomerId] = useState(ALL_CUSTOMERS)
@@ -57,9 +67,22 @@ export function ExportJobListPage() {
       ),
     },
     {
+      key: 'entity',
+      header: t('exports.jobs.fields.entityType'),
+      hideOnMobile: true,
+      cell: (row) =>
+        row.entityType === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          t(`entities.${row.entityType}`, { defaultValue: row.entityType })
+        ),
+    },
+    {
       key: 'status',
       header: t('exports.jobs.fields.status'),
-      cell: (row) => <StatusBadge status={row.status} />,
+      // La source du référentiel est `export_job`, au singulier : c'est l'alias
+      // de `MorphMap`, et c'est lui que `statuses.source` porte.
+      cell: (row) => <StatusBadge status={row.status} source="export_job" />,
     },
     {
       key: 'attemptCount',
@@ -90,14 +113,18 @@ export function ExportJobListPage() {
       header: '',
       className: 'w-12',
       cell: (row) =>
-        row.sentAt === null ? (
+        isRetryable(row) ? (
           <PermissionGuard permission="export_jobs.retry">
             <Button
               variant="ghost"
               size="icon"
               aria-label={t('exports.jobs.retry')}
               disabled={retry.isPending}
-              onClick={() => retry.mutate(row.id)}
+              onClick={(event) => {
+                // Sans cela, le clic ouvrirait aussi la fiche de l'envoi.
+                event.stopPropagation()
+                retry.mutate(row.id)
+              }}
             >
               <RotateCw className="size-4" aria-hidden />
             </Button>
@@ -108,7 +135,18 @@ export function ExportJobListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={t('exports.jobs.title')} description={t('exports.jobs.subtitle')} />
+      <PageHeader
+        title={t('exports.jobs.title')}
+        description={t('exports.jobs.subtitle')}
+        actions={
+          <PermissionGuard permission="export_jobs.create">
+            <Button onClick={() => setGenerating(true)}>
+              <Plus className="size-4" aria-hidden />
+              {t('exports.jobs.generate')}
+            </Button>
+          </PermissionGuard>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="w-full sm:w-56">
@@ -158,8 +196,11 @@ export function ExportJobListPage() {
         error={error}
         onPageChange={setPage}
         onRetry={() => void refetch()}
+        onRowClick={(row) => void navigate(`/integrations/export-jobs/${row.id}`)}
         emptyMessage={t('exports.jobs.empty')}
       />
+
+      <GenerateExportDialog open={generating} onOpenChange={setGenerating} />
     </div>
   )
 }

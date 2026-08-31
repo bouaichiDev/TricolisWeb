@@ -7,7 +7,7 @@ import { ControlledCheckbox } from '@/shared/components/form/ControlledCheckbox'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { formatDateTime } from '@/shared/utils/format'
 
-import { CustomerFilterSelect } from '../components/CustomerFilterSelect'
+import { CustomerFilterSelect } from '@/modules/customers/components/CustomerFilterSelect'
 import { useStockBalances } from '../hooks/useStockBalances'
 import type { StockBalance } from '../types/stock'
 import type { StockBalanceFilters } from '../types/stockFilters'

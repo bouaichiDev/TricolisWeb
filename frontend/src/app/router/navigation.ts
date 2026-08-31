@@ -7,6 +7,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   Network,
+  Plug,
   Settings,
   Shield,
   Users,
@@ -149,6 +150,34 @@ export const organizationNavigation: NavEntry[] = [
     ],
   },
   {
+    labelKey: 'nav.integrations',
+    icon: Plug,
+    to: '/integrations',
+    permission: 'customer_export_configurations.view',
+    children: [
+      {
+        labelKey: 'nav.importConfigurations',
+        to: '/integrations/imports',
+        permission: 'customer_import_configurations.view',
+      },
+      {
+        labelKey: 'nav.customerApiAccess',
+        to: '/integrations/api-access',
+        permission: 'customer_api_configurations.view',
+      },
+      {
+        labelKey: 'nav.exportConfigurationsDirectory',
+        to: '/integrations/exports',
+        permission: 'customer_export_configurations.view',
+      },
+      {
+        labelKey: 'nav.exportHistory',
+        to: '/integrations/export-jobs',
+        permission: 'export_jobs.view',
+      },
+    ],
+  },
+  {
     labelKey: 'nav.administration',
     icon: Settings,
     children: [
@@ -206,4 +235,5 @@ export const sectionIcons: Record<string, LucideIcon> = {
   '/my-organization': Building2,
   '/audit': ClipboardList,
   '/stock': Warehouse,
+  '/integrations': Plug,
 }

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 
-import { CustomerFilterSelect } from '../components/CustomerFilterSelect'
+import { CustomerFilterSelect } from '@/modules/customers/components/CustomerFilterSelect'
 import { StockKpiRow } from '../components/StockKpiRow'
 import { useStockBalances } from '../hooks/useStockBalances'
 import type { StockBalanceFilters } from '../types/stockFilters'

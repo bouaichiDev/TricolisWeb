@@ -6,10 +6,16 @@ import { customersApi, type CustomerPayload } from '../api/customers.api'
 import { customerKeys } from './customerKeys'
 import type { CustomerFilters } from '../types/customer'
 
-export function useCustomerList(filters: CustomerFilters) {
+/**
+ * `enabled` permet de ne rien demander quand le client est déjà connu : un
+ * écran monté dans une fiche client n'a pas de sélecteur à remplir, et charger
+ * cent clients pour ne pas les afficher serait une requête pour rien.
+ */
+export function useCustomerList(filters: CustomerFilters, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: customerKeys.list(filters),
     queryFn: () => customersApi.list(filters),
+    enabled: options.enabled ?? true,
     // La page précédente reste affichée pendant le chargement de la suivante :
     // sans cela, la table clignote entre chaque page.
     placeholderData: (previous) => previous,

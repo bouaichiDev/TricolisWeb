@@ -11,7 +11,7 @@ import { TextField } from '@/shared/components/form/TextField'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
-import { CustomerFilterSelect } from './CustomerFilterSelect'
+import { CustomerFilterSelect } from '@/modules/customers/components/CustomerFilterSelect'
 import { useStockItemOptions, useStockLocationOptions } from '../hooks/useStockScope'
 import {
   STOCK_MOVEMENT_FORM_DEFAULTS,

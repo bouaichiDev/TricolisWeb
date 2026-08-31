@@ -12,7 +12,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
 import { AvailabilityHint } from './AvailabilityHint'
-import { CustomerFilterSelect } from './CustomerFilterSelect'
+import { CustomerFilterSelect } from '@/modules/customers/components/CustomerFilterSelect'
 import { useCustomerOrderOptions, useOrderLineOptions } from '../hooks/useOrderLineOptions'
 import { useStockItemOptions } from '../hooks/useStockScope'
 import {

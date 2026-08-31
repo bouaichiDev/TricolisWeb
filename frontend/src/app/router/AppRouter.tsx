@@ -5,6 +5,7 @@ import { billingRoutes } from './routes/billingRoutes'
 import { customerRoutes } from './routes/customerRoutes'
 import { guarded } from './routes/guarded'
 import { operationsRoutes } from './routes/operationsRoutes'
+import { integrationsRoutes } from './routes/integrationsRoutes'
 import { stockRoutes } from './routes/stockRoutes'
 import { fleetRoutes } from './routes/fleetRoutes'
 import { transportRoutes } from './routes/transportRoutes'
@@ -53,6 +54,7 @@ export function AppRouter() {
         {operationsRoutes}
         {billingRoutes}
         {stockRoutes}
+        {integrationsRoutes}
         {adminRoutes}
 
         <Route path="*" element={<NotFoundPage />} />

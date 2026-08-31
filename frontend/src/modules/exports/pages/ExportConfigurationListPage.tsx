@@ -21,25 +21,48 @@ import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 
 /**
- * Où partent les factures d'un client.
+ * Où partent les exports d'un client.
  *
  * **Client par client**, parce que c'est ainsi que l'API les expose et que le
  * §113 l'exige : la configuration d'un client ne doit jamais servir à un autre.
  * Tant qu'aucun client n'est choisi, l'écran le dit plutôt que d'afficher une
  * table vide.
+ *
+ * Le même écran sert deux fois : sous Facturation, où le client se choisit, et
+ * dans l'onglet Intégrations d'une fiche client, où il est déjà connu. Le §47
+ * demande précisément de réutiliser ces composants plutôt que d'en écrire de
+ * seconds — les configurations sont les mêmes, y compris celles de facture
+ * posées en Phase 6.
  */
-export function ExportConfigurationListPage() {
+interface ExportConfigurationListPageProps {
+  /** Client imposé : le sélecteur et l'en-tête disparaissent alors. */
+  customerId?: string
+  /** Monté dans un onglet : le titre de page appartient à la fiche. */
+  embedded?: boolean
+}
+
+export function ExportConfigurationListPage({
+  customerId: fixedCustomerId,
+  embedded = false,
+}: ExportConfigurationListPageProps = {}) {
   const { t } = useTranslation()
-  const [customerId, setCustomerId] = useState('')
+  const [pickedCustomerId, setPickedCustomerId] = useState('')
+  const customerId = fixedCustomerId ?? pickedCustomerId
+  const setCustomerId = setPickedCustomerId
   const [editing, setEditing] = useState<ExportConfiguration | null>(null)
   const [creating, setCreating] = useState(false)
   const [toDelete, setToDelete] = useState<ExportConfiguration | null>(null)
 
-  const customers = useCustomerList({ page: 1, perPage: 100 })
+  // Sans client imposé, il faut la liste pour le choisir ; avec, la demander
+  // serait une requête pour rien.
+  const customers = useCustomerList(
+    { page: 1, perPage: 100 },
+    { enabled: fixedCustomerId === undefined },
+  )
   const { data, isPending, error, refetch } = useExportConfigurations(customerId)
   const create = useCreateExportConfiguration(customerId)
-  const update = useUpdateExportConfiguration(customerId)
-  const remove = useDeleteExportConfiguration(customerId)
+  const update = useUpdateExportConfiguration()
+  const remove = useDeleteExportConfiguration()
 
   const columns: Column<ExportConfiguration>[] = [
     { key: 'name', header: t('exports.configurations.fields.name'), cell: (row) => row.name },
@@ -96,34 +119,47 @@ export function ExportConfigurationListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title={t('exports.configurations.title')}
-        description={t('exports.configurations.subtitle')}
-        actions={
-          customerId ? (
-            <PermissionGuard permission="customer_export_configurations.create">
-              <Button onClick={() => setCreating(true)}>
-                <Plus className="size-4" aria-hidden />
-                {t('exports.configurations.create')}
-              </Button>
-            </PermissionGuard>
-          ) : null
-        }
-      />
+      {embedded ? (
+        <div className="flex justify-end">
+          <PermissionGuard permission="customer_export_configurations.create">
+            <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
+              <Plus className="size-4" aria-hidden />
+              {t('exports.configurations.create')}
+            </Button>
+          </PermissionGuard>
+        </div>
+      ) : (
+        <>
+          <PageHeader
+            title={t('exports.configurations.title')}
+            description={t('exports.configurations.subtitle')}
+            actions={
+              customerId ? (
+                <PermissionGuard permission="customer_export_configurations.create">
+                  <Button onClick={() => setCreating(true)}>
+                    <Plus className="size-4" aria-hidden />
+                    {t('exports.configurations.create')}
+                  </Button>
+                </PermissionGuard>
+              ) : null
+            }
+          />
 
-      <div className="sm:w-72">
-        <AsyncSelect
-          label={t('exports.configurations.fields.customer')}
-          value={customerId}
-          onChange={setCustomerId}
-          options={(customers.data?.data ?? []).map((customer) => ({
-            value: customer.id,
-            label: customer.name,
-            hint: customer.code,
-          }))}
-          isLoading={customers.isPending}
-        />
-      </div>
+          <div className="sm:w-72">
+            <AsyncSelect
+              label={t('exports.configurations.fields.customer')}
+              value={customerId}
+              onChange={setCustomerId}
+              options={(customers.data?.data ?? []).map((customer) => ({
+                value: customer.id,
+                label: customer.name,
+                hint: customer.code,
+              }))}
+              isLoading={customers.isPending}
+            />
+          </div>
+        </>
+      )}
 
       {customerId === '' ? (
         <EmptyState

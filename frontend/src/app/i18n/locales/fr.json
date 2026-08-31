@@ -42,7 +42,14 @@
     "updatedAt": "Modifié le",
     "open": "Ouvrir",
     "working": "Traitement en cours…",
-    "removeFilter": "Retirer « {{value}} »"
+    "removeFilter": "Retirer « {{value}} »",
+    "copy": "Copier",
+    "copied": "Copié",
+    "remove": "Retirer",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "expand": "Déplier",
+    "collapse": "Replier"
   },
   "auth": {
     "login": "Connexion",
@@ -111,7 +118,12 @@
     "stockOverview": "Vue stock",
     "stockItems": "Articles",
     "stockMovements": "Mouvements",
-    "stockReservations": "Réservations"
+    "stockReservations": "Réservations",
+    "integrations": "Intégrations",
+    "importConfigurations": "Configurations import",
+    "customerApiAccess": "Accès API clients",
+    "exportConfigurationsDirectory": "Configurations export",
+    "exportHistory": "Exports / Historique"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -331,7 +343,8 @@
       "addresses": "Adresses",
       "catalogs": "Catalogues",
       "pricing": "Tarification",
-      "stock": "Stock"
+      "stock": "Stock",
+      "integrations": "Intégrations"
     },
     "fields": {
       "code": "Code",
@@ -2067,7 +2080,33 @@
         "attempts": "Tentatives",
         "generatedAt": "Généré le",
         "sentAt": "Envoyé le",
-        "error": "Erreur"
+        "error": "Erreur",
+        "fileName": "Nom du fichier",
+        "configuration": "Destination",
+        "channel": "Canal",
+        "entityType": "Type de document",
+        "entityId": "Identifiant du document",
+        "entity": "Document",
+        "errorMessage": "Erreur"
+      },
+      "untitled": "Envoi sans fichier",
+      "notSent": "Non transmis",
+      "noFile": "Aucun fichier",
+      "fileGenerated": "Fichier généré",
+      "generate": "Déclencher un export",
+      "generateHint": "L’envoi part en file : le fichier est produit et transmis par le serveur.",
+      "created": "Export déclenché.",
+      "configurationHint": "Seules les destinations actives sont proposées.",
+      "entityTypeHint": "Seule la facture dispose d’un format d’export défini.",
+      "entityIdHint": "Identifiant de la facture à transmettre. Une facture non clôturée sera refusée.",
+      "openInvoice": "Ouvrir la facture",
+      "emptyForCustomer": "Aucun export pour ce client.",
+      "pendingHint": "Cet envoi n’a pas encore abouti : il peut être relancé.",
+      "sentHint": "Cet envoi a été transmis. Le relancer enverrait deux fois le même document.",
+      "targetHint": "La destination employée et le document concerné.",
+      "sections": {
+        "delivery": "Transmission",
+        "target": "Destination et document"
       }
     },
     "authModes": {
@@ -2235,6 +2274,124 @@
       "fallbackTitle": "Barèmes globaux utilisés à défaut",
       "fallbackHint": "Ils s’appliquent pour tout ce que les barèmes du client ne couvre pas.",
       "noGlobal": "Aucun barème global"
+    }
+  },
+  "json": {
+    "format": "Formater",
+    "reset": "Réinitialiser",
+    "valid": "JSON valide",
+    "invalid": "JSON invalide.",
+    "invalidPayload": "Une configuration JSON est invalide : corrigez-la avant d’enregistrer."
+  },
+  "integrations": {
+    "title": "Intégrations clients",
+    "subtitle": "Ce que les clients nous envoient, et ce que nous leur transmettons.",
+    "customerLocked": "Une configuration ne change pas de client.",
+    "sections": {
+      "imports": {
+        "title": "Configurations d’import",
+        "description": "Comment lire les fichiers qu’un client dépose : format, source, correspondance des champs."
+      },
+      "apiAccess": {
+        "title": "Accès API clients",
+        "description": "Les clés avec lesquelles un client appelle nos API, ses adresses autorisées et ses droits."
+      },
+      "exports": {
+        "title": "Configurations d’export",
+        "description": "Où partent les documents : FTP, SFTP, API REST, courriel, ou dépôt manuel."
+      },
+      "exportJobs": {
+        "title": "Historique des exports",
+        "description": "Ce qui est parti, ce qui a échoué, et ce qui reste à renvoyer."
+      }
+    },
+    "fields": {
+      "customer": "Client",
+      "name": "Nom",
+      "sourceType": "Type de source",
+      "fileFormat": "Format de fichier",
+      "mapping": "Correspondance des champs",
+      "validationRules": "Règles de validation",
+      "isActive": "Active"
+    },
+    "imports": {
+      "title": "Configurations d’import",
+      "subtitle": "Comment lire les fichiers déposés par les clients.",
+      "create": "Nouvelle configuration",
+      "createHint": "Elle décrit une lecture ; elle n’en déclenche aucune.",
+      "edit": "Modifier la configuration",
+      "empty": "Aucune configuration d’import",
+      "emptyForCustomer": "Ce client n’a aucune configuration d’import.",
+      "searchPlaceholder": "Nom, type de source ou format",
+      "sections": {
+        "general": "Général",
+        "mapping": "Correspondance et validation"
+      },
+      "generalHint": "À qui appartient cette configuration, et ce qu’elle lit.",
+      "nameHint": "Unique chez ce client.",
+      "sourceTypeHint": "Champ libre : le modèle n’en énumère aucune valeur.",
+      "fileFormatHint": "Champ libre, distinct des formats d’export.",
+      "activeHint": "Une configuration inactive reste enregistrée mais n’est plus employée.",
+      "mappingSectionHint": "Deux objets JSON libres : le serveur les conserve sans jamais les exécuter.",
+      "mappingHint": "Comment les colonnes du fichier se rattachent au modèle.",
+      "validationRulesHint": "Ce qu’une ligne doit respecter pour être acceptée.",
+      "mappedFields": "{{count}} champ",
+      "mappedFields_other": "{{count}} champs",
+      "notConfigured": "Non renseigné."
+    },
+    "api": {
+      "title": "Accès API clients",
+      "subtitle": "Les clés avec lesquelles vos clients appellent nos API.",
+      "create": "Nouvel accès",
+      "createHint": "La clé sera affichée une seule fois, à l’enregistrement.",
+      "edit": "Modifier l’accès",
+      "empty": "Aucun accès API",
+      "emptyForCustomer": "Ce client n’a aucun accès API.",
+      "searchPlaceholder": "Nom de l’accès",
+      "sections": {
+        "general": "Général",
+        "access": "Restrictions"
+      },
+      "generalHint": "À qui appartient cet accès, et s’il est utilisable.",
+      "accessHint": "D’où la clé peut venir, et ce qu’elle a le droit de faire.",
+      "nameHint": "Unique chez ce client — « ERP », « portail », « transporteur ».",
+      "activeHint": "Un accès désactivé est refusé sans que la clé soit détruite.",
+      "allowedIps": "Adresses autorisées",
+      "allowedIpsPlaceholder": "192.168.1.10 ou 10.0.0.0/24",
+      "allowedIpsHint": "Adresses IP ou plages CIDR. La validation exacte revient au serveur.",
+      "allowedIpsEmpty": "Sans restriction : la clé fonctionnera depuis n’importe quelle adresse.",
+      "anyIp": "Toute adresse",
+      "ipCount": "{{count}} adresse",
+      "ipCount_other": "{{count}} adresses",
+      "permissions": "Droits accordés",
+      "permissionsHint": "Repris du référentiel interne. Certains modules sont refusés à une clé client ; le serveur le dira.",
+      "permissionsEmpty": "Aucun droit : la clé s’authentifie mais ne peut rien faire.",
+      "permissionsCount": "{{count}} droit",
+      "permissionsCount_other": "{{count}} droits",
+      "noPermission": "Aucun droit",
+      "searchPermissions": "Rechercher un droit",
+      "lastUsedAt": "Dernière utilisation",
+      "neverUsed": "Jamais utilisée",
+      "keyTitle": "Votre clé API",
+      "keyForNew": "Nouvel accès API",
+      "keyWarning": "Cette clé ne sera plus affichée. Copiez-la et conservez-la dans un endroit sûr.",
+      "keySaved": "J’ai copié la clé",
+      "keyNotShown": "La clé n’est pas consultable : le serveur n’en garde qu’une empreinte.",
+      "keyRotated": "Clé renouvelée.",
+      "rotate": "Renouveler la clé",
+      "rotateConfirm": "L’ancienne clé sera immédiatement invalidée : toute intégration qui l’emploie cessera de fonctionner."
+    },
+    "exports": {
+      "title": "Configurations d’export",
+      "subtitle": "Où partent les documents, tous clients confondus.",
+      "empty": "Aucune configuration d’export",
+      "searchPlaceholder": "Nom, type d’export, hôte ou identifiant",
+      "exportType": "Type d’export",
+      "frequency": "Fréquence",
+      "secret": "Secret",
+      "secretSet": "Enregistré",
+      "noSecret": "Aucun",
+      "editHint": "Les destinations se règlent depuis la fiche du client ou depuis la facturation : ce sont les mêmes configurations."
     }
   }
 }

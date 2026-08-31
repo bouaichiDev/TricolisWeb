@@ -396,6 +396,62 @@ final class MenuCatalogue
                 permission: 'api_configurations.view',
             ),
 
+            // Integrations clients — Phase 8. Quatre entrees, pour les quatre
+            // entites du modele. Ni webhooks, ni exports planifies, ni journaux
+            // d'appels API, ni historique d'import : ces tables n'existent pas,
+            // et le §67 interdit d'en annoncer les ecrans.
+            //
+            // A ne pas confondre avec `api-configurations` ci-dessus, qui est
+            // le sens inverse : les API que l'organisme appelle, et non les
+            // cles avec lesquelles ses clients l'appellent (§19).
+            new MenuEntry(
+                code: 'integrations',
+                labelKey: 'nav.integrations',
+                icon: 'Plug',
+                section: MenuSection::INTEGRATIONS,
+                position: 71,
+            ),
+            new MenuEntry(
+                code: 'integration-imports',
+                labelKey: 'nav.importConfigurations',
+                icon: 'FileInput',
+                section: MenuSection::INTEGRATIONS,
+                position: 72,
+                route: '/integrations/imports',
+                permission: 'customer_import_configurations.view',
+                parent: 'integrations',
+            ),
+            new MenuEntry(
+                code: 'integration-api-access',
+                labelKey: 'nav.customerApiAccess',
+                icon: 'KeyRound',
+                section: MenuSection::INTEGRATIONS,
+                position: 73,
+                route: '/integrations/api-access',
+                permission: 'customer_api_configurations.view',
+                parent: 'integrations',
+            ),
+            new MenuEntry(
+                code: 'integration-exports',
+                labelKey: 'nav.exportConfigurationsDirectory',
+                icon: 'Send',
+                section: MenuSection::INTEGRATIONS,
+                position: 74,
+                route: '/integrations/exports',
+                permission: 'customer_export_configurations.view',
+                parent: 'integrations',
+            ),
+            new MenuEntry(
+                code: 'integration-export-jobs',
+                labelKey: 'nav.exportHistory',
+                icon: 'History',
+                section: MenuSection::INTEGRATIONS,
+                position: 75,
+                route: '/integrations/export-jobs',
+                permission: 'export_jobs.view',
+                parent: 'integrations',
+            ),
+
             // L'administration ne se masque pas : un organisme qui la
             // retirerait n'aurait plus d'écran pour revenir en arrière.
             new MenuEntry(

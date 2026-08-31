@@ -12,6 +12,7 @@ import { CustomerSitesTab } from '@/modules/customerSites/components/CustomerSit
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { CustomerPricingTab } from '@/modules/pricing/components/CustomerPricingTab'
+import { CustomerIntegrationsTab } from '@/modules/integrations/components/CustomerIntegrationsTab'
 import { CustomerStockTab } from '@/modules/stock/components/CustomerStockTab'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
@@ -30,6 +31,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
  * transporteur. Le stock est physiquement celui du transporteur, mais reste
  * séparé métier par client, et deux routes dédiées le servent — c'est ici que
  * la séparation se voit.
+ *
+ * L'onglet « Intégrations » rassemble les quatre volets du modèle : imports,
+ * accès API, exports et historique des envois. Les configurations d'export de
+ * facture posées en Phase 6 y figurent — ce sont les mêmes, et le §34 interdit
+ * une seconde table.
  *
  * Les onglets restants — commandes, réclamations — sont réservés aux phases
  * suivantes : les afficher vides annoncerait des fonctionnalités absentes.
@@ -57,6 +63,7 @@ export function CustomerDetailPage() {
           <TabsTrigger value="catalogs">{t('customers.tabs.catalogs')}</TabsTrigger>
           <TabsTrigger value="pricing">{t('customers.tabs.pricing')}</TabsTrigger>
           <TabsTrigger value="stock">{t('customers.tabs.stock')}</TabsTrigger>
+          <TabsTrigger value="integrations">{t('customers.tabs.integrations')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('customers.tabs.configuration')}</TabsTrigger>
         </TabsList>
 
@@ -92,6 +99,10 @@ export function CustomerDetailPage() {
 
         <TabsContent value="stock" className="mt-6">
           <CustomerStockTab customerId={customer.id} />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-6">
+          <CustomerIntegrationsTab customerId={customer.id} />
         </TabsContent>
 
         <TabsContent value="configuration" className="mt-6">

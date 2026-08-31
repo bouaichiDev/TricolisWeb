@@ -12,6 +12,7 @@ import { CustomerSitesTab } from '@/modules/customerSites/components/CustomerSit
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { CustomerPricingTab } from '@/modules/pricing/components/CustomerPricingTab'
+import { CustomerStockTab } from '@/modules/stock/components/CustomerStockTab'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
 /**
@@ -25,9 +26,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
  * s'appliquent à défaut : le §169S veut que le repli sur le barème global se
  * lise, plutôt qu'une liste vide laisse croire à l'absence de tarif.
  *
- * Les onglets restants — commandes, stock, réclamations — sont réservés aux
- * phases suivantes : les afficher vides annoncerait des fonctionnalités
- * absentes.
+ * L'onglet « Stock » montre la marchandise du client entreposée chez le
+ * transporteur. Le stock est physiquement celui du transporteur, mais reste
+ * séparé métier par client, et deux routes dédiées le servent — c'est ici que
+ * la séparation se voit.
+ *
+ * Les onglets restants — commandes, réclamations — sont réservés aux phases
+ * suivantes : les afficher vides annoncerait des fonctionnalités absentes.
  */
 export function CustomerDetailPage() {
   const { t } = useTranslation()
@@ -51,6 +56,7 @@ export function CustomerDetailPage() {
           <TabsTrigger value="documents">{t('customers.tabs.documents')}</TabsTrigger>
           <TabsTrigger value="catalogs">{t('customers.tabs.catalogs')}</TabsTrigger>
           <TabsTrigger value="pricing">{t('customers.tabs.pricing')}</TabsTrigger>
+          <TabsTrigger value="stock">{t('customers.tabs.stock')}</TabsTrigger>
           <TabsTrigger value="configuration">{t('customers.tabs.configuration')}</TabsTrigger>
         </TabsList>
 
@@ -82,6 +88,10 @@ export function CustomerDetailPage() {
 
         <TabsContent value="pricing" className="mt-6">
           <CustomerPricingTab customerId={customer.id} />
+        </TabsContent>
+
+        <TabsContent value="stock" className="mt-6">
+          <CustomerStockTab customerId={customer.id} />
         </TabsContent>
 
         <TabsContent value="configuration" className="mt-6">

@@ -15,7 +15,7 @@ import {
 } from '@/shared/components/ui/dialog'
 import { ApiError } from '@/shared/api/errors'
 
-import { useCreateStockMovement } from '../hooks/useStock'
+import { useCreateStockMovement } from '../hooks/useStockMovements'
 import { useStockLocationOptions } from '../hooks/useStockScope'
 import type { MovementDirection } from '../types/stock'
 

@@ -1,4 +1,4 @@
-import { ArrowRightLeft, History, Pencil, Trash2 } from 'lucide-react'
+import { ArrowRightLeft, Boxes, History, Pencil, Trash2 } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
 import type { Column } from '@/shared/components/data/DataTable'
@@ -12,6 +12,8 @@ import { RowActions } from './RowActions'
 interface Handlers {
   editable: boolean
   onHistory: (line: OrderLine) => void
+  /** Ouvre le tiroir des réservations de stock de la ligne. */
+  onStock: (line: OrderLine) => void
   onStatus: (line: OrderLine) => void
   onEdit: (line: OrderLine) => void
   onDelete: (line: OrderLine) => void
@@ -32,7 +34,7 @@ const right = (value: string, muted = false) => (
  */
 export function lineColumns(
   t: TFunction,
-  { editable, onHistory, onStatus, onEdit, onDelete }: Handlers,
+  { editable, onHistory, onStock, onStatus, onEdit, onDelete }: Handlers,
 ): Column<OrderLine>[] {
   return [
     {
@@ -91,6 +93,15 @@ export function lineColumns(
               label: t('orders.entityHistory.title'),
               icon: History,
               onSelect: () => onHistory(row),
+            },
+            // Le stock reste consultable sur une commande figée : ce qui est
+            // réservé ne dépend pas de la modifiabilité du contenu.
+            {
+              key: 'stock',
+              label: t('stock.lineStock'),
+              icon: Boxes,
+              permission: 'stock_reservations.view',
+              onSelect: () => onStock(row),
             },
             // Statut, modification et suppression disparaissent avec le contenu
             // figé : le serveur les refuserait.

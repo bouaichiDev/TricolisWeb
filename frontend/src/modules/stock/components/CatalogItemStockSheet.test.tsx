@@ -8,6 +8,7 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
 import { CatalogItemStockSheet } from './CatalogItemStockSheet'
+import { serveStatuses } from '../testSupport'
 
 const CUSTOMER_ID = '01JQZ000000000000000CUST'
 const CATALOG_ITEM_ID = '01JQZ00000000000000ITEM1'
@@ -89,8 +90,15 @@ describe('stock d’un article de catalogue', () => {
     expect(screen.getByRole('button', { name: 'Suivre en stock' })).toBeInTheDocument()
   })
 
+  /**
+   * Le statut initial vient du référentiel, pas d'une constante : « Suivre en
+   * stock » est un clic sans formulaire, et c'est le premier statut de
+   * `stock_item` — les codes reviennent ordonnés par `position` — qui est
+   * retenu.
+   */
   it('crée la référence physique liée à l’article de catalogue', async () => {
     serveLocations()
+    serveStatuses()
 
     let body: unknown = null
     server.use(
@@ -109,6 +117,7 @@ describe('stock d’un article de catalogue', () => {
       customerId: CUSTOMER_ID,
       catalogItemId: CATALOG_ITEM_ID,
       articleCode: 'ART-1',
+      status: 'active',
     })
   })
 

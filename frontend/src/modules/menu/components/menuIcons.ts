@@ -1,4 +1,5 @@
 import {
+  ArrowRightLeft,
   Boxes,
   Building2,
   Calculator,
@@ -40,6 +41,7 @@ import {
  * ne l'est pas.
  */
 const ICONS: Record<string, LucideIcon> = {
+  ArrowRightLeft,
   LayoutDashboard,
   Building2,
   Boxes,

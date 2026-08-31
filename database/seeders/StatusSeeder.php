@@ -108,6 +108,32 @@ class StatusSeeder extends Seeder
             'sent' => 'Envoyé',
             'failed' => 'Échoué',
         ],
+        // Stock. Les trois colonnes `status` du module sont des chaînes libres,
+        // et le référentiel les ignorait — l'interface écrivait donc `active` en
+        // dur. Les codes repris ici sont ceux que le projet emploie déjà :
+        // fabriques et suite de tests, rien d'autre. `stock_balances` et
+        // `stock_movements` n'ont pas de colonne `status` et n'en reçoivent pas.
+        MorphMap::STOCK_ITEM => [
+            'active' => 'Actif',
+            // Une référence qu'on ne réapprovisionne plus, mais dont l'histoire
+            // et les soldes restent consultables.
+            'archived' => 'Archivé',
+        ],
+        MorphMap::STOCK_LOCATION => [
+            'active' => 'Actif',
+            'inactive' => 'Inactif',
+            // Un emplacement qui existe mais où l'on ne range plus : avarie,
+            // travaux, quarantaine.
+            'blocked' => 'Bloqué',
+        ],
+        // `released` est écrit par `ReleaseStockReservationAction` en même temps
+        // que `released_at` : il ne se choisit pas dans un formulaire de
+        // création, mais il doit figurer au référentiel pour s'afficher.
+        MorphMap::STOCK_RESERVATION => [
+            'active' => 'Active',
+            'confirmed' => 'Confirmée',
+            'released' => 'Libérée',
+        ],
     ];
 
     public function run(): void

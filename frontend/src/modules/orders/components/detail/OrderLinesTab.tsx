@@ -7,6 +7,8 @@ import { DataTable } from '@/shared/components/data/DataTable'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { Button } from '@/shared/components/ui/button'
 
+import { OrderLineStockSheet } from '@/modules/stock/components/OrderLineStockSheet'
+
 import { useDeleteOrderLine, useUpdateOrderLine } from '../../hooks/useOrderContent'
 import type { OrderLine } from '../../types/orderDetail'
 import { ChangeEntityStatusDialog } from './ChangeEntityStatusDialog'
@@ -28,7 +30,8 @@ interface OrderLinesTabProps {
  * Les trois quantités suivies — réservée, préparée, livrée — sont en retrait :
  * elles viennent des modules Stock et Exploitation et ne se saisissent pas ici.
  * La note en pied de tableau le dit plutôt que de laisser deviner pourquoi
- * elles restent à zéro.
+ * elles restent à zéro. L'action « Stock » d'une ligne ouvre le détail de ce
+ * qui a été réservé pour elle, et d'où.
  */
 export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) {
   const { t } = useTranslation()
@@ -37,6 +40,7 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
   const [deleting, setDeleting] = useState<OrderLine | null>(null)
   const [history, setHistory] = useState<OrderLine | null>(null)
   const [changingStatus, setChangingStatus] = useState<OrderLine | null>(null)
+  const [stockLine, setStockLine] = useState<OrderLine | null>(null)
   const remove = useDeleteOrderLine(orderId)
   // Le statut d'une ligne est une chaine libre : il passe par la modification
   // ordinaire, sans route ni permission dediee — contrairement au service.
@@ -45,6 +49,7 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
   const columns = lineColumns(t, {
     editable,
     onHistory: setHistory,
+    onStock: setStockLine,
     onStatus: setChangingStatus,
     onEdit: setEditing,
     onDelete: setDeleting,
@@ -109,6 +114,11 @@ export function OrderLinesTab({ orderId, lines, editable }: OrderLinesTabProps) 
         subtitle={history?.articleCode ?? undefined}
         currentStatus={history?.status}
         onClose={() => setHistory(null)}
+      />
+
+      <OrderLineStockSheet
+        line={stockLine}
+        onOpenChange={(open) => !open && setStockLine(null)}
       />
 
       <ConfirmDialog

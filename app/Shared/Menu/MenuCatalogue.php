@@ -206,24 +206,68 @@ final class MenuCatalogue
                 parent: 'operations',
             ),
 
-            // Stock client chez le transporteur. Une seule entrée : les soldes
-            // et les mouvements d'un article se consultent depuis son article
-            // de catalogue, où la question se pose.
+            // Stock client chez le transporteur — Phase 7. Le stock est
+            // physiquement celui du transporteur mais reste separe par client :
+            // les cinq entrees suivent les cinq entites du modele, et rien
+            // d'autre. Ni receptions, ni inventaires, ni ajustements, ni zones,
+            // ni entrepots, ni lots : ces tables n'existent pas.
             new MenuEntry(
                 code: 'stock',
                 labelKey: 'nav.stock',
-                icon: 'Boxes',
+                icon: 'Warehouse',
                 section: MenuSection::STOCK,
                 position: 40,
+            ),
+            // La vue d'ensemble lit les soldes : c'est bien `stock_balances.view`
+            // qu'elle demande, pas une permission propre au tableau de bord.
+            new MenuEntry(
+                code: 'stock-overview',
+                labelKey: 'nav.stockOverview',
+                icon: 'LayoutDashboard',
+                section: MenuSection::STOCK,
+                position: 41,
+                route: '/stock',
+                permission: 'stock_balances.view',
+                parent: 'stock',
+            ),
+            new MenuEntry(
+                code: 'stock-items',
+                labelKey: 'nav.stockItems',
+                icon: 'Boxes',
+                section: MenuSection::STOCK,
+                position: 42,
+                route: '/stock/items',
+                permission: 'stock_items.view',
+                parent: 'stock',
             ),
             new MenuEntry(
                 code: 'stock-locations',
                 labelKey: 'nav.stockLocations',
                 icon: 'Warehouse',
                 section: MenuSection::STOCK,
-                position: 41,
-                route: '/stock-locations',
+                position: 43,
+                route: '/stock/locations',
                 permission: 'stock_locations.view',
+                parent: 'stock',
+            ),
+            new MenuEntry(
+                code: 'stock-movements',
+                labelKey: 'nav.stockMovements',
+                icon: 'ArrowRightLeft',
+                section: MenuSection::STOCK,
+                position: 44,
+                route: '/stock/movements',
+                permission: 'stock_movements.view',
+                parent: 'stock',
+            ),
+            new MenuEntry(
+                code: 'stock-reservations',
+                labelKey: 'nav.stockReservations',
+                icon: 'ClipboardList',
+                section: MenuSection::STOCK,
+                position: 45,
+                route: '/stock/reservations',
+                permission: 'stock_reservations.view',
                 parent: 'stock',
             ),
 

@@ -66,6 +66,19 @@ export function NavGroup({
             <NavLink
               key={child.code}
               to={child.route ?? '/'}
+              // `NavLink` marque une entrée active sur ses descendants : c'est
+              // ce qu'on veut pour « Clients », actif sur la fiche d'un client.
+              // Mais quand une entrée voisine prolonge sa route — « Vue stock »
+              // sur `/stock`, « Articles » sur `/stock/items` — les deux
+              // s'allument ensemble. La correspondance devient alors exacte,
+              // pour celle-là seulement.
+              end={node.children.some(
+                (sibling) =>
+                  sibling.code !== child.code &&
+                  child.route !== null &&
+                  sibling.route !== null &&
+                  sibling.route.startsWith(`${child.route}/`),
+              )}
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(

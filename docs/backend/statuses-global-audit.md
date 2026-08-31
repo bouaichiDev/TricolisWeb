@@ -54,9 +54,9 @@ textuel reste la valeur métier persistée.
 | `organization_user` | `organization_users` | `varchar(20)` | `active` | non | À sa phase |
 | `provider_settlement` | `provider_settlements` | `varchar(32)` | `draft`, `closed` | oui | **Phase 6** |
 | `role` | `roles` | `varchar(20)` | `active` | non | À sa phase |
-| `stock_item` | `stock_items` | `varchar(32)` | `active` | non | À sa phase |
-| `stock_location` | `stock_locations` | `varchar(32)` | `active` | non | À sa phase |
-| `stock_reservation` | `stock_reservations` | `varchar(32)` | — | non | À sa phase |
+| `stock_item` | `stock_items` | `varchar(32)` | `active`, `archived` | oui | **Phase 7** |
+| `stock_location` | `stock_locations` | `varchar(32)` | `active`, `inactive`, `blocked` | oui | **Phase 7** |
+| `stock_reservation` | `stock_reservations` | `varchar(32)` | `active`, `confirmed`, `released` | oui | **Phase 7** |
 | `tour_period` | `tour_periods` | `varchar(32)` | — | non | À sa phase |
 | `tour_stop_service` | `tour_stop_services` | `varchar(32)` | — | non | À sa phase |
 | `tracking_event` | `tracking_events` | `varchar(32)` | `planned` | non | À sa phase |
@@ -75,9 +75,10 @@ travail restant sans imposer un refus prématuré.
 
 ## Valeurs orphelines au 26 août 2026
 
-`php artisan tricolis:check-statuses` en relève **15**, toutes hors du
-périmètre de cette phase — `provider`, `driver`, `vehicle`, `type` et
-`type_item` sont désormais couverts.
+`php artisan tricolis:check-statuses` en relevait **15**, toutes hors du
+périmètre de la phase 6 — `provider`, `driver`, `vehicle`, `type` et
+`type_item` étaient déjà couverts. La phase 7 en retire deux de plus :
+`stock_item` et `stock_location` (voir plus bas).
 
 | Source | Table | Code | Lignes |
 |---|---|---|---|
@@ -93,8 +94,6 @@ périmètre de cette phase — `provider`, `driver`, `vehicle`, `type` et
 | `organization_user` | `organization_users` | `active` | 3 |
 | `role` | `roles` | `active` | 5 |
 | `service` | `services` | `active` | 3 |
-| `stock_item` | `stock_items` | `active` | 1 |
-| `stock_location` | `stock_locations` | `active` | 2 |
 | `tracking_event` | `tracking_events` | `planned` | 1 |
 
 Le cas de `service` mérite attention : la source **a** des entrées au
@@ -166,3 +165,40 @@ Vérifié sur les quatre tables de cette phase : `invoices`, `invoice_lines`,
 référentiel décrit les codes, il ne les héberge pas : une facture reste lisible
 si le référentiel change, et le §170 l'interdit explicitement.
 
+
+
+## Ce que la phase 7 a ajouté — 31 août 2026
+
+Trois sources entrent au référentiel : `stock_item`, `stock_location` et
+`stock_reservation`. Elles étaient déclarées dans `MorphMap` depuis la phase 7
+backend, mais `StatusSeeder` les ignorait — le frontend écrivait donc `active`
+en dur dans ses formulaires, et aucun statut ajouté par un administrateur
+n'aurait été proposé.
+
+| Source | Codes semés | Origine du code |
+|---|---|---|
+| `stock_item` | `active`, `archived` | fabrique (`active`) et `StockItemTest` (`archived`) |
+| `stock_location` | `active`, `inactive`, `blocked` | fabrique (`active`), `StockLocationTest` (`blocked`), `inactive` par symétrie avec les autres référentiels |
+| `stock_reservation` | `active`, `confirmed`, `released` | fabrique (`active`, `released`) et `StockReservationTest` (`confirmed`) |
+
+**Aucun code n'est inventé** : chacun est déjà écrit en base par le projet, à
+l'exception d'`inactive` pour les emplacements, qui est le pendant employé par
+toutes les autres ressources du référentiel.
+
+### Deux tables sans statut, et c'est voulu
+
+`stock_balances` et `stock_movements` **n'ont pas de colonne `status`**, et n'en
+reçoivent pas. Un solde est un état calculé, un mouvement est un fait daté :
+ni l'un ni l'autre n'a de cycle de vie. Le §32 l'interdit explicitement.
+
+### Aucun `status_id`
+
+Vérifié sur les trois tables de cette phase : `stock_items`, `stock_locations`
+et `stock_reservations` portent chacune une colonne `status` en `varchar(32)`,
+et **aucune** ne porte de clé étrangère vers `statuses`.
+
+### `released` n'est pas un statut de formulaire
+
+`ReleaseStockReservationAction` écrit `status` et `released_at` dans la même
+transaction. Le code figure au référentiel pour être **affiché**, mais aucun
+formulaire de création ne le propose : une réservation ne naît pas libérée.

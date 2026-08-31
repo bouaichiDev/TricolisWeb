@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import { PackageStockLocation } from '@/modules/stock/components/PackageStockLocation'
 import { DetailField } from '@/shared/components/layout/DetailField'
 
 import type { OrderPackage } from '../../types/orderDetail'
@@ -16,10 +17,10 @@ interface OrderPackageFieldsProps {
 /**
  * Tous les champs d'un colis, tels que le diagramme les déclare.
  *
- * `currentStockLocationId` en fait partie : la colonne existe depuis la
- * création de la table. L'emplacement lui-même relève du module Stock, phase
- * ultérieure — seul l'identifiant est connu ici, et il reste vide tant que rien
- * ne l'a renseigné.
+ * `currentStockLocationId` en fait partie : la ressource n'en expose que
+ * l'identifiant, que personne ne reconnaît. `PackageStockLocation` le résout en
+ * code d'emplacement — en lecture seule : déplacer un colis demanderait une
+ * règle métier que le backend ne définit pas.
  */
 export function OrderPackageFields({ pkg, parentLabel }: OrderPackageFieldsProps) {
   const { t } = useTranslation()
@@ -46,7 +47,7 @@ export function OrderPackageFields({ pkg, parentLabel }: OrderPackageFieldsProps
       </DetailField>
 
       <DetailField label={t('orders.fields.stockLocation')}>
-        {pkg.currentStockLocationId}
+        <PackageStockLocation stockLocationId={pkg.currentStockLocationId} />
       </DetailField>
       <div className="sm:col-span-2 lg:col-span-3">
         <DetailField label={t('orders.fields.description')}>{pkg.description}</DetailField>

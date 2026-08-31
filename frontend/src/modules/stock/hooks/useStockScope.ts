@@ -1,6 +1,7 @@
 import type { AsyncOption } from '@/shared/components/form/AsyncSelect'
 
-import { useStockLocations } from './useStock'
+import { useStockItems } from './useStockItems'
+import { useStockLocations } from './useStockLocations'
 import type { StockLocation } from '../types/stock'
 
 /**
@@ -62,5 +63,74 @@ export function useStockLocationOptions(search = '', depotId?: string) {
     isTruncated: total > rows.length,
     total,
     byId: new Map(rows.map((location) => [location.id, location])),
+  }
+}
+
+/**
+ * Emplacements proposables comme **parent**, pour une hiérarchie.
+ *
+ * Deux filtres, pour deux raisons différentes. Le dépôt, parce que
+ * `ValidateStockLocationHierarchy` refuse un parent d'un autre dépôt — le
+ * proposer ne produirait qu'un 422. L'emplacement lui-même, parce qu'il ne peut
+ * pas être son propre parent.
+ *
+ * Les cycles plus longs — A sous B sous A — ne sont **pas** filtrés ici : les
+ * détecter demanderait de descendre tout l'arbre à chaque frappe. Le serveur
+ * les refuse, et c'est lui qui fait autorité.
+ */
+export function useParentLocationOptions(depotId: string, excludeId?: string) {
+  const query = useStockLocations(
+    { page: 1, perPage: MAX_PER_PAGE, depotId, status: 'active' },
+    depotId !== '',
+  )
+
+  const rows = (query.data?.data ?? []).filter((location) => location.id !== excludeId)
+  const total = query.data?.meta.total ?? rows.length
+
+  return {
+    isLoading: depotId !== '' && query.isPending,
+    options: rows.map(
+      (location): AsyncOption => ({
+        value: location.id,
+        label: locationLabel(location),
+        hint: location.barcode ?? undefined,
+      }),
+    ),
+    isTruncated: total > rows.length,
+  }
+}
+
+/**
+ * Articles de stock d'un client.
+ *
+ * Le client est **obligatoire** : réserver l'article d'un client pour la
+ * commande d'un autre est refusé par le serveur, et proposer un tel article
+ * n'aurait servi qu'à produire l'erreur.
+ */
+export function useStockItemOptions(customerId: string, search = '') {
+  const query = useStockItems(
+    {
+      page: 1,
+      perPage: MAX_PER_PAGE,
+      customerId,
+      search: search.trim() === '' ? undefined : search.trim(),
+    },
+    customerId !== '',
+  )
+
+  const rows = query.data?.data ?? []
+  const total = query.data?.meta.total ?? rows.length
+
+  return {
+    isLoading: customerId !== '' && query.isPending,
+    options: rows.map(
+      (item): AsyncOption => ({
+        value: item.id,
+        label: item.articleCode,
+        hint: item.description ?? item.barcode ?? undefined,
+      }),
+    ),
+    isTruncated: total > rows.length,
+    byId: new Map(rows.map((item) => [item.id, item])),
   }
 }

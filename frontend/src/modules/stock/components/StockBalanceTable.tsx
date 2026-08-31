@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
 
-import { useStockBalances } from '../hooks/useStock'
+import { useStockBalances } from '../hooks/useStockBalances'
 import { useStockLocationOptions } from '../hooks/useStockScope'
 import type { StockBalance } from '../types/stock'
 

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
 import { formatDateTime } from '@/shared/utils/format'
 
-import { useStockMovements } from '../hooks/useStock'
+import { useStockMovements } from '../hooks/useStockMovements'
 import { useStockLocationOptions } from '../hooks/useStockScope'
 import { movementDirection, type StockMovement } from '../types/stock'
 

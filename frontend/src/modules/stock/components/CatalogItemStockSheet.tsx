@@ -16,7 +16,10 @@ import {
 import { StockBalanceTable } from './StockBalanceTable'
 import { StockMovementDialog } from './StockMovementDialog'
 import { StockMovementTable } from './StockMovementTable'
-import { useCreateStockItem, useStockItemOfCatalogItem } from '../hooks/useStock'
+import { useStatusOptions } from '@/modules/statuses/hooks/useStatuses'
+
+import { useCreateStockItem, useStockItemOfCatalogItem } from '../hooks/useStockItems'
+import { STOCK_ITEM_SOURCE } from '../utils/stockSources'
 
 interface CatalogItemStockSheetProps {
   customerId: string
@@ -51,6 +54,14 @@ export function CatalogItemStockSheet({
   const { item: stockItem, isPending } = useStockItemOfCatalogItem(item?.id ?? '', open)
   const create = useCreateStockItem(customerId)
 
+  // Mettre un article sous suivi est un clic, pas un formulaire : il n'y a donc
+  // pas de champ de statut. Le premier du référentiel est retenu — les statuts
+  // reviennent ordonnés par `position`, et c'est précisément ce que cet ordre
+  // signifie : l'état initial d'abord. `active` ne sert que de repli tant que
+  // le référentiel n'a pas répondu.
+  const statuses = useStatusOptions(STOCK_ITEM_SOURCE)
+  const initialStatus = statuses.options[0]?.value ?? 'active'
+
   const track = () => {
     if (item === null) return
 
@@ -60,7 +71,7 @@ export function CatalogItemStockSheet({
       articleCode: item.articleCode,
       barcode: item.barcode,
       description: item.name,
-      status: 'active',
+      status: initialStatus,
     })
   }
 

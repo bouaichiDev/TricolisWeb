@@ -85,6 +85,35 @@ export const organizationNavigation: NavEntry[] = [
       { labelKey: 'nav.tours', to: '/tours', permission: 'tours.view' },
     ],
   },
+  // Le groupe porte une route, contrairement aux autres : `Breadcrumbs` nomme
+  // le premier segment de l'URL, et `/stock/items` doit se lire « Stock », pas
+  // « Vue stock ». La barre latérale, elle, vient du serveur — ce fichier n'y
+  // sert plus qu'à ces libellés.
+  {
+    labelKey: 'nav.stock',
+    icon: Warehouse,
+    to: '/stock',
+    permission: 'stock_balances.view',
+    children: [
+      { labelKey: 'nav.stockOverview', to: '/stock', permission: 'stock_balances.view' },
+      { labelKey: 'nav.stockItems', to: '/stock/items', permission: 'stock_items.view' },
+      {
+        labelKey: 'nav.stockLocations',
+        to: '/stock/locations',
+        permission: 'stock_locations.view',
+      },
+      {
+        labelKey: 'nav.stockMovements',
+        to: '/stock/movements',
+        permission: 'stock_movements.view',
+      },
+      {
+        labelKey: 'nav.stockReservations',
+        to: '/stock/reservations',
+        permission: 'stock_reservations.view',
+      },
+    ],
+  },
   {
     labelKey: 'nav.billing',
     icon: ReceiptText,
@@ -176,4 +205,5 @@ export const sectionIcons: Record<string, LucideIcon> = {
   '/organizations': Building2,
   '/my-organization': Building2,
   '/audit': ClipboardList,
+  '/stock': Warehouse,
 }

@@ -517,21 +517,42 @@ ni historique d'import.
 
 ## 35. Risques
 
-1. **Le téléchargement manque à l'exploitation.** Un envoi échoué se relance,
+1. **Un accès API client ne sert à rien tant qu'aucun point d'entrée ne le
+   lit.** C'est le risque le plus important de cette phase, et il était déjà
+   consigné dans le rapport backend (risques 2 et 3) : **aucun middleware,
+   aucun guard, aucune route n'authentifie par clé client**. Le seul alias
+   déclaré dans `bootstrap/app.php` est `organization`, et tout `/api/v1/*` est
+   derrière `auth:sanctum`.
+
+   Conséquences concrètes : une clé remise à un client est refusée en 401 ;
+   `allowedIps` et `permissions` sont enregistrés mais **jamais appliqués** ;
+   `lastUsedAt` restera « Jamais utilisée » indéfiniment — la seule écriture de
+   ce champ dans le projet concerne les API *sortantes*
+   (`VehiclePositionProvider`).
+
+   Ce que la phase livre est donc un **registre** : émettre, faire tourner et
+   révoquer des accès, ce qui fonctionne réellement — la rotation change bien
+   `api_key_hash` en base. Le poste de garde qui s'en servirait reste à
+   construire, et c'est du backend.
+
+   **Cette limite n'apparaissait pas dans l'analyse préalable : c'est un manque
+   de cette analyse**, pas une découverte tardive du produit.
+
+2. **Le téléchargement manque à l'exploitation.** Un envoi échoué se relance,
    mais son fichier ne se récupère pas. Une route serveur lèverait la limite ;
    elle n'existe pas.
-2. **`sourceType`, `fileFormat`, `exportType` et `frequency` en saisie libre**
+3. **`sourceType`, `fileFormat`, `exportType` et `frequency` en saisie libre**
    produiront des variantes orthographiques. Le modèle ne permet pas mieux
    aujourd'hui.
-3. **La génération manuelle demande un identifiant de facture à la main.** Il
+4. **La génération manuelle demande un identifiant de facture à la main.** Il
    n'existe pas de sélecteur : le lier demanderait de charger les factures
    clôturées du client, ce que la route `export-jobs` ne suggère pas. Une facture
    non clôturée est refusée à l'exécution, donc en file — le refus se lit sur
    l'envoi, pas à la saisie.
-4. **Deux notions d'« API » cohabitent dans le même module.** Le préfixe
+5. **Deux notions d'« API » cohabitent dans le même module.** Le préfixe
    `customer-` les sépare, et les commentaires le disent, mais la vigilance
    reste nécessaire.
-5. **Aucun E2E.** Voir §31.
+6. **Aucun E2E.** Voir §31.
 
 ## 36. Phase suivante
 

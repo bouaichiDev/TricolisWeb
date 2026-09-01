@@ -266,6 +266,16 @@ Le contexte est filtré sur ce que le modèle déclare avant le rendu : le moteu
 refuse une valeur non déclarée, et lui passer les quinze ferait échouer tout
 modèle n'en nommant qu'une partie — c'est-à-dire tous.
 
+**`orderNumber` et `order_number` désignent la même chose.** Le projet écrit les
+deux : la fabrique de modèles emploie `order_number`, l'aide de l'écran montre
+`{{orderNumber}}`. Trancher aurait cassé les modèles déjà écrits dans l'autre
+graphie, sans que leur auteur comprenne pourquoi — le rendu échouait à l'envoi,
+avec « aucune valeur n'a été fournie ». La correspondance ignore donc casse et
+tirets bas ; un nom absent du contexte reste refusé.
+
+L'écran des modèles propose désormais les quinze noms, comme il propose les
+chemins de facture : les deviner était la cause du problème.
+
 ### Idempotence, sans nouvelle colonne
 
 Le §53 interdit d'inventer un `eventId`. La clé retenue est le couple déjà

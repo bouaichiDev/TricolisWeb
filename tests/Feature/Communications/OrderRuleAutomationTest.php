@@ -205,6 +205,25 @@ it('ne produit pas deux fois le même message pour une même règle', function (
 });
 
 /**
+ * Le projet écrit les deux graphies : la fabrique emploie `order_number`, l'aide
+ * de l'écran montre `{{orderNumber}}`. Trancher aurait cassé les modèles déjà
+ * écrits dans l'autre, sans que leur auteur comprenne pourquoi.
+ */
+it('résout une variable quelle que soit sa graphie', function (): void {
+    ($this->rule)(($this->template)([
+        'body_template' => 'Commande {{ orderNumber }} pour {{ customerName }}.',
+        'available_variables' => ['orderNumber', 'customerName'],
+    ]));
+    $order = ($this->order)();
+
+    ($this->cancel)($order);
+
+    $communication = OrderCommunication::where('order_id', $order->id)->firstOrFail();
+
+    expect($communication->body)->toStartWith("Commande {$order->order_number} pour ");
+});
+
+/**
  * Un modèle qui ne se rend pas ne doit pas empêcher d'annuler la commande.
  *
  * L'inverse rendrait une opération métier tributaire d'un texte : personne ne

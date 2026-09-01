@@ -15,6 +15,7 @@ import {
   INVOICE_STARTER_BODY,
   INVOICE_STARTER_VARIABLES,
 } from '../utils/invoiceVariables'
+import { ORDER_VARIABLES } from '../utils/orderVariables'
 
 interface TemplateFormProps {
   values: TemplateFormValues
@@ -33,10 +34,14 @@ interface TemplateFormProps {
  * **Le sujet suit le canal** : le serveur ne l'exige que pour l'e-mail, et un
  * SMS n'en a pas.
  *
- * `availableVariables` déclare ce que le modèle sait recevoir. Pour un message,
- * la liste est libre — aucun contexte canonique n'existe. Pour une facture,
- * elle est proposée depuis le contexte réel du serveur : déclarer un chemin
- * qu'il ne fournit pas ferait échouer le rendu à la clôture.
+ * `availableVariables` déclare ce que le modèle sait recevoir. Les deux listes
+ * proposées viennent du **contexte réel du serveur** — celui d'une commande
+ * pour un message, celui d'une facture pour un document. Déclarer un nom qu'il
+ * ne fournit pas fait échouer le rendu au moment de l'envoi, quand il est trop
+ * tard pour le corriger.
+ *
+ * La saisie reste libre : un message composé à la main peut porter ses propres
+ * variables, fournies à l'envoi.
  */
 export function TemplateForm({ values, onChange, codeEditable }: TemplateFormProps) {
   const { t } = useTranslation()
@@ -163,7 +168,7 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
       <TemplateVariablePicker
         variables={values.availableVariables}
         onChange={(availableVariables) => onChange({ availableVariables })}
-        suggestions={document ? INVOICE_PATHS : []}
+        suggestions={document ? INVOICE_PATHS : [...ORDER_VARIABLES]}
       />
 
       <div className="flex flex-wrap gap-6 border-t pt-4">

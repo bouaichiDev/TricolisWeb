@@ -56,13 +56,20 @@ final readonly class OrderCommunicationContext
     }
 
     /**
-     * Les seules valeurs que ce template déclare savoir recevoir.
+     * Les seules valeurs que ce modèle déclare savoir recevoir.
      *
      * Le moteur refuse une valeur non déclarée : lui passer le contexte entier
-     * ferait échouer tout template n'en nommant qu'une partie — c'est-à-dire
+     * ferait échouer tout modèle n'en nommant qu'une partie — c'est-à-dire
      * tous. L'inverse — une variable déclarée que le contexte ne fournit pas —
-     * échoue, et c'est juste : le template demande ce que le système ne sait
-     * pas dire.
+     * échoue, et c'est juste : le modèle demande ce que le système ne sait pas
+     * dire.
+     *
+     * **`orderNumber` et `order_number` désignent la même chose.** Le projet
+     * écrit les deux : la fabrique de modèles emploie `order_number`, l'aide de
+     * l'écran montre `{{orderNumber}}`. Trancher aurait cassé les modèles déjà
+     * écrits dans l'autre graphie, sans que leur auteur comprenne pourquoi. La
+     * correspondance ignore donc casse et tirets bas — ce qui ne relâche rien :
+     * un nom absent du contexte reste refusé.
      *
      * @param  array<string, scalar|null>  $context
      * @param  list<string>  $declared
@@ -70,6 +77,28 @@ final readonly class OrderCommunicationContext
      */
     public function forTemplate(array $context, array $declared): array
     {
-        return array_intersect_key($context, array_flip($declared));
+        $byCanonical = [];
+
+        foreach ($context as $name => $value) {
+            $byCanonical[self::canonical($name)] = $value;
+        }
+
+        $values = [];
+
+        foreach ($declared as $name) {
+            $key = self::canonical($name);
+
+            if (array_key_exists($key, $byCanonical)) {
+                $values[$name] = $byCanonical[$key];
+            }
+        }
+
+        return $values;
+    }
+
+    /** `orderNumber`, `order_number` et `OrderNumber` donnent `ordernumber`. */
+    private static function canonical(string $name): string
+    {
+        return str_replace('_', '', mb_strtolower($name));
     }
 }

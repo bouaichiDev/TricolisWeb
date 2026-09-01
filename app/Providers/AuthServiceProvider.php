@@ -15,7 +15,6 @@ use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Claims\Models\Claim;
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
@@ -48,6 +47,7 @@ use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
 use App\Modules\Stock\Models\StockMovement;
 use App\Modules\Stock\Models\StockReservation;
+use App\Modules\Templates\Models\Template;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -63,7 +63,6 @@ use App\Policies\AuditLogPolicy;
 use App\Policies\ClaimPolicy;
 use App\Policies\CommunicationAttachmentPolicy;
 use App\Policies\CommunicationRulePolicy;
-use App\Policies\CommunicationTemplatePolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\CustomerApiConfigurationPolicy;
 use App\Policies\CustomerCatalogPolicy;
@@ -99,6 +98,7 @@ use App\Policies\StockLocationPolicy;
 use App\Policies\StockMovementPolicy;
 use App\Policies\StockReservationPolicy;
 use App\Policies\SubscriptionPolicy;
+use App\Policies\TemplatePolicy;
 use App\Policies\TourPeriodAssignmentPolicy;
 use App\Policies\TourPeriodPolicy;
 use App\Policies\TourPolicy;
@@ -166,7 +166,7 @@ class AuthServiceProvider extends ServiceProvider
         CustomerApiConfiguration::class => CustomerApiConfigurationPolicy::class,
         CustomerExportConfiguration::class => CustomerExportConfigurationPolicy::class,
         ExportJob::class => ExportJobPolicy::class,
-        CommunicationTemplate::class => CommunicationTemplatePolicy::class,
+        Template::class => TemplatePolicy::class,
         CommunicationRule::class => CommunicationRulePolicy::class,
         OrderCommunication::class => OrderCommunicationPolicy::class,
         CommunicationAttachment::class => CommunicationAttachmentPolicy::class,

@@ -16,7 +16,6 @@ use App\Modules\Catalogs\Models\CustomerCatalogItem;
 use App\Modules\Claims\Models\Claim;
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\AddressContact;
 use App\Modules\Contacts\Models\Contact;
@@ -54,6 +53,7 @@ use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
 use App\Modules\Stock\Models\StockMovement;
 use App\Modules\Stock\Models\StockReservation;
+use App\Modules\Templates\Models\Template;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
@@ -181,7 +181,7 @@ final class MorphMap
 
     public const string EXPORT_JOB = 'export_job';
 
-    public const string COMMUNICATION_TEMPLATE = 'communication_template';
+    public const string TEMPLATE = 'template';
 
     public const string COMMUNICATION_RULE = 'communication_rule';
 
@@ -253,7 +253,7 @@ final class MorphMap
             self::CUSTOMER_API_CONFIGURATION => CustomerApiConfiguration::class,
             self::CUSTOMER_EXPORT_CONFIGURATION => CustomerExportConfiguration::class,
             self::EXPORT_JOB => ExportJob::class,
-            self::COMMUNICATION_TEMPLATE => CommunicationTemplate::class,
+            self::TEMPLATE => Template::class,
             self::COMMUNICATION_RULE => CommunicationRule::class,
             self::ORDER_COMMUNICATION => OrderCommunication::class,
             self::COMMUNICATION_ATTACHMENT => CommunicationAttachment::class,

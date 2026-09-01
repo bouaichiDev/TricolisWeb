@@ -2,7 +2,6 @@
 
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Identity\Models\Permission;
@@ -11,6 +10,7 @@ use App\Modules\Identity\Models\RolePermission;
 use App\Modules\Identity\Models\UserRole;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\Templates\Models\Template;
 
 beforeEach(function (): void {
     $this->seed();
@@ -22,7 +22,7 @@ beforeEach(function (): void {
     $this->powerless = $this->membership->user;
 
     $this->order = Order::factory()->forOrganization($this->organization)->create();
-    $this->template = CommunicationTemplate::factory()->forOrganization($this->organization)->create();
+    $this->template = Template::factory()->forOrganization($this->organization)->create();
     $this->rule = CommunicationRule::factory()->forTemplate($this->template)->create();
     $this->communication = OrderCommunication::factory()->forOrder($this->order)->failed()->create();
     $this->document = Document::factory()->forOrganization($this->organization)->create();
@@ -30,7 +30,7 @@ beforeEach(function (): void {
         ->forCommunication($this->communication)->forDocument($this->document)->create();
 
     $this->urls = [
-        '/api/v1/communication-templates',
+        '/api/v1/templates',
         '/api/v1/communication-rules',
         '/api/v1/order-communications',
     ];
@@ -61,7 +61,7 @@ describe('missing permissions', function (): void {
         // Les payloads sont complets : sans cela un 422 masquerait le 403 que
         // ce test cherche a prouver.
         $this->actingAs($this->powerless, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/communication-templates', [
+            ->postJson('/api/v1/templates', [
                 'code' => 'tpl-permission', 'name' => 'Modele', 'channel' => 'sms',
                 'templateType' => 'custom', 'bodyTemplate' => 'Texte.', 'language' => 'fr',
             ])->assertForbidden();
@@ -103,7 +103,7 @@ describe('missing permissions', function (): void {
 describe('granted permissions', function (): void {
     it('grants read access once the view permissions are attached', function (): void {
         ($this->grant)([
-            'communication_templates.view',
+            'templates.view',
             'communication_rules.view',
             'order_communications.view',
             'communication_attachments.view',

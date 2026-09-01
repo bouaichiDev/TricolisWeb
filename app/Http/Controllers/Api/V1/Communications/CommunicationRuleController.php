@@ -14,7 +14,7 @@ use App\Http\Resources\Api\V1\Communications\CommunicationRuleListResource;
 use App\Modules\Communications\Actions\ManageCommunicationRuleAction;
 use App\Modules\Communications\DTOs\CreateCommunicationRuleData;
 use App\Modules\Communications\DTOs\UpdateCommunicationRuleData;
-use App\Modules\Communications\Exceptions\CommunicationTemplateInUse;
+use App\Modules\Communications\Exceptions\CommunicationRuleInUse;
 use App\Modules\Communications\Models\CommunicationRule;
 use App\Modules\Communications\Queries\CommunicationListQuery;
 use App\Shared\Http\Responses\ApiResponse;
@@ -118,7 +118,7 @@ class CommunicationRuleController extends Controller
 
         try {
             $action->delete($communicationRule, $this->auditContext($request, $organizationId));
-        } catch (CommunicationTemplateInUse $exception) {
+        } catch (CommunicationRuleInUse $exception) {
             return ApiResponse::error($exception->getMessage(), 409);
         }
 

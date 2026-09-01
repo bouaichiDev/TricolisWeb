@@ -35,6 +35,7 @@ final readonly class CloseInvoiceAction
     public function __construct(
         private InvoiceClosure $closure,
         private InvoiceExportTrigger $trigger,
+        private RenderInvoiceAction $render,
         private WriteAuditLog $audit,
     ) {}
 
@@ -66,8 +67,21 @@ final readonly class CloseInvoiceAction
                 return $this->trigger->jobsFor($locked);
             }
 
-            $locked->forceFill(['status' => InvoiceClosure::CLOSED])->save();
-            $invoice->forceFill(['status' => InvoiceClosure::CLOSED]);
+            // Le document est fige ici, dans la transaction : c'est un calcul
+            // de chaine sur des donnees deja chargees, pas un appel reseau. Le
+            // renvoyer apres le commit laisserait une facture close sans
+            // document pendant le temps d'un incident.
+            $document = $this->render->renderFresh($locked);
+
+            $snapshot = [
+                'status' => InvoiceClosure::CLOSED,
+                'template_id' => $document->templateId,
+                'rendered_body' => $document->html,
+                'rendered_at' => now(),
+            ];
+
+            $locked->forceFill($snapshot)->save();
+            $invoice->forceFill($snapshot);
 
             $created = $this->trigger->queueFor($locked);
 
@@ -77,7 +91,13 @@ final readonly class CloseInvoiceAction
                 'invoice.closed',
                 $locked,
                 ['status' => 'draft'],
-                ['status' => InvoiceClosure::CLOSED, 'exportJobs' => count($created)],
+                [
+                    'status' => InvoiceClosure::CLOSED,
+                    'exportJobs' => count($created),
+                    // Le modele employe, pas le document : le §125 interdit de
+                    // recopier un corps entier dans le journal.
+                    'templateId' => $document->templateId,
+                ],
                 null,
                 $context->ipAddress,
             );

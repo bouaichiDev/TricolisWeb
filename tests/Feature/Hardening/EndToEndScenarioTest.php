@@ -4,7 +4,6 @@ use App\Modules\Addresses\Models\Address;
 use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
@@ -12,6 +11,7 @@ use App\Modules\Orders\Models\Service;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
+use App\Modules\Templates\Models\Template;
 
 /**
  * Scénarios transversaux — §31.
@@ -227,7 +227,7 @@ describe('scenario 4 : communication', function (): void {
         $orderId = $order->json('data.id');
         $orderNumber = $order->json('data.orderNumber');
 
-        $templateId = ($this->api)('POST', '/api/v1/communication-templates', [
+        $templateId = ($this->api)('POST', '/api/v1/templates', [
             'code' => 'pod-available-e2e', 'name' => 'POD disponible', 'channel' => 'email',
             'templateType' => 'pod_available', 'subjectTemplate' => 'POD {{ order_number }}',
             'bodyTemplate' => 'Bonjour, votre preuve {{ order_number }} est disponible.',
@@ -303,7 +303,7 @@ describe('isolation des scenarios', function (): void {
         $foreignItem = StockItem::factory()->create();
         $foreignLocation = StockLocation::factory()->create();
         $foreignConfiguration = CustomerExportConfiguration::factory()->create();
-        $foreignTemplate = CommunicationTemplate::factory()->create();
+        $foreignTemplate = Template::factory()->create();
 
         ($this->api)('POST', '/api/v1/orders', [
             'customerId' => $foreignCustomer->id, 'agencyId' => $this->agency->id,

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Communications\Services;
 
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\Service;
+use App\Modules\Templates\Models\Template;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -35,9 +35,9 @@ final readonly class CommunicationScopeGuard
         return $service ?? $this->fail('serviceId', 'Ce service n’appartient pas à l’organisation active.');
     }
 
-    public function template(string $templateId, string $organizationId): CommunicationTemplate
+    public function template(string $templateId, string $organizationId): Template
     {
-        $template = CommunicationTemplate::inOrganization($organizationId)->whereKey($templateId)->first();
+        $template = Template::inOrganization($organizationId)->whereKey($templateId)->first();
 
         return $template ?? $this->fail('templateId', 'Ce modèle de message n’appartient pas à l’organisation active.');
     }
@@ -71,7 +71,7 @@ final readonly class CommunicationScopeGuard
      * différente. Une règle sans service hérite du périmètre du template, ce qui
      * reste cohérent.
      */
-    public function ruleMatchesTemplateService(CommunicationTemplate $template, ?string $ruleServiceId): void
+    public function ruleMatchesTemplateService(Template $template, ?string $ruleServiceId): void
     {
         if ($template->service_id === null || $ruleServiceId === null) {
             return;

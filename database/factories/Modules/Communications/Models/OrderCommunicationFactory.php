@@ -4,10 +4,10 @@ namespace Database\Factories\Modules\Communications\Models;
 
 use App\Modules\Communications\Enums\CommunicationChannel;
 use App\Modules\Communications\Enums\CommunicationStatus;
-use App\Modules\Communications\Enums\CommunicationTemplateType;
 use App\Modules\Communications\Enums\RecipientRole;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Templates\Enums\TemplateType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -32,7 +32,7 @@ class OrderCommunicationFactory extends Factory
             'template_id' => null,
             'communication_rule_id' => null,
             'channel' => CommunicationChannel::EMAIL,
-            'communication_type' => CommunicationTemplateType::DELIVERY_CONFIRMATION,
+            'communication_type' => TemplateType::DELIVERY_CONFIRMATION,
             'recipient_role' => RecipientRole::CUSTOM,
             'recipient_name' => 'Marie Dupont',
             'recipient_email' => 'marie.dupont@example.test',

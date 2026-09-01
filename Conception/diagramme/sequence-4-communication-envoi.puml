@@ -11,7 +11,7 @@ actor "Client HTTP" as U
 participant "OrderCommunication\nController" as C
 participant "CreateOrder\nCommunicationAction" as A
 participant "ResolveOrder\nCommunicationRecipient" as RC
-participant "CommunicationTemplate\nRenderer" as RD
+participant "Template\nRenderer" as RD
 participant "QueueOrder\nCommunicationAction" as Q
 participant "ApplyCommunication\nTransition" as TR
 queue "File (database)" as F

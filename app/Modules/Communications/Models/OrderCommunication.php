@@ -6,11 +6,12 @@ namespace App\Modules\Communications\Models;
 
 use App\Modules\Communications\Enums\CommunicationChannel;
 use App\Modules\Communications\Enums\CommunicationStatus;
-use App\Modules\Communications\Enums\CommunicationTemplateType;
 use App\Modules\Communications\Enums\RecipientRole;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Organizations\Models\Organization;
+use App\Modules\Templates\Enums\TemplateType;
+use App\Modules\Templates\Models\Template;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -66,7 +67,7 @@ class OrderCommunication extends Model
     {
         return [
             'channel' => CommunicationChannel::class,
-            'communication_type' => CommunicationTemplateType::class,
+            'communication_type' => TemplateType::class,
             'recipient_role' => RecipientRole::class,
             'status' => CommunicationStatus::class,
             'template_variables' => 'array',
@@ -97,11 +98,11 @@ class OrderCommunication extends Model
     }
 
     /**
-     * @return BelongsTo<CommunicationTemplate, $this>
+     * @return BelongsTo<Template, $this>
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(CommunicationTemplate::class, 'template_id');
+        return $this->belongsTo(Template::class, 'template_id');
     }
 
     /**

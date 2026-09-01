@@ -5,8 +5,8 @@ namespace Database\Factories\Modules\Communications\Models;
 use App\Modules\Communications\Enums\CommunicationEventType;
 use App\Modules\Communications\Enums\RecipientRole;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Organizations\Models\Organization;
+use App\Modules\Templates\Models\Template;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,13 +21,13 @@ class CommunicationRuleFactory extends Factory
 
     public function definition(): array
     {
-        $template = CommunicationTemplate::factory();
+        $template = Template::factory();
 
         return [
             'template_id' => $template,
             // L'organisation est celle du modele : l'API force cette coherence,
             // un jeu qui la romprait serait invalide.
-            'organization_id' => fn (array $attributes): string => CommunicationTemplate::whereKey($attributes['template_id'])->value('organization_id'),
+            'organization_id' => fn (array $attributes): string => Template::whereKey($attributes['template_id'])->value('organization_id'),
             'service_id' => null,
             'event_type' => CommunicationEventType::SERVICE_COMPLETED,
             'recipient_role' => RecipientRole::CUSTOMER,
@@ -39,7 +39,7 @@ class CommunicationRuleFactory extends Factory
         ];
     }
 
-    public function forTemplate(CommunicationTemplate $template): static
+    public function forTemplate(Template $template): static
     {
         return $this->state(fn (): array => [
             'template_id' => $template->id,
@@ -51,7 +51,7 @@ class CommunicationRuleFactory extends Factory
     {
         return $this->state(fn (): array => [
             'organization_id' => $organization->id,
-            'template_id' => CommunicationTemplate::factory()->forOrganization($organization),
+            'template_id' => Template::factory()->forOrganization($organization),
         ]);
     }
 }

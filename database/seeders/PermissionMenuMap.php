@@ -75,7 +75,7 @@ final class PermissionMenuMap
         'provider_settlement_lines' => MenuSection::BILLING,
 
         'communication_rules' => MenuSection::COMMUNICATIONS,
-        'communication_templates' => MenuSection::COMMUNICATIONS,
+        'templates' => MenuSection::COMMUNICATIONS,
         'communication_attachments' => MenuSection::COMMUNICATIONS,
         'order_communications' => MenuSection::COMMUNICATIONS,
 

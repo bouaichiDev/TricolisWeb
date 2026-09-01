@@ -1,9 +1,9 @@
 <?php
 
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Orders\Models\Service;
+use App\Modules\Templates\Models\Template;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function (): void {
@@ -11,7 +11,7 @@ beforeEach(function (): void {
     $this->user = authUser();
     $this->organization = authOrganization();
     $this->headers = ['X-Organization-Id' => $this->organization->id];
-    $this->template = CommunicationTemplate::factory()->forOrganization($this->organization)->create();
+    $this->template = Template::factory()->forOrganization($this->organization)->create();
 
     $this->payload = fn (array $o = []): array => array_merge([
         'templateId' => $this->template->id,
@@ -42,7 +42,7 @@ describe('rule creation', function (): void {
     });
 
     it('refuses a template from another organization', function (): void {
-        $foreign = CommunicationTemplate::factory()->create();
+        $foreign = Template::factory()->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/communication-rules', ($this->payload)(['templateId' => $foreign->id]))
@@ -52,7 +52,7 @@ describe('rule creation', function (): void {
     it('refuses a service inconsistent with the template service', function (): void {
         $serviceA = Service::factory()->create(['organization_id' => $this->organization->id]);
         $serviceB = Service::factory()->create(['organization_id' => $this->organization->id]);
-        $scoped = CommunicationTemplate::factory()->forService($serviceA)->create();
+        $scoped = Template::factory()->forService($serviceA)->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/communication-rules', ($this->payload)([

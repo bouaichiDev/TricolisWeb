@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Exports\Services;
 
 use App\Modules\Audit\Actions\WriteAuditLog;
+use App\Modules\Billing\Actions\RenderInvoiceAction;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Services\InvoiceClosure;
 use App\Modules\Exports\DTOs\InvoiceExportData;
@@ -48,6 +49,7 @@ final readonly class ExportDispatcher
         private InvoiceXmlFormatter $xml,
         private InvoiceCsvFormatter $csv,
         private InvoicePdfFormatter $pdf,
+        private RenderInvoiceAction $render,
         private RestApiExportTransporter $rest,
         private FileExportTransporter $files,
         private EmailExportTransporter $email,
@@ -86,16 +88,31 @@ final readonly class ExportDispatcher
             throw new RuntimeException('Cette destination n’appartient pas au client de la facture.');
         }
 
-        $formatter = $this->formatterFor($configuration->format);
-        $encoding = (string) ($configuration->encoding ?? 'UTF-8');
+        $settings = $configuration->settings ?? [];
 
-        $contents = $formatter->render(
-            InvoiceExportData::from($invoice->load(['lines.addressSnapshot'])),
-            $configuration->settings ?? [],
-            $encoding,
-        );
+        // Le §0.26 separe les deux natures d'export. Un PDF est un **document** :
+        // il se rend depuis le modele INVOICE resolu, et une facture close sert
+        // le document fige a sa cloture. JSON, XML et CSV sont des **mappings** :
+        // ils partent du DTO canonique, et le §0.26 interdit d'y convertir le
+        // HTML du modele.
+        if ($configuration->format === ExportFormat::PDF) {
+            $contents = $this->pdf->fromDocument($this->render->execute($invoice), $settings);
+            $extension = $this->pdf->extension();
+            $contentType = $this->pdf->contentType();
+        } else {
+            $formatter = $this->mappingFormatterFor($configuration->format);
 
-        $fileName = $this->names->build($configuration, $invoice, $formatter->extension());
+            $contents = $formatter->render(
+                InvoiceExportData::from($invoice->load(['lines.addressSnapshot'])),
+                $settings,
+                (string) ($configuration->encoding ?? 'UTF-8'),
+            );
+
+            $extension = $formatter->extension();
+            $contentType = $formatter->contentType();
+        }
+
+        $fileName = $this->names->build($configuration, $invoice, $extension);
         $path = sprintf('exports/%s/%s', $job->id, $fileName);
 
         Storage::disk(self::DISK)->put($path, $contents);
@@ -108,7 +125,7 @@ final readonly class ExportDispatcher
         ])->save();
 
         $this->transporterFor($configuration->transport)
-            ->send($configuration, $fileName, $contents, $formatter->contentType());
+            ->send($configuration, $fileName, $contents, $contentType);
 
         $job->forceFill(['status' => 'sent', 'sent_at' => now(), 'error_message' => null])->save();
 
@@ -135,13 +152,17 @@ final readonly class ExportDispatcher
         return $invoice;
     }
 
-    private function formatterFor(ExportFormat $format): InvoiceFormatter
+    /**
+     * Les formats qui transposent le DTO. Le PDF n'en est pas : il se rend
+     * depuis un modele, et le §0.26 interdit d'en convertir le HTML.
+     */
+    private function mappingFormatterFor(ExportFormat $format): InvoiceFormatter
     {
         return match ($format) {
             ExportFormat::JSON => $this->json,
             ExportFormat::XML => $this->xml,
             ExportFormat::CSV => $this->csv,
-            ExportFormat::PDF => $this->pdf,
+            ExportFormat::PDF => throw new RuntimeException('Le PDF se rend depuis un modele, pas depuis un mapping.'),
         };
     }
 

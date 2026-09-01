@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Billing\DTOs\RenderedInvoice;
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Billing\Models\InvoiceLineAddressSnapshot;
@@ -202,17 +203,21 @@ describe('CSV', function (): void {
 });
 
 describe('PDF', function (): void {
-    it('produit un document PDF', function (): void {
-        $rendered = $this->pdf->render(($this->data)(), [], 'UTF-8');
+    it('met sur papier le document deja rendu', function (): void {
+        $document = RenderedInvoice::fallback('<h1>Facture INV-1</h1>');
+
+        $rendered = $this->pdf->fromDocument($document, []);
 
         expect($rendered)->toStartWith('%PDF-')
             ->and($this->pdf->contentType())->toBe('application/pdf')
             ->and($this->pdf->extension())->toBe('pdf');
     });
 
-    /** Le titre est configurable ; le reste de la mise en page ne l'est pas. */
-    it('accepte un titre de document', function (): void {
-        $rendered = $this->pdf->render(($this->data)(), ['documentTitle' => 'Note de frais'], 'UTF-8');
+    /** Les valeurs fixes du client s'ajoutent en pied ; le reste vient du modele. */
+    it('ajoute les valeurs fixes en pied de document', function (): void {
+        $document = RenderedInvoice::fallback('<h1>Facture INV-1</h1>');
+
+        $rendered = $this->pdf->fromDocument($document, ['staticValues' => ['Code fournisseur' => 'F-42']]);
 
         expect($rendered)->toStartWith('%PDF-');
     });

@@ -7,12 +7,12 @@ namespace App\Modules\Communications\Actions;
 use App\Modules\Communications\DTOs\CreateOrderCommunicationData;
 use App\Modules\Communications\Enums\CommunicationStatus;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Communications\Services\CommunicationScopeGuard;
-use App\Modules\Communications\Services\CommunicationTemplateRenderer;
-use App\Modules\Communications\Services\RenderedContent;
 use App\Modules\Communications\Services\ResolveOrderCommunicationRecipient;
+use App\Modules\Templates\Models\Template;
+use App\Modules\Templates\Services\RenderedContent;
+use App\Modules\Templates\Services\TemplateRenderer;
 use App\Shared\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -39,7 +39,7 @@ final readonly class CreateOrderCommunicationAction
     public function __construct(
         private CommunicationScopeGuard $guard,
         private ResolveOrderCommunicationRecipient $recipients,
-        private CommunicationTemplateRenderer $renderer,
+        private TemplateRenderer $renderer,
         private WriteCommunicationAudit $writer,
     ) {}
 
@@ -53,7 +53,7 @@ final readonly class CreateOrderCommunicationAction
             : $this->guard->rule($data->communicationRuleId, $organizationId);
         $template = $this->resolveTemplate($data, $rule, $organizationId);
 
-        if ($template instanceof CommunicationTemplate) {
+        if ($template instanceof Template) {
             $this->guard->ruleMatchesTemplateService($template, $rule?->service_id);
         }
 
@@ -104,7 +104,7 @@ final readonly class CreateOrderCommunicationAction
         CreateOrderCommunicationData $data,
         ?CommunicationRule $rule,
         string $organizationId,
-    ): ?CommunicationTemplate {
+    ): ?Template {
         if ($data->templateId !== null) {
             return $this->guard->template($data->templateId, $organizationId);
         }
@@ -118,9 +118,9 @@ final readonly class CreateOrderCommunicationAction
      * Sans template, `body` est obligatoire — une communication sans corps n'a
      * rien à transmettre.
      */
-    private function buildContent(CreateOrderCommunicationData $data, ?CommunicationTemplate $template): RenderedContent
+    private function buildContent(CreateOrderCommunicationData $data, ?Template $template): RenderedContent
     {
-        if ($template instanceof CommunicationTemplate) {
+        if ($template instanceof Template) {
             return $this->renderer->render($template, $data->templateVariables ?? []);
         }
 

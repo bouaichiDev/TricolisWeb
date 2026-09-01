@@ -363,16 +363,51 @@ final class MenuCatalogue
                 parent: 'billing',
             ),
 
-            // Configuration des messages. Les *regles* de communication ne
-            // figurent pas ici : elles sont hors perimetre de la Phase 3.
+            // Configuration des messages — Phase 9.
+            //
+            // `templates` et `billing-templates` menent au **meme ecran** : le
+            // §0.15 interdit deux CRUD pour une seule table. Seul le filtre
+            // d'arrivee differe, parce qu'un comptable et un exploitant ne
+            // cherchent pas le meme modele en ouvrant la page.
             new MenuEntry(
-                code: 'communication-templates',
-                labelKey: 'nav.communicationTemplates',
+                code: 'templates',
+                labelKey: 'nav.templates',
                 icon: 'Mail',
                 section: MenuSection::COMMUNICATIONS,
                 position: 60,
-                route: '/communication-templates',
-                permission: 'communication_templates.view',
+                route: '/templates?category=communication',
+                permission: 'templates.view',
+            ),
+
+            new MenuEntry(
+                code: 'communication-rules',
+                labelKey: 'nav.communicationRules',
+                icon: 'Workflow',
+                section: MenuSection::COMMUNICATIONS,
+                position: 61,
+                route: '/communications/rules',
+                permission: 'communication_rules.view',
+            ),
+
+            new MenuEntry(
+                code: 'communication-history',
+                labelKey: 'nav.communicationHistory',
+                icon: 'Send',
+                section: MenuSection::COMMUNICATIONS,
+                position: 62,
+                route: '/communications/history',
+                permission: 'order_communications.view',
+            ),
+
+            new MenuEntry(
+                code: 'billing-templates',
+                labelKey: 'nav.invoiceTemplates',
+                icon: 'FileText',
+                section: MenuSection::BILLING,
+                position: 59,
+                route: '/templates?templateType=invoice',
+                permission: 'templates.view',
+                parent: 'billing',
             ),
 
             new MenuEntry(

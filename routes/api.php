@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Auth\SessionController;
 use App\Http\Controllers\Api\V1\Billing\BillableServiceController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceClosureController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceController;
+use App\Http\Controllers\Api\V1\Billing\InvoiceDocumentController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceLineController;
 use App\Http\Controllers\Api\V1\Billing\InvoiceRepricingController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
@@ -22,7 +23,6 @@ use App\Http\Controllers\Api\V1\Client\ClientIdentityController;
 use App\Http\Controllers\Api\V1\Client\ClientOrderController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationAttachmentController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationRuleController;
-use App\Http\Controllers\Api\V1\Communications\CommunicationTemplateController;
 use App\Http\Controllers\Api\V1\Communications\OrderCommunicationController;
 use App\Http\Controllers\Api\V1\Communications\OrderCommunicationStateController;
 use App\Http\Controllers\Api\V1\Contacts\ContactController;
@@ -77,6 +77,7 @@ use App\Http\Controllers\Api\V1\Stock\StockItemController;
 use App\Http\Controllers\Api\V1\Stock\StockLocationController;
 use App\Http\Controllers\Api\V1\Stock\StockMovementController;
 use App\Http\Controllers\Api\V1\Stock\StockReservationController;
+use App\Http\Controllers\Api\V1\Templates\TemplateController;
 use App\Http\Controllers\Api\V1\Tours\TourController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodAssignmentController;
 use App\Http\Controllers\Api\V1\Tours\TourPeriodController;
@@ -314,6 +315,7 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->name('invoices.repricing.show');
         Route::post('invoices/{invoice}/reprice', [InvoiceRepricingController::class, 'store'])
             ->name('invoices.reprice');
+        Route::get('invoices/{invoice}/document', [InvoiceDocumentController::class, 'show'])->name('invoices.document.show');
         Route::get('invoices/{invoice}/closure', [InvoiceClosureController::class, 'show'])->name('invoices.closure.show');
         Route::post('invoices/{invoice}/close', [InvoiceClosureController::class, 'store'])->name('invoices.close');
         Route::apiResource('invoices', InvoiceController::class)->except(['create', 'edit']);
@@ -433,10 +435,12 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->parameters(['export-jobs' => 'exportJob'])
             ->only(['index', 'store', 'show']);
 
-        // Communication et templates
-        Route::apiResource('communication-templates', CommunicationTemplateController::class)
-            ->parameters(['communication-templates' => 'communicationTemplate'])
+        // Modeles : messages et documents, une seule table et une seule API.
+        Route::apiResource('templates', TemplateController::class)
             ->except(['create', 'edit']);
+
+        // Communication
+
         Route::apiResource('communication-rules', CommunicationRuleController::class)
             ->parameters(['communication-rules' => 'communicationRule'])
             ->except(['create', 'edit']);

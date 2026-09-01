@@ -629,7 +629,7 @@ package "Communication et templates" {
     INTERNAL_NOTIFICATION
   }
 
-  enum CommunicationTemplateType {
+  enum TemplateType {
     APPOINTMENT_REQUEST
     APPOINTMENT_CONFIRMATION
     APPOINTMENT_REMINDER
@@ -641,6 +641,7 @@ package "Communication et templates" {
     DELIVERY_FAILED
     POD_AVAILABLE
     ORDER_CANCELLED
+    INVOICE
     CUSTOM
   }
 
@@ -679,14 +680,15 @@ package "Communication et templates" {
     CUSTOM
   }
 
-  class CommunicationTemplate {
+  class Template {
     +id: ULID
     +organizationId: ULID
+    +customerId: ULID
     +serviceId: ULID
     +code: string
     +name: string
     +channel: CommunicationChannel
-    +templateType: CommunicationTemplateType
+    +templateType: TemplateType
     +subjectTemplate: text
     +bodyTemplate: longtext
     +language: string
@@ -720,7 +722,7 @@ package "Communication et templates" {
     +templateId: ULID
     +communicationRuleId: ULID
     +channel: CommunicationChannel
-    +communicationType: CommunicationTemplateType
+    +communicationType: TemplateType
     +recipientRole: RecipientRole
     +recipientName: string
     +recipientEmail: string
@@ -770,6 +772,9 @@ package "Facturation client et fournisseur" {
     +externalReference: string
     +remark: text
     +status: string
+    +templateId: ULID
+    +renderedBody: longtext
+    +renderedAt: datetime
     +createdAt: datetime
   }
 
@@ -923,15 +928,17 @@ PriceRule "0..1" -- "0..*" PricingCalculation
 PriceMatrix "0..1" -- "0..*" PricingCalculation
 PriceMatrixRow "0..1" -- "0..*" PricingCalculation
 
-Organization "1" -- "0..*" CommunicationTemplate
+Organization "1" -- "0..*" Template
+Customer "0..1" -- "0..*" Template
 Organization "1" -- "0..*" CommunicationRule
 Organization "1" -- "0..*" OrderCommunication
 
-Service "0..1" -- "0..*" CommunicationTemplate
+Service "0..1" -- "0..*" Template
 Service "0..1" -- "0..*" CommunicationRule
 
-CommunicationTemplate "1" -- "0..*" CommunicationRule
-CommunicationTemplate "0..1" -- "0..*" OrderCommunication
+Template "1" -- "0..*" CommunicationRule
+Template "0..1" -- "0..*" OrderCommunication
+Template "0..1" -- "0..*" Invoice
 CommunicationRule "0..1" -- "0..*" OrderCommunication
 
 Order "1" -- "0..*" OrderCommunication

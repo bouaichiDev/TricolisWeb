@@ -279,10 +279,10 @@ class PermissionSeeder extends Seeder
         ['code' => 'pricing_calculations.view', 'name' => 'Historique des calculs tarifaires', 'module' => 'pricing_calculations', 'action' => 'view'],
         ['code' => 'pricing_calculations.calculate', 'name' => 'Calculer un tarif', 'module' => 'pricing_calculations', 'action' => 'calculate'],
 
-        ['code' => 'communication_templates.view', 'name' => 'Voir les modèles de message', 'module' => 'communication_templates', 'action' => 'view'],
-        ['code' => 'communication_templates.create', 'name' => 'Créer un modèle de message', 'module' => 'communication_templates', 'action' => 'create'],
-        ['code' => 'communication_templates.update', 'name' => 'Modifier un modèle de message', 'module' => 'communication_templates', 'action' => 'update'],
-        ['code' => 'communication_templates.delete', 'name' => 'Supprimer un modèle de message', 'module' => 'communication_templates', 'action' => 'delete'],
+        ['code' => 'templates.view', 'name' => 'Voir les modèles', 'module' => 'templates', 'action' => 'view'],
+        ['code' => 'templates.create', 'name' => 'Créer un modèle', 'module' => 'templates', 'action' => 'create'],
+        ['code' => 'templates.update', 'name' => 'Modifier un modèle', 'module' => 'templates', 'action' => 'update'],
+        ['code' => 'templates.delete', 'name' => 'Supprimer un modèle', 'module' => 'templates', 'action' => 'delete'],
 
         ['code' => 'communication_rules.view', 'name' => 'Voir les règles de communication', 'module' => 'communication_rules', 'action' => 'view'],
         ['code' => 'communication_rules.create', 'name' => 'Créer une règle de communication', 'module' => 'communication_rules', 'action' => 'create'],

@@ -6,8 +6,8 @@ namespace App\Modules\Communications\Queries;
 
 use App\Http\Requests\Api\V1\Communications\ListCommunicationRequest;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
+use App\Modules\Templates\Models\Template;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -120,7 +120,7 @@ final readonly class CommunicationListQuery
     private function baseQuery(string $profile, string $organizationId): Builder
     {
         return match ($profile) {
-            'template' => CommunicationTemplate::inOrganization($organizationId),
+            'template' => Template::inOrganization($organizationId),
             'rule' => CommunicationRule::inOrganization($organizationId)->with('template:id,code,name,channel'),
             'communication' => OrderCommunication::inOrganization($organizationId)
                 ->with(['template:id,code,name', 'order:id,order_number'])

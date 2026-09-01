@@ -1,11 +1,11 @@
 <?php
 
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
 use App\Modules\Orders\Models\OrderServiceContact;
+use App\Modules\Templates\Models\Template;
 use App\Shared\Enums\ContactRole;
 use Illuminate\Support\Facades\Schema;
 
@@ -67,7 +67,7 @@ describe('communication creation', function (): void {
     });
 
     it('renders the template and freezes the result', function (): void {
-        $template = CommunicationTemplate::factory()->forOrganization($this->organization)->create();
+        $template = Template::factory()->forOrganization($this->organization)->create();
 
         $response = ($this->post)([
             'templateId' => $template->id,
@@ -80,7 +80,7 @@ describe('communication creation', function (): void {
     });
 
     it('keeps the snapshot when the template changes afterwards', function (): void {
-        $template = CommunicationTemplate::factory()->forOrganization($this->organization)->create();
+        $template = Template::factory()->forOrganization($this->organization)->create();
 
         $id = ($this->post)([
             'templateId' => $template->id,
@@ -96,7 +96,7 @@ describe('communication creation', function (): void {
     });
 
     it('derives the template from the rule when only the rule is given', function (): void {
-        $template = CommunicationTemplate::factory()->forOrganization($this->organization)->create();
+        $template = Template::factory()->forOrganization($this->organization)->create();
         $rule = CommunicationRule::factory()->forTemplate($template)->create();
 
         ($this->post)([
@@ -109,7 +109,7 @@ describe('communication creation', function (): void {
     });
 
     it('refuses an unknown variable in the template', function (): void {
-        $template = CommunicationTemplate::factory()->forOrganization($this->organization)
+        $template = Template::factory()->forOrganization($this->organization)
             ->create(['body_template' => 'Bonjour {{ secret_field }}.']);
 
         ($this->post)([
@@ -119,7 +119,7 @@ describe('communication creation', function (): void {
     });
 
     it('refuses a template or an order from another organization', function (): void {
-        $foreignTemplate = CommunicationTemplate::factory()->create();
+        $foreignTemplate = Template::factory()->create();
         $foreignOrder = Order::factory()->create();
 
         ($this->post)(['templateId' => $foreignTemplate->id])

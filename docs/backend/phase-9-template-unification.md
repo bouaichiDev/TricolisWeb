@@ -200,3 +200,102 @@ document appartient au modèle.
 - `CommunicationEventType` ne reçoit pas `INVOICE_CLOSED` (§0.28) ;
 - `OrderCommunication` reste lié à `Order` ; aucun `InvoiceCommunication` ;
 - `order_communications.status` reste textuel ; aucun `status_id`.
+
+---
+
+## 10. Déclenchement automatique — évolution du 1er septembre 2026
+
+Le rapport backend Phase 9 déclarait « aucun déclenchement automatique des
+règles » : les onze `CommunicationEventType` n'étaient émis nulle part. Une
+règle « commande annulée » se configurait donc sans jamais rien produire.
+
+**Trois événements sont désormais émis.** Les huit autres ne le sont toujours
+pas, et c'est délibéré : le §2 interdit d'inventer leur sémantique — à partir de
+quand un arrêt est-il « imminent » ? Les câbler au jugé produirait des messages
+au mauvais moment, ce qui est pire que pas de message.
+
+### Ce qui est émis
+
+| Événement Laravel | Émis par | `CommunicationEventType` |
+|---|---|---|
+| `Orders\Events\OrderCreated` | `CreateFullOrder` | `ORDER_CREATED` |
+| `Orders\Events\OrderStatusChanged` | `ChangeOrderStatus` | `ORDER_CONFIRMED`, `ORDER_CANCELLED` |
+
+Un seul événement porte toutes les transitions, avec l'état de départ et celui
+d'arrivée. Une classe par statut aurait multiplié dix fichiers identiques, et
+obligé chaque nouvel état du référentiel à en créer un onzième.
+
+Les Orders ne connaissent pas `CommunicationEventType` : la correspondance vit
+dans le listener, côté Communications. Une commande change d'état ; ce que la
+messagerie en fait la regarde seule.
+
+### Après le commit, jamais pendant
+
+Les deux événements sont émis **hors** de la transaction. Un abonné qui agirait
+dedans enverrait un message que le rollback ne rattraperait pas : le client
+recevrait l'annulation d'une commande qui ne l'est pas.
+
+### L'enchaînement
+
+```text
+événement → règles de l'organisation → même eventType → active → automatique
+          → service compatible → conditions vraies → communication créée
+          → mise en file, ou programmée si la règle porte un délai
+```
+
+`ApplyCommunicationRules` porte cette logique. Elle n'est pas dans un contrôleur
+— le §52 l'interdit — et se teste sans HTTP.
+
+### Le contexte de variables
+
+`OrderCommunicationContext` est l'équivalent d'`InvoiceRenderContext` pour une
+commande : une **liste close, écrite à la main**. Quinze clés plates, en
+minuscules — c'est ce que le motif des conditions accepte.
+
+```text
+order_number  order_status  order_type  order_source  order_date
+external_reference  customer_reference  group_code  currency_code
+weight  volume  package_count  customer_code  customer_name  agency_name
+```
+
+Les mêmes valeurs servent au rendu **et** aux conditions. Deux jeux distincts
+auraient laissé configurer une condition sur un champ qu'aucun modèle ne peut
+nommer, sans que rien ne le signale.
+
+Le contexte est filtré sur ce que le modèle déclare avant le rendu : le moteur
+refuse une valeur non déclarée, et lui passer les quinze ferait échouer tout
+modèle n'en nommant qu'une partie — c'est-à-dire tous.
+
+### Idempotence, sans nouvelle colonne
+
+Le §53 interdit d'inventer un `eventId`. La clé retenue est le couple déjà
+présent en base : `order_id` + `communication_rule_id`. Une règle ne produit
+qu'un message par commande.
+
+C'est exact pour les trois événements câblés, qui ne surviennent qu'une fois
+dans la vie d'une commande. Un rejeu de file, un double-clic ou un incident ne
+produit donc pas de doublon. Un événement récurrent — `TOUR_STOP_APPROACHING`,
+par exemple — demanderait une autre clé ; c'est l'une des raisons de ne pas
+l'avoir câblé.
+
+### Un échec ne bloque rien
+
+Une règle qui échoue — modèle irrésoluble, destinataire introuvable, canal sans
+transporteur — est journalisée et **n'empêche ni les autres règles, ni
+l'opération métier**. L'inverse rendrait l'annulation d'une commande tributaire
+d'un texte : personne ne pourrait plus annuler tant que le modèle n'est pas
+corrigé.
+
+Le journal porte les identifiants et la raison, jamais le corps du message : le
+§125 interdit d'y déverser un contenu personnel.
+
+### Ce qui n'est toujours pas câblé
+
+```text
+SERVICE_PLANNED         APPOINTMENT_REQUESTED   APPOINTMENT_CONFIRMED
+DRIVER_ASSIGNED         TOUR_STOP_APPROACHING   SERVICE_COMPLETED
+POD_CREATED             CLAIM_CREATED
+```
+
+Les règles qui les visent s'enregistrent et restent sans effet. L'écran des
+règles le dit.

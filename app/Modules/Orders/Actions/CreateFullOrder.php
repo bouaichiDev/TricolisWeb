@@ -9,9 +9,11 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Services\OrderScopeGuard;
 use App\Modules\Planning\Actions\GeocodeMissingAddresses;
+use App\Shared\Support\AuditContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +40,7 @@ final readonly class CreateFullOrder
 
     public function execute(CreateOrderData $data, string $organizationId, User $user, ?Request $request = null): Order
     {
-        return DB::transaction(function () use ($data, $organizationId, $user, $request): Order {
+        $order = DB::transaction(function () use ($data, $organizationId, $user, $request): Order {
             $customer = $this->guard->customer($data->customerId, $organizationId);
             $this->guard->agency($data->agencyId, $organizationId);
 
@@ -80,6 +82,16 @@ final readonly class CreateFullOrder
 
             return $order;
         });
+
+        // Apres le commit, jamais pendant : un abonne qui ecrirait dans la
+        // transaction agirait a propos d'une commande que le rollback peut
+        // encore faire disparaitre.
+        OrderCreated::dispatch(
+            $order,
+            new AuditContext($organizationId, $user, $request?->ip()),
+        );
+
+        return $order;
     }
 
     /**

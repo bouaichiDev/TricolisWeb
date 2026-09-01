@@ -128,7 +128,15 @@ négative n'est offerte : le serveur la refuse, et son message dit pourquoi.
 
 ## 14. Automatisation
 
-Configurable, **non déclenchable**. Voir §36.
+**Trois événements sur onze sont émis** depuis le 1er septembre 2026 :
+`ORDER_CREATED`, `ORDER_CONFIRMED`, `ORDER_CANCELLED`. Une règle qui les vise
+produit réellement son message, le met en file, ou le programme si elle porte un
+délai.
+
+Les huit autres restent sans émetteur : leur sémantique n'est pas tranchée, et
+les câbler au jugé produirait des messages au mauvais moment. Une règle qui en
+vise un porte la mention « Non émis » dans la liste. Détail en §8 et §10 de
+`docs/backend/phase-9-template-unification.md`.
 
 ## 15. Résolution du destinataire
 

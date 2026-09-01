@@ -7,6 +7,7 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Events\OrderStatusChanged;
 use App\Modules\Orders\Exceptions\InvalidOrderTransition;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Statuses\Services\StatusMachine;
@@ -73,7 +74,7 @@ final readonly class ChangeOrderStatus
             throw InvalidOrderTransition::reasonRequired($target);
         }
 
-        return DB::transaction(function () use ($order, $current, $target, $user, $reasonCode, $reasonText, $request, $stockLocations): Order {
+        $changed = DB::transaction(function () use ($order, $current, $target, $user, $reasonCode, $reasonText, $request, $stockLocations): Order {
             if ($target === OrderStatus::CONFIRMED) {
                 $this->stock->execute(
                     $order,
@@ -104,5 +105,17 @@ final readonly class ChangeOrderStatus
 
             return $order;
         });
+
+        // Apres le commit, jamais pendant : un message parti pendant la
+        // transaction survivrait a son rollback, et le client recevrait
+        // l'annulation d'une commande qui ne l'est pas.
+        OrderStatusChanged::dispatch(
+            $changed,
+            $current,
+            $target,
+            new AuditContext($changed->organization_id, $user, $request?->ip()),
+        );
+
+        return $changed;
     }
 }

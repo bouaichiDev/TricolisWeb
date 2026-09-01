@@ -2543,12 +2543,11 @@
   },
   "communicationRules": {
     "title": "Règles automatiques",
-    "description": "Quel message part, sur quel événement, vers quel destinataire et après quel délai.",
+    "description": "Quel message part, sur quel événement, vers quel destinataire et après quel délai. Trois événements sur onze sont émis aujourd’hui : création, confirmation et annulation d’une commande.",
     "empty": "Aucune règle",
     "create": "Nouvelle règle",
     "edit": "Modifier la règle",
     "formHint": "La règle relie un événement à un modèle. Le canal vient du modèle, et le destinataire est résolu à l’envoi.",
-    "notWiredYet": "Aucun événement métier n’est encore émis par la plateforme : les règles s’enregistrent et s’appliqueront dès qu’ils le seront.",
     "manualOnly": "Règle non automatique : elle ne produit rien d’elle-même, même lorsque l’événement survient.",
     "deleteHint": "Une règle ayant déjà produit des messages ne peut pas être supprimée. La désactiver l’arrête sans effacer l’historique.",
     "eventHint": "L’événement métier qui déclenche l’envoi.",
@@ -2612,6 +2611,8 @@
       "conditions": "Si",
       "always": "Toujours",
       "immediately": "Immédiatement"
-    }
+    },
+    "eventNotEmitted": "Non émis",
+    "eventNotEmittedHint": "Cet événement n’est pas encore émis par la plateforme : la règle est enregistrée, mais ne produira rien tant qu’il ne le sera pas."
   }
 }

@@ -44,9 +44,9 @@ export const RECIPIENT_ROLES = [
 /**
  * Les onze événements métier qui peuvent déclencher une règle.
  *
- * Aucun n'est émis par les Phases 1 à 8 : le backend Phase 9 les déclare, et
- * leur branchement attend que les événements existent. Une règle se configure
- * donc dès aujourd'hui, et s'appliquera le jour où l'événement sera émis.
+ * **Trois seulement sont réellement émis** — voir `WIRED_EVENT_TYPES`. Les huit
+ * autres se configurent et restent sans effet : leur sémantique n'est pas
+ * tranchée, et les câbler au jugé produirait des messages au mauvais moment.
  */
 export const COMMUNICATION_EVENT_TYPES = [
   'order_created',
@@ -61,6 +61,19 @@ export const COMMUNICATION_EVENT_TYPES = [
   'pod_created',
   'claim_created',
 ] as const
+
+/**
+ * Les événements que la plateforme émet réellement.
+ *
+ * La liste suit `CreateCommunicationsForOrderEvents` côté serveur. Une règle
+ * visant un autre événement s'enregistre sans jamais rien produire : le taire
+ * ferait attendre des messages qui ne partiront pas.
+ */
+export const WIRED_EVENT_TYPES = ['order_created', 'order_confirmed', 'order_cancelled'] as const
+
+export function isEventWired(eventType: string): boolean {
+  return (WIRED_EVENT_TYPES as readonly string[]).includes(eventType)
+}
 
 export type CommunicationChannel = (typeof COMMUNICATION_CHANNELS)[number]
 export type CommunicationStatus = (typeof COMMUNICATION_STATUSES)[number]

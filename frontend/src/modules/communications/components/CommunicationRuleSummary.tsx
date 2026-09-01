@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Template } from '@/modules/templates/types/template'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 
+import { isEventWired } from '../types/communication'
 import type { RuleFormValues } from '../schemas/ruleSchema'
 
 interface RuleSummaryProps {
@@ -23,8 +24,8 @@ interface RuleSummaryProps {
  * Deux réserves y sont dites plutôt que cachées :
  *
  * - une règle **non automatique** ne produit rien d'elle-même ;
- * - aucun événement n'est encore émis par la plateforme, donc aucune règle ne
- *   se déclenche aujourd'hui. Le taire ferait attendre des messages qui ne
+ * - un événement que la plateforme **n'émet pas encore** ne déclenchera rien,
+ *   quelle que soit la règle. Le taire ferait attendre des messages qui ne
  *   partiront pas.
  */
 export function CommunicationRuleSummary({ values, template, serviceName }: RuleSummaryProps) {
@@ -73,15 +74,17 @@ export function CommunicationRuleSummary({ values, template, serviceName }: Rule
         ))}
       </dl>
 
-      {values.isAutomatic ? (
-        <Alert>
-          <AlertDescription>{t('communicationRules.notWiredYet')}</AlertDescription>
-        </Alert>
-      ) : (
+      {values.isAutomatic ? null : (
         <Alert>
           <AlertDescription>{t('communicationRules.manualOnly')}</AlertDescription>
         </Alert>
       )}
+
+      {values.isAutomatic && !isEventWired(values.eventType) ? (
+        <Alert>
+          <AlertDescription>{t('communicationRules.eventNotEmittedHint')}</AlertDescription>
+        </Alert>
+      ) : null}
     </section>
   )
 }

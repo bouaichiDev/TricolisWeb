@@ -7,7 +7,6 @@ import { DataTable, type Column } from '@/shared/components/data/DataTable'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
-import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 
@@ -15,6 +14,7 @@ import { CommunicationRuleDialog } from '../components/CommunicationRuleDialog'
 import { CommunicationRuleFilterBar } from '../components/CommunicationRuleFilterBar'
 import type { CommunicationRuleFilters } from '../api/communication-rules.api'
 import { useCommunicationRuleList, useDeleteCommunicationRule } from '../hooks/useCommunicationRules'
+import { isEventWired } from '../types/communication'
 import type { CommunicationRule } from '../types/communicationRule'
 
 /**
@@ -24,9 +24,10 @@ import type { CommunicationRule } from '../types/communicationRule'
  * C'est la nouveauté de la Phase 9 : jusqu'ici, chaque message se composait à
  * la main depuis une commande.
  *
- * **Rien ne se déclenche encore.** Aucune des Phases 1 à 8 n'émet les onze
- * événements ; les règles s'enregistrent et s'appliqueront le jour où ils
- * seront émis. Le dire ici évite d'attendre des messages qui ne partiront pas.
+ * **Trois événements sur onze sont réellement émis** : création, confirmation
+ * et annulation d'une commande. Les huit autres se configurent et restent sans
+ * effet — leur sémantique n'est pas tranchée. Une règle qui en vise un porte la
+ * mention, plutôt que de laisser attendre un message qui ne partira pas.
  */
 export function CommunicationRuleListPage() {
   const { t } = useTranslation()
@@ -45,7 +46,14 @@ export function CommunicationRuleListPage() {
         key: 'eventType',
         header: t('communicationRules.fields.eventType'),
         cell: (row) => (
-          <span className="font-medium">{t(`communicationEvents.${row.eventType}`)}</span>
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="font-medium">{t(`communicationEvents.${row.eventType}`)}</span>
+            {isEventWired(row.eventType) ? null : (
+              <Badge variant="outline" title={t('communicationRules.eventNotEmittedHint')}>
+                {t('communicationRules.eventNotEmitted')}
+              </Badge>
+            )}
+          </span>
         ),
       },
       {
@@ -153,10 +161,6 @@ export function CommunicationRuleListPage() {
           </PermissionGuard>
         }
       />
-
-      <Alert>
-        <AlertDescription>{t('communicationRules.notWiredYet')}</AlertDescription>
-      </Alert>
 
       <CommunicationRuleFilterBar
         filters={filters}

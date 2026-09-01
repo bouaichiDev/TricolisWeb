@@ -88,15 +88,25 @@ describe('règles de communication', () => {
   })
 
   /**
-   * Aucun des onze événements n'est émis par les Phases 1 à 8. Le taire ferait
-   * attendre des messages qui ne partiront pas.
+   * Trois evenements sur onze sont emis. Une regle qui en vise un autre porte
+   * la mention : le taire ferait attendre un message qui ne partira pas.
    */
-  it('dit que rien ne déclenche encore les règles', async () => {
+  it('marque une règle dont l’événement n’est pas encore émis', async () => {
+    // `service_completed` n'est pas cable : la regle est enregistree, mais
+    // rien ne la declenchera.
     render(['communication_rules.view'])
 
-    expect(
-      await screen.findByText(/Aucun événement métier n’est encore émis/),
-    ).toBeInTheDocument()
+    await screen.findByText('Prestation terminée')
+
+    expect(screen.getByText('Non émis')).toBeInTheDocument()
+  })
+
+  it('ne signale rien sur un événement réellement émis', async () => {
+    render(['communication_rules.view'], [rule({ eventType: 'order_cancelled' })])
+
+    await screen.findByText('Commande annulée')
+
+    expect(screen.queryByText('Non émis')).not.toBeInTheDocument()
   })
 
   it('masque création, modification et suppression sans les permissions', async () => {

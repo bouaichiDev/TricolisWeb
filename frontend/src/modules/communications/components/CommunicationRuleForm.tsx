@@ -41,8 +41,12 @@ export function CommunicationRuleForm({ values, onChange }: RuleFormProps) {
   const services = useActiveServices()
   const templates = useTemplateOptions()
 
+  // Les documents sont ecartes : une facture n'a pas de canal par ou partir,
+  // et le serveur refuserait la regle. Le predicat retire aussi `null` du type
+  // du canal, ce qui evite un libelle « communicationChannels.null ».
   const selectable = (templates.data?.data ?? []).filter(
-    (template): template is Template => template.channel !== null,
+    (template): template is Template & { channel: NonNullable<Template['channel']> } =>
+      template.channel !== null,
   )
   const template = selectable.find((item) => item.id === values.templateId)
   const serviceName = (services.data?.data ?? []).find(

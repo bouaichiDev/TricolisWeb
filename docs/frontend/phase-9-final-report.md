@@ -266,6 +266,7 @@ rendraient le journal illisible.
 | `tests/Feature/Api/V1/Templates/TemplateTest.php` | déplacé, `customer_id`, audit renommé |
 | `tests/Unit/Exports/InvoiceFormatterTest.php` | PDF depuis un document rendu |
 | `tests/Feature/Hardening/MenuPermissionConsistencyTest.php` | chemin comparé sans sa requête |
+| `tests/Feature/Api/V1/Billing/BillableServiceTest.php` | seconde adresse imposée — voir ci-dessous |
 
 **Frontend — 606 tests, tous verts.**
 
@@ -275,6 +276,13 @@ rendraient le journal illisible.
 | `communications/pages/CommunicationRuleListPage.test.tsx` | **nouveau** — 8 tests |
 | `communications/pages/CommunicationHistoryPage.test.tsx` | **nouveau** — 4 tests |
 | `billing/components/InvoiceDocumentDialog.test.tsx` | **nouveau** — 4 tests |
+
+**Un test intermittent corrigé, sans rapport avec cette phase.**
+`BillableServiceTest → filtre sur la localité de l'adresse` tirait sa seconde
+adresse au hasard. La collation MySQL du projet ignore les accents —
+`LIKE '%Genè%'` retient donc « Gene… » — et Faker en_US tire ses villes de
+prénoms, « Gene » et « Genevieve » compris. Le test échouait une fois sur
+quelques dizaines. La seconde adresse est désormais imposée.
 
 Migrations vérifiées sur une base réelle, **aller et retour** :
 `migrate`, `migrate:rollback --step=4`, `migrate`.
@@ -286,7 +294,7 @@ npm run typecheck   passe
 npm run lint        passe (18 avertissements préexistants, aucun nouveau)
 npm run test        606 / 606
 npm run build       passe
-php artisan test    1342 / 1342
+php artisan test    1342 / 1342 (4147 assertions)
 ./vendor/bin/pint --test   passe
 php artisan migrate --force / rollback / migrate   passe
 ```

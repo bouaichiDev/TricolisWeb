@@ -137,11 +137,20 @@ describe('filtres de colonne', function (): void {
             ->assertJsonPath('data.0.id', $wanted->id);
     });
 
+    /**
+     * La seconde adresse est **imposée**, pas tirée au hasard.
+     *
+     * La collation MySQL du projet ignore les accents : `LIKE '%Genè%'` retient
+     * donc aussi « Gene… », et Faker en_US tire ses villes de prénoms — « Gene »
+     * et « Genevieve » en font partie. Le test échouait une fois sur quelques
+     * dizaines, sans rapport avec ce qu'il vérifie.
+     */
     it('filtre sur la localité de l’adresse', function (): void {
         $address = Address::factory()->create(['city' => 'Genève']);
+        $other = Address::factory()->create(['city' => 'Zurich']);
 
         $wanted = ($this->serviceFor)($this->customer, 'completed', ['address_id' => $address->id]);
-        ($this->serviceFor)($this->customer);
+        ($this->serviceFor)($this->customer, 'completed', ['address_id' => $other->id]);
 
         ($this->list)(['address' => 'Genè'])
             ->assertOk()

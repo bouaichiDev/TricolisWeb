@@ -115,3 +115,27 @@ export interface CustomerApiConfigurationFilters extends ListParams {
   lastUsedFrom?: string
   lastUsedTo?: string
 }
+
+/**
+ * Ce qu'une correspondance produirait sur un fichier donné.
+ *
+ * Rendu par `POST /customer-import-configurations/{id}/preview`. **Rien n'est
+ * créé** : le fichier est lu en mémoire et oublié. C'est ce qui permet de
+ * vérifier une correspondance avant de s'en servir — sans quoi on la saisit à
+ * l'aveugle.
+ */
+export interface ImportPreview {
+  /** Lignes lues dans le fichier. */
+  rowCount: number
+  /** Colonnes trouvées : de quoi repérer un nom mal orthographié. */
+  columns: string[]
+  /** La charge utile que la correspondance construit. */
+  payload: Record<string, unknown>
+  /** Ce qui manquerait, selon les règles réelles de création d'une commande. */
+  errors: Record<string, string[]>
+  /**
+   * Identifiants qu'aucun fichier client ne porte, et que le verdict n'exige
+   * donc pas. C'est le travail que devra faire un futur moteur d'import.
+   */
+  resolvedElsewhere: string[]
+}

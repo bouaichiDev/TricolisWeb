@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\V1\Identity\RoleController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
 use App\Http\Controllers\Api\V1\Integrations\ApiConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
+use App\Http\Controllers\Api\V1\Integrations\ImportPreviewController;
 use App\Http\Controllers\Api\V1\Integrations\OrganizationApiConfigurationController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Http\Controllers\Api\V1\Orders\OrderDocumentController;
@@ -406,6 +407,10 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('customers/{customer}/export-configurations', [ExportConfigurationController::class, 'byCustomer'])->name('customers.export-configurations.index');
         Route::post('customers/{customer}/export-configurations', [ExportConfigurationController::class, 'storeForCustomer'])->name('customers.export-configurations.store');
 
+        // Eprouver une correspondance sur un vrai fichier, sans rien creer.
+        // Precede l'apiResource, sinon `{configuration}/preview` serait lu
+        // comme un identifiant.
+        Route::post('customer-import-configurations/{configuration}/preview', ImportPreviewController::class)->name('customer-import-configurations.preview');
         Route::apiResource('customer-import-configurations', ImportConfigurationController::class)
             ->parameters(['customer-import-configurations' => 'configuration'])
             ->except(['create', 'edit']);

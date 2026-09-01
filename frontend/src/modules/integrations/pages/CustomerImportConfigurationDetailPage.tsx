@@ -10,6 +10,7 @@ import { EntityHeader } from '@/shared/components/layout/EntityHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Badge } from '@/shared/components/ui/badge'
 
+import { ImportPreviewPanel } from '../components/ImportPreviewPanel'
 import {
   useCustomerImportConfiguration,
   useDeleteCustomerImportConfiguration,
@@ -24,6 +25,10 @@ import {
  *
  * Aucune trace d'exécution n'est affichée : il n'existe ni table `Import`, ni
  * route pour en produire une. Le §5 interdit d'inventer cet écran.
+ *
+ * L'essai, en revanche, y a sa place : éprouver la correspondance sur un
+ * fichier ne crée rien et ne garde rien, mais c'est la seule façon de vérifier
+ * qu'elle est juste avant de s'en servir.
  */
 export function CustomerImportConfigurationDetailPage() {
   const { t } = useTranslation()
@@ -87,6 +92,16 @@ export function CustomerImportConfigurationDetailPage() {
         description={t('integrations.imports.validationRulesHint')}
       >
         {block(configuration.validationRules)}
+      </SectionCard>
+
+      <SectionCard
+        title={t('integrations.imports.preview.title')}
+        description={t('integrations.imports.preview.subtitle')}
+      >
+        <ImportPreviewPanel
+          configurationId={id}
+          hasMapping={configuration.mapping !== null}
+        />
       </SectionCard>
 
       <ConfirmDialog

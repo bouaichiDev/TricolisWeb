@@ -2363,6 +2363,22 @@
         },
         "addField": "Ajouter {{field}} à la correspondance",
         "refused": "La correspondance n’est pas un JSON valide : corrigez-la, puis réessayez."
+      },
+      "preview": {
+        "title": "Éprouver la correspondance",
+        "subtitle": "Sur un fichier d’exemple. Rien n’est créé ni conservé.",
+        "choose": "Choisir un fichier",
+        "hint": "Un échantillon de votre client suffit — quelques lignes.",
+        "noMapping": "Renseignez d’abord une correspondance.",
+        "rows": "{{count}} ligne lue",
+        "rows_other": "{{count}} lignes lues",
+        "complete": "La correspondance produit une commande valide.",
+        "incomplete": "{{count}} champ manquerait à la création.",
+        "incomplete_other": "{{count}} champs manqueraient à la création.",
+        "columns": "Colonnes trouvées dans le fichier",
+        "missing": "Ce qui manquerait",
+        "payload": "Ce que la correspondance produit",
+        "resolvedElsewhere": "{{fields}} et les autres identifiants ne viennent pas du fichier : ils devront être résolus depuis vos références métier."
       }
     },
     "api": {

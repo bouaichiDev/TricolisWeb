@@ -285,6 +285,17 @@ UsageLog), `Webhook*`, `FileTransferLog`, `NotificationJob`.
    c'est ce qui empêche la fonction d'exister pour son utilisateur. La
    distinction compte : une limite de périmètre s'assume, un blocker se lève.
 
+   **Levé pour la moitié qui compte.** Une prévisualisation a été ajoutée :
+   `POST /customer-import-configurations/{id}/preview` lit un fichier
+   d'exemple, applique la correspondance et rend ce qu'elle produirait, avec le
+   verdict des règles réelles de création d'une commande. **Rien n'est créé** :
+   le §5 tient, prévisualiser n'est pas importer, et il n'existe toujours ni
+   table `Import`, ni historique.
+
+   Ce qui reste : l'exécution réelle. Elle suppose de décider comment le fichier
+   arrive, comment les références métier se résolvent en identifiants, et que
+   faire d'une ligne fautive — trois questions de conception, pas de code.
+
 2. **Téléchargement d'un export impossible.** Les §56, §58, §65 et §86
    prévoient `GET /export-jobs/{id}/download` et la permission
    `export_jobs.download`. **Ni l'un ni l'autre n'existe.** La ressource expose

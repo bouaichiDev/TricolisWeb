@@ -89,8 +89,11 @@ table, ni constante. Conformément aux §8 et §9, rien n'est codé en dur : sai
 libre. Le filtre de liste les accepte tels quels.
 
 `mapping` et `validationRules` sont validés comme **tableaux**, jamais
-interprétés : aucune Action ne les exécute. Le §5 est respecté — il n'existe
-aucun moteur d'import, et aucun écran d'historique ne sera créé.
+interprétés : aucune Action ne les exécute. Le §5 interdit d'écrire un moteur
+d'import dans cette phase, et aucun écran d'historique ne sera donc créé.
+
+**Mais l'absence de moteur n'est pas qu'une limite de périmètre** : sans lui,
+une correspondance ne peut être ni éprouvée ni employée. Voir le blocker 1.
 
 ## 9–12. mapping / validationRules
 
@@ -265,7 +268,24 @@ UsageLog), `Webhook*`, `FileTransferLog`, `NotificationJob`.
 
 ## Blockers
 
-1. **Téléchargement d'un export impossible.** Les §56, §58, §65 et §86
+1. **Une configuration d'import ne peut pas être testée, ni livrée à un
+   client.** Aucune Action ne lit `mapping`, aucune route ne déclenche une
+   lecture, et il n'existe pas de moteur d'import. L'écran permet donc de
+   décrire comment un fichier serait lu, **sans aucun moyen de vérifier que la
+   description est juste** — et sans que rien ne se produise à l'arrivée d'un
+   fichier.
+
+   Le §5 explique pourquoi le moteur n'est pas construit dans cette phase. Il ne
+   rend pas la fonction livrable pour autant : un transporteur à qui l'on
+   demande de saisir une correspondance, sans pouvoir l'éprouver sur un fichier
+   réel, ne peut ni la valider ni s'en servir.
+
+   **Ce blocker manquait à la première version de cette analyse.** Il y était
+   présenté comme une limite de périmètre — « le §5 est respecté » — alors que
+   c'est ce qui empêche la fonction d'exister pour son utilisateur. La
+   distinction compte : une limite de périmètre s'assume, un blocker se lève.
+
+2. **Téléchargement d'un export impossible.** Les §56, §58, §65 et §86
    prévoient `GET /export-jobs/{id}/download` et la permission
    `export_jobs.download`. **Ni l'un ni l'autre n'existe.** La ressource expose
    bien `hasFile`, mais rien ne sert le fichier. Le §58 interdit par ailleurs
@@ -277,10 +297,10 @@ UsageLog), `Webhook*`, `FileTransferLog`, `NotificationJob`.
    un bouton mènerait à un 404, et fabriquer une URL violerait le §58 et le
    §105.
 
-2. **`sourceType` et `fileFormat` sans liste contrôlée.** Aucune énumération ni
+3. **`sourceType` et `fileFormat` sans liste contrôlée.** Aucune énumération ni
    table. Conformément aux §8 et §9 : saisie libre, aucune valeur inventée.
 
-3. **Modules interdits aux clés API non exposés.** `ApiPermissionValidator`
+4. **Modules interdits aux clés API non exposés.** `ApiPermissionValidator`
    exclut cinq modules, mais aucune route ne publie cette liste. Le frontend
    propose les permissions de `GET /permissions` et laisse le serveur refuser
    en 422 plutôt que de recopier la règle.

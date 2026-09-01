@@ -538,6 +538,24 @@ ni historique d'import.
    **Cette limite n'apparaissait pas dans l'analyse préalable : c'est un manque
    de cette analyse**, pas une découverte tardive du produit.
 
+   **Suite donnée.** Un portail client a été posé après coup — middleware
+   `customer-api`, correspondance IP/CIDR, contexte de requête, trois routes
+   `/api/v1/client/*` et 19 tests — documenté dans
+   [customer-api-portal.md](../backend/customer-api-portal.md). Il lève le
+   risque pour la lecture des commandes : la clé authentifie, l'adresse et le
+   droit sont appliqués, `lastUsedAt` est daté.
+
+   Deux réserves subsistent. La surface est **volontairement étroite** : chaque
+   route ajoutée demande de décider comment l'appartenance au client s'y
+   exprime, ce qui est une décision par ressource et non un réglage. Et
+   **l'écran des droits promet plus que le portail ne sert** — le sélecteur
+   propose tout le référentiel RBAC alors qu'un seul droit, `orders.view`, a
+   aujourd'hui un point d'entrée.
+
+   L'endroit où ce portail doit vivre — même code déployé deux fois, projet
+   séparé appelant l'API, ou projet séparé sur la même base — **reste une
+   décision ouverte**, pesée dans le document ci-dessus.
+
 2. **Le téléchargement manque à l'exploitation.** Un envoi échoué se relance,
    mais son fichier ne se récupère pas. Une route serveur lèverait la limite ;
    elle n'existe pas.

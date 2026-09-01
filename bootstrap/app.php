@@ -5,6 +5,7 @@ use App\Console\Commands\GrantPlatformAdmin;
 use App\Console\Commands\ImportStatusCodes;
 use App\Console\Commands\RepairSiteAddressLinks;
 use App\Console\Commands\SyncOrganizationMenus;
+use App\Http\Middleware\AuthenticateCustomerApiKey;
 use App\Http\Middleware\EnsureOrganizationContext;
 use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use Illuminate\Foundation\Application;
@@ -33,6 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'organization' => EnsureOrganizationContext::class,
+            // Le portail des clients : une cle API, une adresse autorisee, un
+            // droit. Distinct de `auth:sanctum`, qui ouvre l'administration.
+            'customer-api' => AuthenticateCustomerApiKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

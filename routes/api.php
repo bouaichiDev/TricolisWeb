@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\V1\Billing\InvoiceRepricingController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogController;
 use App\Http\Controllers\Api\V1\Catalogs\CustomerCatalogItemController;
 use App\Http\Controllers\Api\V1\Claims\ClaimController;
+use App\Http\Controllers\Api\V1\Client\ClientIdentityController;
+use App\Http\Controllers\Api\V1\Client\ClientOrderController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationAttachmentController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationRuleController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationTemplateController;
@@ -102,6 +104,32 @@ Route::prefix('auth')->name('auth.')->group(static function (): void {
         Route::patch('password', [ProfileController::class, 'updatePassword'])->name('password');
         Route::get('sessions', [SessionController::class, 'index'])->name('sessions');
         Route::delete('sessions/{tokenId}', [SessionController::class, 'destroy'])->name('sessions.revoke');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Portail client
+|--------------------------------------------------------------------------
+|
+| Les routes qu'un client appelle lui-meme, avec sa cle API. Elles vivent a
+| part, et c'est deliberе : les routes d'administration scopent par
+| **organisation**, et y brancher une cle cliente lui donnerait les donnees de
+| tous les clients du transporteur. Ici l'appartenance est une contrainte, pas
+| un filtre.
+|
+| Le droit exige se declare sur chaque route. `client/me` n'en demande aucun :
+| une cle sans permission doit pouvoir constater qu'elle n'en a pas.
+|
+*/
+Route::prefix('client')->name('client.')->group(static function (): void {
+    Route::middleware('customer-api')->group(static function (): void {
+        Route::get('me', ClientIdentityController::class)->name('me');
+    });
+
+    Route::middleware('customer-api:orders.view')->group(static function (): void {
+        Route::get('orders', [ClientOrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [ClientOrderController::class, 'show'])->name('orders.show');
     });
 });
 

@@ -1,5 +1,5 @@
 import { Check, RotateCcw, WandSparkles } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useState, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/shared/components/ui/button'
@@ -16,6 +16,13 @@ interface JsonConfigurationEditorProps {
   rows?: number
   /** Valeur de départ, pour le bouton de réinitialisation. */
   initialValue?: string
+  /**
+   * Accès à la zone de saisie, pour qui doit connaître la position du curseur.
+   *
+   * L'assistant de champs en a besoin : ce qu'il insère dépend de l'endroit du
+   * document où l'on se trouve, et cette information n'existe que là.
+   */
+  textareaRef?: RefObject<HTMLTextAreaElement | null>
 }
 
 /**
@@ -43,6 +50,7 @@ export function JsonConfigurationEditor({
   error,
   rows = 8,
   initialValue,
+  textareaRef,
 }: JsonConfigurationEditorProps) {
   const { t } = useTranslation()
   const id = useId()
@@ -110,6 +118,7 @@ export function JsonConfigurationEditor({
 
       <Textarea
         id={id}
+        ref={textareaRef}
         value={value}
         rows={rows}
         spellCheck={false}

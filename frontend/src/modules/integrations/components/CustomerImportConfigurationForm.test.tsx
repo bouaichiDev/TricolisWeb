@@ -129,13 +129,19 @@ describe('référence des champs acceptés', () => {
     // `externalReference` existe deux fois — au niveau commande et au niveau
     // ligne : les noms sont donc visés exactement.
     expect(
-      await screen.findByRole('button', { name: 'Copier lines[].quantity' }),
+      await screen.findByRole('button', { name: 'Ajouter lines[].quantity à la correspondance' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Copier externalReference' })).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Copier lines[].externalReference' }),
+      screen.getByRole('button', { name: 'Ajouter externalReference à la correspondance' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Copier packages[].barcode' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: 'Ajouter lines[].externalReference à la correspondance',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Ajouter packages[].barcode à la correspondance' }),
+    ).toBeInTheDocument()
   })
 
   /**
@@ -154,9 +160,11 @@ describe('référence des champs acceptés', () => {
     // Les services sont la section la plus exigeante d'une commande : presque
     // tous leurs champs sont obligatoires.
     expect(
-      screen.getByRole('button', { name: 'Copier services[].serviceNumber' }),
+      screen.getByRole('button', { name: 'Ajouter services[].serviceNumber à la correspondance' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Copier claimType' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Ajouter claimType à la correspondance' }),
+    ).toBeInTheDocument()
   })
 
   /**
@@ -169,5 +177,73 @@ describe('référence des champs acceptés', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
 
     expect(await screen.findByText(/pas exécutée/)).toBeInTheDocument()
+  })
+})
+
+describe('assistant de correspondance', () => {
+  const open = async () =>
+    userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
+
+  const editor = () => screen.getByLabelText(/^Correspondance des champs/) as HTMLTextAreaElement
+
+  /** Un éditeur vide n'a pas d'objet : le premier clic le crée. */
+  it('crée le document au premier champ ajouté', async () => {
+    render(async () => {})
+    await open()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Ajouter orderDate à la correspondance' }),
+    )
+
+    expect(JSON.parse(editor().value)).toEqual({ orderDate: '' })
+  })
+
+  /**
+   * Le cas qui décourage sans assistant : un chemin imbriqué s'écrit en entier
+   * depuis la racine, avec ses tableaux.
+   */
+  it('déploie la structure d’un champ imbriqué', async () => {
+    render(async () => {})
+    await open()
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Ajouter services[].contacts[].phone à la correspondance',
+      }),
+    )
+
+    expect(JSON.parse(editor().value)).toEqual({
+      services: [{ contacts: [{ phone: '' }] }],
+    })
+  })
+
+  /** Deux champs de suite se complètent au lieu de s'écraser. */
+  it('ajoute un second champ sans effacer le premier', async () => {
+    render(async () => {})
+    await open()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Ajouter lines[].articleCode à la correspondance' }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Ajouter lines[].quantity à la correspondance' }),
+    )
+
+    expect(JSON.parse(editor().value)).toEqual({
+      lines: [{ articleCode: '', quantity: '' }],
+    })
+  })
+
+  /** Sur un document cassé, l'assistant le dit plutôt que de rester inerte. */
+  it('refuse d’écrire dans un JSON invalide', async () => {
+    render(async () => {})
+    await open()
+
+    await userEvent.type(editor(), '{{"a": ')
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Ajouter orderDate à la correspondance' }),
+    )
+
+    expect(await screen.findByText(/n’est pas un JSON valide/)).toBeInTheDocument()
   })
 })

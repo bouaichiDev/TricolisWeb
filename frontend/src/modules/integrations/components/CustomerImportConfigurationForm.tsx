@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
@@ -16,6 +17,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
 import { ImportTargetFieldsReference } from './ImportTargetFieldsReference'
+import { insertField } from '../utils/mappingInsertion'
 import {
   customerImportConfigurationSchema,
   IMPORT_CONFIGURATION_DEFAULTS,
@@ -66,6 +68,40 @@ export function CustomerImportConfigurationForm({
   })
 
   const { formError, handleError, clearError, setFormError } = useApiFormError(form)
+  const mappingRef = useRef<HTMLTextAreaElement>(null)
+
+  /**
+   * Écrit un champ dans la correspondance, au niveau du curseur.
+   *
+   * La position vient de la zone de saisie elle-même : c'est elle, et rien
+   * d'autre, qui sait où l'on se trouve dans le document. Sans curseur — le
+   * champ n'a jamais eu le focus — on insère à la fin, ce qui revient à la
+   * racine sur un document bien formé.
+   *
+   * Le curseur est ensuite reposé entre les guillemets de la valeur : c'est là
+   * qu'on écrit le nom de la colonne du fichier, tout de suite après.
+   */
+  const insertIntoMapping = (fieldPath: string): boolean => {
+    const current = form.getValues('mapping')
+    const cursor = mappingRef.current?.selectionStart ?? current.length
+    const result = insertField(current, cursor, fieldPath)
+
+    if (result === null) return false
+
+    form.setValue('mapping', result.text, { shouldDirty: true })
+
+    // Après le rendu : régler la sélection avant que React ait réécrit la
+    // valeur la replacerait à la fin.
+    requestAnimationFrame(() => {
+      const field = mappingRef.current
+      if (field === null) return
+
+      field.focus()
+      field.setSelectionRange(result.cursor, result.cursor)
+    })
+
+    return true
+  }
 
   const submit = form.handleSubmit(async (values) => {
     clearError()
@@ -152,7 +188,7 @@ export function CustomerImportConfigurationForm({
         description={t('integrations.imports.mappingSectionHint')}
       >
         <div className="flex flex-col gap-5">
-          <ImportTargetFieldsReference />
+          <ImportTargetFieldsReference onInsert={insertIntoMapping} />
 
           <JsonConfigurationEditor
             label={t('integrations.fields.mapping')}
@@ -160,6 +196,7 @@ export function CustomerImportConfigurationForm({
             onChange={(next) => form.setValue('mapping', next, { shouldDirty: true })}
             description={t('integrations.imports.mappingHint')}
             initialValue={defaultValues?.mapping ?? ''}
+            textareaRef={mappingRef}
           />
 
           <JsonConfigurationEditor

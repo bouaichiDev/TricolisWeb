@@ -2341,7 +2341,7 @@
       "reference": {
         "title": "Champs acceptés par Tricolis",
         "subtitle": "La destination d’une correspondance — relevée sur le contrat de l’API.",
-        "hint": "Écrivez ces noms à gauche de votre correspondance. À droite, décrivez votre fichier comme vous le souhaitez : aucun format n’est imposé.",
+        "hint": "Cliquez un champ : il est écrit dans la correspondance, au niveau où se trouve votre curseur. À vous d’indiquer ensuite la colonne de votre fichier, entre les guillemets.",
         "groups": {
           "order": "Commande",
           "lines": "Lignes",
@@ -2355,11 +2355,12 @@
           "conditional": "conditionnel"
         },
         "notExecuted": "Cette correspondance est enregistrée, pas exécutée : aucun moteur d’import n’existe encore. Elle sert à préparer et documenter l’intégration.",
-        "copyField": "Copier {{field}}",
         "targets": {
           "order": "Import de commandes",
           "claim": "Import de réclamations"
-        }
+        },
+        "addField": "Ajouter {{field}} à la correspondance",
+        "refused": "La correspondance n’est pas un JSON valide : corrigez-la, puis réessayez."
       }
     },
     "api": {

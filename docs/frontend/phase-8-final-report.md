@@ -88,9 +88,44 @@ Le **côté droit** décrit le fichier du client et n'est pas contraint : le bac
 valide `mapping` comme un tableau sans schéma, et le §11 interdit d'inventer un
 langage de correspondance qu'il ne possède pas.
 
+### Le panneau écrit, il ne fait pas que nommer
+
+Nommer les champs ne suffisait pas : coller `services[].contacts[].phone` comme
+texte ne produit rien de valide, et construire l'imbrication à la main est
+précisément ce qui décourage devant cet écran.
+
+Un clic **insère** donc le champ dans la correspondance, avec la structure qu'il
+faut et **seulement ce qui manque à l'endroit du curseur** :
+
+| Curseur | Ce qui est inséré |
+|---|---|
+| document vide | l'objet est créé |
+| à la racine | `{ "services": [ { "contacts": [ { "phone": "" } ] } ] }` |
+| dans un service | `{ "contacts": [ { "phone": "" } ] }` |
+| dans un contact | `{ "phone": "" }` |
+
+`contextPathAt` lit le chemin des conteneurs ouverts au curseur — en sautant les
+chaînes, pour qu'une accolade dans `"va{leur"` n'ouvre rien — puis
+`insertField` retire le préfixe commun et fusionne le reste dans le document
+analysé. Passer par l'objet plutôt que par le texte garantit un résultat
+toujours valide et indenté ; un découpage de chaîne produit une accolade en trop
+au premier cas limite.
+
+Ce qui existe n'est jamais écrasé : ajouter `lines[].quantity` après
+`lines[].articleCode` complète la ligne au lieu de la remplacer. Le curseur se
+repose entre les guillemets de la valeur, là où l'on écrit le nom de la colonne
+du fichier.
+
+Un contexte qui ne coïncide pas avec le champ est ignoré : `orderDate` choisi
+depuis l'intérieur d'un contact s'insère bien à la racine.
+
+Sur un JSON cassé, l'assistant **renonce et le dit** — réparer le document à la
+place de son auteur ferait plus de dégâts que de bien, et l'éditeur affiche déjà
+l'erreur avec sa position.
+
 Le panneau dit enfin ce qui est le plus facile à manquer — **cette
 correspondance est enregistrée, pas exécutée** — pour qu'enregistrer ne laisse
-pas croire qu'un import se déclenche. Deux tests le vérifient.
+pas croire qu'un import se déclenche.
 
 Les identifiants (`customerId`, `agencyId`, `catalogItemId`) sont volontairement
 absents de la référence : un fichier client porte des références métier, pas les
@@ -339,13 +374,14 @@ formulaire Phase 6, réutilisé.
 
 ## 30. Tests
 
-80 fichiers, 547 tests, tous verts — 26 ajoutés par cette phase.
+81 fichiers, 568 tests, tous verts — 47 ajoutés par cette phase.
 
 | Fichier | Couvre |
 |---|---|
 | `CustomerApiConfigurationCreatePage.test.tsx` | clé absente du formulaire et de la charge utile, clé montrée une fois, copie, absence de tout stockage après fermeture |
 | `CustomerApiConfigurationDetailPage.test.tsx` | restrictions affichées, clé et hash jamais montrés, `lastUsedAt` en lecture seule, rotation confirmée puis clé unique, permission |
-| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, séparation commande/réclamation, mention « pas exécutée » |
+| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, séparation commande/réclamation, assistant d'insertion, refus sur JSON invalide, mention « pas exécutée » |
+| `mappingInsertion.test.ts` | chemin d'un champ, contexte au curseur (racine, tableau, imbrication, chaînes, valeur refermée), création du document, déploiement complet, insertion partielle, champ de racine depuis un contact, préservation de l'existant, refus sur JSON invalide |
 | `ExportJobDetailPage.test.tsx` | statut et erreur, chemin de stockage jamais révélé, aucun téléchargement, ni édition ni suppression, relance, relance retirée si transmis, permission |
 
 Vérifications :
@@ -353,7 +389,7 @@ Vérifications :
 ```text
 npm run lint       ✔ 0 erreur
 npm run typecheck  ✔
-npm run test       ✔ 547 / 547
+npm run test       ✔ 568 / 568
 npm run build      ✔
 php artisan test   ✔ 1251 / 1251
 ./vendor/bin/pint  ✔

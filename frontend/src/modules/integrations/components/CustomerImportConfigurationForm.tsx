@@ -15,6 +15,7 @@ import { TextField } from '@/shared/components/form/TextField'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
+import { ImportTargetFieldsReference } from './ImportTargetFieldsReference'
 import {
   customerImportConfigurationSchema,
   IMPORT_CONFIGURATION_DEFAULTS,
@@ -151,6 +152,8 @@ export function CustomerImportConfigurationForm({
         description={t('integrations.imports.mappingSectionHint')}
       >
         <div className="flex flex-col gap-5">
+          <ImportTargetFieldsReference />
+
           <JsonConfigurationEditor
             label={t('integrations.fields.mapping')}
             value={form.watch('mapping')}

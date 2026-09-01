@@ -2337,7 +2337,23 @@
       "validationRulesHint": "Ce qu’une ligne doit respecter pour être acceptée.",
       "mappedFields": "{{count}} champ",
       "mappedFields_other": "{{count}} champs",
-      "notConfigured": "Non renseigné."
+      "notConfigured": "Non renseigné.",
+      "reference": {
+        "title": "Champs acceptés par Tricolis",
+        "subtitle": "La destination d’une correspondance — relevée sur le contrat de l’API.",
+        "hint": "Écrivez ces noms à gauche de votre correspondance. À droite, décrivez votre fichier comme vous le souhaitez : aucun format n’est imposé.",
+        "groups": {
+          "order": "Commande",
+          "lines": "Lignes",
+          "packages": "Colis"
+        },
+        "rules": {
+          "required": "obligatoire",
+          "conditional": "conditionnel"
+        },
+        "notExecuted": "Cette correspondance est enregistrée, pas exécutée : aucun moteur d’import n’existe encore. Elle sert à préparer et documenter l’intégration.",
+        "copyField": "Copier {{field}}"
+      }
     },
     "api": {
       "title": "Accès API clients",

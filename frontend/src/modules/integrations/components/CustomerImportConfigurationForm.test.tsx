@@ -115,3 +115,38 @@ describe('formulaire de configuration d’import', () => {
     await waitFor(() => expect((editor as HTMLTextAreaElement).value).toContain('\n  "a": 1'))
   })
 })
+
+describe('référence des champs acceptés', () => {
+  /**
+   * Le §12 : éditeur contrôlé **et documentation**. Sans elle, l'écran demande
+   * un JSON sans dire quelles clés sont valides.
+   */
+  it('documente les champs que Tricolis accepte', async () => {
+    render(async () => {})
+
+    await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
+
+    // `externalReference` existe deux fois — au niveau commande et au niveau
+    // ligne : les noms sont donc visés exactement.
+    expect(
+      await screen.findByRole('button', { name: 'Copier lines[].quantity' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copier externalReference' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Copier lines[].externalReference' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copier packages[].barcode' })).toBeInTheDocument()
+  })
+
+  /**
+   * Le point le plus facile à manquer : rien ne lit encore ce mapping. Le taire
+   * laisserait croire qu'enregistrer déclenche quelque chose.
+   */
+  it('dit que la correspondance n’est pas exécutée', async () => {
+    render(async () => {})
+
+    await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
+
+    expect(await screen.findByText(/pas exécutée/)).toBeInTheDocument()
+  })
+})

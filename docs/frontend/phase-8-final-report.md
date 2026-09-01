@@ -58,6 +58,30 @@ déclenchement. Le §5 s'arrête à la configuration, et l'interface aussi.
 `JSON.parse`, qui indique la position fautive — « JSON invalide » sans position
 obligerait à relire cent lignes.
 
+### La documentation qui va avec
+
+Le §12 exige un éditeur contrôlé **et** une documentation. Un éditeur seul laisse
+l'utilisateur écrire un JSON sans savoir quelles clés sont valides — le reproche
+qu'on peut légitimement faire à un champ libre.
+
+`ImportTargetFieldsReference` documente donc le **côté gauche** d'une
+correspondance : les 27 champs que `StoreOrderRequest` accepte réellement, avec
+leur obligation et leur contrainte, groupés en commande / lignes / colis et
+copiables au clic. La liste est relevée une par une sur le contrat de l'API ;
+rien n'y est ajouté.
+
+Le **côté droit** décrit le fichier du client et n'est pas contraint : le backend
+valide `mapping` comme un tableau sans schéma, et le §11 interdit d'inventer un
+langage de correspondance qu'il ne possède pas.
+
+Le panneau dit enfin ce qui est le plus facile à manquer — **cette
+correspondance est enregistrée, pas exécutée** — pour qu'enregistrer ne laisse
+pas croire qu'un import se déclenche. Deux tests le vérifient.
+
+Les identifiants (`customerId`, `agencyId`, `catalogItemId`) sont volontairement
+absents de la référence : un fichier client porte des références métier, pas les
+ULID de notre base.
+
 **Rien n'est exécuté** : le contenu est analysé pour vérifier sa syntaxe puis
 renvoyé tel quel. Ni `eval`, ni fonction dynamique, ni nom de classe interprété
 (§10, §41).
@@ -301,13 +325,13 @@ formulaire Phase 6, réutilisé.
 
 ## 30. Tests
 
-80 fichiers, 544 tests, tous verts — 23 ajoutés par cette phase.
+80 fichiers, 546 tests, tous verts — 25 ajoutés par cette phase.
 
 | Fichier | Couvre |
 |---|---|
 | `CustomerApiConfigurationCreatePage.test.tsx` | clé absente du formulaire et de la charge utile, clé montrée une fois, copie, absence de tout stockage après fermeture |
 | `CustomerApiConfigurationDetailPage.test.tsx` | restrictions affichées, clé et hash jamais montrés, `lastUsedAt` en lecture seule, rotation confirmée puis clé unique, permission |
-| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage |
+| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, mention « pas exécutée » |
 | `ExportJobDetailPage.test.tsx` | statut et erreur, chemin de stockage jamais révélé, aucun téléchargement, ni édition ni suppression, relance, relance retirée si transmis, permission |
 
 Vérifications :
@@ -315,7 +339,7 @@ Vérifications :
 ```text
 npm run lint       ✔ 0 erreur
 npm run typecheck  ✔
-npm run test       ✔ 544 / 544
+npm run test       ✔ 546 / 546
 npm run build      ✔
 php artisan test   ✔ 1251 / 1251
 ./vendor/bin/pint  ✔
@@ -356,6 +380,14 @@ mêmes `ExportJob` lus par le même cache.
    promettre de le servir.
 2. **`sourceType` et `fileFormat` sans liste contrôlée.** Aucune énumération ni
    table. Saisie libre, conformément aux §8 et §9.
+2 bis. **Le mapping n'a pas de structure définie, et personne ne le lit.** Le
+   backend le valide comme `array|max:500` sans schéma, et aucune Action ne
+   l'interprète — il n'existe pas de moteur d'import (§5). Une correspondance
+   imbriquée — un XML dont les lignes sont répétées, dont les adresses se
+   distinguent par un code — ne peut donc pas être exprimée par une convention
+   validée : il faudrait en inventer une, ce que le §11 interdit. La référence
+   des champs cibles documente ce qui est certain ; le reste attend la
+   spécification du moteur.
 3. **Modules interdits aux clés API non exposés.** `ApiPermissionValidator` en
    exclut cinq, mais aucune route ne publie la liste. Le serveur refuse en 422
    plutôt que de voir la règle recopiée.

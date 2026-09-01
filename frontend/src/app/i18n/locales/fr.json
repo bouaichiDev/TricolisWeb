@@ -2405,7 +2405,9 @@
       "keyNotShown": "La clé n’est pas consultable : le serveur n’en garde qu’une empreinte.",
       "keyRotated": "Clé renouvelée.",
       "rotate": "Renouveler la clé",
-      "rotateConfirm": "L’ancienne clé sera immédiatement invalidée : toute intégration qui l’emploie cessera de fonctionner."
+      "rotateConfirm": "L’ancienne clé sera immédiatement invalidée : toute intégration qui l’emploie cessera de fonctionner.",
+      "copyKey": "Copier la clé",
+      "copyFailed": "La copie automatique n’a pas abouti. Sélectionnez la clé ci-dessus et copiez-la à la main."
     },
     "exports": {
       "title": "Configurations d’export",

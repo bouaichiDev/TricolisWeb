@@ -101,6 +101,44 @@ describe('création d’un accès API client', () => {
   })
 
   /**
+   * La clé est longue : elle doit se lire **en entier**. Un défilement
+   * horizontal en cacherait la moitié, et personne ne vérifie ce qu'il a copié
+   * dans une valeur tronquée.
+   */
+  it('affiche la clé entière, sans la tronquer', async () => {
+    serveCreate()
+    render()
+
+    await fillAndSubmit()
+
+    const key = await screen.findByText(API_KEY)
+    expect(key.textContent).toBe(API_KEY)
+    expect(key.className).toContain('break-all')
+  })
+
+  /**
+   * Le presse-papiers exige un contexte sécurisé : une application servie en
+   * HTTP simple n'y a pas droit. Un échec silencieux laisserait croire que la
+   * clé est copiée alors qu'elle ne l'est pas — pour une valeur qu'on ne reverra
+   * jamais, c'est la pire issue possible.
+   */
+  it('prévient quand la copie automatique échoue', async () => {
+    Object.assign(navigator, {
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error('refusé')) },
+    })
+
+    serveCreate()
+    render()
+
+    await fillAndSubmit()
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByRole('button', { name: /Copier la clé/ }))
+
+    expect(await screen.findByText(/copiez-la à la main/)).toBeInTheDocument()
+  })
+
+  /**
    * Le §22 : après fermeture, la clé ne subsiste nulle part. Elle vivait dans
    * l'état du composant, et rien d'autre ne l'a écrite.
    */

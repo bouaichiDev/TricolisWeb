@@ -39,18 +39,32 @@ export function ApiKeyCreatedDialog({
 }: ApiKeyCreatedDialogProps) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
+  const [failed, setFailed] = useState(false)
 
+  /**
+   * Le presse-papiers n'est pas toujours accessible : il exige un contexte
+   * sécurisé, et une application servie en HTTP simple n'y a pas droit. Un
+   * échec silencieux laisserait croire que la clé est copiée alors qu'elle ne
+   * l'est pas — pour une valeur qu'on ne reverra jamais, c'est la pire issue
+   * possible. On le dit, et on invite à la sélectionner à la main.
+   */
   const copy = () => {
     if (apiKey === null) return
 
-    void navigator.clipboard.writeText(apiKey).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
-    })
+    setFailed(false)
+
+    navigator.clipboard
+      ?.writeText(apiKey)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2500)
+      })
+      .catch(() => setFailed(true)) ?? setFailed(true)
   }
 
   const close = () => {
     setCopied(false)
+    setFailed(false)
     onClose()
   }
 
@@ -62,7 +76,7 @@ export function ApiKeyCreatedDialog({
         if (!open) close()
       }}
     >
-      <DialogContent className="max-w-lg" showCloseButton={false}>
+      <DialogContent className="sm:max-w-xl" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{t('integrations.api.keyTitle')}</DialogTitle>
           <DialogDescription>
@@ -76,20 +90,27 @@ export function ApiKeyCreatedDialog({
             <p className="text-sm">{t('integrations.api.keyWarning')}</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 overflow-x-auto rounded-md border bg-muted px-3 py-2 font-mono text-sm">
-              {apiKey}
-            </code>
+          {/* La clé s'affiche **en entier**, sur plusieurs lignes s'il le faut.
+              Un défilement horizontal en cacherait la moitié, et personne ne
+              vérifie ce qu'il a copié dans une valeur tronquée. `select-all`
+              permet de la prendre d'un clic quand le presse-papiers est
+              indisponible. */}
+          <code className="block select-all break-all rounded-md border bg-muted px-3 py-2.5 font-mono text-sm leading-relaxed">
+            {apiKey}
+          </code>
 
-            <Button type="button" variant="outline" onClick={copy} aria-label={t('common.copy')}>
-              {copied ? (
-                <Check className="size-4 text-success" aria-hidden />
-              ) : (
-                <Copy className="size-4" aria-hidden />
-              )}
-              {copied ? t('common.copied') : t('common.copy')}
-            </Button>
-          </div>
+          <Button type="button" variant="outline" className="w-full" onClick={copy}>
+            {copied ? (
+              <Check className="size-4 text-success" aria-hidden />
+            ) : (
+              <Copy className="size-4" aria-hidden />
+            )}
+            {copied ? t('common.copied') : t('integrations.api.copyKey')}
+          </Button>
+
+          {failed ? (
+            <p className="text-sm text-destructive">{t('integrations.api.copyFailed')}</p>
+          ) : null}
         </div>
 
         <DialogFooter>

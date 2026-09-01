@@ -211,11 +211,23 @@ Le §19 distingue les deux ; tous les fichiers de cette phase portent le préfix
 « Copier ». Le dialogue ne se ferme pas au clic à côté : on ne referme pas par
 mégarde une valeur irrécupérable.
 
+La clé s'affiche **en entier**, sur plusieurs lignes s'il le faut : un
+défilement horizontal en cacherait la moitié, et personne ne vérifie ce qu'il a
+copié dans une valeur tronquée. Elle est sélectionnable d'un clic, et le bouton
+de copie occupe toute la largeur sous elle plutôt que d'être coincé à côté.
+
+Le presse-papiers exige un contexte sécurisé — une application servie en HTTP
+simple n'y a pas droit. Un échec est donc **dit**, avec l'invitation à
+sélectionner la clé à la main : un échec silencieux laisserait croire que la clé
+est copiée alors qu'elle ne l'est pas, ce qui est la pire issue possible pour
+une valeur qu'on ne reverra jamais.
+
 La clé vit **uniquement** dans l'état local du composant. Elle n'entre pas au
 cache TanStack Query — `onSuccess` n'invalide que la liste, sans `setQueryData`
 — ni en `localStorage`, ni en `sessionStorage`, ni dans une URL, ni dans un
-journal. Quatre tests le vérifient, dont un qui inspecte les deux stockages et
-l'URL après fermeture.
+journal. Six tests le vérifient, dont un qui inspecte les deux stockages et l'URL après
+fermeture, un qui contrôle que la clé n'est pas tronquée, et un qui simule un
+presse-papiers refusé.
 
 Le formulaire ne demande jamais `apiKeyHash` ni de clé, et un test vérifie que
 la charge utile envoyée n'en contient aucune trace.
@@ -417,11 +429,11 @@ formulaire Phase 6, réutilisé.
 
 ## 30. Tests
 
-81 fichiers, 572 tests, tous verts — 51 ajoutés par cette phase.
+81 fichiers, 574 tests, tous verts — 53 ajoutés par cette phase.
 
 | Fichier | Couvre |
 |---|---|
-| `CustomerApiConfigurationCreatePage.test.tsx` | clé absente du formulaire et de la charge utile, clé montrée une fois, copie, absence de tout stockage après fermeture |
+| `CustomerApiConfigurationCreatePage.test.tsx` | clé absente du formulaire et de la charge utile, clé montrée une fois et non tronquée, copie, échec de copie signalé, absence de tout stockage après fermeture |
 | `CustomerApiConfigurationDetailPage.test.tsx` | restrictions affichées, clé et hash jamais montrés, `lastUsedAt` en lecture seule, rotation confirmée puis clé unique, permission |
 | `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, séparation commande/réclamation, assistant d'insertion, liaisons colis/lignes/services, colis traité par plusieurs services, rattachements d'une réclamation, refus sur JSON invalide, mention « pas exécutée » |
 | `mappingInsertion.test.ts` | chemin d'un champ, contexte au curseur (racine, tableau, imbrication, chaînes, valeur refermée), création du document, déploiement complet, insertion partielle, champ de racine depuis un contact, préservation de l'existant, refus sur JSON invalide |
@@ -432,7 +444,7 @@ Vérifications :
 ```text
 npm run lint       ✔ 0 erreur
 npm run typecheck  ✔
-npm run test       ✔ 572 / 572
+npm run test       ✔ 574 / 574
 npm run build      ✔
 php artisan test   ✔ 1251 / 1251
 ./vendor/bin/pint  ✔

@@ -115,6 +115,22 @@ Le **côté droit** décrit le fichier du client et n'est pas contraint : le bac
 valide `mapping` comme un tableau sans schéma, et le §11 interdit d'inventer un
 langage de correspondance qu'il ne possède pas.
 
+### Deux colonnes, pour voir ce qu'on écrit
+
+À partir du grand écran, la section se partage : les champs disponibles à
+gauche, la correspondance à droite. Empilés, chaque ajout obligeait à remonter
+pour lire la liste puis redescendre pour voir le résultat — sur soixante champs,
+c'est intenable.
+
+La liste défile dans son propre cadre, plafonné en hauteur, et reste collée en
+haut de la colonne pendant qu'on travaille sur le JSON. L'avertissement « pas
+exécutée » et le message de refus restent hors de ce défilement, pour qu'ils
+soient lus. Le panneau est déplié d'emblée : replié, il laisserait une colonne
+vide.
+
+Sous `xl`, tout s'empile de nouveau — deux colonnes sur un écran étroit
+donneraient deux zones illisibles.
+
 ### Le panneau écrit, il ne fait pas que nommer
 
 Nommer les champs ne suffisait pas : coller `services[].contacts[].phone` comme
@@ -401,7 +417,7 @@ formulaire Phase 6, réutilisé.
 
 ## 30. Tests
 
-81 fichiers, 571 tests, tous verts — 50 ajoutés par cette phase.
+81 fichiers, 572 tests, tous verts — 51 ajoutés par cette phase.
 
 | Fichier | Couvre |
 |---|---|
@@ -416,7 +432,7 @@ Vérifications :
 ```text
 npm run lint       ✔ 0 erreur
 npm run typecheck  ✔
-npm run test       ✔ 571 / 571
+npm run test       ✔ 572 / 572
 npm run build      ✔
 php artisan test   ✔ 1251 / 1251
 ./vendor/bin/pint  ✔

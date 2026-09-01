@@ -187,25 +187,37 @@ export function CustomerImportConfigurationForm({
         title={t('integrations.imports.sections.mapping')}
         description={t('integrations.imports.mappingSectionHint')}
       >
-        <div className="flex flex-col gap-5">
-          <ImportTargetFieldsReference onInsert={insertIntoMapping} />
+        {/* Deux colonnes à partir du grand écran : les champs disponibles à
+            gauche, ce qu'on en écrit à droite. Empilés, chaque ajout obligeait à
+            remonter pour lire la liste puis redescendre pour voir le résultat. */}
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="xl:col-span-5">
+            <div className="xl:sticky xl:top-4">
+              <ImportTargetFieldsReference onInsert={insertIntoMapping} />
+            </div>
+          </div>
 
-          <JsonConfigurationEditor
-            label={t('integrations.fields.mapping')}
-            value={form.watch('mapping')}
-            onChange={(next) => form.setValue('mapping', next, { shouldDirty: true })}
-            description={t('integrations.imports.mappingHint')}
-            initialValue={defaultValues?.mapping ?? ''}
-            textareaRef={mappingRef}
-          />
+          <div className="flex flex-col gap-5 xl:col-span-7">
+            <JsonConfigurationEditor
+              label={t('integrations.fields.mapping')}
+              value={form.watch('mapping')}
+              onChange={(next) => form.setValue('mapping', next, { shouldDirty: true })}
+              description={t('integrations.imports.mappingHint')}
+              initialValue={defaultValues?.mapping ?? ''}
+              textareaRef={mappingRef}
+              // Plus haut que par défaut : la colonne en laisse la place, et une
+              // correspondance imbriquée dépasse vite huit lignes.
+              rows={18}
+            />
 
-          <JsonConfigurationEditor
-            label={t('integrations.fields.validationRules')}
-            value={form.watch('validationRules')}
-            onChange={(next) => form.setValue('validationRules', next, { shouldDirty: true })}
-            description={t('integrations.imports.validationRulesHint')}
-            initialValue={defaultValues?.validationRules ?? ''}
-          />
+            <JsonConfigurationEditor
+              label={t('integrations.fields.validationRules')}
+              value={form.watch('validationRules')}
+              onChange={(next) => form.setValue('validationRules', next, { shouldDirty: true })}
+              description={t('integrations.imports.validationRulesHint')}
+              initialValue={defaultValues?.validationRules ?? ''}
+            />
+          </div>
         </div>
       </SectionCard>
 

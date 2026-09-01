@@ -121,10 +121,18 @@ describe('référence des champs acceptés', () => {
    * Le §12 : éditeur contrôlé **et documentation**. Sans elle, l'écran demande
    * un JSON sans dire quelles clés sont valides.
    */
-  it('documente les champs que Tricolis accepte', async () => {
+  /** Ouvert d'emblée : il occupe sa colonne, à côté de l'éditeur. */
+  it('est déplié dès l’ouverture de l’écran', async () => {
     render(async () => {})
 
-    await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
+    expect(await screen.findByRole('button', { name: /Champs acceptés/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+  })
+
+  it('documente les champs que Tricolis accepte', async () => {
+    render(async () => {})
 
     // `externalReference` existe deux fois — au niveau commande et au niveau
     // ligne : les noms sont donc visés exactement.
@@ -152,8 +160,6 @@ describe('référence des champs acceptés', () => {
   it('sépare les deux cibles d’import', async () => {
     render(async () => {})
 
-    await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
-
     expect(await screen.findByText('Import de commandes')).toBeInTheDocument()
     expect(screen.getByText('Import de réclamations')).toBeInTheDocument()
 
@@ -174,23 +180,16 @@ describe('référence des champs acceptés', () => {
   it('dit que la correspondance n’est pas exécutée', async () => {
     render(async () => {})
 
-    await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
-
     expect(await screen.findByText(/pas exécutée/)).toBeInTheDocument()
   })
 })
 
 describe('assistant de correspondance', () => {
-  const open = async () =>
-    userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
-
   const editor = () => screen.getByLabelText(/^Correspondance des champs/) as HTMLTextAreaElement
 
   /** Un éditeur vide n'a pas d'objet : le premier clic le crée. */
   it('crée le document au premier champ ajouté', async () => {
     render(async () => {})
-    await open()
-
     await userEvent.click(
       screen.getByRole('button', { name: 'Ajouter orderDate à la correspondance' }),
     )
@@ -204,8 +203,6 @@ describe('assistant de correspondance', () => {
    */
   it('déploie la structure d’un champ imbriqué', async () => {
     render(async () => {})
-    await open()
-
     await userEvent.click(
       screen.getByRole('button', {
         name: 'Ajouter services[].contacts[].phone à la correspondance',
@@ -220,8 +217,6 @@ describe('assistant de correspondance', () => {
   /** Deux champs de suite se complètent au lieu de s'écraser. */
   it('ajoute un second champ sans effacer le premier', async () => {
     render(async () => {})
-    await open()
-
     await userEvent.click(
       screen.getByRole('button', { name: 'Ajouter lines[].articleCode à la correspondance' }),
     )
@@ -237,8 +232,6 @@ describe('assistant de correspondance', () => {
   /** Sur un document cassé, l'assistant le dit plutôt que de rester inerte. */
   it('refuse d’écrire dans un JSON invalide', async () => {
     render(async () => {})
-    await open()
-
     await userEvent.type(editor(), '{{"a": ')
     await userEvent.click(
       screen.getByRole('button', { name: 'Ajouter orderDate à la correspondance' }),
@@ -249,9 +242,6 @@ describe('assistant de correspondance', () => {
 })
 
 describe('liaisons entre lignes, colis et services', () => {
-  const open = async () =>
-    userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
-
   const editor = () => screen.getByLabelText(/^Correspondance des champs/) as HTMLTextAreaElement
 
   const add = async (field: string) =>
@@ -263,8 +253,6 @@ describe('liaisons entre lignes, colis et services', () => {
    */
   it('documente les trois rattachements d’une commande', async () => {
     render(async () => {})
-    await open()
-
     expect(await screen.findByText('Liaisons — lignes, colis, services')).toBeInTheDocument()
 
     for (const field of [
@@ -286,8 +274,6 @@ describe('liaisons entre lignes, colis et services', () => {
    */
   it('permet de décrire un colis traité par plusieurs services', async () => {
     render(async () => {})
-    await open()
-
     await add('packages[].key')
     await add('services[].packages[].packageKey')
     await add('services[].packages[].handlingInstructions')
@@ -301,8 +287,6 @@ describe('liaisons entre lignes, colis et services', () => {
   /** Une réclamation se rattache à ce qu'elle conteste. */
   it('documente les rattachements d’une réclamation', async () => {
     render(async () => {})
-    await open()
-
     expect(await screen.findByText('Rattachements')).toBeInTheDocument()
 
     for (const field of ['orderId', 'orderServiceId', 'tourId']) {

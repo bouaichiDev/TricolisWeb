@@ -139,3 +139,15 @@ export interface ImportPreview {
    */
   resolvedElsewhere: string[]
 }
+
+/**
+ * Ce qu'un import a réellement créé.
+ *
+ * Rendu par `POST /customer-import-configurations/{id}/import`. Contrairement à
+ * la prévisualisation, **les commandes existent** : elles se retrouvent dans la
+ * liste, filtrées sur leur origine.
+ */
+export interface ImportResult {
+  rowCount: number
+  orders: { id: string; orderNumber: string; externalReference: string | null }[]
+}

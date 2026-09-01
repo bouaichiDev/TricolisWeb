@@ -62,6 +62,13 @@ final readonly class OrderListQuery
                 $query->where($column, $request->validated($input));
             }
         }
+
+        // `filled` refuserait `false` : ce filtre ne s'applique donc qu'a la
+        // demande explicite, et « avec depot » n'est pas son contraire — c'est
+        // l'absence de filtre.
+        if ($request->boolean('withoutDepot')) {
+            $query->whereNull('depot_id');
+        }
     }
 
     private function applyDateFilters(mixed $query, ListOrderRequest $request): void

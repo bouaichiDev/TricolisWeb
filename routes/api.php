@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\V1\Identity\RoleController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
 use App\Http\Controllers\Api\V1\Integrations\ApiConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
+use App\Http\Controllers\Api\V1\Integrations\ImportOrdersController;
 use App\Http\Controllers\Api\V1\Integrations\ImportPreviewController;
 use App\Http\Controllers\Api\V1\Integrations\OrganizationApiConfigurationController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
@@ -411,6 +412,9 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // Precede l'apiResource, sinon `{configuration}/preview` serait lu
         // comme un identifiant.
         Route::post('customer-import-configurations/{configuration}/preview', ImportPreviewController::class)->name('customer-import-configurations.preview');
+        // Importer reellement : meme lecture, meme interpreteur, mais les
+        // commandes sont ecrites. Tout ou rien, dans une transaction.
+        Route::post('customer-import-configurations/{configuration}/import', ImportOrdersController::class)->name('customer-import-configurations.import');
         Route::apiResource('customer-import-configurations', ImportConfigurationController::class)
             ->parameters(['customer-import-configurations' => 'configuration'])
             ->except(['create', 'edit']);

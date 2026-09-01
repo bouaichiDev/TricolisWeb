@@ -35,6 +35,9 @@ export const ORDER_SOURCES = [
   'csv_import',
   'excel_import',
   'xml_import',
+  // Ajoutee avec l'import de fichiers : le lecteur accepte le JSON, et une
+  // commande venue d'un JSON marquee `csv_import` serait fausse.
+  'json_import',
   'stock',
   'catalog',
 ] as const
@@ -99,6 +102,13 @@ export interface OrderFilters {
   requestedDate?: string
   city?: string
   fromCatalog?: boolean
+  /**
+   * Commandes qui n'ont pas encore de depot.
+   *
+   * C'est l'etat dans lequel arrive une commande importee : l'agence est
+   * choisie a l'import, le depot reste a affecter. Le filtre les rassemble.
+   */
+  withoutDepot?: boolean
   sort?: string
   direction?: 'asc' | 'desc'
 }

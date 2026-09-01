@@ -1430,6 +1430,10 @@
       "upcoming": "Pas encore atteint",
       "noReferential": "Aucun cycle de vie n’est décrit pour ce type d’élément : seul le passé est affiché. Un administrateur plateforme peut le définir depuis l’écran Statuts.",
       "changes": "Modifications"
+    },
+    "filters": {
+      "withoutDepot": "Sans dépôt affecté",
+      "withoutDepotHint": "Les commandes importées arrivent avec une agence mais sans dépôt : combinez avec l’origine pour ne voir qu’elles."
     }
   },
   "orderStatuses": {
@@ -1452,7 +1456,8 @@
     "excel_import": "Import Excel",
     "xml_import": "Import XML",
     "stock": "Stock",
-    "catalog": "Catalogue"
+    "catalog": "Catalogue",
+    "json_import": "Import JSON"
   },
   "orderServiceStatuses": {
     "draft": "Brouillon",
@@ -2380,6 +2385,20 @@
         "payload": "Ce que la correspondance produirait",
         "resolvedElsewhere": "{{fields}} et les autres identifiants ne viennent pas du fichier : ils devront être résolus depuis vos références métier.",
         "nothingCreated": "Ceci est un essai. Le fichier a été lu en mémoire puis oublié : aucune commande, aucune ligne, aucun colis n’existe en base. Importer réellement demandera un moteur d’import, qui n’existe pas encore."
+      },
+      "run": {
+        "title": "Importer le fichier",
+        "subtitle": "Les commandes sont créées. Tout ou rien : une seule ligne fautive fait tout refuser.",
+        "choose": "Choisir et importer",
+        "hint": "Le fichier sera lu et les commandes créées immédiatement.",
+        "pickAgency": "Choisissez d’abord l’agence.",
+        "inactive": "Cette configuration est désactivée.",
+        "agencyHint": "Obligatoire : une commande sans agence n’existe pas, et le fichier ne la porte pas.",
+        "depotHint": "Facultatif. Laissé vide, il restera à affecter depuis la liste des commandes.",
+        "created": "{{count}} commande créée.",
+        "created_other": "{{count}} commandes créées.",
+        "nothingWritten": "Aucune commande n’a été créée : le fichier est refusé en entier tant qu’une ligne est fautive.",
+        "seeImported": "Voir les commandes sans dépôt"
       }
     },
     "api": {

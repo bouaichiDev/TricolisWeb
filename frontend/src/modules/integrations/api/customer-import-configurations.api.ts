@@ -3,6 +3,7 @@ import type { ApiCollection, ApiResource } from '@/shared/api/types'
 
 import type {
   ImportPreview,
+  ImportResult,
   CustomerImportConfiguration,
   CustomerImportConfigurationFilters,
   CustomerImportConfigurationPayload,
@@ -86,6 +87,24 @@ export const customerImportConfigurationsApi = {
         `/customer-import-configurations/${id}/preview`,
         form,
       )
+      .then((response) => response.data)
+  },
+
+  /**
+   * Importe réellement : les commandes sont créées.
+   *
+   * Tout ou rien — une seule commande invalide fait refuser le fichier entier,
+   * en 422, sans que rien ne soit écrit. L'agence est fournie ici parce que
+   * `orders.agency_id` est `NOT NULL` et qu'aucun fichier client ne la porte.
+   */
+  import: (id: string, file: File, agencyId: string, depotId?: string) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('agencyId', agencyId)
+    if (depotId !== undefined && depotId !== '') form.append('depotId', depotId)
+
+    return api
+      .upload<ApiResource<ImportResult>>(`/customer-import-configurations/${id}/import`, form)
       .then((response) => response.data)
   },
 }

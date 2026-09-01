@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ORDER_SOURCES, ORDER_STATUSES, type OrderFilters } from '../types/order'
 import { SearchInput } from '@/shared/components/data/SearchInput'
+import { ControlledCheckbox } from '@/shared/components/form/ControlledCheckbox'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
@@ -37,7 +38,8 @@ export function OrderFilterBar({ filters, onChange, onReset }: OrderFiltersProps
     Boolean(filters.status) ||
     Boolean(filters.source) ||
     Boolean(filters.requestedDate) ||
-    Boolean(filters.city)
+    Boolean(filters.city) ||
+    filters.withoutDepot === true
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border bg-card p-4">
@@ -100,6 +102,17 @@ export function OrderFilterBar({ filters, onChange, onReset }: OrderFiltersProps
           />
         </div>
       </div>
+
+      {/* Ce qui reste a faire sur une commande importee, c'est lui donner un
+          depot : l'agence est choisie a l'import, le depot non. Le filtre les
+          rassemble, et se combine avec l'origine pour ne voir que celles-la.
+          « Avec depot » n'est pas propose : ce serait l'absence de filtre. */}
+      <ControlledCheckbox
+        label={t('orders.filters.withoutDepot')}
+        checked={filters.withoutDepot === true}
+        onChange={(checked) => onChange({ withoutDepot: checked ? true : undefined })}
+        description={t('orders.filters.withoutDepotHint')}
+      />
 
       {active ? (
         <div className="flex justify-end">

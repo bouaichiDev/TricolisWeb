@@ -11,6 +11,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Badge } from '@/shared/components/ui/badge'
 
 import { ImportPreviewPanel } from '../components/ImportPreviewPanel'
+import { ImportRunPanel } from '../components/ImportRunPanel'
 import {
   useCustomerImportConfiguration,
   useDeleteCustomerImportConfiguration,
@@ -101,6 +102,17 @@ export function CustomerImportConfigurationDetailPage() {
         <ImportPreviewPanel
           configurationId={id}
           hasMapping={configuration.mapping !== null}
+        />
+      </SectionCard>
+
+      <SectionCard
+        title={t('integrations.imports.run.title')}
+        description={t('integrations.imports.run.subtitle')}
+      >
+        <ImportRunPanel
+          configurationId={id}
+          hasMapping={configuration.mapping !== null}
+          isActive={configuration.isActive}
         />
       </SectionCard>
 

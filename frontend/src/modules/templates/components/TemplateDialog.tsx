@@ -12,10 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 
 import { TemplateForm } from './TemplateForm'
 import { TemplatePreview } from './TemplatePreview'
-import { useCreateTemplate, useUpdateTemplate } from '../hooks/useTemplates'
+import { useCreateTemplate, useTemplate, useUpdateTemplate } from '../hooks/useTemplates'
 import {
   INVOICE_FORM_DEFAULTS,
   TEMPLATE_FORM_DEFAULTS,
@@ -43,14 +44,61 @@ interface TemplateDialogProps {
 /**
  * Création et modification d'un modèle.
  *
- * Le formulaire et son aperçu vivent côte à côte : écrire un modèle sans voir
- * ce qu'il donne oblige à enregistrer pour vérifier, puis à revenir.
+ * **La modification recharge le modèle avant d'ouvrir le formulaire.** La liste
+ * n'expose ni le corps, ni l'objet, ni les variables — ce sont des LONGTEXT que
+ * le §37 interdit de charger par ligne. Éditer depuis la ligne de liste
+ * ouvrirait donc un formulaire au corps vide, et l'enregistrer effacerait le
+ * contenu du modèle sans que personne l'ait demandé.
+ */
+export function TemplateDialog({ template, open, onOpenChange, initial }: TemplateDialogProps) {
+  const { t } = useTranslation()
+  const detail = useTemplate(template?.id)
+
+  // En création, il n'y a rien à charger. En modification, le formulaire attend
+  // le modèle complet plutôt que de s'ouvrir sur des champs vides.
+  const loading = template !== null && detail.data === undefined
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{template === null ? t('templates.create') : t('templates.edit')}</DialogTitle>
+          <DialogDescription>{t('templates.formHint')}</DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <Skeleton className="h-72 w-full" />
+        ) : (
+          <TemplateDialogBody
+            template={detail.data ?? null}
+            initial={initial}
+            onDone={() => onOpenChange(false)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface TemplateDialogBodyProps {
+  template: Template | null
+  initial?: Partial<TemplateFormValues>
+  onDone: () => void
+}
+
+/**
+ * Le formulaire lui-même, monté une fois le modèle connu.
+ *
+ * Séparé du dialogue parce que son état de départ se calcule à la construction :
+ * le monter plus tôt figerait des champs vides, qu'un effet devrait ensuite
+ * rattraper — et l'utilisateur verrait sa saisie écrasée à l'arrivée des
+ * données.
  *
  * Le `code` n'est pas modifiable après coup. Il identifie le modèle — c'est par
  * lui qu'on le retrouve — et le renommer romprait cette référence sans
  * prévenir.
  */
-export function TemplateDialog({ template, open, onOpenChange, initial }: TemplateDialogProps) {
+function TemplateDialogBody({ template, initial, onDone }: TemplateDialogBodyProps) {
   const { t } = useTranslation()
   const isEdit = template !== null
 
@@ -76,43 +124,36 @@ export function TemplateDialog({ template, open, onOpenChange, initial }: Templa
       if (isEdit) await update.mutateAsync({ id: template.id, ...payload })
       else await create.mutateAsync(payload)
 
-      onOpenChange(false)
+      onDone()
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : t('errors.unexpected'))
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? t('templates.edit') : t('templates.create')}</DialogTitle>
-          <DialogDescription>{t('templates.formHint')}</DialogDescription>
-        </DialogHeader>
+    <>
+      <FormErrorSummary message={error} />
 
-        <FormErrorSummary message={error} />
+      <TemplateForm
+        values={values}
+        onChange={(patch) => setValues((current) => ({ ...current, ...patch }))}
+        codeEditable={!isEdit}
+      />
 
-        <TemplateForm
-          values={values}
-          onChange={(patch) => setValues((current) => ({ ...current, ...patch }))}
-          codeEditable={!isEdit}
-        />
+      <TemplatePreview values={values} />
 
-        <TemplatePreview values={values} />
-
-        <DialogFooter>
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => void submit()}
-            disabled={!isTemplateComplete(values) || create.isPending || update.isPending}
-          >
-            {t('common.save')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <Button type="button" variant="ghost" onClick={onDone}>
+          {t('common.cancel')}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => void submit()}
+          disabled={!isTemplateComplete(values) || create.isPending || update.isPending}
+        >
+          {t('common.save')}
+        </Button>
+      </DialogFooter>
+    </>
   )
 }

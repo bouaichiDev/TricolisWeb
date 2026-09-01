@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '@/shared/api/errors'
@@ -16,7 +16,7 @@ import {
 
 import { CommunicationMessageFields } from './CommunicationMessageFields'
 import { CommunicationRecipientFields } from './CommunicationRecipientFields'
-import { useTemplateList } from '@/modules/templates/hooks/useTemplates'
+import { useTemplate, useTemplateList } from '@/modules/templates/hooks/useTemplates'
 import type { Template } from '@/modules/templates/types/template'
 import { useCreateOrderCommunication } from '../hooks/useOrderCommunications'
 import { TEMPLATE_TYPES } from '@/modules/templates/types/template'
@@ -90,17 +90,31 @@ export function CreateOrderCommunicationDialog({
   const effectiveChannel = chosen?.channel ?? channel
   const effectiveType = chosen?.templateType ?? communicationType
 
-  const applyTemplate = (id: string) => {
-    setTemplateId(id)
+  // La liste ne transporte ni objet ni corps — des LONGTEXT que le §37 interdit
+  // d'y charger. Les recopier depuis la ligne remplissait le message avec
+  // `undefined` ; le modele choisi est donc recharge en entier.
+  const full = useTemplate(templateId === FREE_FORM ? undefined : templateId)
 
-    const template = available.find((item) => item.id === id)
+  useEffect(() => {
+    const template = full.data
+
     if (template === undefined) return
 
     setMessage((current) => ({
       ...current,
       subject: template.subjectTemplate ?? '',
-      body: template.bodyTemplate,
+      body: template.bodyTemplate ?? '',
     }))
+  }, [full.data])
+
+  const applyTemplate = (id: string) => {
+    setTemplateId(id)
+
+    if (id !== FREE_FORM) return
+
+    // Revenir au message libre efface ce que le modele avait pose : le laisser
+    // ferait passer pour une saisie ce qui venait d'ailleurs.
+    setMessage((current) => ({ ...current, subject: '', body: '' }))
   }
 
   const submit = async () => {

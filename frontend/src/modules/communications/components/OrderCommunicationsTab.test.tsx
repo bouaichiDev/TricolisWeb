@@ -14,28 +14,38 @@ const COMM_ID = '01JQZ0000000000000COMM01'
 const TEMPLATE_ID = '01JQZ0000000000000TMPL01'
 
 /**
- * Template « Client absent ».
+ * Modèle « Client absent », **tel que la liste le rend** : ni objet, ni corps.
+ * Ce sont des LONGTEXT que le §37 interdit d'y charger, et une fixture qui les
+ * porterait couvrirait un écran qui n'existe pas.
  *
- * `CUSTOMER_ABSENT_EMAIL` est un **code de template**, pas une énumération : le
+ * `CUSTOMER_ABSENT_EMAIL` est un **code de modèle**, pas une énumération : le
  * §20 interdit d'ajouter `CUSTOMER_ABSENT` aux types, et `templateType` reste
  * `custom`.
  */
 const absentTemplate = {
   id: TEMPLATE_ID,
   organizationId: '01JQZ0000000000000000ORG1',
+  customerId: null,
   serviceId: null,
+  scope: 'global',
   code: 'CUSTOMER_ABSENT_EMAIL',
   name: 'Client absent',
   channel: 'email',
   templateType: 'custom',
-  subjectTemplate: 'Absence lors de notre passage - {{orderNumber}}',
-  bodyTemplate: 'Bonjour,\n\nNous sommes passés sans pouvoir vous remettre votre commande.',
   language: 'fr',
-  availableVariables: ['orderNumber'],
   isDefault: false,
   isActive: true,
   createdAt: '2026-08-01T09:00:00+00:00',
   updatedAt: '2026-08-01T09:00:00+00:00',
+}
+
+/** Le modèle complet, servi par `GET /templates/{id}` au moment du choix. */
+const absentTemplateDetail = {
+  ...absentTemplate,
+  subjectTemplate: 'Absence lors de notre passage - {{orderNumber}}',
+  bodyTemplate: 'Bonjour,\n\nNous sommes passés sans pouvoir vous remettre votre commande.',
+  bodyFormat: 'text',
+  availableVariables: ['orderNumber'],
 }
 
 const communication = (overrides: Record<string, unknown> = {}) => ({
@@ -78,6 +88,10 @@ function renderDetail(permissions: string[], communications: unknown[] = [commun
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/templates`, () => HttpResponse.json(paginated([absentTemplate]))),
+    http.get(`${API}/templates/${TEMPLATE_ID}`, () =>
+      HttpResponse.json({ data: absentTemplateDetail, meta: [] }),
+    ),
+    http.get(`${API}/statuses`, () => HttpResponse.json(paginated([]))),
     // Le detail reflete la ligne : renvoyer un brouillon alors que la liste
     // montre un echec ferait passer un test qui ne prouve rien.
     http.get(`${API}/order-communications/:id`, () =>
@@ -164,11 +178,14 @@ describe('communications d’une commande', () => {
     await userEvent.click(dialog.getByLabelText(/^Modèle/))
     await userEvent.click(await screen.findByRole('option', { name: /Client absent/ }))
 
-    // Le modele preremplit sujet et corps, tels quels.
-    expect(dialog.getByLabelText(/^Sujet/)).toHaveValue(
-      'Absence lors de notre passage - {{orderNumber}}',
+    // Le modele preremplit sujet et corps, tels quels — une fois charge en
+    // entier : la liste n'en transporte ni l'un ni l'autre.
+    await waitFor(() =>
+      expect(dialog.getByLabelText(/^Sujet/)).toHaveValue(
+        'Absence lors de notre passage - {{orderNumber}}',
+      ),
     )
-    expect(dialog.getByLabelText(/^Message/)).toHaveValue(absentTemplate.bodyTemplate)
+    expect(dialog.getByLabelText(/^Message/)).toHaveValue(absentTemplateDetail.bodyTemplate)
 
     await userEvent.click(dialog.getByLabelText(/^Destinataire/))
     await userEvent.click(await screen.findByRole('option', { name: 'Contact de livraison' }))

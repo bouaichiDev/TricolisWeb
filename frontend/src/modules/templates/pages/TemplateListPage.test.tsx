@@ -12,6 +12,13 @@ import { TemplateListPage } from './TemplateListPage'
 const TEMPLATE_ID = '01JQZ0000000000000TMPL01'
 const CUSTOMER_ID = '01JQZ00000000000000CUST1'
 
+/**
+ * Une **ligne de liste**, telle que `TemplateListResource` la rend.
+ *
+ * Ni objet, ni corps, ni variables : ce sont des LONGTEXT que le §37 interdit
+ * de charger par ligne. La fixture doit mentir aussi peu que le serveur, sans
+ * quoi elle couvrirait un écran qui n'existe pas.
+ */
 const template = (overrides: Record<string, unknown> = {}) => ({
   id: TEMPLATE_ID,
   organizationId: '01JQZ0000000000000000ORG1',
@@ -24,15 +31,21 @@ const template = (overrides: Record<string, unknown> = {}) => ({
   name: 'Client absent',
   channel: 'email',
   templateType: 'custom',
-  subjectTemplate: 'Absence lors de notre passage - {{orderNumber}}',
-  bodyTemplate: 'Bonjour, nous sommes passés le {{deliveryDate}}.',
   language: 'fr',
-  bodyFormat: 'text',
-  availableVariables: ['orderNumber'],
   isDefault: false,
   isActive: true,
   createdAt: '2026-08-01T09:00:00+00:00',
   updatedAt: '2026-08-01T09:00:00+00:00',
+  ...overrides,
+})
+
+/** Le modèle complet, servi par `GET /templates/{id}`. */
+const detail = (overrides: Record<string, unknown> = {}) => ({
+  ...template(),
+  subjectTemplate: 'Absence lors de notre passage - {{orderNumber}}',
+  bodyTemplate: 'Bonjour, nous sommes passés le {{deliveryDate}}.',
+  bodyFormat: 'text',
+  availableVariables: ['orderNumber'],
   ...overrides,
 })
 
@@ -41,9 +54,14 @@ const template = (overrides: Record<string, unknown> = {}) => ({
  * sont donc interrogées à l'ouverture, et `onUnhandledRequest: 'error'` les
  * exige déclarées ici.
  */
-function render(permissions: string[], templates: unknown[] = [template()]) {
+function render(
+  permissions: string[],
+  templates: unknown[] = [template()],
+  full: Record<string, unknown> = detail(),
+) {
   server.use(
     http.get(`${API}/templates`, () => HttpResponse.json(paginated(templates))),
+    http.get(`${API}/templates/${TEMPLATE_ID}`, () => HttpResponse.json({ data: full, meta: [] })),
     http.get(`${API}/customers`, () =>
       HttpResponse.json(paginated([{ id: CUSTOMER_ID, code: 'IKEA', name: 'IKEA' }])),
     ),
@@ -154,6 +172,51 @@ describe('modèles', () => {
     expect(warning).not.toHaveTextContent('{{orderNumber}}')
   })
 
+  /**
+   * La liste ne transporte ni corps, ni objet, ni variables.
+   *
+   * Ouvrir le formulaire sur la ligne de liste l'affichait vide, et
+   * l'enregistrer aurait effacé le contenu du modèle — quand l'aperçu ne
+   * faisait pas d'abord tomber l'écran.
+   */
+  it('recharge le modèle complet avant de le modifier', async () => {
+    render(['templates.view', 'templates.update'])
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+
+    expect(await dialog.findByLabelText(/^Message/)).toHaveValue(
+      'Bonjour, nous sommes passés le {{deliveryDate}}.',
+    )
+    expect(dialog.getByLabelText(/^Sujet/)).toHaveValue(
+      'Absence lors de notre passage - {{orderNumber}}',
+    )
+  })
+
+  it('renvoie le corps intact quand rien d’autre ne change', async () => {
+    let body: unknown = null
+    render(['templates.view', 'templates.update'])
+
+    server.use(
+      http.patch(`${API}/templates/${TEMPLATE_ID}`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: detail(), meta: [] })
+      }),
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await dialog.findByLabelText(/^Message/)
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({
+      bodyTemplate: 'Bonjour, nous sommes passés le {{deliveryDate}}.',
+    })
+  })
+
   /** Le code identifie le modèle : le renommer romprait la référence. */
   it('verrouille le code en modification', async () => {
     render(['templates.view', 'templates.update'])
@@ -229,7 +292,8 @@ describe('format du message', () => {
   it('rend l’aperçu HTML dans une iframe sans script', async () => {
     render(
       ['templates.view', 'templates.update'],
-      [template({ bodyFormat: 'html', bodyTemplate: '<p>Bonjour</p>' })],
+      [template()],
+      detail({ bodyFormat: 'html', bodyTemplate: '<p>Bonjour</p>' }),
     )
 
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))

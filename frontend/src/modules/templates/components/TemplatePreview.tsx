@@ -6,8 +6,16 @@ import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import type { TemplateFormValues } from '../schemas/templateSchema'
 import { isDocumentType } from '../types/template'
 
-/** Chemins employés dans le corps, sections comprises. */
-function usedPaths(body: string): string[] {
+/**
+ * Chemins employés dans le corps, sections comprises.
+ *
+ * Tolère l'absence de corps : la liste des modèles n'en transporte pas, et un
+ * appelant qui lui passerait une ligne de liste ferait sinon tomber l'écran
+ * entier pour un aperçu.
+ */
+function usedPaths(body: string | undefined): string[] {
+  if (body === undefined || body === '') return []
+
   const placeholders = [...body.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g)].map((match) => match[1])
   const sections = [...body.matchAll(/\{\{#\s*([\w.]+)\s*\}\}/g)].map((match) => match[1])
 

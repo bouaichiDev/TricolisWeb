@@ -75,8 +75,35 @@ porte des colis et un type de réclamation :
 
 | Cible | Sections |
 |---|---|
-| Import de commandes | Commande · Lignes · Colis · **Services** · Contacts et colis d'un service |
-| Import de réclamations | Réclamation |
+| Import de commandes | Commande · Lignes · Colis · **Liaisons** · **Services** · Contacts d'un service |
+| Import de réclamations | Réclamation · Rattachements |
+
+### Les liaisons, qui font tenir la commande ensemble
+
+Elles ont leur propre section, parce qu'elles ne se devinent pas : les
+rattachements se font par des **clés locales au fichier**, jamais par des
+identifiants de notre base — que le fichier d'un client ne porte pas.
+
+| Champ | Ce qu'il désigne |
+|---|---|
+| `packages[].key` | le nom que le fichier donne à un colis |
+| `packages[].parentKey` | le colis contenant, **déclaré avant** son enfant |
+| `packages[].lines[].lineKey` | une ligne par son **rang** dans `lines`, à partir de 0 |
+| `services[].packages[].packageKey` | le `packages[].key` du colis traité — **obligatoire** |
+
+Le lien service–colis passe par la table pivot `order_service_packages` : **un
+même colis est traité par plusieurs services** — livraison puis montage — chacun
+avec sa propre `quantity` et ses propres `handlingInstructions`. La
+correspondance peut donc le décrire, et un test le vérifie.
+
+`services[].packages[].status` n'est pas exposé : `StoreOrderRequest` ne
+l'accepte pas, et `CreateOrderServices` le pose lui-même à `pending`.
+
+Côté réclamation, `orderId`, `orderServiceId` et `tourId` sont documentés à part,
+avec la mention qu'ils attendent des identifiants Tricolis : c'est au futur
+moteur de les résoudre depuis une référence métier.
+
+### Les services
 
 La section **Services** mérite l'attention : `services` est `required|min:1` et
 quinze de ses champs sont obligatoires — `serviceNumber`, `sequence`,
@@ -374,13 +401,13 @@ formulaire Phase 6, réutilisé.
 
 ## 30. Tests
 
-81 fichiers, 568 tests, tous verts — 47 ajoutés par cette phase.
+81 fichiers, 571 tests, tous verts — 50 ajoutés par cette phase.
 
 | Fichier | Couvre |
 |---|---|
 | `CustomerApiConfigurationCreatePage.test.tsx` | clé absente du formulaire et de la charge utile, clé montrée une fois, copie, absence de tout stockage après fermeture |
 | `CustomerApiConfigurationDetailPage.test.tsx` | restrictions affichées, clé et hash jamais montrés, `lastUsedAt` en lecture seule, rotation confirmée puis clé unique, permission |
-| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, séparation commande/réclamation, assistant d'insertion, refus sur JSON invalide, mention « pas exécutée » |
+| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, séparation commande/réclamation, assistant d'insertion, liaisons colis/lignes/services, colis traité par plusieurs services, rattachements d'une réclamation, refus sur JSON invalide, mention « pas exécutée » |
 | `mappingInsertion.test.ts` | chemin d'un champ, contexte au curseur (racine, tableau, imbrication, chaînes, valeur refermée), création du document, déploiement complet, insertion partielle, champ de racine depuis un contact, préservation de l'existant, refus sur JSON invalide |
 | `ExportJobDetailPage.test.tsx` | statut et erreur, chemin de stockage jamais révélé, aucun téléchargement, ni édition ni suppression, relance, relance retirée si transmis, permission |
 
@@ -389,7 +416,7 @@ Vérifications :
 ```text
 npm run lint       ✔ 0 erreur
 npm run typecheck  ✔
-npm run test       ✔ 568 / 568
+npm run test       ✔ 571 / 571
 npm run build      ✔
 php artisan test   ✔ 1251 / 1251
 ./vendor/bin/pint  ✔

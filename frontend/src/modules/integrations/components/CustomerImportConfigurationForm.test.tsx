@@ -247,3 +247,68 @@ describe('assistant de correspondance', () => {
     expect(await screen.findByText(/n’est pas un JSON valide/)).toBeInTheDocument()
   })
 })
+
+describe('liaisons entre lignes, colis et services', () => {
+  const open = async () =>
+    userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
+
+  const editor = () => screen.getByLabelText(/^Correspondance des champs/) as HTMLTextAreaElement
+
+  const add = async (field: string) =>
+    userEvent.click(screen.getByRole('button', { name: `Ajouter ${field} à la correspondance` }))
+
+  /**
+   * Les rattachements passent par des clés locales au fichier, pas par des
+   * identifiants de notre base — que le fichier d'un client ne porte pas.
+   */
+  it('documente les trois rattachements d’une commande', async () => {
+    render(async () => {})
+    await open()
+
+    expect(await screen.findByText('Liaisons — lignes, colis, services')).toBeInTheDocument()
+
+    for (const field of [
+      'packages[].key',
+      'packages[].parentKey',
+      'packages[].lines[].lineKey',
+      'services[].packages[].packageKey',
+    ]) {
+      expect(
+        screen.getByRole('button', { name: `Ajouter ${field} à la correspondance` }),
+      ).toBeInTheDocument()
+    }
+  })
+
+  /**
+   * Un même colis est traité par plusieurs services — livraison puis montage —
+   * chacun avec sa quantité et sa consigne. La table pivot le permet, et la
+   * correspondance doit pouvoir le décrire.
+   */
+  it('permet de décrire un colis traité par plusieurs services', async () => {
+    render(async () => {})
+    await open()
+
+    await add('packages[].key')
+    await add('services[].packages[].packageKey')
+    await add('services[].packages[].handlingInstructions')
+
+    expect(JSON.parse(editor().value)).toEqual({
+      packages: [{ key: '' }],
+      services: [{ packages: [{ packageKey: '', handlingInstructions: '' }] }],
+    })
+  })
+
+  /** Une réclamation se rattache à ce qu'elle conteste. */
+  it('documente les rattachements d’une réclamation', async () => {
+    render(async () => {})
+    await open()
+
+    expect(await screen.findByText('Rattachements')).toBeInTheDocument()
+
+    for (const field of ['orderId', 'orderServiceId', 'tourId']) {
+      expect(
+        screen.getByRole('button', { name: `Ajouter ${field} à la correspondance` }),
+      ).toBeInTheDocument()
+    }
+  })
+})

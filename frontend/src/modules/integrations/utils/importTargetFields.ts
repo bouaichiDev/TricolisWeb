@@ -19,6 +19,20 @@
  * volontairement absents : un fichier client porte des références métier, pas
  * les ULID de notre base. Ils devront être résolus par le futur moteur, et ce
  * point est le principal travail de conception qui reste.
+ *
+ * **Les rattachements, eux, sont documentés**, parce qu'ils se font par des
+ * clés locales au fichier et non par des identifiants :
+ *
+ * - `packages[].lines[].lineKey` désigne une ligne par son **rang** dans
+ *   `lines`, à partir de 0 — `CreateOrderLines` les indexe ainsi ;
+ * - `services[].packages[].packageKey` désigne un colis par le
+ *   `packages[].key` que le fichier lui a donné ;
+ * - `packages[].parentKey` emboîte un colis dans un autre, qui doit être
+ *   déclaré avant lui.
+ *
+ * Le lien service–colis passe par une table pivot : **un même colis est traité
+ * par plusieurs services** — livraison puis montage — chacun avec sa propre
+ * quantité et sa propre consigne.
  */
 export interface ImportTargetField {
   /** Le nom exact attendu par l'API. */
@@ -89,16 +103,55 @@ export const IMPORT_TARGETS: ImportTarget[] = [
       {
         key: 'packages',
         fields: [
-          { path: 'packages[].key', ruleKey: 'optional', constraint: 'référence interne au fichier' },
-          { path: 'packages[].parentKey', ruleKey: 'optional', constraint: 'colis parent' },
           { path: 'packages[].reference', ruleKey: 'optional', constraint: 'max 255' },
           { path: 'packages[].barcode', ruleKey: 'optional', constraint: 'max 128' },
           { path: 'packages[].description', ruleKey: 'optional', constraint: 'max 255' },
           { path: 'packages[].quantity', ruleKey: 'optional', constraint: '> 0' },
           { path: 'packages[].weight', ruleKey: 'optional', constraint: '≥ 0' },
           { path: 'packages[].volume', ruleKey: 'optional', constraint: '≥ 0' },
-          { path: 'packages[].lines[].lineKey', ruleKey: 'optional', constraint: 'ligne rangée dedans' },
-          { path: 'packages[].lines[].quantity', ruleKey: 'optional', constraint: '> 0' },
+        ],
+      },
+      {
+        // Les rattachements, qui font tenir la commande ensemble. Ils se font
+        // par des **clés locales au fichier**, jamais par des identifiants de
+        // notre base : le fichier d'un client ne les connaît pas.
+        key: 'links',
+        fields: [
+          {
+            path: 'packages[].key',
+            ruleKey: 'optional',
+            constraint: 'nom que vous donnez au colis dans le fichier, max 64',
+          },
+          {
+            path: 'packages[].parentKey',
+            ruleKey: 'optional',
+            constraint: 'colis contenant — à déclarer avant son enfant',
+          },
+          {
+            path: 'packages[].lines[].lineKey',
+            ruleKey: 'optional',
+            constraint: 'rang de la ligne dans lines, à partir de 0',
+          },
+          {
+            path: 'packages[].lines[].quantity',
+            ruleKey: 'optional',
+            constraint: 'quantité de la ligne rangée dans ce colis, > 0',
+          },
+          {
+            path: 'services[].packages[].packageKey',
+            ruleKey: 'required',
+            constraint: 'packages[].key du colis traité par ce service',
+          },
+          {
+            path: 'services[].packages[].quantity',
+            ruleKey: 'optional',
+            constraint: '> 0',
+          },
+          {
+            path: 'services[].packages[].handlingInstructions',
+            ruleKey: 'optional',
+            constraint: 'consigne propre à ce service',
+          },
         ],
       },
       {
@@ -132,7 +185,7 @@ export const IMPORT_TARGETS: ImportTarget[] = [
         ],
       },
       {
-        key: 'serviceContacts',
+        key: 'contacts',
         fields: [
           {
             path: 'services[].contacts[].firstName',
@@ -149,13 +202,6 @@ export const IMPORT_TARGETS: ImportTarget[] = [
             constraint: 'load, delivery, billing, operations, emergency, other',
           },
           { path: 'services[].contacts[].isPrimary', ruleKey: 'optional', constraint: 'booléen' },
-          {
-            path: 'services[].packages[].packageKey',
-            ruleKey: 'optional',
-            constraint: 'colis rattaché, max 64',
-          },
-          { path: 'services[].packages[].quantity', ruleKey: 'optional', constraint: '> 0' },
-          { path: 'services[].packages[].handlingInstructions', ruleKey: 'optional' },
         ],
       },
     ],
@@ -171,6 +217,22 @@ export const IMPORT_TARGETS: ImportTarget[] = [
           { path: 'status', ruleKey: 'required', constraint: 'code du référentiel, max 32' },
           { path: 'description', ruleKey: 'optional' },
           { path: 'cause', ruleKey: 'optional', constraint: 'max 255' },
+        ],
+      },
+      {
+        // Une réclamation se rattache à ce qu'elle conteste. Les trois champs
+        // attendent des **identifiants de notre base**, que le fichier d'un
+        // client ne porte pas : c'est au futur moteur de les résoudre depuis
+        // une référence métier.
+        key: 'claimLinks',
+        fields: [
+          { path: 'orderId', ruleKey: 'optional', constraint: 'identifiant Tricolis, à résoudre' },
+          {
+            path: 'orderServiceId',
+            ruleKey: 'optional',
+            constraint: 'identifiant Tricolis, à résoudre',
+          },
+          { path: 'tourId', ruleKey: 'optional', constraint: 'identifiant Tricolis, à résoudre' },
         ],
       },
     ],

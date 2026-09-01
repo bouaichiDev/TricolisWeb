@@ -2346,9 +2346,11 @@
           "order": "Commande",
           "lines": "Lignes",
           "packages": "Colis",
+          "links": "Liaisons — lignes, colis, services",
           "services": "Services",
-          "serviceContacts": "Contacts et colis d’un service",
-          "claim": "Réclamation"
+          "contacts": "Contacts d’un service",
+          "claim": "Réclamation",
+          "claimLinks": "Rattachements"
         },
         "rules": {
           "required": "obligatoire",

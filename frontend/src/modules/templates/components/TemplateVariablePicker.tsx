@@ -8,17 +8,16 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 
 import { INVOICE_LINES_PATH } from '../utils/invoiceVariables'
+import { hasVariableLabel, variableLabel } from '../utils/variableLabel'
 
 interface TemplateVariablePickerProps {
   variables: string[]
   onChange: (variables: string[]) => void
   /**
-   * Chemins que le contexte de rendu fournira réellement.
+   * Noms que le contexte de rendu fournira réellement.
    *
-   * Vide pour un message : `availableVariables` y est libre, aucun contexte
-   * canonique n'existe, et le §23 interdit d'inventer une liste de référence.
-   * Renseigné pour une facture : le contexte est connu, et les proposer évite
-   * de déclarer un chemin que le serveur ne saura pas résoudre.
+   * Les proposer évite de déclarer un nom que le serveur ne saura pas résoudre
+   * — l'erreur ne se voit sinon qu'à l'envoi, quand il est trop tard.
    */
   suggestions?: string[]
 }
@@ -32,6 +31,10 @@ interface TemplateVariablePickerProps {
  * Un chemin de **liste** — `invoice.lines` — se signale à part : il ne se
  * remplace pas, il se parcourt par une section. L'écrire entre accolades
  * simples donnerait un rendu en échec, et le badge le dit avant.
+ *
+ * Chaque nom proposé porte son **libellé** : `order_number` ne dit rien à qui
+ * remplit le formulaire, « N° commande » si. Le nom technique reste visible —
+ * c'est lui qu'on écrit dans le corps.
  */
 export function TemplateVariablePicker({
   variables,
@@ -63,8 +66,13 @@ export function TemplateVariablePicker({
         <ul className="flex flex-wrap gap-1.5">
           {variables.map((name) => (
             <li key={name}>
-              <Badge variant="secondary" className="gap-1 font-mono">
-                {name === INVOICE_LINES_PATH ? `{{#${name}}}` : `{{${name}}}`}
+              <Badge variant="secondary" className="gap-1.5" title={variableLabel(t, name)}>
+                <span className="font-mono">
+                  {name === INVOICE_LINES_PATH ? `{{#${name}}}` : `{{${name}}}`}
+                </span>
+                {hasVariableLabel(t, name) ? (
+                  <span className="text-muted-foreground">{variableLabel(t, name)}</span>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => onChange(variables.filter((item) => item !== name))}
@@ -112,10 +120,14 @@ export function TemplateVariablePicker({
               <li key={path}>
                 <button
                   type="button"
-                  className="rounded border border-dashed px-2 py-0.5 font-mono text-xs text-muted-foreground hover:border-solid hover:text-foreground"
+                  className="flex items-center gap-1.5 rounded border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:border-solid hover:text-foreground"
                   onClick={() => add(path)}
+                  title={path}
                 >
-                  {path}
+                  <span>{variableLabel(t, path)}</span>
+                  {hasVariableLabel(t, path) ? (
+                    <span className="font-mono opacity-70">{path}</span>
+                  ) : null}
                 </button>
               </li>
             ))}

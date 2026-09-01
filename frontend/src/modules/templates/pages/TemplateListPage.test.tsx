@@ -244,6 +244,50 @@ describe('format du message', () => {
  * Le modèle de facture est un **document** : le §0.7 interdit de lui inventer
  * un canal, et l'écran ne doit pas laisser en saisir un.
  */
+/**
+ * `order_number` ne dit rien a qui remplit le formulaire.
+ *
+ * Deviner les noms disponibles etait la cause d'un rendu en echec a l'envoi :
+ * un modele declarant une variable que le serveur ne fournit pas ne produit
+ * aucun message, et l'erreur ne se lit que dans le journal.
+ */
+describe('variables proposées', () => {
+  it('propose les variables d’une commande avec leur libellé', async () => {
+    render(['templates.view', 'templates.create'])
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+
+    expect(dialog.getByRole('button', { name: /N° commande/ })).toBeInTheDocument()
+    expect(dialog.getByRole('button', { name: /Nom du client/ })).toBeInTheDocument()
+  })
+
+  it('déclare la variable quand on la choisit', async () => {
+    render(['templates.view', 'templates.create'])
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByRole('button', { name: /N° commande/ }))
+
+    expect(dialog.getByText('{{order_number}}')).toBeInTheDocument()
+  })
+
+  /** Les chemins d'une facture ont leurs propres libellés. */
+  it('propose les chemins d’une facture avec leur libellé', async () => {
+    render(['templates.view', 'templates.create'])
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByLabelText(/^Type/))
+    await userEvent.click(await screen.findByRole('option', { name: 'Facture' }))
+
+    expect(dialog.getByRole('button', { name: /Total TTC/ })).toBeInTheDocument()
+  })
+})
+
 describe('modèle de facture', () => {
   it('retire le canal et le sujet quand le type devient « Facture »', async () => {
     render(['templates.view', 'templates.create'])

@@ -2497,7 +2497,7 @@
     "invoiceTitle": "Modèles de facture",
     "invoiceDescription": "La mise en page des factures. Sans modèle propre à un client, celui du transporteur sert.",
     "createInvoice": "Nouveau modèle de facture",
-    "suggestionsHint": "Chemins que le serveur fournira pour une facture :",
+    "suggestionsHint": "Variables que le serveur fournira. Cliquer pour la déclarer ; le nom entre accolades s’écrit ensuite dans le message.",
     "invoiceBodyHint": "HTML du document. {{ chemin }} insère une valeur ; {{#invoice.lines}} … {{/invoice.lines}} répète un bloc pour chaque ligne.",
     "globalScope": "Transporteur",
     "customerHint": "Aucun client : le modèle vaut pour toute l’organisation. Un client : il ne vaut que pour lui.",
@@ -2614,5 +2614,68 @@
     },
     "eventNotEmitted": "Non émis",
     "eventNotEmittedHint": "Cet événement n’est pas encore émis par la plateforme : la règle est enregistrée, mais ne produira rien tant qu’il ne le sera pas."
+  },
+  "templateVariables": {
+    "order_number": "N° commande",
+    "order_status": "Statut de la commande",
+    "order_type": "Type de commande",
+    "order_source": "Origine de la commande",
+    "order_date": "Date de la commande",
+    "external_reference": "Référence externe",
+    "customer_reference": "Référence client",
+    "group_code": "Code de groupe",
+    "currency_code": "Devise",
+    "weight": "Poids",
+    "volume": "Volume",
+    "package_count": "Nombre de colis",
+    "customer_code": "Code client",
+    "customer_name": "Nom du client",
+    "agency_name": "Agence",
+    "invoice": {
+      "invoiceNumber": "N° facture",
+      "invoiceDate": "Date de facture",
+      "periodFrom": "Période — début",
+      "periodTo": "Période — fin",
+      "currencyCode": "Devise",
+      "subtotal": "Total HT",
+      "taxTotal": "TVA",
+      "total": "Total TTC",
+      "externalReference": "Référence externe",
+      "remark": "Remarque",
+      "lines": {
+        "_self": "Lignes de la facture (section)",
+        "lineNumber": "N° de ligne",
+        "serviceCode": "Code prestation",
+        "description": "Description",
+        "customerOrderReference": "Référence commande client",
+        "quantity": "Quantité",
+        "unitPrice": "Prix unitaire",
+        "discountRate": "Remise",
+        "taxRate": "Taux de TVA",
+        "totalExcludingTax": "Total HT de la ligne",
+        "totalIncludingTax": "Total TTC de la ligne",
+        "serviceCompletedAt": "Prestation terminée le",
+        "address": {
+          "name": "Adresse — nom",
+          "addressLine1": "Adresse — rue",
+          "postalCode": "Adresse — code postal",
+          "city": "Adresse — localité",
+          "country": "Adresse — pays"
+        }
+      }
+    },
+    "customer": {
+      "code": "Code client",
+      "name": "Nom du client",
+      "legalName": "Raison sociale",
+      "email": "E-mail du client",
+      "phone": "Téléphone du client"
+    },
+    "organization": {
+      "code": "Code du transporteur",
+      "name": "Nom du transporteur",
+      "email": "E-mail du transporteur",
+      "phone": "Téléphone du transporteur"
+    }
   }
 }

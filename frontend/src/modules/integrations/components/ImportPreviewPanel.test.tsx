@@ -93,13 +93,19 @@ describe('essai d’une correspondance', () => {
     expect(await screen.findByText(/"articleCode": "A-1"/)).toBeInTheDocument()
   })
 
-  it('annonce une correspondance complète', async () => {
+  /**
+   * « Correspondance valide » se lit trop facilement comme « commande créée ».
+   * Le verdict porte donc son démenti, et la mention est répétée sous le
+   * résultat — l'avertissement d'en-tête est déjà loin quand on arrive là.
+   */
+  it('annonce une correspondance valide sans laisser croire à un import', async () => {
     serve(preview())
     render()
 
     await upload()
 
-    expect(await screen.findByText(/produit une commande valide/)).toBeInTheDocument()
+    expect(await screen.findByText(/aucune commande n’a été créée/)).toBeInTheDocument()
+    expect(screen.getByText(/lu en mémoire puis oublié/)).toBeInTheDocument()
   })
 
   /** Le verdict porte sur les règles réelles de création d'une commande. */

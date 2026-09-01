@@ -161,14 +161,20 @@ export function ImportPreviewPanel({ configurationId, hasMapping }: ImportPrevie
             </pre>
           </div>
 
-          {/* Le point qu'on croirait un défaut : ces identifiants n'ont pas à
-              venir du fichier, et le verdict ne les réclame donc pas. */}
-          <p className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs">
+          {/* Dit après le résultat, pas seulement avant : « correspondance
+              valide » se lit trop facilement comme « commande créée », et la
+              mention d'en-tête est déjà loin quand on arrive ici. */}
+          <p className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs">
             <FlaskConical className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
             <span>
-              {t('integrations.imports.preview.resolvedElsewhere', {
-                fields: result.resolvedElsewhere.slice(0, 3).join(', '),
-              })}
+              <span className="font-medium">
+                {t('integrations.imports.preview.nothingCreated')}
+              </span>
+              <span className="mt-1 block text-muted-foreground">
+                {t('integrations.imports.preview.resolvedElsewhere', {
+                  fields: result.resolvedElsewhere.slice(0, 3).join(', '),
+                })}
+              </span>
             </span>
           </p>
         </div>

@@ -2372,13 +2372,14 @@
         "noMapping": "Renseignez d’abord une correspondance.",
         "rows": "{{count}} ligne lue",
         "rows_other": "{{count}} lignes lues",
-        "complete": "La correspondance produit une commande valide.",
-        "incomplete": "{{count}} champ manquerait à la création.",
-        "incomplete_other": "{{count}} champs manqueraient à la création.",
+        "complete": "Correspondance valide — mais aucune commande n’a été créée.",
+        "incomplete": "{{count}} champ manquerait. Aucune commande n’a été créée.",
+        "incomplete_other": "{{count}} champs manqueraient. Aucune commande n’a été créée.",
         "columns": "Colonnes trouvées dans le fichier",
         "missing": "Ce qui manquerait",
-        "payload": "Ce que la correspondance produit",
-        "resolvedElsewhere": "{{fields}} et les autres identifiants ne viennent pas du fichier : ils devront être résolus depuis vos références métier."
+        "payload": "Ce que la correspondance produirait",
+        "resolvedElsewhere": "{{fields}} et les autres identifiants ne viennent pas du fichier : ils devront être résolus depuis vos références métier.",
+        "nothingCreated": "Ceci est un essai. Le fichier a été lu en mémoire puis oublié : aucune commande, aucune ligne, aucun colis n’existe en base. Importer réellement demandera un moteur d’import, qui n’existe pas encore."
       }
     },
     "api": {

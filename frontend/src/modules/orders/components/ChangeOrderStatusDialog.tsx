@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useStatusOptions } from '@/modules/statuses/hooks/useStatuses'
 import { ApiError } from '@/shared/api/errors'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
+import { ControlledField } from '@/shared/components/form/ControlledField'
 import { Alert, AlertDescription } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import {
@@ -52,6 +54,17 @@ interface ChangeOrderStatusDialogProps {
  * « Confirmée » est visé, et l'écran demande l'emplacement des seules lignes
  * dont l'article dort dans plusieurs endroits — le serveur trouve les autres
  * tout seul. Sans cela, la confirmation partirait pour revenir en 422.
+ *
+ * **Certains statuts exigent un motif**, et le champ n'apparaît que pour
+ * ceux-là. Lesquels vient du **référentiel** — la colonne `requiresReason` de
+ * `statuses` —, jamais d'une liste écrite ici : un administrateur peut en
+ * exiger un sur d'autres statuts, et l'écran doit suivre. Sans ce champ,
+ * annuler une commande était impossible : le serveur refusait, sans que rien à
+ * l'écran permette de lui répondre.
+ *
+ * Le motif n'est pas conservé sur la commande : il part au journal d'audit,
+ * avec la transition. C'est là qu'on cherche pourquoi une commande a été
+ * annulée.
  */
 export function ChangeOrderStatusDialog({
   orderId,
@@ -62,6 +75,7 @@ export function ChangeOrderStatusDialog({
 }: ChangeOrderStatusDialogProps) {
   const { t } = useTranslation()
   const [status, setStatus] = useState('')
+  const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [locations, setLocations] = useState<Record<string, string>>({})
   const changeStatus = useChangeOrderStatus(orderId)
@@ -70,11 +84,24 @@ export function ChangeOrderStatusDialog({
   const plan = useOrderStockPlan(orderId, open && confirming)
   const planLines = plan.data ?? []
 
+  // Le referentiel dit lesquels exigent un motif. Le deviner ici ferait mentir
+  // l'ecran des qu'un administrateur en exigerait un ailleurs.
+  //
+  // Meme requete que celle des pastilles de statut : la fiche l'a deja chargee,
+  // et ouvrir ce dialogue n'en declenche donc aucune de plus.
+  const { statuses } = useStatusOptions('order')
+
+  const reasonRequired =
+    status !== '' && statuses.some((item) => item.code === status && item.requiresReason)
+
+  const reasonMissing = reasonRequired && reason.trim() === ''
+
   const ambiguous = planLines.filter((line) => line.state === 'ambiguous')
   const blocked =
-    confirming &&
-    (planLines.some((line) => line.state === 'insufficient') ||
-      ambiguous.some((line) => (locations[line.orderLineId] ?? '') === ''))
+    reasonMissing ||
+    (confirming &&
+      (planLines.some((line) => line.state === 'insufficient') ||
+        ambiguous.some((line) => (locations[line.orderLineId] ?? '') === '')))
 
   const options = ORDER_STATUSES.map((value) => {
     const allowed = allowedTransitions.includes(value)
@@ -104,10 +131,12 @@ export function ChangeOrderStatusDialog({
           orderLineId,
           stockLocationId,
         })),
+        reasonText: reason,
       },
       {
       onSuccess: () => {
         setStatus('')
+        setReason('')
         setLocations({})
         onOpenChange(false)
       },
@@ -146,6 +175,17 @@ export function ChangeOrderStatusDialog({
           required
           description={t('orders.statusDialog.hint')}
         />
+
+        {reasonRequired ? (
+          <ControlledField
+            label={t('orders.statusDialog.reason')}
+            value={reason}
+            onChange={setReason}
+            required
+            multiline
+            description={t('orders.statusDialog.reasonHint')}
+          />
+        ) : null}
 
         {confirming ? (
           <OrderStockPlanFields

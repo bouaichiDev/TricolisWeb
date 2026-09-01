@@ -44,12 +44,25 @@ export const ordersApi = {
    * `stockLocations` n'est utile qu'à la confirmation, et seulement pour les
    * lignes dont l'article dort dans plusieurs emplacements : le serveur trouve
    * seul les autres.
+   *
+   * `reasonText` est exigé par les statuts dont le référentiel porte
+   * `requiresReason` — l'annulation, par défaut. Il n'est pas envoyé vide : le
+   * serveur distingue « absent » de « chaîne vide », et refuse les deux de la
+   * même façon.
    */
-  changeStatus: (id: string, status: string, stockLocations: StockLocationChoice[] = []) =>
+  changeStatus: (
+    id: string,
+    status: string,
+    stockLocations: StockLocationChoice[] = [],
+    reasonText?: string,
+  ) =>
     api
       .patch<ApiResource<OrderDetail>>(`/orders/${id}/status`, {
         status,
         ...(stockLocations.length > 0 ? { stockLocations } : {}),
+        ...(reasonText !== undefined && reasonText.trim() !== ''
+          ? { reasonText: reasonText.trim() }
+          : {}),
       })
       .then((response) => response.data),
 

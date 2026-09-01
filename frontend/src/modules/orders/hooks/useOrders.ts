@@ -96,8 +96,11 @@ export function useChangeOrderStatus(id: string) {
   const { t } = useTranslation()
 
   return useMutation({
-    mutationFn: (input: { status: string; stockLocations?: StockLocationChoice[] }) =>
-      ordersApi.changeStatus(id, input.status, input.stockLocations ?? []),
+    mutationFn: (input: {
+      status: string
+      stockLocations?: StockLocationChoice[]
+      reasonText?: string
+    }) => ordersApi.changeStatus(id, input.status, input.stockLocations ?? [], input.reasonText),
     onSuccess: (order) => {
       queryClient.setQueryData(orderKeys.detail(id), order)
       void queryClient.invalidateQueries({ queryKey: orderKeys.lists() })

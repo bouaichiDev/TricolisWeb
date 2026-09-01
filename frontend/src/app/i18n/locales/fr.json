@@ -2345,14 +2345,21 @@
         "groups": {
           "order": "Commande",
           "lines": "Lignes",
-          "packages": "Colis"
+          "packages": "Colis",
+          "services": "Services",
+          "serviceContacts": "Contacts et colis d’un service",
+          "claim": "Réclamation"
         },
         "rules": {
           "required": "obligatoire",
           "conditional": "conditionnel"
         },
         "notExecuted": "Cette correspondance est enregistrée, pas exécutée : aucun moteur d’import n’existe encore. Elle sert à préparer et documenter l’intégration.",
-        "copyField": "Copier {{field}}"
+        "copyField": "Copier {{field}}",
+        "targets": {
+          "order": "Import de commandes",
+          "claim": "Import de réclamations"
+        }
       }
     },
     "api": {

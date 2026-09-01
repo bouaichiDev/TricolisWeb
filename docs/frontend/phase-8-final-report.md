@@ -65,10 +65,24 @@ l'utilisateur écrire un JSON sans savoir quelles clés sont valides — le repr
 qu'on peut légitimement faire à un champ libre.
 
 `ImportTargetFieldsReference` documente donc le **côté gauche** d'une
-correspondance : les 27 champs que `StoreOrderRequest` accepte réellement, avec
-leur obligation et leur contrainte, groupés en commande / lignes / colis et
-copiables au clic. La liste est relevée une par une sur le contrat de l'API ;
-rien n'y est ajouté.
+correspondance, relevé une par une sur `StoreOrderRequest` et
+`StoreClaimRequest`, avec l'obligation et la contrainte de chaque champ,
+copiable au clic.
+
+Deux cibles sont présentées **séparément**, parce que ce sont deux documents
+servis par deux endpoints — les fondre laisserait croire qu'un même fichier
+porte des colis et un type de réclamation :
+
+| Cible | Sections |
+|---|---|
+| Import de commandes | Commande · Lignes · Colis · **Services** · Contacts et colis d'un service |
+| Import de réclamations | Réclamation |
+
+La section **Services** mérite l'attention : `services` est `required|min:1` et
+quinze de ses champs sont obligatoires — `serviceNumber`, `sequence`,
+`requestedDate`, `quantity`, `unit`, les deux durées, poids, volume, nombre de
+colis, les quatre montants et le statut. C'est la partie la plus exigeante d'un
+import de commande, et l'ignorer produirait un 422 systématique.
 
 Le **côté droit** décrit le fichier du client et n'est pas contraint : le backend
 valide `mapping` comme un tableau sans schéma, et le §11 interdit d'inventer un
@@ -325,13 +339,13 @@ formulaire Phase 6, réutilisé.
 
 ## 30. Tests
 
-80 fichiers, 546 tests, tous verts — 25 ajoutés par cette phase.
+80 fichiers, 547 tests, tous verts — 26 ajoutés par cette phase.
 
 | Fichier | Couvre |
 |---|---|
 | `CustomerApiConfigurationCreatePage.test.tsx` | clé absente du formulaire et de la charge utile, clé montrée une fois, copie, absence de tout stockage après fermeture |
 | `CustomerApiConfigurationDetailPage.test.tsx` | restrictions affichées, clé et hash jamais montrés, `lastUsedAt` en lecture seule, rotation confirmée puis clé unique, permission |
-| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, mention « pas exécutée » |
+| `CustomerImportConfigurationForm.test.tsx` | aucune exécution d'import, JSON envoyé tel quel, JSON invalide refusé, champs vides acceptés, formatage, référence des champs cibles, séparation commande/réclamation, mention « pas exécutée » |
 | `ExportJobDetailPage.test.tsx` | statut et erreur, chemin de stockage jamais révélé, aucun téléchargement, ni édition ni suppression, relance, relance retirée si transmis, permission |
 
 Vérifications :
@@ -339,7 +353,7 @@ Vérifications :
 ```text
 npm run lint       ✔ 0 erreur
 npm run typecheck  ✔
-npm run test       ✔ 546 / 546
+npm run test       ✔ 547 / 547
 npm run build      ✔
 php artisan test   ✔ 1251 / 1251
 ./vendor/bin/pint  ✔

@@ -139,6 +139,27 @@ describe('référence des champs acceptés', () => {
   })
 
   /**
+   * Commande et réclamation sont deux documents distincts, servis par deux
+   * endpoints. Les fondre laisserait croire qu'un même fichier porte des colis
+   * et un type de réclamation.
+   */
+  it('sépare les deux cibles d’import', async () => {
+    render(async () => {})
+
+    await userEvent.click(await screen.findByRole('button', { name: /Champs acceptés/ }))
+
+    expect(await screen.findByText('Import de commandes')).toBeInTheDocument()
+    expect(screen.getByText('Import de réclamations')).toBeInTheDocument()
+
+    // Les services sont la section la plus exigeante d'une commande : presque
+    // tous leurs champs sont obligatoires.
+    expect(
+      screen.getByRole('button', { name: 'Copier services[].serviceNumber' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copier claimType' })).toBeInTheDocument()
+  })
+
+  /**
    * Le point le plus facile à manquer : rien ne lit encore ce mapping. Le taire
    * laisserait croire qu'enregistrer déclenche quelque chose.
    */

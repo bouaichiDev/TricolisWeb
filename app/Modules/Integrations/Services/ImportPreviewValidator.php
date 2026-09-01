@@ -14,10 +14,13 @@ use Illuminate\Support\Facades\Validator;
  * `customerId`, `agencyId`, `catalogItemId` et leurs semblables sont des ULID
  * de notre base, qu'aucun fichier client ne porte. Les exiger ferait échouer
  * toute prévisualisation sur des champs qui ne relèvent pas de la
- * correspondance.
+ * correspondance : ils sont fournis à l'import, ou déduits du client.
  *
- * Ce sont eux le vrai travail restant d'un futur moteur : les résoudre depuis
- * une référence métier. La prévisualisation les nomme plutôt que de les taire.
+ * **`serviceId` et `addressId` font exception.** Eux se résolvent depuis le
+ * fichier, par `serviceCode` et `addressCode`, et l'import les exige. Une
+ * prévisualisation qui les passerait sous silence annoncerait « correspondance
+ * valide » sur un fichier que l'import refuserait — c'est le pire des verdicts,
+ * puisqu'il donne confiance à tort.
  */
 final readonly class ImportPreviewValidator
 {
@@ -32,11 +35,34 @@ final readonly class ImportPreviewValidator
         'agencyId',
         'depotId',
         'lines.*.catalogItemId',
-        'services.*.serviceId',
-        'services.*.addressId',
         'services.*.contacts.*.contactId',
         'packages.*.packageTypeId',
         'packages.*.groupingTypeId',
+    ];
+
+    /**
+     * Identifiants que la correspondance ne porte jamais, mais que l'import
+     * **resout depuis le fichier**.
+     *
+     * Ils sont retires des regles — la charge utile ne les contient pas encore
+     * — mais leur code d'origine est exige, sans quoi l'import echouerait apres
+     * un verdict favorable.
+     *
+     * @var list<string>
+     */
+    private const array RESOLVED_FROM_FILE = [
+        'services.*.serviceId',
+        'services.*.addressId',
+    ];
+
+    /**
+     * Ce que la correspondance doit porter pour qu'un identifiant se resolve.
+     *
+     * @var array<string, string>
+     */
+    private const array RESOLVED_FROM_CODE = [
+        'serviceId' => 'serviceCode',
+        'addressId' => 'addressCode',
     ];
 
     /**
@@ -49,7 +75,10 @@ final readonly class ImportPreviewValidator
         $applicable = [];
 
         foreach ($rules as $field => $rule) {
-            if (in_array($field, self::RESOLVED_ELSEWHERE, true)) {
+            if (
+                in_array($field, self::RESOLVED_ELSEWHERE, true)
+                || in_array($field, self::RESOLVED_FROM_FILE, true)
+            ) {
                 continue;
             }
 
@@ -59,7 +88,10 @@ final readonly class ImportPreviewValidator
         $validator = Validator::make($payload, $applicable);
 
         return [
-            'errors' => $validator->errors()->toArray(),
+            'errors' => array_merge(
+                $validator->errors()->toArray(),
+                $this->missingCodes($payload),
+            ),
             'resolvedElsewhere' => self::RESOLVED_ELSEWHERE,
         ];
     }
@@ -71,6 +103,45 @@ final readonly class ImportPreviewValidator
      * `unique` la rendraient dépendante des données du moment, alors qu'elle ne
      * juge que la forme de ce que la correspondance produit.
      */
+    /**
+     * Les codes qui manquent pour résoudre un identifiant obligatoire.
+     *
+     * Le service porte déjà l'identifiant ? Rien à dire — une correspondance
+     * peut très bien le fournir directement. Sinon le code est requis, et
+     * l'annoncer ici évite le « valide » suivi d'un refus à l'import.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, list<string>>
+     */
+    private function missingCodes(array $payload): array
+    {
+        $services = $payload['services'] ?? null;
+
+        if (! is_array($services)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($services as $index => $service) {
+            if (! is_array($service)) {
+                continue;
+            }
+
+            foreach (self::RESOLVED_FROM_CODE as $identifier => $code) {
+                if (isset($service[$identifier]) || isset($service[$code])) {
+                    continue;
+                }
+
+                $errors["services.{$index}.{$code}"] = [
+                    "Ce champ est requis pour retrouver « {$identifier} » : le fichier ne porte pas d’identifiant Tricolis.",
+                ];
+            }
+        }
+
+        return $errors;
+    }
+
     private function withoutForeignKeyChecks(mixed $rule): mixed
     {
         if (! is_array($rule)) {

@@ -208,6 +208,7 @@ describe('verdict de validation', function (): void {
             'lines' => [['name' => 'ART', 'quantity' => 'QTE']],
             'services' => [[
                 'serviceNumber' => 'PRESTA', 'sequence' => 'SEQ', 'requestedDate' => 'DATE',
+                'serviceCode' => 'PRESTA', 'addressCode' => 'ADR',
                 'quantity' => 'QTE', 'unit' => 'UNITE', 'requiredTimeMinutes' => 'DUREE',
                 'remainingTimeMinutes' => 'DUREE', 'weight' => 'POIDS', 'volume' => 'VOLUME',
                 'packageCount' => 'NBCOLIS', 'customerUnitPrice' => 'PU', 'customerTotalPrice' => 'PT',
@@ -215,8 +216,8 @@ describe('verdict de validation', function (): void {
             ]],
         ]);
 
-        $csv = "DATE,ART,QTE,PRESTA,SEQ,UNITE,DUREE,POIDS,VOLUME,NBCOLIS,PU,PT,STATUT\n"
-            ."2026-09-01,Palette,2,LIVRAISON,1,U,30,12.5,0.4,1,10,20,draft\n";
+        $csv = "DATE,ART,QTE,PRESTA,ADR,SEQ,UNITE,DUREE,POIDS,VOLUME,NBCOLIS,PU,PT,STATUT\n"
+            ."2026-09-01,Palette,2,LIVRAISON,QUAI-NORD,1,U,30,12.5,0.4,1,10,20,draft\n";
 
         $response = ($this->preview)($configuration, $csv)->assertOk();
 
@@ -295,5 +296,40 @@ describe('portée', function (): void {
             ['file' => UploadedFile::fake()->createWithContent('s.csv', "REF\nCMD-1\n")],
             $this->headers,
         )->assertForbidden();
+    });
+});
+
+describe('accord avec l’import', function (): void {
+    /**
+     * Le pire verdict serait « valide » sur un fichier que l'import refuse :
+     * il donne confiance à tort. `serviceId` et `addressId` sont obligatoires
+     * et se résolvent depuis le fichier ; sans code, la prévisualisation le dit.
+     */
+    it('réclame les codes que l’import devra résoudre', function (): void {
+        $configuration = ($this->configure)([
+            'orderDate' => 'DATE',
+            'lines' => [['name' => 'ART', 'quantity' => 'QTE']],
+            'services' => [['serviceNumber' => 'PRESTA']],
+        ]);
+
+        $response = ($this->preview)($configuration, "DATE,ART,QTE,PRESTA\n2026-09-01,P,1,LIVRAISON\n")
+            ->assertOk();
+
+        expect(array_keys($response->json('data.errors')))
+            ->toContain('services.0.serviceCode')
+            ->toContain('services.0.addressCode');
+    });
+
+    /** Un identifiant fourni directement dispense du code. */
+    it('accepte un identifiant déjà présent', function (): void {
+        $configuration = ($this->configure)([
+            'services' => [['serviceId' => 'SID', 'addressId' => 'AID']],
+        ]);
+
+        $response = ($this->preview)($configuration, "SID,AID\n01JQZ,01JQY\n")->assertOk();
+
+        expect(array_keys($response->json('data.errors')))
+            ->not->toContain('services.0.serviceCode')
+            ->not->toContain('services.0.addressCode');
     });
 });

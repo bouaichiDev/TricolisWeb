@@ -15,6 +15,23 @@ export const orderCommunicationKeys = {
     [...orderCommunicationKeys.byOrder(orderId), filters] as const,
   detail: (id: string) => [...orderCommunicationKeys.all, 'detail', id] as const,
   attachments: (id: string) => [...orderCommunicationKeys.all, 'attachments', id] as const,
+  history: (filters: OrderCommunicationFilters) =>
+    [...orderCommunicationKeys.all, 'history', filters] as const,
+}
+
+/**
+ * Historique de toute l'organisation.
+ *
+ * Filtres et pagination restent au serveur : le §140 interdit de descendre
+ * l'historique entier pour trier dans le navigateur.
+ */
+export function useCommunicationHistory(filters: OrderCommunicationFilters, enabled = true) {
+  return useQuery({
+    queryKey: orderCommunicationKeys.history(filters),
+    queryFn: () => orderCommunicationsApi.list(filters),
+    enabled,
+    placeholderData: (previous) => previous,
+  })
 }
 
 export function useOrderCommunications(

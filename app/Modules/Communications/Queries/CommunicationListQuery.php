@@ -121,7 +121,7 @@ final readonly class CommunicationListQuery
     {
         return match ($profile) {
             'template' => Template::inOrganization($organizationId),
-            'rule' => CommunicationRule::inOrganization($organizationId)->with('template:id,code,name,channel'),
+            'rule' => CommunicationRule::inOrganization($organizationId)->with(['template:id,code,name,channel', 'service:id,code,name']),
             'communication' => OrderCommunication::inOrganization($organizationId)
                 ->with(['template:id,code,name', 'order:id,order_number'])
                 ->withCount('attachments'),

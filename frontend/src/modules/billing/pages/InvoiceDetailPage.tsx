@@ -1,10 +1,11 @@
-import { Calculator, Lock, Pencil, Plus } from 'lucide-react'
+import { Calculator, FileText, Lock, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 
 import { InvoiceAddLinesDialog } from '../components/InvoiceAddLinesDialog'
 import { InvoiceCloseDialog } from '../components/InvoiceCloseDialog'
+import { InvoiceDocumentDialog } from '../components/InvoiceDocumentDialog'
 import { InvoiceEditDialog } from '../components/InvoiceEditDialog'
 import { InvoiceLinesTable } from '../components/InvoiceLinesTable'
 import { InvoiceRepriceDialog } from '../components/InvoiceRepriceDialog'
@@ -44,6 +45,7 @@ export function InvoiceDetailPage() {
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   const [repricing, setRepricing] = useState(false)
+  const [previewing, setPreviewing] = useState(false)
   const [toRemove, setToRemove] = useState<InvoiceLine | null>(null)
 
   const { data: invoice, isPending, error, refetch } = useInvoice(id)
@@ -63,6 +65,12 @@ export function InvoiceDetailPage() {
         actions={
           editable ? (
             <span className="flex flex-wrap items-center gap-2">
+              {/* L'apercu vaut surtout avant la cloture : c'est le dernier
+                  moment ou la mise en page se corrige encore. */}
+              <Button variant="outline" onClick={() => setPreviewing(true)}>
+                <FileText className="size-4" aria-hidden />
+                {t('billing.document.action')}
+              </Button>
               <PermissionGuard permission="invoices.update">
                 <Button variant="outline" onClick={() => setEditing(true)}>
                   <Pencil className="size-4" aria-hidden />
@@ -83,7 +91,13 @@ export function InvoiceDetailPage() {
               </PermissionGuard>
             </span>
           ) : (
-            <StatusBadge status={invoice.status} />
+            <span className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" onClick={() => setPreviewing(true)}>
+                <FileText className="size-4" aria-hidden />
+                {t('billing.document.action')}
+              </Button>
+              <StatusBadge status={invoice.status} />
+            </span>
           )
         }
       />
@@ -157,6 +171,11 @@ export function InvoiceDetailPage() {
           onOpenChange={setRepricing}
         />
       ) : null}
+
+      <InvoiceDocumentDialog
+        invoiceId={previewing ? id : null}
+        onClose={() => setPreviewing(false)}
+      />
 
       <InvoiceCloseDialog
         invoiceId={id}

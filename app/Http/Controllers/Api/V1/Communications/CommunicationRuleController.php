@@ -62,7 +62,7 @@ class CommunicationRuleController extends Controller
             $this->auditContext($request, $organizationId),
         );
 
-        return ApiResponse::created(new CommunicationRuleDetailResource($rule->load('template')));
+        return ApiResponse::created(new CommunicationRuleDetailResource($rule->load(['template', 'service'])));
     }
 
     /**
@@ -74,7 +74,7 @@ class CommunicationRuleController extends Controller
         $this->authorize('view', $communicationRule);
 
         return ApiResponse::ok(new CommunicationRuleDetailResource(
-            $communicationRule->load('template')->loadCount('communications'),
+            $communicationRule->load(['template', 'service'])->loadCount('communications'),
         ));
     }
 
@@ -97,7 +97,7 @@ class CommunicationRuleController extends Controller
             $this->auditContext($request, $organizationId),
         );
 
-        return ApiResponse::ok(new CommunicationRuleDetailResource($updated->load('template')));
+        return ApiResponse::ok(new CommunicationRuleDetailResource($updated->load(['template', 'service'])));
     }
 
     /**

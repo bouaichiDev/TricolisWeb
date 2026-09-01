@@ -13,26 +13,31 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 
-import { CommunicationTemplateForm } from './CommunicationTemplateForm'
-import { CommunicationTemplatePreview } from './CommunicationTemplatePreview'
+import { TemplateForm } from './TemplateForm'
+import { TemplatePreview } from './TemplatePreview'
+import { useCreateTemplate, useUpdateTemplate } from '../hooks/useTemplates'
 import {
-  useCreateCommunicationTemplate,
-  useUpdateCommunicationTemplate,
-} from '../hooks/useCommunicationTemplates'
-import {
-  isTemplateComplete,
+  INVOICE_FORM_DEFAULTS,
   TEMPLATE_FORM_DEFAULTS,
+  isTemplateComplete,
   toTemplateFormValues,
   toTemplatePayload,
   type TemplateFormValues,
-} from '../schemas/templateForm'
-import type { CommunicationTemplate } from '../types/communication'
+} from '../schemas/templateSchema'
+import type { Template } from '../types/template'
 
-interface CommunicationTemplateDialogProps {
+interface TemplateDialogProps {
   /** `null` pour une création. */
-  template: CommunicationTemplate | null
+  template: Template | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  /**
+   * Valeurs imposées à la création.
+   *
+   * Sert aux deux accès du menu : ouvrir « Templates de facture » puis devoir
+   * choisir le type serait une question dont l'écran connaît déjà la réponse.
+   */
+  initial?: Partial<TemplateFormValues>
 }
 
 /**
@@ -45,21 +50,22 @@ interface CommunicationTemplateDialogProps {
  * lui qu'on le retrouve — et le renommer romprait cette référence sans
  * prévenir.
  */
-export function CommunicationTemplateDialog({
-  template,
-  open,
-  onOpenChange,
-}: CommunicationTemplateDialogProps) {
+export function TemplateDialog({ template, open, onOpenChange, initial }: TemplateDialogProps) {
   const { t } = useTranslation()
   const isEdit = template !== null
 
-  const [values, setValues] = useState<TemplateFormValues>(() =>
-    template === null ? TEMPLATE_FORM_DEFAULTS : toTemplateFormValues(template),
-  )
+  const [values, setValues] = useState<TemplateFormValues>(() => {
+    if (template !== null) return toTemplateFormValues(template)
+
+    const base =
+      initial?.templateType === 'invoice' ? INVOICE_FORM_DEFAULTS : TEMPLATE_FORM_DEFAULTS
+
+    return { ...base, ...initial }
+  })
   const [error, setError] = useState<string | null>(null)
 
-  const create = useCreateCommunicationTemplate()
-  const update = useUpdateCommunicationTemplate()
+  const create = useCreateTemplate()
+  const update = useUpdateTemplate()
 
   const submit = async () => {
     setError(null)
@@ -80,21 +86,19 @@ export function CommunicationTemplateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? t('communicationTemplates.edit') : t('communicationTemplates.create')}
-          </DialogTitle>
-          <DialogDescription>{t('communicationTemplates.formHint')}</DialogDescription>
+          <DialogTitle>{isEdit ? t('templates.edit') : t('templates.create')}</DialogTitle>
+          <DialogDescription>{t('templates.formHint')}</DialogDescription>
         </DialogHeader>
 
         <FormErrorSummary message={error} />
 
-        <CommunicationTemplateForm
+        <TemplateForm
           values={values}
           onChange={(patch) => setValues((current) => ({ ...current, ...patch }))}
           codeEditable={!isEdit}
         />
 
-        <CommunicationTemplatePreview values={values} />
+        <TemplatePreview values={values} />
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
@@ -103,9 +107,7 @@ export function CommunicationTemplateDialog({
           <Button
             type="button"
             onClick={() => void submit()}
-            disabled={
-              !isTemplateComplete(values) || create.isPending || update.isPending
-            }
+            disabled={!isTemplateComplete(values) || create.isPending || update.isPending}
           >
             {t('common.save')}
           </Button>

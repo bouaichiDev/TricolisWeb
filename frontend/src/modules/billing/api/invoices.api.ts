@@ -8,6 +8,7 @@ import type {
   InvoiceClosurePreview,
   InvoiceClosureResult,
   InvoiceDetail,
+  InvoiceDocument,
   InvoiceFilters,
   InvoiceLinePayload,
   InvoicePayload,
@@ -54,6 +55,19 @@ export const invoicesApi = {
    * Le §52 le veut : savoir où la facture partira, et si elle peut seulement
    * être clôturée, avant de la figer.
    */
+  /**
+   * Le document de la facture, en HTML.
+   *
+   * Rendu par le moteur unique du serveur, jamais reconstruit ici : le §0.20
+   * interdit un second moteur en JavaScript, qui montrerait un document
+   * different de celui que le client recevra.
+   *
+   * Une facture close sert le document fige a sa cloture ; un brouillon se rend
+   * depuis le modele du moment.
+   */
+  document: (id: string) =>
+    api.get<ApiResource<InvoiceDocument>>(`/invoices/${id}/document`).then((r) => r.data),
+
   closurePreview: (id: string) =>
     api.get<ApiResource<InvoiceClosurePreview>>(`/invoices/${id}/closure`).then((r) => r.data),
 

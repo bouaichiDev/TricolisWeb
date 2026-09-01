@@ -207,6 +207,26 @@ export interface RepricingChange {
   formula?: string | null
 }
 
+/**
+ * Le document d'une facture, et d'où il vient.
+ *
+ * La provenance n'est pas décorative : voyant sa mise en page globale
+ * s'afficher, l'utilisateur ne saurait pas sans elle si son modèle client a été
+ * ignoré ou s'il n'a simplement jamais été créé.
+ *
+ * `scope` vaut `customer`, `global`, `fallback` — aucun modèle n'existe, la
+ * mise en page livrée sert — ou `frozen` : la facture est close, et son
+ * document ne dépend plus d'aucun modèle.
+ */
+export interface InvoiceDocument {
+  html: string
+  templateId: string | null
+  templateName: string | null
+  scope: 'customer' | 'global' | 'fallback' | 'frozen'
+  isFrozen: boolean
+  renderedAt: string | null
+}
+
 /** Ce que la clôture ferait, avant de la déclencher. */
 export interface InvoiceClosurePreview {
   closable: boolean

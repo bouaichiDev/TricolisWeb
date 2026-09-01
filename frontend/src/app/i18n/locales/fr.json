@@ -92,7 +92,6 @@
     "orders": "Commandes",
     "catalogs": "Catalogues",
     "claims": "Réclamations",
-    "communicationTemplates": "Modèles de communication",
     "stock": "Stock",
     "stockLocations": "Emplacements",
     "statuses": "Statuts",
@@ -123,7 +122,11 @@
     "importConfigurations": "Configurations import",
     "customerApiAccess": "Accès API clients",
     "exportConfigurationsDirectory": "Configurations export",
-    "exportHistory": "Exports / Historique"
+    "exportHistory": "Exports / Historique",
+    "templates": "Modèles",
+    "communicationRules": "Règles automatiques",
+    "communicationHistory": "Historique",
+    "invoiceTemplates": "Modèles de facture"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -375,7 +378,13 @@
     "notFound": "Ce client n’existe pas dans l’organisation active.",
     "deleteConfirm": "Supprimer définitivement « {{name}} » ? Cette action est irréversible.",
     "blockConfirm": "Bloquer « {{name}} » ? Ses commandes en cours ne pourront plus avancer.",
-    "unblockConfirm": "Débloquer « {{name}} » ? Le client pourra de nouveau passer commande."
+    "unblockConfirm": "Débloquer « {{name}} » ? Le client pourra de nouveau passer commande.",
+    "invoiceTemplate": {
+      "title": "Modèle de facture",
+      "hint": "La mise en page employée par les factures de ce client.",
+      "create": "Créer un modèle spécifique",
+      "usesGlobal": "Aucun modèle spécifique : le modèle du transporteur sera employé."
+    }
   },
   "customerSites": {
     "title": "Sites",
@@ -916,20 +925,6 @@
     "push_notification": "Notification push",
     "internal_notification": "Notification interne"
   },
-  "communicationTemplateTypes": {
-    "appointment_request": "Demande de rendez-vous",
-    "appointment_confirmation": "Confirmation de rendez-vous",
-    "appointment_reminder": "Rappel de rendez-vous",
-    "driver_assigned": "Chauffeur affecté",
-    "driver_departed": "Chauffeur parti",
-    "arrival_estimate": "Estimation d’arrivée",
-    "arrival_soon": "Arrivée imminente",
-    "delivery_confirmation": "Confirmation de livraison",
-    "delivery_failed": "Échec de livraison",
-    "pod_available": "Preuve disponible",
-    "order_cancelled": "Commande annulée",
-    "custom": "Personnalisé"
-  },
   "communicationStatuses": {
     "draft": "Brouillon",
     "scheduled": "Programmée",
@@ -948,39 +943,6 @@
     "billing_contact": "Contact de facturation",
     "internal_user": "Utilisateur interne",
     "custom": "Coordonnées saisies"
-  },
-  "communicationTemplates": {
-    "title": "Modèles de communication",
-    "description": "Le contenu des messages envoyés depuis une commande",
-    "empty": "Aucun modèle",
-    "create": "Nouveau modèle",
-    "edit": "Modifier le modèle",
-    "formHint": "Le modèle porte le texte ; la commande fournit les valeurs à l’envoi.",
-    "codeHint": "Lettres, chiffres, point, tiret et souligné. Par exemple CUSTOMER_ABSENT_EMAIL.",
-    "codeLocked": "Le code identifie le modèle et ne change plus.",
-    "typeHint": "« Personnalisé » quand aucun type officiel ne correspond.",
-    "languageHint": "Code court, par exemple fr ou en.",
-    "variablesHint": "Ce que le modèle sait recevoir. Saisir le nom seul, sans accolades.",
-    "removeVariable": "Retirer la variable {{name}}",
-    "preview": "Aperçu",
-    "previewHint": "Mise en forme seulement : les variables sont remplacées à l’envoi, par le serveur.",
-    "undeclaredVariables": "Ces variables ne sont pas déclarées et ne seront pas remplacées : {{names}}.",
-    "emptySubject": "Sujet vide",
-    "emptyBody": "Message vide",
-    "fields": {
-      "code": "Code",
-      "name": "Nom",
-      "channel": "Canal",
-      "templateType": "Type",
-      "language": "Langue",
-      "subjectTemplate": "Sujet",
-      "bodyTemplate": "Message",
-      "availableVariables": "Variables disponibles",
-      "isActive": "Actif",
-      "isDefault": "Par défaut",
-      "bodyFormat": "Format du message"
-    },
-    "bodyFormatHint": "HTML pour une mise en forme, texte brut sinon. Le SMS ne connaît que le texte."
   },
   "communications": {
     "title": "Communications",
@@ -1025,9 +987,33 @@
       "deliveredAt": "Remise le",
       "readAt": "Lue le",
       "failedAt": "Échec le",
-      "communicationType": "Type"
+      "communicationType": "Type",
+      "order": "Commande",
+      "origin": "Origine",
+      "rule": "Règle",
+      "timing": "Échéance",
+      "createdAt": "Créée le",
+      "createdBy": "Auteur",
+      "templateVariables": "Variables employées",
+      "providerMessageId": "Référence fournisseur"
     },
-    "noTemplate": "Sans modèle — message ponctuel"
+    "noTemplate": "Sans modèle — message ponctuel",
+    "historyTitle": "Historique des communications",
+    "historyDescription": "Tout ce qui est parti, part ou a échoué. Chaque message conserve ce qui a été envoyé, même si le modèle change ensuite.",
+    "allStatuses": "Tous les statuts",
+    "views": {
+      "all": "Tout",
+      "scheduled": "Programmées",
+      "failed": "Échecs"
+    },
+    "origins": {
+      "manual": "Manuelle",
+      "rule": "Règle",
+      "manualHint": "Message écrit depuis une commande.",
+      "ruleHint": "Message produit par une règle automatique.",
+      "openRules": "Voir les règles",
+      "system": "Système"
+    }
   },
   "claims": {
     "title": "Réclamations",
@@ -1969,6 +1955,21 @@
         "confirm_other": "Appliquer à {{count}} lignes",
         "done": "Tarifs recalculés"
       }
+    },
+    "document": {
+      "action": "Prévisualiser",
+      "title": "Document de la facture",
+      "hint": "Rendu par le serveur, avec le modèle résolu pour ce client.",
+      "failed": "Le document n’a pas pu être rendu.",
+      "renderedAt": "Figé le {{date}}",
+      "noTemplate": "Aucun modèle de facture n’est configuré : la mise en page livrée est employée.",
+      "frozen": "Facture clôturée : ce document est celui qui a été produit à la clôture. Modifier le modèle ne le réécrit pas.",
+      "scopes": {
+        "customer": "Modèle du client",
+        "global": "Modèle du transporteur",
+        "fallback": "Mise en page par défaut",
+        "frozen": "Document figé"
+      }
     }
   },
   "settlements": {
@@ -2456,6 +2457,160 @@
       "secretSet": "Enregistré",
       "noSecret": "Aucun",
       "editHint": "Les destinations se règlent depuis la fiche du client ou depuis la facturation : ce sont les mêmes configurations."
+    }
+  },
+  "templates": {
+    "title": "Modèles",
+    "description": "Le texte des messages et la mise en page des documents. Une seule table pour toute la plateforme.",
+    "empty": "Aucun modèle",
+    "create": "Nouveau modèle",
+    "edit": "Modifier le modèle",
+    "formHint": "Le modèle porte le texte ; la commande fournit les valeurs à l’envoi.",
+    "codeHint": "Lettres, chiffres, point, tiret et souligné. Par exemple CUSTOMER_ABSENT_EMAIL.",
+    "codeLocked": "Le code identifie le modèle et ne change plus.",
+    "typeHint": "« Personnalisé » quand aucun type officiel ne correspond.",
+    "languageHint": "Code court, par exemple fr ou en.",
+    "variablesHint": "Ce que le modèle sait recevoir. Saisir le chemin seul, sans accolades — par exemple invoice.total.",
+    "removeVariable": "Retirer la variable {{name}}",
+    "preview": "Aperçu",
+    "previewHint": "Mise en forme seulement : les variables sont remplacées à l’envoi, par le serveur.",
+    "undeclaredVariables": "Ces variables ne sont pas déclarées et ne seront pas remplacées : {{names}}.",
+    "emptySubject": "Sujet vide",
+    "emptyBody": "Message vide",
+    "fields": {
+      "code": "Code",
+      "name": "Nom",
+      "channel": "Canal",
+      "templateType": "Type",
+      "language": "Langue",
+      "subjectTemplate": "Sujet",
+      "bodyTemplate": "Message",
+      "availableVariables": "Variables disponibles",
+      "isActive": "Actif",
+      "isDefault": "Par défaut",
+      "bodyFormat": "Format du message",
+      "customer": "Client",
+      "service": "Prestation"
+    },
+    "bodyFormatHint": "HTML pour une mise en forme, texte brut sinon. Le SMS ne connaît que le texte.",
+    "invoiceTitle": "Modèles de facture",
+    "invoiceDescription": "La mise en page des factures. Sans modèle propre à un client, celui du transporteur sert.",
+    "createInvoice": "Nouveau modèle de facture",
+    "suggestionsHint": "Chemins que le serveur fournira pour une facture :",
+    "invoiceBodyHint": "HTML du document. {{ chemin }} insère une valeur ; {{#invoice.lines}} … {{/invoice.lines}} répète un bloc pour chaque ligne.",
+    "globalScope": "Transporteur",
+    "customerHint": "Aucun client : le modèle vaut pour toute l’organisation. Un client : il ne vaut que pour lui.",
+    "serviceHint": "Aucun service : le modèle vaut pour toutes les prestations.",
+    "allServices": "Toutes les prestations",
+    "allTypes": "Tous les types",
+    "allCustomers": "Tous les clients",
+    "globalOnly": "Modèles du transporteur",
+    "allChannels": "Tous les canaux",
+    "allStates": "Actifs et inactifs",
+    "noChannel": "Document",
+    "errors": {
+      "documentChannel": "Un modèle de facture est un document : il n’a pas de canal d’envoi."
+    }
+  },
+  "templateTypes": {
+    "appointment_request": "Demande de rendez-vous",
+    "appointment_confirmation": "Confirmation de rendez-vous",
+    "appointment_reminder": "Rappel de rendez-vous",
+    "driver_assigned": "Chauffeur affecté",
+    "driver_departed": "Chauffeur parti",
+    "arrival_estimate": "Estimation d’arrivée",
+    "arrival_soon": "Arrivée imminente",
+    "delivery_confirmation": "Confirmation de livraison",
+    "delivery_failed": "Échec de livraison",
+    "pod_available": "Preuve disponible",
+    "order_cancelled": "Commande annulée",
+    "custom": "Personnalisé",
+    "invoice": "Facture"
+  },
+  "communicationEvents": {
+    "order_created": "Commande créée",
+    "order_confirmed": "Commande confirmée",
+    "order_cancelled": "Commande annulée",
+    "service_planned": "Prestation planifiée",
+    "appointment_requested": "Rendez-vous demandé",
+    "appointment_confirmed": "Rendez-vous confirmé",
+    "driver_assigned": "Chauffeur affecté",
+    "tour_stop_approaching": "Arrêt imminent",
+    "service_completed": "Prestation terminée",
+    "pod_created": "Preuve de livraison créée",
+    "claim_created": "Réclamation créée"
+  },
+  "communicationRules": {
+    "title": "Règles automatiques",
+    "description": "Quel message part, sur quel événement, vers quel destinataire et après quel délai.",
+    "empty": "Aucune règle",
+    "create": "Nouvelle règle",
+    "edit": "Modifier la règle",
+    "formHint": "La règle relie un événement à un modèle. Le canal vient du modèle, et le destinataire est résolu à l’envoi.",
+    "notWiredYet": "Aucun événement métier n’est encore émis par la plateforme : les règles s’enregistrent et s’appliqueront dès qu’ils le seront.",
+    "manualOnly": "Règle non automatique : elle ne produit rien d’elle-même, même lorsque l’événement survient.",
+    "deleteHint": "Une règle ayant déjà produit des messages ne peut pas être supprimée. La désactiver l’arrête sans effacer l’historique.",
+    "eventHint": "L’événement métier qui déclenche l’envoi.",
+    "serviceHint": "Aucune prestation : la règle vaut pour toutes.",
+    "templateHint": "Seuls les modèles actifs de message sont proposés ; une facture n’a pas de canal.",
+    "recipientHint": "Le serveur résout le contact à partir du rôle, au moment de créer le message.",
+    "delayHint": "0 pour un envoi dès l’événement. Un délai négatif n’a pas de sens.",
+    "allServices": "Toutes les prestations",
+    "allEvents": "Tous les événements",
+    "allRecipients": "Tous les destinataires",
+    "allModes": "Automatiques et manuelles",
+    "automaticOnly": "Automatiques",
+    "manualOnlyFilter": "Non automatiques",
+    "noTemplate": "Aucun modèle choisi",
+    "addCondition": "Ajouter une condition",
+    "conditionsEmpty": "Sans condition, la règle s’applique à chaque fois que l’événement survient.",
+    "conditionsHint": "Toutes les conditions doivent être vraies. Ni « ou », ni imbrication.",
+    "listPlaceholder": "valeurs séparées par des virgules",
+    "fields": {
+      "eventType": "Événement",
+      "service": "Prestation",
+      "template": "Modèle",
+      "channel": "Canal",
+      "recipientRole": "Destinataire",
+      "delay": "Délai",
+      "delayValue": "Délai",
+      "delayUnit": "Unité",
+      "conditions": "Conditions",
+      "conditionField": "Champ",
+      "conditionOperator": "Opérateur",
+      "conditionValue": "Valeur",
+      "isAutomatic": "Automatique",
+      "isActive": "Active"
+    },
+    "delayUnits": {
+      "minutes": "minutes",
+      "hours": "heures",
+      "days": "jours"
+    },
+    "operators": {
+      "eq": "est",
+      "neq": "n’est pas",
+      "gt": "supérieur à",
+      "gte": "supérieur ou égal à",
+      "lt": "inférieur à",
+      "lte": "inférieur ou égal à",
+      "in": "parmi",
+      "not_in": "hors de"
+    },
+    "errors": {
+      "field": "Minuscules, chiffres et tirets bas seulement — ni point, ni chemin."
+    },
+    "summary": {
+      "title": "Ce que fera la règle",
+      "when": "Quand",
+      "scope": "Pour",
+      "wait": "Attendre",
+      "send": "Envoyer",
+      "channel": "Canal",
+      "to": "À",
+      "conditions": "Si",
+      "always": "Toujours",
+      "immediately": "Immédiatement"
     }
   }
 }

@@ -29,8 +29,21 @@ export interface OrderCommunicationPayload {
 export interface OrderCommunicationFilters {
   page: number
   perPage: number
+  search?: string
+  orderId?: string
+  templateId?: string
+  communicationRuleId?: string
   channel?: string
+  communicationType?: string
   recipientRole?: string
+  status?: string
+  createdBy?: string
+  scheduledFrom?: string
+  scheduledTo?: string
+  sentFrom?: string
+  sentTo?: string
+  failedFrom?: string
+  failedTo?: string
   sort?: string
   direction?: 'asc' | 'desc'
 }
@@ -43,6 +56,19 @@ export interface OrderCommunicationFilters {
  * `sending`, `sent`.
  */
 export const orderCommunicationsApi = {
+  /**
+   * Historique de toute l'organisation.
+   *
+   * Distinct de `byOrder` : celui-ci répond « qu'est-il parti chez ce
+   * client ? », l'autre « qu'est-il parti pour cette commande ? ». Les charger
+   * tous pour filtrer côté navigateur ferait descendre l'historique entier à
+   * chaque ouverture, ce que le §140 interdit.
+   */
+  list: (filters: OrderCommunicationFilters) =>
+    api.get<ApiCollection<OrderCommunication>>('/order-communications', {
+      query: { ...filters },
+    }),
+
   byOrder: (orderId: string, filters: OrderCommunicationFilters) =>
     api.get<ApiCollection<OrderCommunication>>(`/orders/${orderId}/communications`, {
       query: { ...filters },

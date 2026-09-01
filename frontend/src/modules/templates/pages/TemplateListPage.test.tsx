@@ -7,14 +7,19 @@ import { paginated, withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { API, server } from '@/test/server'
 
-import { CommunicationTemplateListPage } from './CommunicationTemplateListPage'
+import { TemplateListPage } from './TemplateListPage'
 
 const TEMPLATE_ID = '01JQZ0000000000000TMPL01'
+const CUSTOMER_ID = '01JQZ00000000000000CUST1'
 
 const template = (overrides: Record<string, unknown> = {}) => ({
   id: TEMPLATE_ID,
   organizationId: '01JQZ0000000000000000ORG1',
+  customerId: null,
+  customerName: null,
   serviceId: null,
+  serviceName: null,
+  scope: 'global',
   code: 'CUSTOMER_ABSENT_EMAIL',
   name: 'Client absent',
   channel: 'email',
@@ -31,25 +36,42 @@ const template = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+/**
+ * L'écran choisit le client et la prestation d'un modèle : les deux listes
+ * sont donc interrogées à l'ouverture, et `onUnhandledRequest: 'error'` les
+ * exige déclarées ici.
+ */
 function render(permissions: string[], templates: unknown[] = [template()]) {
   server.use(
-    http.get(`${API}/communication-templates`, () => HttpResponse.json(paginated(templates))),
+    http.get(`${API}/templates`, () => HttpResponse.json(paginated(templates))),
+    http.get(`${API}/customers`, () =>
+      HttpResponse.json(paginated([{ id: CUSTOMER_ID, code: 'IKEA', name: 'IKEA' }])),
+    ),
+    http.get(`${API}/services`, () => HttpResponse.json(paginated([]))),
   )
 
-  return renderWithProviders(<CommunicationTemplateListPage />, {
+  return renderWithProviders(<TemplateListPage />, {
     membership: withPermissions(permissions),
   })
 }
 
-describe('modèles de communication', () => {
+describe('modèles', () => {
   it('liste les modèles avec leur canal, leur type et leur langue', async () => {
-    render(['communication_templates.view'])
+    render(['templates.view'])
 
     expect(await screen.findByText('Client absent')).toBeInTheDocument()
     expect(screen.getByText('CUSTOMER_ABSENT_EMAIL')).toBeInTheDocument()
     expect(screen.getByText('E-mail')).toBeInTheDocument()
-    expect(screen.getByText('Personnalisé')).toBeInTheDocument()
     expect(screen.getByText('FR')).toBeInTheDocument()
+  })
+
+  /** Un modèle sans client vaut pour toute l'organisation : le dire. */
+  it('marque un modèle sans client comme celui du transporteur', async () => {
+    render(['templates.view'])
+
+    await screen.findByText('Client absent')
+
+    expect(screen.getAllByText('Transporteur').length).toBeGreaterThan(0)
   })
 
   /**
@@ -58,10 +80,10 @@ describe('modèles de communication', () => {
    */
   it('crée un modèle « Client absent » sans inventer de type', async () => {
     let body: unknown = null
-    render(['communication_templates.view', 'communication_templates.create'])
+    render(['templates.view', 'templates.create'])
 
     server.use(
-      http.post(`${API}/communication-templates`, async ({ request }) => {
+      http.post(`${API}/templates`, async ({ request }) => {
         body = await request.json()
         return HttpResponse.json({ data: template(), meta: [] }, { status: 201 })
       }),
@@ -82,19 +104,20 @@ describe('modèles de communication', () => {
       channel: 'email',
       templateType: 'custom',
       language: 'fr',
+      customerId: null,
     })
   })
 
   /**
-   * `StoreCommunicationTemplateRequest` rend le sujet requis pour un e-mail et
-   * pas pour un SMS. Le demander toujours ferait saisir une valeur inutile.
+   * `StoreTemplateRequest` rend le sujet requis pour un e-mail et pas pour un
+   * SMS. Le demander toujours ferait saisir une valeur inutile.
    */
   it('n’exige le sujet que sur les canaux qui en ont un', async () => {
     let body: unknown = null
-    render(['communication_templates.view', 'communication_templates.create'])
+    render(['templates.view', 'templates.create'])
 
     server.use(
-      http.post(`${API}/communication-templates`, async ({ request }) => {
+      http.post(`${API}/templates`, async ({ request }) => {
         body = await request.json()
         return HttpResponse.json({ data: template(), meta: [] }, { status: 201 })
       }),
@@ -119,7 +142,7 @@ describe('modèles de communication', () => {
 
   /** Les variables non déclarées ne seront pas remplacées : le dire. */
   it('signale une variable employée mais non déclarée', async () => {
-    render(['communication_templates.view', 'communication_templates.update'])
+    render(['templates.view', 'templates.update'])
 
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
 
@@ -133,7 +156,7 @@ describe('modèles de communication', () => {
 
   /** Le code identifie le modèle : le renommer romprait la référence. */
   it('verrouille le code en modification', async () => {
-    render(['communication_templates.view', 'communication_templates.update'])
+    render(['templates.view', 'templates.update'])
 
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
 
@@ -142,7 +165,7 @@ describe('modèles de communication', () => {
   })
 
   it('masque création, modification et suppression sans les permissions', async () => {
-    render(['communication_templates.view'])
+    render(['templates.view'])
 
     await screen.findByText('Client absent')
 
@@ -159,7 +182,7 @@ describe('modèles de communication', () => {
  */
 describe('format du message', () => {
   it('propose le format sur un e-mail, jamais sur un SMS', async () => {
-    render(['communication_templates.view', 'communication_templates.create'])
+    render(['templates.view', 'templates.create'])
 
     await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
 
@@ -174,10 +197,10 @@ describe('format du message', () => {
 
   it('envoie le format retenu', async () => {
     let body: unknown = null
-    render(['communication_templates.view', 'communication_templates.create'])
+    render(['templates.view', 'templates.create'])
 
     server.use(
-      http.post(`${API}/communication-templates`, async ({ request }) => {
+      http.post(`${API}/templates`, async ({ request }) => {
         body = await request.json()
         return HttpResponse.json({ data: template(), meta: [] }, { status: 201 })
       }),
@@ -204,13 +227,67 @@ describe('format du message', () => {
    * modèle s'exécuterait sinon chez tous ceux qui l'ouvrent.
    */
   it('rend l’aperçu HTML dans une iframe sans script', async () => {
-    render(['communication_templates.view', 'communication_templates.update'],
-      [template({ bodyFormat: 'html', bodyTemplate: '<p>Bonjour</p>' })])
+    render(
+      ['templates.view', 'templates.update'],
+      [template({ bodyFormat: 'html', bodyTemplate: '<p>Bonjour</p>' })],
+    )
 
     await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
 
     const frame = await screen.findByTitle('Aperçu')
     expect(frame).toHaveAttribute('sandbox', '')
     expect(frame).toHaveAttribute('srcdoc', '<p>Bonjour</p>')
+  })
+})
+
+/**
+ * Le modèle de facture est un **document** : le §0.7 interdit de lui inventer
+ * un canal, et l'écran ne doit pas laisser en saisir un.
+ */
+describe('modèle de facture', () => {
+  it('retire le canal et le sujet quand le type devient « Facture »', async () => {
+    render(['templates.view', 'templates.create'])
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByLabelText(/^Canal/)).toBeInTheDocument()
+
+    await userEvent.click(dialog.getByLabelText(/^Type/))
+    await userEvent.click(await screen.findByRole('option', { name: 'Facture' }))
+
+    expect(dialog.queryByLabelText(/^Canal/)).not.toBeInTheDocument()
+    expect(dialog.queryByLabelText(/^Sujet/)).not.toBeInTheDocument()
+  })
+
+  it('envoie un canal nul et propose une mise en page de départ', async () => {
+    let body: unknown = null
+    render(['templates.view', 'templates.create'])
+
+    server.use(
+      http.post(`${API}/templates`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: template(), meta: [] }, { status: 201 })
+      }),
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: /Nouveau modèle/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    await userEvent.click(dialog.getByLabelText(/^Type/))
+    await userEvent.click(await screen.findByRole('option', { name: 'Facture' }))
+
+    await userEvent.type(dialog.getByLabelText(/^Code/), 'INVOICE_DEFAULT')
+    await userEvent.type(dialog.getByLabelText(/^Nom/), 'Facture standard')
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({
+      templateType: 'invoice',
+      channel: null,
+      subjectTemplate: null,
+      serviceId: null,
+    })
+    expect((body as { bodyTemplate: string }).bodyTemplate).toContain('{{#invoice.lines}}')
   })
 })

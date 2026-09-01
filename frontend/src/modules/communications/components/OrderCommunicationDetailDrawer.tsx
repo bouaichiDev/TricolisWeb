@@ -11,6 +11,7 @@ import {
 import { formatDateTime } from '@/shared/utils/format'
 
 import { CommunicationAttachmentList } from './CommunicationAttachmentList'
+import { CommunicationOriginPanel } from './CommunicationOriginPanel'
 import { CommunicationStatusBadge } from './CommunicationStatusBadge'
 import { useOrderCommunication } from '../hooks/useOrderCommunications'
 import { abilitiesOf } from '../utils/communicationActions'
@@ -117,6 +118,19 @@ export function OrderCommunicationDetailDrawer({
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm">{shown.body}</p>
             </div>
+
+            <CommunicationOriginPanel communication={shown} />
+
+            {shown.providerMessageId ? (
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t('communications.fields.providerMessageId')}
+                </p>
+                {/* Reference technique du fournisseur, jamais un identifiant
+                    metier. `providerResponse` reste, lui, hors de l'ecran. */}
+                <p className="mt-1 break-all font-mono text-xs">{shown.providerMessageId}</p>
+              </div>
+            ) : null}
 
             <div className="border-t pt-3">
               <CommunicationAttachmentList

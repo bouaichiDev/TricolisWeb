@@ -1,11 +1,16 @@
 import type { Document } from '@/modules/documents/types/document'
+import type { Template, TemplateType } from '@/modules/templates/types/template'
 import type { CompactUser } from '@/modules/tracking/types/trackingEvent'
 
 /**
- * Les quatre énumérations du domaine, **valeurs exactes du backend**.
+ * Les énumérations du domaine, **valeurs exactes du backend**.
  *
  * Elles sont en `snake_case` parce que les cas PHP le sont : envoyer `EMAIL`
  * ferait échouer `Rule::in(CommunicationChannel::values())`.
+ *
+ * `TemplateType` vit dans le module `templates` depuis la Phase 9 : la même
+ * énumération sert aux messages et aux documents, et la dupliquer ici aurait
+ * laissé les deux copies diverger.
  */
 export const COMMUNICATION_CHANNELS = [
   'email',
@@ -13,21 +18,6 @@ export const COMMUNICATION_CHANNELS = [
   'whatsapp',
   'push_notification',
   'internal_notification',
-] as const
-
-export const COMMUNICATION_TEMPLATE_TYPES = [
-  'appointment_request',
-  'appointment_confirmation',
-  'appointment_reminder',
-  'driver_assigned',
-  'driver_departed',
-  'arrival_estimate',
-  'arrival_soon',
-  'delivery_confirmation',
-  'delivery_failed',
-  'pod_available',
-  'order_cancelled',
-  'custom',
 ] as const
 
 export const COMMUNICATION_STATUSES = [
@@ -51,13 +41,30 @@ export const RECIPIENT_ROLES = [
   'custom',
 ] as const
 
-/** Format du corps : `html` pour un e-mail mis en forme, `text` sinon. */
-export const BODY_FORMATS = ['text', 'html'] as const
+/**
+ * Les onze événements métier qui peuvent déclencher une règle.
+ *
+ * Aucun n'est émis par les Phases 1 à 8 : le backend Phase 9 les déclare, et
+ * leur branchement attend que les événements existent. Une règle se configure
+ * donc dès aujourd'hui, et s'appliquera le jour où l'événement sera émis.
+ */
+export const COMMUNICATION_EVENT_TYPES = [
+  'order_created',
+  'order_confirmed',
+  'order_cancelled',
+  'service_planned',
+  'appointment_requested',
+  'appointment_confirmed',
+  'driver_assigned',
+  'tour_stop_approaching',
+  'service_completed',
+  'pod_created',
+  'claim_created',
+] as const
 
-export type BodyFormat = (typeof BODY_FORMATS)[number]
 export type CommunicationChannel = (typeof COMMUNICATION_CHANNELS)[number]
-export type CommunicationTemplateType = (typeof COMMUNICATION_TEMPLATE_TYPES)[number]
 export type CommunicationStatus = (typeof COMMUNICATION_STATUSES)[number]
+export type CommunicationEventType = (typeof COMMUNICATION_EVENT_TYPES)[number]
 export type RecipientRole = (typeof RECIPIENT_ROLES)[number]
 
 /** Canaux où le sujet a un sens. Un SMS n'en a pas. */
@@ -71,33 +78,13 @@ export function usesPhone(channel: string): boolean {
 }
 
 /**
- * Modèle de message — `CommunicationTemplateResource`.
+ * Une communication n'est plus modifiable une fois partie.
  *
- * `serviceId` est facultatif : un template peut valoir pour toute
- * l'organisation ou pour un service précis.
- *
- * `rulesCount` existe et n'est **pas** exploité : les règles de communication
- * sont hors périmètre de cette phase.
+ * Le §83 l'exige : les instantanés restent historiques. Le serveur refuse ;
+ * l'écran cache le bouton plutôt que de laisser découvrir le refus.
  */
-export interface CommunicationTemplate {
-  id: string
-  organizationId: string
-  serviceId: string | null
-  code: string
-  name: string
-  channel: CommunicationChannel
-  templateType: CommunicationTemplateType
-  subjectTemplate: string | null
-  bodyTemplate: string
-  bodyFormat: BodyFormat
-  language: string
-  availableVariables: string[] | null
-  isDefault: boolean
-  isActive: boolean
-  rulesCount?: number
-  communicationsCount?: number
-  createdAt: string
-  updatedAt: string
+export function isCommunicationSent(status: string): boolean {
+  return status === 'sent' || status === 'delivered' || status === 'read'
 }
 
 /**
@@ -120,12 +107,13 @@ export interface CommunicationAttachment {
  * Communication d'une commande — `OrderCommunicationResource`.
  *
  * C'est un **instantané** : `recipientName`, `subject`, `body` et
- * `templateVariables` conservent ce qui est parti, même si le template change
- * ensuite. Reconstruire un ancien message depuis le template actuel montrerait
+ * `templateVariables` conservent ce qui est parti, même si le modèle change
+ * ensuite. Reconstruire un ancien message depuis le modèle actuel montrerait
  * un texte que personne n'a jamais reçu.
  *
- * `communicationRuleId` reste au contrat, en **lecture seule** : une
- * communication manuelle l'envoie à `null`, et les règles sont hors périmètre.
+ * `communicationRuleId` dit d'où vient le message : renseigné, une règle l'a
+ * produit ; nul avec un `createdBy`, quelqu'un l'a écrit. Aucun champ `origin`
+ * n'existe, et le §75 interdit d'en inventer un.
  *
  * `providerResponse` est exposé par la ressource mais **jamais affiché** : la
  * réponse brute d'un fournisseur peut porter des identifiants techniques.
@@ -135,10 +123,11 @@ export interface OrderCommunication {
   id: string
   organizationId: string
   orderId: string
+  orderNumber?: string | null
   templateId: string | null
   communicationRuleId: string | null
   channel: CommunicationChannel
-  communicationType: CommunicationTemplateType
+  communicationType: TemplateType
   recipientRole: RecipientRole
   recipientName: string | null
   recipientEmail: string | null
@@ -157,7 +146,7 @@ export interface OrderCommunication {
   errorMessage?: string | null
   createdBy: string | null
   creator?: CompactUser
-  template?: CommunicationTemplate
+  template?: Template
   attachments?: CommunicationAttachment[]
   attachmentsCount?: number
   createdAt: string

@@ -15,6 +15,7 @@ export const invoiceKeys = {
   list: (filters: InvoiceFilters) => [...invoiceKeys.all, 'list', filters] as const,
   detail: (id: string) => [...invoiceKeys.all, 'detail', id] as const,
   closure: (id: string) => [...invoiceKeys.all, 'closure', id] as const,
+  document: (id: string) => [...invoiceKeys.all, 'document', id] as const,
   repricing: (id: string) => [...invoiceKeys.all, 'repricing', id] as const,
   billable: (customerId: string, filters: BillableServiceFilters) =>
     ['billable-services', customerId, filters] as const,
@@ -35,6 +36,23 @@ export function useInvoice(id: string | null) {
     queryKey: invoiceKeys.detail(id ?? ''),
     queryFn: () => invoicesApi.get(id as string),
     enabled: id !== null && id !== '',
+  })
+}
+
+/**
+ * Le document de la facture.
+ *
+ * Rechargé à chaque ouverture : un brouillon se rend depuis le modèle du
+ * moment, et celui-ci a pu être retouché depuis la dernière consultation. Une
+ * facture close, elle, rend toujours la même chose — le document figé à sa
+ * clôture.
+ */
+export function useInvoiceDocument(id: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: invoiceKeys.document(id ?? ''),
+    queryFn: () => invoicesApi.document(id as string),
+    enabled: enabled && id !== null && id !== '',
+    staleTime: 0,
   })
 }
 

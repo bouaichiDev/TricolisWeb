@@ -235,3 +235,46 @@ inventer un statut créerait deux vérités sur la même question.
 Vérifié sur la seule table de cette phase qui porte un statut : `export_jobs` a
 une colonne `status` en `varchar(32)` et **aucune** clé étrangère vers
 `statuses`.
+
+## Phase 9 — confirmation pour `order_communication`
+
+Relevé du 1er septembre 2026, après l'unification des modèles.
+
+### La source est bien `order_communication`
+
+Le §192 demande de confirmer `src = order_communications`. La valeur réelle est
+`order_communication`, au singulier : c'est l'alias de
+`MorphMap::ORDER_COMMUNICATION`, et c'est lui que porte `statuses.source`. Le
+pluriel est le nom de la table. Même écart de vocabulaire qu'`export_job` en
+Phase 8, même conclusion.
+
+### Les neuf codes sont semés
+
+`StatusSeeder` sème `order_communication` **depuis l'énumération PHP**
+`CommunicationStatus` — pas depuis une liste recopiée. Les neuf codes y sont donc
+par construction :
+
+```text
+draft  scheduled  queued  sending  sent  delivered  read  failed  cancelled
+```
+
+Aucun n'a été ajouté par la Phase 9, et aucun `RETRYING`, `PROCESSING` ou
+`ARCHIVED` n'a été inventé — le §11 les interdit.
+
+### Aucun `status_id`
+
+`order_communications.status` est un `varchar(16)`, sans clé étrangère vers
+`statuses`. Le frontend lit couleur et libellé par le référentiel ; aucune
+teinte n'est écrite en dur ailleurs que dans `CommunicationStatusBadge`, qui
+porte les neuf codes officiels et rien d'autre.
+
+### Les modèles n'entrent pas au référentiel
+
+`templates` porte `is_active` et `is_default`, deux booléens — **pas** de
+colonne `status`. La table ne relève donc pas de `statuses`, et le §14 interdit
+d'y forcer `CommunicationChannel`, `TemplateType`, `CommunicationEventType` ou
+`RecipientRole` : la convention centrale concerne les champs métier `status`,
+pas toute énumération.
+
+Le renommage `communication_templates → templates` ne change donc rien au
+référentiel : il n'y avait aucune entrée à déplacer.

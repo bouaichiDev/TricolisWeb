@@ -29,6 +29,7 @@ class OrderCommunicationListResource extends JsonResource
             'id' => $this->id,
             'organizationId' => $this->organization_id,
             'orderId' => $this->order_id,
+            'orderNumber' => $this->whenLoaded('order', fn (): ?string => $this->order?->order_number),
             'templateId' => $this->template_id,
             'communicationRuleId' => $this->communication_rule_id,
             'channel' => $this->channel?->value,

@@ -25,6 +25,7 @@ class CommunicationRuleDetailResource extends JsonResource
             'id' => $this->id,
             'organizationId' => $this->organization_id,
             'serviceId' => $this->service_id,
+            'serviceName' => $this->whenLoaded('service', fn (): ?string => $this->service?->name),
             'templateId' => $this->template_id,
             'eventType' => $this->event_type?->value,
             'recipientRole' => $this->recipient_role?->value,

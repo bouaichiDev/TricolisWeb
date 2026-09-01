@@ -77,7 +77,7 @@ function renderDetail(permissions: string[], communications: unknown[] = [commun
     ),
     http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
     http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
-    http.get(`${API}/communication-templates`, () => HttpResponse.json(paginated([absentTemplate]))),
+    http.get(`${API}/templates`, () => HttpResponse.json(paginated([absentTemplate]))),
     // Le detail reflete la ligne : renvoyer un brouillon alors que la liste
     // montre un echec ferait passer un test qui ne prouve rien.
     http.get(`${API}/order-communications/:id`, () =>

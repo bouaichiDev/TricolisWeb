@@ -16,14 +16,11 @@ import {
 
 import { CommunicationMessageFields } from './CommunicationMessageFields'
 import { CommunicationRecipientFields } from './CommunicationRecipientFields'
-import { useCommunicationTemplateList } from '../hooks/useCommunicationTemplates'
+import { useTemplateList } from '@/modules/templates/hooks/useTemplates'
+import type { Template } from '@/modules/templates/types/template'
 import { useCreateOrderCommunication } from '../hooks/useOrderCommunications'
-import {
-  COMMUNICATION_CHANNELS,
-  COMMUNICATION_TEMPLATE_TYPES,
-  hasSubject,
-  RECIPIENT_ROLES,
-} from '../types/communication'
+import { TEMPLATE_TYPES } from '@/modules/templates/types/template'
+import { COMMUNICATION_CHANNELS, hasSubject, RECIPIENT_ROLES } from '../types/communication'
 
 interface CreateOrderCommunicationDialogProps {
   orderId: string
@@ -76,12 +73,17 @@ export function CreateOrderCommunicationDialog({
 
   // Seuls les templates actifs : proposer un template retire ferait partir un
   // message que l'organisation a justement decide de ne plus utiliser.
-  const templates = useCommunicationTemplateList(
+  const templates = useTemplateList(
     { page: 1, perPage: 100, isActive: true, sort: 'name', direction: 'asc' },
     open,
   )
 
-  const available = templates.data?.data ?? []
+  // Les documents sont ecartes : une facture n'a pas de canal par ou partir,
+  // et le serveur refuserait la communication.
+  const available = (templates.data?.data ?? []).filter(
+    (template): template is Template & { channel: NonNullable<Template['channel']> } =>
+      template.channel !== null,
+  )
   const chosen = available.find((item) => item.id === templateId)
 
   // Sans modele, le canal et le type viennent des selecteurs ; avec, du modele.
@@ -147,7 +149,7 @@ export function CreateOrderCommunicationDialog({
               label: template.name,
               hint: [
                 t(`communicationChannels.${template.channel}`),
-                t(`communicationTemplateTypes.${template.templateType}`),
+                t(`templateTypes.${template.templateType}`),
                 template.language.toUpperCase(),
               ].join(' · '),
             })),
@@ -185,9 +187,10 @@ export function CreateOrderCommunicationDialog({
                 label={t('communications.fields.communicationType')}
                 value={communicationType}
                 onChange={setCommunicationType}
-                options={COMMUNICATION_TEMPLATE_TYPES.map((value) => ({
+                // `invoice` est ecarte : c'est un document, pas un message.
+                options={TEMPLATE_TYPES.filter((value) => value !== 'invoice').map((value) => ({
                   value,
-                  label: t(`communicationTemplateTypes.${value}`),
+                  label: t(`templateTypes.${value}`),
                 }))}
                 required
               />

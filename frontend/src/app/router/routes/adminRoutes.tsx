@@ -2,7 +2,9 @@ import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
 import { PricingVariablesPage } from '@/modules/pricing/pages/PricingVariablesPage'
-import { CommunicationTemplateListPage } from '@/modules/communications/pages/CommunicationTemplateListPage'
+import { CommunicationHistoryPage } from '@/modules/communications/pages/CommunicationHistoryPage'
+import { CommunicationRuleListPage } from '@/modules/communications/pages/CommunicationRuleListPage'
+import { TemplateListPage } from '@/modules/templates/pages/TemplateListPage'
 import { ApiConfigurationListPage } from '@/modules/integrations/pages/ApiConfigurationListPage'
 import { JourneyConfigurationPage } from '@/modules/tracking/pages/JourneyConfigurationPage'
 import { AuditLogPage } from '@/modules/audit/pages/AuditLogPage'
@@ -47,10 +49,27 @@ export const adminRoutes = [
     })}
   />,
 
+  // Un seul ecran de modeles pour toute la plateforme. Le menu y mene par deux
+  // portes — Communication et Facturation — avec un filtre d'arrivee different ;
+  // le §0.15 interdit d'en faire deux CRUD.
   <Route
-    key="communication-templates"
-    path="/communication-templates"
-    element={guarded('communication_templates.view', <CommunicationTemplateListPage />, {
+    key="templates"
+    path="/templates"
+    element={guarded('templates.view', <TemplateListPage />, { organizationOnly: true })}
+  />,
+
+  <Route
+    key="communication-rules"
+    path="/communications/rules"
+    element={guarded('communication_rules.view', <CommunicationRuleListPage />, {
+      organizationOnly: true,
+    })}
+  />,
+
+  <Route
+    key="communication-history"
+    path="/communications/history"
+    element={guarded('order_communications.view', <CommunicationHistoryPage />, {
       organizationOnly: true,
     })}
   />,

@@ -225,7 +225,17 @@ describe('template crud, scope and deletion', function (): void {
             ->and($columns)->not->toContain('priority')
             ->and($columns)->not->toContain('metadata');
 
-        foreach (['invoice_templates', 'email_templates', 'communication_recipients', 'notifications', 'email_logs', 'sms_logs', 'whatsapp_logs', 'webhooks', 'message_threads', 'communication_status_histories'] as $table) {
+        // Les sept premieres sont celles que le §0.1 interdit nommement : une
+        // seule table de modeles gouverne toute la plateforme, et en ouvrir une
+        // par usage ferait diverger les deux au premier correctif.
+        $forbidden = [
+            'invoice_templates', 'customer_invoice_templates', 'invoice_template_lines',
+            'email_templates', 'sms_templates', 'whatsapp_templates', 'document_templates',
+            'communication_recipients', 'notifications', 'email_logs', 'sms_logs',
+            'whatsapp_logs', 'webhooks', 'message_threads', 'communication_status_histories',
+        ];
+
+        foreach ($forbidden as $table) {
             expect(Schema::hasTable($table))->toBeFalse();
         }
     });

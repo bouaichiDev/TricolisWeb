@@ -112,8 +112,14 @@ describe('menu catalogue', function (): void {
 
         $declared[] = '/dashboard';
 
+        // Seul le chemin est compare : depuis la Phase 9, deux entrees menent au
+        // meme ecran de modeles avec un filtre d'arrivee different — un
+        // exploitant et un comptable n'y cherchent pas la meme chose. La chaine
+        // de requete n'est pas une route, et le routeur ne la declare pas.
         $routes = array_values(array_filter(array_map(
-            static fn (MenuEntry $entry): ?string => $entry->route,
+            static fn (MenuEntry $entry): ?string => $entry->route === null
+                ? null
+                : strtok($entry->route, '?'),
             MenuCatalogue::entries(),
         )));
 

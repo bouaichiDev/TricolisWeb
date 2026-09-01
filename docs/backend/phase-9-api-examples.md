@@ -11,7 +11,7 @@ Aucun attribut de ces exemples n'est absent du diagramme.
 ## 1. Créer un modèle e-mail
 
 ```http
-POST /api/v1/communication-templates
+POST /api/v1/templates
 ```
 
 ```json
@@ -57,7 +57,7 @@ POST /api/v1/communication-templates
 ## 2. Créer un modèle SMS — sans objet
 
 ```http
-POST /api/v1/communication-templates
+POST /api/v1/templates
 ```
 
 ```json
@@ -353,7 +353,7 @@ autre transporteur ne se révèle pas.
 
 ```http
 GET /api/v1/order-communications?status=failed&channel=email&sentFrom=2026-08-01&perPage=50
-GET /api/v1/communication-templates?channel=sms&isActive=1&search=rappel
+GET /api/v1/templates?channel=sms&isActive=1&search=rappel
 GET /api/v1/communication-rules?eventType=service_completed&recipientRole=customer
 GET /api/v1/orders/{order}/communications
 ```
@@ -377,3 +377,84 @@ mégaoctets.
   `CommunicationEventType` ne sont émis par aucune phase antérieure ;
 - **SMS, WhatsApp et push échouent explicitement** : aucun fournisseur n'est
   raccordé, et un faux succès serait pire qu'un échec annoncé.
+
+---
+
+## Évolution du 1er septembre 2026 — modèles unifiés
+
+Les routes de ce document ont suivi le renommage `communication-templates →
+templates`. Trois exemples s'y ajoutent.
+
+### Créer un modèle de facture — un document, pas un message
+
+```http
+POST /api/v1/templates
+```
+
+```json
+{
+  "code": "INVOICE_DEFAULT",
+  "name": "Facture standard",
+  "templateType": "invoice",
+  "channel": null,
+  "bodyFormat": "html",
+  "bodyTemplate": "<h1>Facture {{ invoice.invoiceNumber }}</h1>{{#invoice.lines}}<p>{{ invoice.lines.description }}</p>{{/invoice.lines}}",
+  "language": "fr",
+  "availableVariables": ["invoice.invoiceNumber", "invoice.lines", "invoice.lines.description"],
+  "isDefault": true
+}
+```
+
+`201 Created`. Envoyer `"channel": "email"` avec `"templateType": "invoice"`
+donne un `422` sur `channel` : une facture est un document, et le §0.7 interdit
+de lui inventer un canal.
+
+### Créer le modèle propre à un client
+
+```json
+{
+  "code": "INVOICE_IKEA",
+  "name": "Facture IKEA",
+  "customerId": "01JQZ00000000000000CUST1",
+  "templateType": "invoice",
+  "bodyTemplate": "…",
+  "language": "fr"
+}
+```
+
+Les factures d'IKEA l'emploieront ; celles des autres clients continueront
+d'employer `INVOICE_DEFAULT`. Aucun client ne reçoit jamais le modèle d'un
+autre.
+
+### N'afficher que les modèles du transporteur
+
+```http
+GET /api/v1/templates?customerId=global&templateType=invoice
+```
+
+`global` est une **sentinelle**, pas un identifiant : elle demande les modèles
+dont `customer_id` est nul. Sans elle, « aucun client » et « tous les clients »
+se demanderaient de la même façon.
+
+### Prévisualiser le document d'une facture
+
+```http
+GET /api/v1/invoices/{invoice}/document
+```
+
+```json
+{
+  "data": {
+    "html": "<h1>Facture INV-2026-001</h1>…",
+    "templateId": "01JQZ0000000000000TMPL01",
+    "templateName": "Facture IKEA",
+    "scope": "customer",
+    "isFrozen": false,
+    "renderedAt": null
+  }
+}
+```
+
+`scope` vaut `customer`, `global`, `fallback` — aucun modèle n'existe, la mise
+en page livrée sert — ou `frozen` : la facture est close, et `html` est le
+document produit à sa clôture. Modifier le modèle ensuite ne le réécrit pas.

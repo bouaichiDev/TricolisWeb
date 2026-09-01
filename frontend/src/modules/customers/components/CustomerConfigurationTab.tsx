@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { CustomerCapabilities } from './CustomerCapabilities'
-import { CustomerInvoiceTemplate } from './CustomerInvoiceTemplate'
+import { CustomerBillingTemplate } from './CustomerBillingTemplate'
 import type { Customer } from '../types/customer'
 import { DetailField } from '@/shared/components/layout/DetailField'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
@@ -29,7 +29,7 @@ export function CustomerConfigurationTab({ customer }: { customer: Customer }) {
         <CustomerCapabilities customer={customer} />
       </SectionCard>
 
-      <CustomerInvoiceTemplate customer={customer} />
+      <CustomerBillingTemplate customer={customer} />
     </div>
   )
 }

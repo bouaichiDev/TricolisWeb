@@ -16,6 +16,12 @@ import type { Customer } from '../types/customer'
 /**
  * Le modèle de facture de ce client — ou l'absence de modèle.
  *
+ * Nommé `CustomerBillingTemplate` et non `CustomerInvoiceTemplate` : ce dernier
+ * est un nom d'**entité** que le §11 interdit, et une recherche globale
+ * cherchant un second référentiel de modèles tomberait sur ce composant sans
+ * savoir qu'il n'en est pas un. Le nom d'un écran ne vaut pas qu'on ait à
+ * raisonner pour l'écarter.
+ *
  * Deux cas, et le second n'est pas une erreur :
  *
  * - un **modèle spécifique** existe : ses factures l'emploieront ;
@@ -26,7 +32,7 @@ import type { Customer } from '../types/customer'
  * Créer un modèle spécifique n'ouvre pas un CRUD parallèle : c'est le même
  * dialogue que l'écran des modèles, avec le client et le type déjà posés.
  */
-export function CustomerInvoiceTemplate({ customer }: { customer: Customer }) {
+export function CustomerBillingTemplate({ customer }: { customer: Customer }) {
   const { t } = useTranslation()
   const [creating, setCreating] = useState(false)
 

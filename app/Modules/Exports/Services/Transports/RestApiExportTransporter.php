@@ -23,6 +23,10 @@ use RuntimeException;
  * **Le secret ne paraît nulle part.** Ni dans le message d'erreur, ni dans les
  * journaux : le §124 l'interdit, et une exception HTTP contient volontiers
  * l'en-tête qui l'a provoquée.
+ *
+ * La manière de s'authentifier est déléguée à `RestAuthentication` : jeton
+ * porteur, basic, clé d'API ou OAuth2 selon ce que le client attend derrière sa
+ * porte.
  */
 final readonly class RestApiExportTransporter implements ExportTransporter
 {
@@ -31,7 +35,10 @@ final readonly class RestApiExportTransporter implements ExportTransporter
 
     private const int DEFAULT_TIMEOUT = 30;
 
-    public function __construct(private RemoteTargetGuard $guard) {}
+    public function __construct(
+        private RemoteTargetGuard $guard,
+        private RestAuthentication $authentication,
+    ) {}
 
     public function send(
         CustomerExportConfiguration $configuration,
@@ -57,13 +64,9 @@ final readonly class RestApiExportTransporter implements ExportTransporter
             ->withBody($contents, $this->contentType($settings, $contentType))
             ->withHeaders($this->headers($settings));
 
-        $secret = $configuration->password();
-
-        if ($secret !== null && $secret !== '') {
-            $request = $request->withToken($secret);
-        }
-
-        $response = $request->send($method, $url);
+        $response = $this->authentication
+            ->apply($request, $configuration, $settings)
+            ->send($method, $url);
 
         if ($response->successful()) {
             return;

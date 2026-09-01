@@ -5,7 +5,9 @@ use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Billing\Models\InvoiceLineAddressSnapshot;
 use App\Modules\Exports\DTOs\InvoiceExportData;
 use App\Modules\Exports\Services\ExportFieldMapping;
+use App\Modules\Exports\Services\Formats\InvoiceCsvFormatter;
 use App\Modules\Exports\Services\Formats\InvoiceJsonFormatter;
+use App\Modules\Exports\Services\Formats\InvoicePdfFormatter;
 use App\Modules\Exports\Services\Formats\InvoiceXmlFormatter;
 use Illuminate\Database\Eloquent\Collection;
 use Tests\TestCase;
@@ -26,6 +28,8 @@ beforeEach(function (): void {
     $this->mapping = new ExportFieldMapping;
     $this->json = new InvoiceJsonFormatter($this->mapping);
     $this->xml = new InvoiceXmlFormatter($this->mapping);
+    $this->csv = new InvoiceCsvFormatter($this->mapping);
+    $this->pdf = new InvoicePdfFormatter;
 
     $this->data = function (array $invoice = [], array $line = []): InvoiceExportData {
         $model = new Invoice(array_merge([
@@ -147,5 +151,69 @@ describe('XML', function (): void {
     it('déclare l’encodage demandé', function (): void {
         expect($this->xml->render(($this->data)(), [], 'ISO-8859-1'))
             ->toContain('encoding="ISO-8859-1"');
+    });
+});
+
+describe('CSV', function (): void {
+    /** Un CSV n'a pas de hierarchie : l'en-tete de facture suit chaque ligne. */
+    it('répète l’en-tête de facture sur chaque ligne', function (): void {
+        $rendered = $this->csv->render(($this->data)(), [], 'UTF-8');
+        $rows = array_values(array_filter(explode('
+', trim($rendered))));
+
+        expect($rows)->toHaveCount(2)
+            ->and($rows[0])->toContain('invoiceNumber')
+            ->and($rows[0])->toContain('lineNumber')
+            ->and($rows[1])->toContain('INV-2026-00042');
+    });
+
+    it('aplatit l’adresse en colonnes', function (): void {
+        $rendered = $this->csv->render(($this->data)(), [], 'UTF-8');
+
+        expect($rendered)->toContain('address.city')->toContain('Genève');
+    });
+
+    /** Le point-virgule est la norme francophone ; la virgule ailleurs. */
+    it('suit le séparateur demandé', function (): void {
+        $rendered = $this->csv->render(($this->data)(), ['delimiter' => ','], 'UTF-8');
+
+        expect($rendered)->toContain('invoiceNumber,invoiceDate');
+    });
+
+    /** Une raison sociale contenant le separateur ne doit pas decaler la colonne. */
+    it('encadre une valeur qui contient le séparateur', function (): void {
+        $data = ($this->data)([], ['description' => 'Livraison; retour']);
+
+        $rendered = $this->csv->render($data, [], 'UTF-8');
+        $rows = array_values(array_filter(explode('
+', trim($rendered))));
+
+        expect($rows[1])->toContain('"Livraison; retour"')
+            ->and(str_getcsv($rows[1], ';', '"', ''))->toHaveCount(count(str_getcsv($rows[0], ';', '"', '')));
+    });
+
+    it('renomme les colonnes selon le mapping du client', function (): void {
+        $settings = ['fieldMapping' => ['invoiceNumber' => 'numero']];
+
+        expect($this->csv->render(($this->data)(), $settings, 'UTF-8'))
+            ->toContain('numero')
+            ->not->toContain('invoiceNumber');
+    });
+});
+
+describe('PDF', function (): void {
+    it('produit un document PDF', function (): void {
+        $rendered = $this->pdf->render(($this->data)(), [], 'UTF-8');
+
+        expect($rendered)->toStartWith('%PDF-')
+            ->and($this->pdf->contentType())->toBe('application/pdf')
+            ->and($this->pdf->extension())->toBe('pdf');
+    });
+
+    /** Le titre est configurable ; le reste de la mise en page ne l'est pas. */
+    it('accepte un titre de document', function (): void {
+        $rendered = $this->pdf->render(($this->data)(), ['documentTitle' => 'Note de frais'], 'UTF-8');
+
+        expect($rendered)->toStartWith('%PDF-');
     });
 });

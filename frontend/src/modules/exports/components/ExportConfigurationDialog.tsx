@@ -2,14 +2,22 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
-  INVOICE_EXPORT_TYPE,
   INVOICE_FORMATS,
   INVOICE_TRANSPORTS,
-  ON_INVOICE_CLOSED,
   needsHost,
+  type AuthMode,
   type ExportConfiguration,
   type ExportConfigurationPayload,
+  type ExportSettings,
 } from '../types/export'
+import {
+  buildExportPayload,
+  hasConnection,
+  type ConnectionDraft,
+} from '../utils/exportPayload'
+import { ExportAuthFields } from './ExportAuthFields'
+import { ExportConnectionFields } from './ExportConnectionFields'
+import { ExportDeliveryFields } from './ExportDeliveryFields'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { Button } from '@/shared/components/ui/button'
 import {
@@ -36,14 +44,15 @@ interface ExportConfigurationDialogProps {
 /**
  * Une destination d'export, créée ou corrigée.
  *
- * **Le mot de passe ne se relit pas.** Le serveur ne le rend jamais ; le champ
- * est donc vide à l'ouverture, et un champ laissé vide veut dire « inchangé »,
- * pas « effacé ». C'est ce que le §124 impose, et l'écran le dit plutôt que de
- * laisser croire à un oubli.
+ * L'écran se réduit à ce que le transport et le format retenus demandent
+ * vraiment : une connexion pour FTP et REST, une authentification pour REST
+ * seul, des destinataires pour le courriel, un séparateur pour le CSV. Tout
+ * afficher d'un coup donnerait une vingtaine de champs dont la moitié serait
+ * sans effet — et remplie quand même.
  *
- * Les formats et transports proposés sont ceux qu'on sait réellement produire
- * pour une facture : offrir CSV créerait une destination qui échoue à chaque
- * clôture, loin de l'écran qui l'a acceptée.
+ * Les quatre formats et les cinq transports du modèle sont proposés : chacun a
+ * désormais son générateur et son transporteur, et aucun ne crée une
+ * destination qui échouerait à la première clôture.
  */
 export function ExportConfigurationDialog({
   customerId,
@@ -58,35 +67,39 @@ export function ExportConfigurationDialog({
   const [name, setName] = useState(configuration?.name ?? '')
   const [format, setFormat] = useState(configuration?.format ?? 'json')
   const [transport, setTransport] = useState(configuration?.transport ?? 'rest_api')
-  const [host, setHost] = useState(configuration?.host ?? '')
-  const [port, setPort] = useState(configuration?.port?.toString() ?? '')
-  const [username, setUsername] = useState(configuration?.username ?? '')
-  const [password, setPassword] = useState('')
-  const [remoteDirectory, setRemoteDirectory] = useState(configuration?.remoteDirectory ?? '')
   const [fileNamePattern, setFileNamePattern] = useState(configuration?.fileNamePattern ?? '')
   const [isActive, setIsActive] = useState(configuration?.isActive ?? true)
+  const [connection, setConnection] = useState<ConnectionDraft>({
+    host: configuration?.host ?? '',
+    port: configuration?.port?.toString() ?? '',
+    username: configuration?.username ?? '',
+    password: '',
+    remoteDirectory: configuration?.remoteDirectory ?? '',
+  })
+  const [settings, setSettings] = useState<ExportSettings>(
+    (configuration?.settings ?? {}) as ExportSettings,
+  )
 
-  const ready = name.trim() !== '' && (!needsHost(transport) || host.trim() !== '')
+  const authMode = (settings.authType ?? 'bearer') as AuthMode
+  const patch = (values: ExportSettings) => setSettings({ ...settings, ...values })
 
-  const submit = () => {
-    onSubmit({
-      customerId,
-      name: name.trim(),
-      exportType: INVOICE_EXPORT_TYPE,
-      format,
-      transport,
-      host: host.trim() || null,
-      port: port === '' ? null : Number.parseInt(port, 10),
-      username: username.trim() || null,
-      // Un champ vide laisse le secret en place : l'omettre est la seule facon
-      // de dire « inchange ».
-      ...(password === '' ? {} : { password }),
-      remoteDirectory: remoteDirectory.trim() || null,
-      fileNamePattern: fileNamePattern.trim() || null,
-      frequency: ON_INVOICE_CLOSED,
-      isActive,
-    })
-  }
+  const ready =
+    name.trim() !== '' &&
+    (!needsHost(transport) || connection.host.trim() !== '') &&
+    (transport !== 'email' || (settings.recipients ?? '').trim() !== '')
+
+  const submit = () =>
+    onSubmit(
+      buildExportPayload(customerId, {
+        name,
+        format,
+        transport,
+        fileNamePattern,
+        isActive,
+        connection,
+        settings,
+      }),
+    )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,7 +114,12 @@ export function ExportConfigurationDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="export-name">{t('exports.configurations.fields.name')}</Label>
-            <Input id="export-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input
+              id="export-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
 
           <AsyncSelect
@@ -121,67 +139,32 @@ export function ExportConfigurationDialog({
             options={INVOICE_FORMATS.map((value) => ({ value, label: value.toUpperCase() }))}
           />
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="export-host">{t('exports.configurations.fields.host')}</Label>
-            <Input
-              id="export-host"
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-              placeholder={transport === 'rest_api' ? 'https://…' : ''}
-              required={needsHost(transport)}
-            />
-          </div>
+          {transport === 'rest_api' ? (
+            <ExportAuthFields settings={settings} onChange={patch} />
+          ) : null}
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="export-port">{t('exports.configurations.fields.port')}</Label>
-            <Input
-              id="export-port"
-              type="number"
-              min={1}
-              max={65535}
-              value={port}
-              onChange={(e) => setPort(e.target.value)}
+          {hasConnection(transport) ? (
+            <ExportConnectionFields
+              transport={transport}
+              authMode={authMode}
+              host={connection.host}
+              port={connection.port}
+              username={connection.username}
+              password={connection.password}
+              remoteDirectory={connection.remoteDirectory}
+              hasPassword={configuration?.hasPassword ?? false}
+              onChange={(values) => setConnection({ ...connection, ...values })}
             />
-          </div>
+          ) : null}
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="export-username">{t('exports.configurations.fields.username')}</Label>
-            <Input
-              id="export-username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
+          <ExportDeliveryFields
+            transport={transport}
+            format={format}
+            settings={settings}
+            onChange={patch}
+          />
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="export-password">{t('exports.configurations.fields.password')}</Label>
-            <Input
-              id="export-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={
-                configuration?.hasPassword
-                  ? t('exports.configurations.passwordSet')
-                  : t('exports.configurations.passwordEmpty')
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              {t('exports.configurations.passwordHint')}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="export-directory">{t('exports.configurations.fields.directory')}</Label>
-            <Input
-              id="export-directory"
-              value={remoteDirectory}
-              onChange={(e) => setRemoteDirectory(e.target.value)}
-              disabled={transport === 'rest_api'}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="export-pattern">{t('exports.configurations.fields.pattern')}</Label>
             <Input
               id="export-pattern"

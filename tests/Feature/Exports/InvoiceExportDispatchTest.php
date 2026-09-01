@@ -4,12 +4,15 @@ use App\Modules\Billing\Models\Invoice;
 use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Billing\Models\InvoiceLineAddressSnapshot;
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Exports\Enums\ExportFormat;
+use App\Modules\Exports\Mail\InvoiceExportMail;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Exports\Services\ExportDispatcher;
 use App\Shared\Database\MorphMap;
 use App\Shared\Support\Secret;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -195,16 +198,26 @@ describe('garde-fous', function (): void {
         Http::assertNothingSent();
     });
 
-    /** §32 : mieux vaut refuser que livrer un fichier au mauvais format. */
-    it('refuse un format qu’on ne sait pas produire', function (): void {
-        Http::fake();
+    /**
+     * §32 : un format proposé sans générateur créerait une destination qui
+     * échoue à chaque clôture, loin de l'écran qui l'a acceptée. Le cas ne se
+     * teste plus par un refus — les quatre formats sont produits — mais en
+     * vérifiant qu'aucun n'est resté sur le bord.
+     */
+    it('sait produire chacun des formats du modèle', function (): void {
+        Http::fake(['*' => Http::response('', 200)]);
 
-        $job = ($this->job)(($this->rest)(['format' => 'csv']), ($this->invoice)());
+        // Une seule facture : son numero est unique par organisation, et ce
+        // qu'on eprouve ici est le format, pas la facturation.
+        $invoice = ($this->invoice)();
 
-        $this->dispatcher->process($job);
+        foreach (ExportFormat::cases() as $format) {
+            $job = ($this->job)(($this->rest)(['format' => $format->value]), $invoice);
 
-        expect($job->fresh()->status)->toBe('failed');
-        Http::assertNothingSent();
+            $this->dispatcher->process($job);
+
+            expect($job->fresh()->status)->toBe('sent', $format->value);
+        }
     });
 });
 
@@ -243,5 +256,108 @@ describe('fichier produit', function (): void {
 
         expect($job->fresh()->file_name)->not->toContain('/')
             ->and($job->fresh()->file_name)->not->toContain('..');
+    });
+});
+
+/**
+ * Les quatre formats et les cinq transports du modèle vont jusqu'au bout.
+ *
+ * Le §32 n'autorise à proposer un format que si son générateur existe : ces cas
+ * vérifient qu'aucune destination configurable depuis l'écran n'échoue à la
+ * clôture, ce qui serait découvert bien trop tard.
+ */
+describe('formats et transports', function (): void {
+    it('produit un CSV et le dépose', function (): void {
+        Http::fake(['*' => Http::response('', 200)]);
+
+        $job = ($this->job)(($this->rest)(['format' => 'csv']), ($this->invoice)());
+
+        $this->dispatcher->process($job);
+
+        $job->refresh();
+
+        expect($job->status)->toBe('sent')
+            ->and($job->file_name)->toEndWith('.csv')
+            ->and(Storage::disk('local')->get($job->storage_path))->toContain('INV-2026-00042');
+    });
+
+    it('produit un PDF et le dépose', function (): void {
+        Http::fake(['*' => Http::response('', 200)]);
+
+        $job = ($this->job)(($this->rest)(['format' => 'pdf']), ($this->invoice)());
+
+        $this->dispatcher->process($job);
+
+        $job->refresh();
+
+        expect($job->status)->toBe('sent')
+            ->and($job->file_name)->toEndWith('.pdf')
+            ->and(Storage::disk('local')->get($job->storage_path))->toStartWith('%PDF-');
+    });
+
+    it('envoie la facture par courriel', function (): void {
+        Mail::fake();
+
+        $configuration = ($this->rest)([
+            'transport' => 'email',
+            'format' => 'pdf',
+            'host' => null,
+            'settings' => ['recipients' => 'compta@client.example'],
+        ]);
+
+        $job = ($this->job)($configuration, ($this->invoice)());
+
+        $this->dispatcher->process($job);
+
+        Mail::assertSent(InvoiceExportMail::class);
+
+        expect($job->fresh()->status)->toBe('sent');
+    });
+
+    /** Le mode manuel range le fichier et n'appelle personne. */
+    it('range le fichier sans rien transmettre en mode manuel', function (): void {
+        Http::fake();
+        Mail::fake();
+
+        $configuration = ($this->rest)([
+            'transport' => 'manual',
+            'format' => 'json',
+            'host' => null,
+            'settings' => [],
+        ]);
+
+        $job = ($this->job)($configuration, ($this->invoice)());
+
+        $this->dispatcher->process($job);
+
+        $job->refresh();
+
+        Http::assertNothingSent();
+        Mail::assertNothingSent();
+
+        expect($job->status)->toBe('sent')
+            ->and(Storage::disk('local')->exists($job->storage_path))->toBeTrue();
+    });
+
+    /** Une destination courriel sans adresse échoue en le disant (§27). */
+    it('échoue proprement quand un envoi courriel n’a pas de destinataire', function (): void {
+        Mail::fake();
+
+        $configuration = ($this->rest)([
+            'transport' => 'email',
+            'host' => null,
+            'settings' => [],
+        ]);
+
+        $job = ($this->job)($configuration, ($this->invoice)());
+
+        $this->dispatcher->process($job);
+
+        $job->refresh();
+
+        Mail::assertNothingSent();
+
+        expect($job->status)->toBe('failed')
+            ->and($job->error_message)->toContain('destinataire');
     });
 });

@@ -11,11 +11,15 @@ use App\Modules\Exports\DTOs\InvoiceExportData;
 use App\Modules\Exports\Enums\ExportFormat;
 use App\Modules\Exports\Enums\ExportTransport;
 use App\Modules\Exports\Models\ExportJob;
+use App\Modules\Exports\Services\Formats\InvoiceCsvFormatter;
 use App\Modules\Exports\Services\Formats\InvoiceFormatter;
 use App\Modules\Exports\Services\Formats\InvoiceJsonFormatter;
+use App\Modules\Exports\Services\Formats\InvoicePdfFormatter;
 use App\Modules\Exports\Services\Formats\InvoiceXmlFormatter;
+use App\Modules\Exports\Services\Transports\EmailExportTransporter;
 use App\Modules\Exports\Services\Transports\ExportTransporter;
 use App\Modules\Exports\Services\Transports\FileExportTransporter;
+use App\Modules\Exports\Services\Transports\ManualExportTransporter;
 use App\Modules\Exports\Services\Transports\RestApiExportTransporter;
 use App\Shared\Database\MorphMap;
 use Illuminate\Support\Facades\Storage;
@@ -42,8 +46,12 @@ final readonly class ExportDispatcher
         private InvoiceClosure $closure,
         private InvoiceJsonFormatter $json,
         private InvoiceXmlFormatter $xml,
+        private InvoiceCsvFormatter $csv,
+        private InvoicePdfFormatter $pdf,
         private RestApiExportTransporter $rest,
         private FileExportTransporter $files,
+        private EmailExportTransporter $email,
+        private ManualExportTransporter $manual,
         private ExportFileName $names,
         private WriteAuditLog $audit,
     ) {}
@@ -132,13 +140,8 @@ final readonly class ExportDispatcher
         return match ($format) {
             ExportFormat::JSON => $this->json,
             ExportFormat::XML => $this->xml,
-            // Le §32 ne retient CSV et PDF que si leur generateur existe : il
-            // n'existe pas, et produire un fichier au mauvais format serait pire
-            // qu'un refus.
-            default => throw new RuntimeException(sprintf(
-                'Le format « %s » n’est pas encore produit pour les factures.',
-                $format->value,
-            )),
+            ExportFormat::CSV => $this->csv,
+            ExportFormat::PDF => $this->pdf,
         };
     }
 
@@ -147,10 +150,9 @@ final readonly class ExportDispatcher
         return match ($transport) {
             ExportTransport::REST_API => $this->rest,
             ExportTransport::FTP, ExportTransport::SFTP => $this->files,
-            default => throw new RuntimeException(sprintf(
-                'Le transport « %s » n’est pas pris en charge pour les factures.',
-                $transport->value,
-            )),
+            ExportTransport::EMAIL => $this->email,
+            // Manuel : le fichier est produit et range, personne n'est appele.
+            ExportTransport::MANUAL => $this->manual,
         };
     }
 

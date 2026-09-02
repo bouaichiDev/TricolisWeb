@@ -29,6 +29,16 @@ enum TemplateType: string
     case POD_AVAILABLE = 'pod_available';
     case ORDER_CANCELLED = 'order_cancelled';
     case INVOICE = 'invoice';
+    /**
+     * Le courriel qui porte un lien de reinitialisation de mot de passe.
+     *
+     * Il s'adresse a un membre de l'organisation, non a un client : c'est le
+     * seul modele de cette liste qui ne parle pas d'une commande. Il y figure
+     * quand meme parce que c'est un courriel qui part au nom du transporteur,
+     * et qu'un texte signe Laravel dans une boite d'entreprise ne rassure
+     * personne.
+     */
+    case PASSWORD_RESET = 'password_reset';
     case CUSTOM = 'custom';
 
     public function label(): string
@@ -46,6 +56,7 @@ enum TemplateType: string
             self::POD_AVAILABLE => 'Preuve de livraison disponible',
             self::ORDER_CANCELLED => 'Commande annulée',
             self::INVOICE => 'Facture',
+            self::PASSWORD_RESET => 'Réinitialisation de mot de passe',
             self::CUSTOM => 'Personnalisé',
         };
     }

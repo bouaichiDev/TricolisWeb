@@ -55,35 +55,31 @@ final readonly class DeliveredOrderFactory
         string $orderNumber,
         CarbonImmutable $date,
         int $index,
-        string $customerId,
+        SeededCustomer $customer,
     ): array {
-        $address = $this->parts->address($index, $customerId);
-        $contact = $this->parts->contact($index, $customerId);
-
-        $weight = SwissOrderParts::PACKAGES * SwissOrderParts::PACKAGE_WEIGHT;
-        $volume = SwissOrderParts::PACKAGES * SwissOrderParts::PACKAGE_VOLUME;
+        [$weight, $volume] = SwissOrderParts::totals($index);
 
         $order = Order::create([
             'organization_id' => $this->organizationId,
-            'customer_id' => $customerId,
+            'customer_id' => $customer->id,
             'agency_id' => $this->agencyId,
             'depot_id' => $this->depotId,
             'order_number' => $orderNumber,
-            'customer_reference' => sprintf('LIV-%s-%02d', $date->format('md'), $index + 1),
+            'customer_reference' => sprintf('%s-LIV-%s-%02d', $customer->code, $date->format('md'), $index % 100 + 1),
             'order_type' => 'delivery',
             'order_date' => $date->setTime(8, 0),
             'source' => 'internal',
             'weight' => $weight,
             'volume' => $volume,
-            'package_count' => SwissOrderParts::PACKAGES,
+            'package_count' => SwissOrderParts::packageCount($index),
             'currency_code' => 'CHF',
             // Livrée : la prestation est faite, il reste à la facturer.
             'status' => 'completed',
             'created_by' => $this->userId,
         ]);
 
-        $packages = $this->parts->packages($order);
-        $this->parts->lines($order);
+        $packages = $this->parts->packages($order, $index);
+        $this->parts->lines($order, $index);
 
         $loading = $this->service(
             $order, $this->loadingServiceId, $this->depotAddressId, 1, $date,
@@ -91,9 +87,11 @@ final readonly class DeliveredOrderFactory
         );
 
         $delivery = $this->service(
-            $order, $this->deliveryServiceId, $address->id, 2, $date,
+            $order, $this->deliveryServiceId, $customer->addressFor('delivery'), 2, $date,
             $weight, $volume, $packages, self::DELIVERY_PRICE, self::DELIVERY_COST,
         );
+
+        $contact = $customer->contactFor('delivery');
 
         $delivery->contacts()->create([
             'contact_id' => $contact->id,

@@ -538,15 +538,23 @@ describe('commandes d’une tournée', () => {
     expect(screen.getByText(/passera à « Confirmée »/)).toBeInTheDocument()
   })
 
-  /** Sans arrêt tracé, la carte n'aurait rien à montrer. */
-  it('n’offre pas la carte d’une tournée sans arrêt', async () => {
+  /**
+   * La carte reste offerte sur une tournée vide.
+   *
+   * On a d'abord cru l'inverse — « sans arrêt tracé, elle n'aurait rien à
+   * montrer ». Mais la fenêtre n'affiche pas l'itinéraire seul : elle ouvre
+   * l'écran de planification et son vivier de commandes. C'est exactement là
+   * qu'on va pour remplir une tournée qui n'a encore rien, et la masquer
+   * obligeait à y poser une première commande sans voir le terrain.
+   */
+  it('offre la carte même sur une tournée sans arrêt', async () => {
     render({ stops: [], stopCount: 0 })
 
     await screen.findByText('TR-001')
 
     expect(
-      screen.queryByRole('button', { name: 'Voir la tournée sur la carte' }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('button', { name: 'Voir la tournée sur la carte' }),
+    ).toBeInTheDocument()
   })
 })
 

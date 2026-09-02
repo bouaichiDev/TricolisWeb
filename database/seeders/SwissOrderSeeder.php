@@ -12,8 +12,10 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use Carbon\CarbonImmutable;
+use Database\Seeders\Support\SeededCustomer;
 use Database\Seeders\Support\SwissCatalogue;
 use Database\Seeders\Support\SwissOrderFactory;
+use Database\Seeders\Support\SwissServiceMix;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -22,8 +24,13 @@ use Illuminate\Support\Facades\DB;
  *
  * Trente commandes par jour sur trente jours : de quoi voir une file de
  * planification se remplir, une carte se couvrir, et des tournées se comparer.
- * Chaque commande porte son adresse, son contact, ses articles, ses colis, et
- * les deux services attendus — chargement au dépôt, livraison chez le client.
+ * Chaque commande porte ses articles, ses colis, et **de une à quatre
+ * prestations** — {@see SwissServiceMix} fait tourner les combinaisons, pour que
+ * le jeu d'essai ne se réduise pas à une forme unique.
+ *
+ * Elles se répartissent sur **cinq clients**, chacun avec ses trois adresses.
+ * Un client par localité donnait trente clients d'une commande chacun : ni la
+ * facturation, ni le stock, ni un import client ne s'y éprouvaient.
  *
  * **Les coordonnées viennent du carnet, pas du service de géocodage.** Neuf
  * cents appels épuiseraient le quota, et une adresse inventée ne se géocode pas.
@@ -78,13 +85,19 @@ class SwissOrderSeeder extends Seeder
 
         $catalogue = app(SwissCatalogue::class);
 
+        // Le chargement d'abord : il declare son code dans les reglages, et
+        // c'est lui que le pool reconnait pour regrouper au depot.
+        $catalogue->loadingServiceId($organization);
+
         $factory = new SwissOrderFactory(
             $organization->id,
             $agency->id,
             $depot->id,
-            $depotAddressId,
-            $catalogue->loadingServiceId($organization),
-            $catalogue->deliveryServiceId($organization),
+            new SwissServiceMix(
+                $catalogue->services($organization),
+                $catalogue->serviceMinutes(),
+                $depotAddressId,
+            ),
             $userId,
         );
 
@@ -92,7 +105,7 @@ class SwissOrderSeeder extends Seeder
     }
 
     /**
-     * @param  list<string>  $customers
+     * @param  list<SeededCustomer>  $customers
      */
     private function fill(Organization $organization, SwissOrderFactory $factory, array $customers): void
     {
@@ -108,11 +121,13 @@ class SwissOrderSeeder extends Seeder
             // trop longtemps.
             DB::transaction(function () use ($factory, $numbers, $organization, $customers, $date, &$index): void {
                 for ($position = 0; $position < self::ORDERS_PER_DAY; $position++) {
+                    $customer = $customers[$index % count($customers)];
+
                     $factory->create(
-                        $numbers->execute($organization->id, $date->year),
+                        $numbers->execute($organization->id, $date->year, $customer->code),
                         $date,
                         $index,
-                        $customers[$index % count($customers)],
+                        $customer,
                     );
 
                     $index++;

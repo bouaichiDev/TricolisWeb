@@ -4,98 +4,71 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Support;
 
-use App\Modules\Addresses\Models\Address;
-use App\Modules\Addresses\Models\EntityAddress;
-use App\Modules\Contacts\Models\Contact;
-use App\Modules\Contacts\Models\EntityContact;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderLine;
 use App\Modules\Packages\Models\Package;
 
 /**
- * Ce qu'une commande de démonstration porte : son adresse, son contact, ses
- * articles, ses colis.
+ * Ce qu'une commande de démonstration contient : des articles et des colis.
  *
- * Séparé de la fabrique pour la garder lisible : celle-ci décide de la forme
- * d'une commande, celui-ci écrit ses pièces.
+ * **Les deux varient avec le rang.** Un semis où chaque commande pèse la même
+ * chose et porte le même nombre de colis ne dit rien d'un camion qui se remplit
+ * : les totaux d'une tournée y seraient toujours des multiples du même nombre,
+ * et une contrainte de charge ne se déclencherait jamais. Un à trois colis, un à
+ * trois articles, poids et volumes distincts par gabarit.
+ *
+ * Les adresses et les contacts n'y sont plus : ils appartiennent au client, pas
+ * à la commande. {@see SwissCustomerBook} les tient.
  */
 final readonly class SwissOrderParts
 {
-    public const int PACKAGES = 2;
-
-    public const float PACKAGE_WEIGHT = 12.5;
-
-    public const float PACKAGE_VOLUME = 0.08;
-
-    /** @var list<string> */
-    private const array FIRST_NAMES = ['Anne', 'Marc', 'Sofia', 'Luca', 'Nadia', 'Yves', 'Elena', 'Pierre'];
-
-    /** @var list<string> */
-    private const array LAST_NAMES = ['Rochat', 'Meier', 'Fontana', 'Blanc', 'Dubois', 'Keller', 'Rossi', 'Girard'];
-
-    public function __construct(private string $organizationId) {}
+    /**
+     * Les gabarits de colis : description, poids, volume.
+     *
+     * @var list<array{0: string, 1: float, 2: float}>
+     */
+    private const array PACKAGE_KINDS = [
+        ['Carton standard', 12.5, 0.08],
+        ['Palette europe', 180.0, 0.96],
+        ['Colis long', 34.0, 0.42],
+    ];
 
     /**
-     * L'adresse de livraison, rattachée au client.
+     * Les articles disponibles : code, nom, prix de vente.
      *
-     * C'est la liaison qui la rend visible : une adresse sans `EntityAddress`
-     * n'apparaît dans aucune liste de l'organisation.
+     * @var list<array{0: string, 1: string, 2: float}>
      */
-    public function address(int $index, string $customerId): Address
+    private const array ARTICLES = [
+        ['ART-CH-001', 'Meuble en kit', 249.90],
+        ['ART-CH-002', 'Accessoires de montage', 39.90],
+        ['ART-CH-003', 'Plan de travail', 189.00],
+    ];
+
+    /** Un à trois colis, selon le rang de la commande. */
+    public static function packageCount(int $index): int
     {
-        $address = Address::create(SwissAddressBook::at($index));
-
-        EntityAddress::create([
-            'organization_id' => $this->organizationId,
-            'address_id' => $address->id,
-            'entity_type' => 'customer',
-            'entity_id' => $customerId,
-            'address_type' => 'delivery',
-            'is_default' => false,
-        ]);
-
-        return $address;
+        return 1 + $index % 3;
     }
 
-    public function contact(int $index, string $customerId): Contact
-    {
-        $first = self::FIRST_NAMES[$index % count(self::FIRST_NAMES)];
-        $last = self::LAST_NAMES[$index % count(self::LAST_NAMES)];
-
-        $contact = Contact::create([
-            'first_name' => $first,
-            'last_name' => $last,
-            'phone' => sprintf('+41 21 %03d %02d %02d', 100 + $index % 800, $index % 90, ($index * 3) % 90),
-            'email' => sprintf('%s.%s%d@example.ch', mb_strtolower($first), mb_strtolower($last), $index),
-            'preferred_language' => 'fr',
-            'is_active' => true,
-        ]);
-
-        EntityContact::create([
-            'organization_id' => $this->organizationId,
-            'contact_id' => $contact->id,
-            'entity_type' => 'customer',
-            'entity_id' => $customerId,
-            'contact_role' => 'delivery',
-            'is_primary' => false,
-        ]);
-
-        return $contact;
-    }
-
-    /** @return list<Package> */
-    public function packages(Order $order): array
+    /**
+     * Les colis de la commande.
+     *
+     * @return list<Package>
+     */
+    public function packages(Order $order, int $index): array
     {
         $packages = [];
 
-        for ($position = 1; $position <= self::PACKAGES; $position++) {
+        for ($position = 1; $position <= self::packageCount($index); $position++) {
+            [$description, $weight, $volume] = self::PACKAGE_KINDS[($index + $position) % count(self::PACKAGE_KINDS)];
+
             $packages[] = Package::create([
                 'order_id' => $order->id,
                 'reference' => sprintf('%s-C%d', $order->order_number, $position),
-                'description' => 'Carton standard',
+                'description' => $description,
                 'quantity' => 1,
-                'weight' => self::PACKAGE_WEIGHT,
-                'volume' => self::PACKAGE_VOLUME,
+                'weight' => $weight,
+                'volume' => $volume,
                 'status' => 'ready',
             ]);
         }
@@ -103,22 +76,46 @@ final readonly class SwissOrderParts
         return $packages;
     }
 
-    public function lines(Order $order): void
+    /**
+     * Le poids et le volume que porteront la commande et ses prestations.
+     *
+     * Calculés depuis les mêmes gabarits que les colis, et **avant** de les
+     * créer : la commande porte ses totaux dès l'insertion, sans quoi il
+     * faudrait la relire pour les poser.
+     *
+     * @return array{0: float, 1: float}
+     */
+    public static function totals(int $index): array
     {
-        $articles = [
-            ['ART-CH-001', 'Meuble en kit', 2],
-            ['ART-CH-002', 'Accessoires de montage', 4],
-        ];
+        $weight = 0.0;
+        $volume = 0.0;
 
-        foreach ($articles as $position => [$code, $name, $quantity]) {
+        for ($position = 1; $position <= self::packageCount($index); $position++) {
+            [, $packageWeight, $packageVolume] = self::PACKAGE_KINDS[($index + $position) % count(self::PACKAGE_KINDS)];
+
+            $weight += $packageWeight;
+            $volume += $packageVolume;
+        }
+
+        return [round($weight, 3), round($volume, 4)];
+    }
+
+    /** Un à trois articles, pris dans le catalogue par rotation. */
+    public function lines(Order $order, int $index): void
+    {
+        $count = 1 + ($index + 1) % 3;
+
+        for ($position = 0; $position < $count; $position++) {
+            [$code, $name, $price] = self::ARTICLES[($index + $position) % count(self::ARTICLES)];
+
             OrderLine::create([
                 'order_id' => $order->id,
                 'article_code' => $code,
                 'name' => $name,
-                'quantity' => $quantity,
-                'weight' => self::PACKAGE_WEIGHT / 2,
-                'volume' => self::PACKAGE_VOLUME / 2,
-                'selling_price' => 49.90 + $position * 10,
+                'quantity' => 1 + ($index + $position) % 4,
+                'weight' => 6.25,
+                'volume' => 0.04,
+                'selling_price' => $price,
                 'status' => 'active',
             ]);
         }

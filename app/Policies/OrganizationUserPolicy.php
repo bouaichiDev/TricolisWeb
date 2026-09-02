@@ -33,4 +33,17 @@ class OrganizationUserPolicy extends BaseOrganizationPolicy
     {
         return $this->hasPermission($user, $membership->organization_id, 'users.disable');
     }
+
+    /**
+     * Rendre l'acces a un membre : lien de reinitialisation, ou mot de passe pose.
+     *
+     * Sa propre fiche est exclue : un administrateur change son mot de passe par
+     * son profil, ou l'oublie et passe par la procedure publique. Se le poser
+     * ici contournerait la verification du mot de passe actuel.
+     */
+    public function resetPassword(User $user, OrganizationUser $membership): bool
+    {
+        return $membership->user_id !== $user->id
+            && $this->hasPermission($user, $membership->organization_id, 'users.reset_password');
+    }
 }

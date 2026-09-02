@@ -41,6 +41,10 @@ class PermissionSeeder extends Seeder
         ['code' => 'users.update', 'name' => 'Modifier un utilisateur', 'module' => 'users', 'action' => 'update'],
         ['code' => 'users.disable', 'name' => 'Désactiver un utilisateur', 'module' => 'users', 'action' => 'disable'],
         ['code' => 'users.assign_roles', 'name' => 'Affecter des rôles', 'module' => 'users', 'action' => 'assign_roles'],
+        // Distincte de `users.update` : renommer un compte et pouvoir entrer
+        // dedans ne sont pas le meme pouvoir. Un role qui corrige une faute de
+        // frappe n'a pas a pouvoir prendre la place de quelqu'un.
+        ['code' => 'users.reset_password', 'name' => 'Réinitialiser un mot de passe', 'module' => 'users', 'action' => 'reset_password'],
 
         ['code' => 'roles.view', 'name' => 'Voir les rôles', 'module' => 'roles', 'action' => 'view'],
         ['code' => 'roles.create', 'name' => 'Créer un rôle', 'module' => 'roles', 'action' => 'create'],
@@ -188,6 +192,13 @@ class PermissionSeeder extends Seeder
         ['code' => 'api_configurations.create', 'name' => 'Ajouter une API externe', 'module' => 'api_configurations', 'action' => 'create'],
         ['code' => 'api_configurations.update', 'name' => 'Modifier une API externe', 'module' => 'api_configurations', 'action' => 'update'],
         ['code' => 'api_configurations.delete', 'name' => 'Supprimer une API externe', 'module' => 'api_configurations', 'action' => 'delete'],
+
+        // La boite d'envoi de l'organisation : d'ou partent ses courriers.
+        // Pas de `create` — la configuration est unique, l'ecrire et la
+        // modifier sont le meme geste.
+        ['code' => 'mail_configuration.view', 'name' => 'Voir la messagerie d’envoi', 'module' => 'mail_configuration', 'action' => 'view'],
+        ['code' => 'mail_configuration.update', 'name' => 'Régler la messagerie d’envoi', 'module' => 'mail_configuration', 'action' => 'update'],
+        ['code' => 'mail_configuration.delete', 'name' => 'Supprimer la messagerie d’envoi', 'module' => 'mail_configuration', 'action' => 'delete'],
 
         ['code' => 'proofs_of_delivery.view', 'name' => 'Voir les preuves de livraison', 'module' => 'proofs_of_delivery', 'action' => 'view'],
         ['code' => 'proofs_of_delivery.create', 'name' => 'Créer une preuve de livraison', 'module' => 'proofs_of_delivery', 'action' => 'create'],

@@ -14,6 +14,7 @@ import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { homeRoute } from '@/app/router/navigation'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
+import { ResetPasswordPage } from '@/modules/auth/pages/ResetPasswordPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
 import { ForbiddenPage } from '@/modules/system/pages/ForbiddenPage'
 import { NotFoundPage } from '@/modules/system/pages/NotFoundPage'
@@ -32,6 +33,9 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Publique, et elle doit l'etre : on y arrive precisement parce qu'on ne
+          peut plus se connecter. Le jeton de l'URL fait l'authentification. */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
       <Route

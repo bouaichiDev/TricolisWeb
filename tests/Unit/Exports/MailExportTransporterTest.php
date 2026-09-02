@@ -18,7 +18,9 @@ use Tests\TestCase;
 uses(TestCase::class);
 
 beforeEach(function (): void {
-    $this->email = new EmailExportTransporter;
+    // Resolu par le conteneur : le transporteur prend desormais la boite
+    // d'envoi de l'organisation, et le construire a la main le priverait.
+    $this->email = app(EmailExportTransporter::class);
     $this->manual = new ManualExportTransporter;
 
     $this->configuration = fn (array $settings): CustomerExportConfiguration => new CustomerExportConfiguration([

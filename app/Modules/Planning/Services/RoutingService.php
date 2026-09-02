@@ -6,6 +6,7 @@ namespace App\Modules\Planning\Services;
 
 use App\Modules\Integrations\Models\OrganizationApiConfiguration;
 use App\Modules\Planning\DTOs\RouteLeg;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use SimpleXMLElement;
@@ -39,6 +40,9 @@ final readonly class RoutingService
     /** Profil par défaut, celui du service actuel. */
     private const string DEFAULT_PROFILE = 'truckfast';
 
+    /** Entre deux points fixes, la route ne change pas d'un jour a l'autre. */
+    private const int CACHE_DAYS = 30;
+
     /**
      * Segments successifs entre les points fournis.
      *
@@ -62,7 +66,7 @@ final readonly class RoutingService
         $legs = [];
 
         for ($index = 0; $index < count($points) - 1; $index++) {
-            $leg = $this->between($configuration, $points[$index], $points[$index + 1]);
+            $leg = $this->remembered($configuration, $points[$index], $points[$index + 1]);
 
             if ($leg === null) {
                 // Un segment manquant rendrait le total faux sans le dire :
@@ -80,6 +84,54 @@ final readonly class RoutingService
      * @param  array{0: float, 1: float}  $from
      * @param  array{0: float, 1: float}  $to
      */
+    /**
+     * Un segment, repris du cache quand la même paire a déjà été demandée.
+     *
+     * C'est ce qui permet de calculer pendant la planification plutôt qu'en
+     * file d'attente. Ajouter un arrêt à une tournée de douze n'appelle plus le
+     * service distant onze fois mais une : les dix autres paires n'ont pas
+     * bougé. Réordonner n'appelle que pour les paires que l'ordre crée.
+     *
+     * **Rien n'est mis en cache quand l'appel échoue.** Une panne passagère du
+     * service figerait sinon une tournée sans itinéraire pour la journée.
+     *
+     * La durée retenue est longue : entre deux points fixes, la route ne change
+     * pas d'un jour à l'autre. Le trafic, lui, n'entre pas dans ce que l'on
+     * conserve — {@see RouteLeg} le porte à part, et il n'est pas persisté.
+     *
+     * @param  array{0: float, 1: float}  $from
+     * @param  array{0: float, 1: float}  $to
+     */
+    private function remembered(
+        OrganizationApiConfiguration $configuration,
+        array $from,
+        array $to,
+    ): ?RouteLeg {
+        $settings = $configuration->settings ?? [];
+        $profile = is_string($settings['profile'] ?? null) ? $settings['profile'] : self::DEFAULT_PROFILE;
+
+        $key = sprintf(
+            'routing:%s:%s:%s',
+            $configuration->organization_id,
+            $profile,
+            $this->waypoints($from, $to),
+        );
+
+        $cached = Cache::get($key);
+
+        if ($cached instanceof RouteLeg) {
+            return $cached;
+        }
+
+        $leg = $this->between($configuration, $from, $to);
+
+        if ($leg !== null) {
+            Cache::put($key, $leg, self::CACHE_DAYS * 86400);
+        }
+
+        return $leg;
+    }
+
     private function between(OrganizationApiConfiguration $configuration, array $from, array $to): ?RouteLeg
     {
         $settings = $configuration->settings ?? [];

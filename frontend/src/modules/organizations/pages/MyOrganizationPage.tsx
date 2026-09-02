@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 
 import { OrganizationDetailPage } from './OrganizationDetailPage'
 import { MenuSettingsPanel } from '@/modules/menu/components/MenuSettingsPanel'
+import { AutoLoadingServicePanel } from '@/modules/planning/components/AutoLoadingServicePanel'
 import { LoadingServicesPanel } from '@/modules/planning/components/LoadingServicesPanel'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
@@ -48,7 +49,13 @@ export function MyOrganizationPage() {
           s'appliquer. */}
       <PermissionGuard permission="organizations.update">
         <SectionCard title={t('planning.loadingServices')}>
-          <LoadingServicesPanel />
+          <div className="flex flex-col gap-4">
+            {/* L'option d'abord : elle decide s'il y a un chargement, la liste
+                en dessous decide lequel. Dans l'autre ordre, on cocherait des
+                services sans savoir a quoi ils servent. */}
+            <AutoLoadingServicePanel />
+            <LoadingServicesPanel />
+          </div>
         </SectionCard>
       </PermissionGuard>
     </div>

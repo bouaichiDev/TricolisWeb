@@ -37,6 +37,9 @@ class TrackingEventDefinitionController extends Controller
         'icon' => 'icon',
         'position' => 'position',
         'api_configuration_id' => 'apiConfigurationId',
+        'service_id' => 'serviceId',
+        'visible_to_customer' => 'visibleToCustomer',
+        'shows_proof_of_delivery' => 'showsProofOfDelivery',
         'active' => 'active',
     ];
 
@@ -61,7 +64,10 @@ class TrackingEventDefinitionController extends Controller
         }
 
         return ApiResponse::paginated(
-            $query->orderBy('position')->orderBy('code')->paginate($request->getPerPage())
+            // La prestation chargee avec l'etape : sans elle, l'ecran ne dirait
+            // que des identifiants la ou il doit dire « Livraison ».
+            $query->with('service:id,code,name')
+                ->orderBy('position')->orderBy('code')->paginate($request->getPerPage())
                 ->through(fn ($item) => new TrackingEventDefinitionResource($item)),
         );
     }

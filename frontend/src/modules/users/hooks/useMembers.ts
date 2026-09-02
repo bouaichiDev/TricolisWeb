@@ -73,3 +73,29 @@ export function useDisableMember() {
     },
   })
 }
+
+/**
+ * Envoie au membre un lien de réinitialisation.
+ *
+ * Le succès nomme l'adresse servie : sans elle, l'administrateur ne saurait pas
+ * où le lien est parti, et une adresse périmée passerait pour un envoi réussi.
+ */
+export function useSendPasswordResetLink() {
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: (id: string) => membersApi.sendPasswordResetLink(id),
+    onSuccess: (result) => toast.success(t('users.password.linkSent', { email: result.email })),
+  })
+}
+
+/** Pose un mot de passe pour le membre, pour les comptes sans boîte relevée. */
+export function useSetMemberPassword() {
+  const { t } = useTranslation()
+
+  return useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) =>
+      membersApi.setPassword(id, password),
+    onSuccess: () => toast.success(t('users.password.set')),
+  })
+}

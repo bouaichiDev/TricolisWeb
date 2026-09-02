@@ -105,6 +105,9 @@ final readonly class RecalculateTourRoute
                     'period_type' => self::PERIOD_TYPE,
                     'sequence' => $offset + $index + 1,
                     'distance_meters' => $leg->distanceMeters,
+                    // La duree du segment, et pas seulement son cumul : c'est
+                    // elle qui s'affiche entre deux arrets.
+                    'travel_minutes' => $leg->travelMinutes(),
                     'status' => 'planned',
                 ]);
             }

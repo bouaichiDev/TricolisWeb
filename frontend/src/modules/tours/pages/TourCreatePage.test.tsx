@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -85,7 +85,7 @@ describe('création d’une tournée', () => {
   it('envoie un brouillon, moyens non affectés à null', async () => {
     const bodies = render()
 
-    await userEvent.type(await screen.findByLabelText(/^Date/), '2026-09-01')
+    await start('2026-09-01T06:30')
     await pick('Agence', 'Casablanca')
     await pick('Chauffeur', 'Youssef Alami')
 
@@ -97,7 +97,9 @@ describe('création d’une tournée', () => {
     // dit plutot que de laisser un champ vide sans explication.
     expect(bodies[0]).not.toHaveProperty('tourNumber')
     expect(bodies[0]).toMatchObject({
+      // La date n'est plus saisie : elle se lit sur le depart.
       tourDate: '2026-09-01',
+      plannedStartAt: '2026-09-01T06:30',
       agencyId: AGENCY_ID,
       driverId: DRIVER_ID,
       status: 'draft',
@@ -107,3 +109,68 @@ describe('création d’une tournée', () => {
     })
   })
 })
+
+/**
+ * Le formulaire demandait trois dates pour deux informations : la date de la
+ * tournée, son début, sa fin. Une tournée qui part le 2 n'est pas datée du 3.
+ */
+describe('les horaires portent la date', () => {
+  it('refuse d’enregistrer sans départ', async () => {
+    const bodies = render()
+
+    await pick('Agence', 'Casablanca')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(screen.queryByLabelText(/^Date/)).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getAllByText('Ce champ est obligatoire.').length).toBeGreaterThan(0),
+    )
+    expect(bodies).toHaveLength(0)
+  })
+
+  it('ferme la journée à 20 h quand la fin manque', async () => {
+    const bodies = render()
+
+    await start('2026-09-01T06:30')
+    await pick('Agence', 'Casablanca')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0]).toMatchObject({ plannedEndAt: '2026-09-01T20:00' })
+  })
+
+  /**
+   * Le serveur refuse une fin antérieure au début. Sans report au lendemain,
+   * une tournée de nuit serait rejetée sans que rien ne l'explique à l'écran.
+   */
+  it('reporte au lendemain un départ passé 20 h', async () => {
+    const bodies = render()
+
+    await start('2026-09-01T21:15')
+    await pick('Agence', 'Casablanca')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0]).toMatchObject({
+      tourDate: '2026-09-01',
+      plannedEndAt: '2026-09-02T20:00',
+    })
+  })
+
+  it('garde la fin qu’on lui donne', async () => {
+    const bodies = render()
+
+    await start('2026-09-01T06:30')
+    fireEvent.change(screen.getByLabelText(/^Fin prévue/), { target: { value: '2026-09-01T14:00' } })
+    await pick('Agence', 'Casablanca')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0]).toMatchObject({ plannedEndAt: '2026-09-01T14:00' })
+  })
+})
+
+/** `userEvent.type` ne remplit pas un `datetime-local` : il faut poser la valeur. */
+async function start(value: string) {
+  fireEvent.change(await screen.findByLabelText(/^Début prévu/), { target: { value } })
+}

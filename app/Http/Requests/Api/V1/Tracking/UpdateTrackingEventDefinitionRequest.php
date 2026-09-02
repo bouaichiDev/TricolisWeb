@@ -41,6 +41,16 @@ class UpdateTrackingEventDefinitionRequest extends FormRequest
             'position' => ['sometimes', 'integer', 'min:0', 'max:65535'],
             // Non nulle, l'etape est suivie en direct — et on sait par quoi.
             'apiConfigurationId' => ['sometimes', 'nullable', 'ulid'],
+            // De quelle prestation l'etape parle. Nulle, elle vaut pour toutes :
+            // une commande porte souvent chargement, livraison et montage, et
+            // le destinataire ne suit que la sienne.
+            'serviceId' => ['sometimes', 'nullable', 'ulid'],
+            // Ce que le client final voit. Le chargement au depot interesse le
+            // planificateur, jamais le destinataire.
+            'visibleToCustomer' => ['sometimes', 'boolean'],
+            // La preuve s'attache a l'etape qui la produit : offerte des
+            // « planifie », elle n'existe pas encore.
+            'showsProofOfDelivery' => ['sometimes', 'boolean'],
             'active' => ['sometimes', 'boolean'],
         ];
     }

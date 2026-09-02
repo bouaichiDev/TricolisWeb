@@ -9,7 +9,11 @@ interface ControlledFieldProps {
   label: string
   value: string
   onChange: (value: string) => void
-  type?: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'email' | 'tel'
+  /**
+   * `password` masque la saisie : un mot de passe pose par un administrateur se
+   * lit par-dessus l'epaule comme un autre.
+   */
+  type?: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'email' | 'tel' | 'password'
   multiline?: boolean
   required?: boolean
   disabled?: boolean

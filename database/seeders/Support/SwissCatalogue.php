@@ -4,57 +4,84 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Support;
 
-use App\Modules\Customers\Models\Customer;
 use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Planning\Services\LoadingServices;
 
 /**
- * Ce dont un mois de commandes a besoin avant d'exister : des clients et deux
+ * Ce dont un mois de commandes a besoin avant d'exister : des clients et des
  * services.
  *
  * Séparé du semis parce que ce sont deux questions distinctes — quoi créer, et
  * sur quoi l'accrocher. La seconde se résout une fois, la première neuf cents.
+ *
+ * **Quatre services, et non deux.** Une commande qui porte toujours les mêmes
+ * deux prestations ne prouve rien : ni qu'un arrêt cumule correctement ses
+ * durées, ni qu'une facture distingue ce qu'elle facture. Le montage et le
+ * déballage donnent au semis de quoi varier.
  */
 final readonly class SwissCatalogue
 {
-    public function __construct(private LoadingServices $loading) {}
+    /**
+     * Les services du semis : code → nom, unité, durée par défaut.
+     *
+     * @var array<string, array{0: string, 1: string, 2: int}>
+     */
+    private const array SERVICES = [
+        'LOAD' => ['Chargement', 'commande', 20],
+        'DELIVERY' => ['Livraison', 'commande', 30],
+        'MONTAGE' => ['Montage', 'colis', 45],
+        'DEBALLAGE' => ['Déballage', 'colis', 20],
+    ];
+
+    public function __construct(
+        private LoadingServices $loading,
+        private SwissCustomerBook $book,
+    ) {}
 
     /**
-     * Un client par localité.
+     * Cinq clients, chacun avec ses trois adresses et leurs contacts.
      *
-     * Trente adresses réparties sur trente villes donnent une carte lisible, là
-     * où un client unique en ferait un tas.
-     *
-     * @return list<string>
+     * @return list<SeededCustomer>
      */
     public function customers(Organization $organization): array
     {
+        return $this->book->forOrganization($organization);
+    }
+
+    /**
+     * Les services du semis, par code.
+     *
+     * @return array<string, string>
+     */
+    public function services(Organization $organization): array
+    {
         $ids = [];
 
-        for ($index = 0; $index < SwissAddressBook::localityCount(); $index++) {
-            $city = SwissAddressBook::at($index)['city'];
-
-            $ids[] = Customer::firstOrCreate(
-                ['organization_id' => $organization->id, 'code' => sprintf('CH-%02d', $index + 1)],
-                [
-                    'name' => sprintf('Client %s', $city),
-                    'email' => sprintf('contact%d@example.ch', $index + 1),
-                    'status' => 'active',
-                ],
-            )->id;
+        foreach (self::SERVICES as $code => [$name, $unit, $minutes]) {
+            $ids[$code] = $this->service($organization, $code, $name, $unit, $minutes);
         }
 
         return $ids;
     }
 
     /**
+     * Les durées par défaut, par code — ce qu'un service met sur place.
+     *
+     * @return array<string, int>
+     */
+    public function serviceMinutes(): array
+    {
+        return array_map(static fn (array $service): int => $service[2], self::SERVICES);
+    }
+
+    /**
      * Le service de chargement de l'organisation, créé si elle n'en a pas.
      *
      * La reconnaissance passe par les codes réglés — jamais par une constante
-     * écrite ici : c'est `LoadingServices` qui fait autorité, et le semis s'y
-     * plie. Quand il en crée un, il déclare aussi son code dans les réglages,
-     * sans quoi le regroupement au dépôt ne le reconnaîtrait pas.
+     * lue ici : c'est `LoadingServices` qui fait autorité, et le semis s'y plie.
+     * Quand il en crée un, il déclare aussi son code dans les réglages, sans
+     * quoi le regroupement au dépôt ne le reconnaîtrait pas.
      */
     public function loadingServiceId(Organization $organization): string
     {
@@ -64,7 +91,8 @@ final readonly class SwissCatalogue
             return $existing[0];
         }
 
-        $service = $this->service($organization, 'LOAD', 'Chargement');
+        [$name, $unit, $minutes] = self::SERVICES['LOAD'];
+        $service = $this->service($organization, 'LOAD', $name, $unit, $minutes);
 
         $settings = $organization->settings ?? [];
         data_set($settings, LoadingServices::SETTING_PATH, ['LOAD']);
@@ -73,27 +101,33 @@ final readonly class SwissCatalogue
         return $service;
     }
 
-    /** La livraison : le premier service qui n'est pas un chargement. */
+    /**
+     * La livraison, désignée par son code.
+     *
+     * Elle se cherchait auparavant comme « le premier service qui n'est pas un
+     * chargement, par ordre de code » : avec un déballage au catalogue, c'est
+     * lui que l'ordre alphabétique aurait désigné.
+     */
     public function deliveryServiceId(Organization $organization): string
     {
-        $loadingIds = $this->loading->serviceIds($organization);
+        [$name, $unit, $minutes] = self::SERVICES['DELIVERY'];
 
-        $delivery = Service::where('organization_id', $organization->id)
-            ->whereNotIn('id', $loadingIds === [] ? ['-'] : $loadingIds)
-            ->orderBy('code')
-            ->value('id');
-
-        return $delivery ?? $this->service($organization, 'DELIVERY', 'Livraison');
+        return $this->service($organization, 'DELIVERY', $name, $unit, $minutes);
     }
 
-    private function service(Organization $organization, string $code, string $name): string
-    {
+    private function service(
+        Organization $organization,
+        string $code,
+        string $name,
+        string $unit,
+        int $minutes,
+    ): string {
         return Service::firstOrCreate(
             ['organization_id' => $organization->id, 'code' => $code],
             [
                 'name' => $name,
-                'unit' => 'commande',
-                'default_duration_minutes' => 30,
+                'unit' => $unit,
+                'default_duration_minutes' => $minutes,
                 'billable_to_customer' => true,
                 'payable_to_provider' => true,
                 'requires_address' => true,

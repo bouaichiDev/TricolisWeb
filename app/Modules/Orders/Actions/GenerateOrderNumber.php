@@ -18,17 +18,27 @@ use RuntimeException;
  * la transaction, ce qui sérialise les créations concurrentes d'une même série
  * et laisse passer les autres.
  *
- * Format : `ORD-2026-000001`, remis à zéro chaque année civile. La granularité
- * `scope` permet d'introduire plus tard une série par agence sans changer de
- * mécanisme.
+ * Format : `CH-01-2026-000001` — **le code du client**, l'année, le rang.
+ *
+ * Le préfixe fixe `ORD` ne disait rien : il fallait ouvrir la commande pour
+ * savoir de qui elle venait. Le code client répond dès la liste, et c'est le
+ * repère que donne le client lui-même quand il rappelle.
+ *
+ * **Une série par client**, portée par le `scope` du compteur — le mécanisme
+ * était prévu pour ça. Chaque client numérote donc à partir de un, remis à zéro
+ * chaque année civile. Un compteur commun donnerait des rangs qui sautent, et
+ * un client ne comprendrait pas de passer de sa commande 12 à sa commande 431.
  */
 final readonly class GenerateOrderNumber
 {
-    private const string PREFIX = 'ORD';
-
     private const int PADDING = 6;
 
-    public function execute(string $organizationId, int $year, string $scope = 'default'): string
+    /**
+     * @param  string  $series  Le code du client : préfixe du numéro, et clé de
+     *                          son compteur. Deux clients ne se partagent ni
+     *                          l'un ni l'autre.
+     */
+    public function execute(string $organizationId, int $year, string $series): string
     {
         if (DB::transactionLevel() === 0) {
             throw new RuntimeException('Le numéro de commande doit être attribué dans une transaction.');
@@ -36,7 +46,7 @@ final readonly class GenerateOrderNumber
 
         $sequence = OrderNumberSequence::query()
             ->where('organization_id', $organizationId)
-            ->where('scope', $scope)
+            ->where('scope', $series)
             ->where('year', $year)
             ->lockForUpdate()
             ->first();
@@ -45,12 +55,12 @@ final readonly class GenerateOrderNumber
             // firstOrCreate ne suffit pas : deux requêtes concurrentes peuvent
             // arriver ici en même temps. La contrainte unique arbitre, et le
             // perdant relit la ligne du gagnant sous verrou.
-            $sequence = $this->createSequence($organizationId, $scope, $year);
+            $sequence = $this->createSequence($organizationId, $series, $year);
         }
 
         $sequence->increment('last_number');
 
-        return sprintf('%s-%d-%0'.self::PADDING.'d', self::PREFIX, $year, $sequence->last_number);
+        return sprintf('%s-%d-%0'.self::PADDING.'d', $series, $year, $sequence->last_number);
     }
 
     private function createSequence(string $organizationId, string $scope, int $year): OrderNumberSequence

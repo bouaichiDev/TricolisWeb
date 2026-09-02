@@ -47,6 +47,22 @@ export interface Tour {
   lockedAt?: string | null
   /** Rendu seulement sur `?withStops=1` : la vue en colonnes les montre. */
   stops?: TourStop[]
+  /** Rendus avec les arrêts : le trajet qui mène à chacun. */
+  legs?: TourLeg[]
+}
+
+/**
+ * Trajet entre deux arrêts — période de conduite de `TourListResource`.
+ *
+ * Il porte l'arrêt vers lequel il mène, jamais celui d'où il part : c'est ce
+ * qui permet de l'afficher juste avant le bon arrêt même quand la composition
+ * en cours en masque certains.
+ */
+export interface TourLeg {
+  tourStopId: string | null
+  distanceMeters: number
+  /** Nul tant qu'aucun itinéraire n'a été calculé depuis l'ajout du champ. */
+  travelMinutes: number
 }
 
 /** Arrêt d'une tournée — `TourStopResource`. */

@@ -79,6 +79,24 @@ it('range chaque segment dans une période de conduite', function (): void {
         ->and($periods->sum('distance_meters'))->toBe(24000);
 });
 
+/**
+ * Le total ne se redécoupe pas : sans la durée de chaque segment, impossible
+ * d'annoncer entre deux arrêts le temps qui les sépare.
+ */
+it('conserve la durée de chaque segment, pas seulement leur somme', function (): void {
+    ($this->stopAt)(1, 33.59, -7.62);
+    ($this->stopAt)(2, 33.55, -7.60);
+    ($this->stopAt)(3, 33.97, -6.85);
+    ($this->answer)(12000, 900);
+
+    $this->action->execute($this->tour);
+
+    $periods = $this->tour->periods()->where('period_type', 'driving')->get();
+
+    expect($periods->pluck('travel_minutes')->all())->toBe([15, 15])
+        ->and($this->tour->fresh()->driving_time_minutes)->toBe(30);
+});
+
 /** §92 : la distance de la tournée est la somme de ses périodes, déjà câblée. */
 it('alimente la distance et le temps de conduite de la tournée', function (): void {
     ($this->stopAt)(1, 33.59, -7.62);
@@ -169,6 +187,11 @@ it('efface l’itinéraire quand le service ne répond pas', function (): void {
     $this->action->execute($this->tour);
     expect($this->tour->fresh()->distance_meters)->toBe(12000);
 
+    // Un troisieme arret cree une paire que le cache ne connait pas : c'est
+    // elle qui se heurte a la panne. Rejouer les deux memes points ne
+    // rappellerait rien et n'eprouverait donc rien.
+    ($this->stopAt)(3, 33.97, -6.85);
+
     expect($this->action->execute($this->tour))->toBe(0);
 
     $tour = $this->tour->fresh();
@@ -176,6 +199,28 @@ it('efface l’itinéraire quand le service ne répond pas', function (): void {
     expect($tour->distance_meters)->toBe(0)
         ->and($tour->driving_time_minutes)->toBe(0)
         ->and($tour->periods()->where('period_type', 'driving')->count())->toBe(0);
+});
+
+/**
+ * Une panne passagère ne doit pas effacer ce qui était connu.
+ *
+ * Le cache des segments existe pour calculer pendant la planification ; il
+ * protège aussi de l'interruption. Entre deux points qui n'ont pas bougé, la
+ * route ne dépend pas de la disponibilité du service — la redemander pour
+ * conclure « non calculé » ferait perdre au planificateur un chiffre juste.
+ */
+it('garde un segment déjà connu malgré une panne', function (): void {
+    ($this->stopAt)(1, 33.59, -7.62);
+    ($this->stopAt)(2, 33.55, -7.60);
+
+    Http::fakeSequence()
+        ->push('<Result><Distance>12000</Distance><TravelTime>900</TravelTime></Result>')
+        ->pushStatus(503);
+
+    $this->action->execute($this->tour);
+
+    expect($this->action->execute($this->tour))->toBe(1)
+        ->and($this->tour->fresh()->distance_meters)->toBe(12000);
 });
 
 /** Un recalcul ne doit pas empiler les segments du précédent. */

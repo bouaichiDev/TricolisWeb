@@ -6,7 +6,7 @@ namespace App\Modules\Exports\Services\Transports;
 
 use App\Modules\Exports\Mail\InvoiceExportMail;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
-use Illuminate\Support\Facades\Mail;
+use App\Modules\Integrations\Services\OrganizationMailer;
 use RuntimeException;
 
 /**
@@ -28,6 +28,8 @@ use RuntimeException;
  */
 final readonly class EmailExportTransporter implements ExportTransporter
 {
+    public function __construct(private OrganizationMailer $mailer) {}
+
     public function send(
         CustomerExportConfiguration $configuration,
         string $fileName,
@@ -45,7 +47,12 @@ final readonly class EmailExportTransporter implements ExportTransporter
             ? $settings['subject']
             : 'Facture '.pathinfo($fileName, PATHINFO_FILENAME);
 
-        Mail::to($recipients)->send(new InvoiceExportMail(
+        // La facture part de la boite de l'organisation qui la reclame : un
+        // client ne doit pas recevoir sa facture depuis l'adresse d'un autre
+        // transporteur heberge sur la meme installation.
+        $organizationId = $configuration->customer?->organization_id;
+
+        $this->mailer->for($organizationId)->to($recipients)->send(new InvoiceExportMail(
             $subject,
             $this->body($settings),
             $fileName,

@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useApiConfigurationList } from '@/modules/integrations/hooks/useApiConfigurations'
 import { ApiError } from '@/shared/api/errors'
-import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
 import { FormErrorSummary } from '@/shared/components/form/FormErrorSummary'
 import { Button } from '@/shared/components/ui/button'
@@ -18,6 +16,8 @@ import {
 import { Label } from '@/shared/components/ui/label'
 import { Switch } from '@/shared/components/ui/switch'
 
+import { ALL_SERVICES, JourneyCustomerFields } from './JourneyCustomerFields'
+import { JourneyLiveFields, NO_API } from './JourneyLiveFields'
 import { JourneyTriggerFields } from './JourneyTriggerFields'
 import { useCreateTrackingDefinition, useUpdateTrackingDefinition } from '../hooks/useTracking'
 import type { TrackingEventDefinition } from '../types/trackingDefinition'
@@ -28,9 +28,6 @@ interface JourneyStepDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
-
-/** Valeur désignant « aucune API », Radix refusant une option vide. */
-const NO_API = 'none'
 
 /**
  * Une étape du parcours : quel statut la déclenche, ce que le client lit.
@@ -55,10 +52,11 @@ export function JourneyStepDialog({ step, open, onOpenChange }: JourneyStepDialo
   const [description, setDescription] = useState(step?.description ?? '')
   const [position, setPosition] = useState(String(step?.position ?? 10))
   const [apiId, setApiId] = useState(step?.apiConfigurationId ?? NO_API)
+  const [serviceId, setServiceId] = useState(step?.serviceId ?? ALL_SERVICES)
+  const [visibleToCustomer, setVisible] = useState(step?.visibleToCustomer ?? false)
+  const [showsProof, setShowsProof] = useState(step?.showsProofOfDelivery ?? false)
   const [active, setActive] = useState(step?.active ?? true)
   const [error, setError] = useState<string | null>(null)
-
-  const apis = useApiConfigurationList({ page: 1, perPage: 100 }, open)
 
   const create = useCreateTrackingDefinition()
   const update = useUpdateTrackingDefinition()
@@ -78,6 +76,11 @@ export function JourneyStepDialog({ step, open, onOpenChange }: JourneyStepDialo
         description: description.trim() === '' ? null : description.trim(),
         position: Number(position) || 0,
         apiConfigurationId: apiId === NO_API ? null : apiId,
+        serviceId: serviceId === ALL_SERVICES ? null : serviceId,
+        visibleToCustomer,
+        // La preuve n'a de sens que sur une etape visible : l'envoyer sur une
+        // etape interne promettrait un document que personne n'irait chercher.
+        showsProofOfDelivery: visibleToCustomer && showsProof,
         active,
       }
 
@@ -144,20 +147,22 @@ export function JourneyStepDialog({ step, open, onOpenChange }: JourneyStepDialo
             multiline
           />
 
-          <AsyncSelect
-            label={t('journey.fields.api')}
-            value={apiId}
+          <JourneyLiveFields
+            apiConfigurationId={apiId}
             onChange={setApiId}
-            options={[
-              { value: NO_API, label: t('journey.noApi') },
-              ...(apis.data?.data ?? []).map((api) => ({
-                value: api.id,
-                label: api.name,
-                hint: api.code,
-              })),
-            ]}
-            isLoading={apis.isPending}
-            description={t('journey.apiHint')}
+            enabled={open}
+          />
+
+          <JourneyCustomerFields
+            serviceId={serviceId}
+            visibleToCustomer={visibleToCustomer}
+            showsProofOfDelivery={showsProof}
+            onChange={(patch) => {
+              if (patch.serviceId !== undefined) setServiceId(patch.serviceId)
+              if (patch.visibleToCustomer !== undefined) setVisible(patch.visibleToCustomer)
+              if (patch.showsProofOfDelivery !== undefined) setShowsProof(patch.showsProofOfDelivery)
+            }}
+            enabled={open}
           />
 
           <span className="flex items-center gap-2">

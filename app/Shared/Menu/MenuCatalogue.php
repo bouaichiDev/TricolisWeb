@@ -431,6 +431,19 @@ final class MenuCatalogue
                 permission: 'api_configurations.view',
             ),
 
+            // D'ou partent les courriers de l'organisation. Range avec les
+            // integrations : c'est un service externe qu'elle declare, au meme
+            // titre qu'une API — et non un reglage de son profil.
+            new MenuEntry(
+                code: 'mail-configuration',
+                labelKey: 'nav.mailConfiguration',
+                icon: 'Mail',
+                section: MenuSection::INTEGRATIONS,
+                position: 75,
+                route: '/mail-configuration',
+                permission: 'mail_configuration.view',
+            ),
+
             // Integrations clients — Phase 8. Quatre entrees, pour les quatre
             // entites du modele. Ni webhooks, ni exports planifies, ni journaux
             // d'appels API, ni historique d'import : ces tables n'existent pas,

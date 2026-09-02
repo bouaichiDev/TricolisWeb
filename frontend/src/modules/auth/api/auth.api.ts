@@ -22,4 +22,20 @@ export const authApi = {
   logout: () => api.post<void>('/auth/logout'),
 
   logoutAll: () => api.post<void>('/auth/logout-all'),
+
+  /**
+   * Pose le nouveau mot de passe à partir du jeton reçu par courriel.
+   *
+   * Le jeton et l'adresse viennent du lien : les retaper serait absurde, et
+   * l'adresse sert au serveur à retrouver le jeton qu'il a émis.
+   */
+  resetPassword: (payload: {
+    token: string
+    email: string
+    password: string
+  }) =>
+    api.post<{ message: string }>('/auth/reset-password', {
+      ...payload,
+      password_confirmation: payload.password,
+    }),
 }

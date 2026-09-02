@@ -15,6 +15,8 @@ interface StatusFilterSelectProps {
   value: string | undefined
   onChange: (status: string | undefined) => void
   className?: string
+  /** Identifiant du declencheur, pour qu'un libelle visible s'y associe. */
+  id?: string
 }
 
 /**
@@ -32,6 +34,7 @@ export function StatusFilterSelect({
   value,
   onChange,
   className,
+  id,
 }: StatusFilterSelectProps) {
   const { t } = useTranslation()
   const { options } = useStatusOptions(source, value)
@@ -41,7 +44,11 @@ export function StatusFilterSelect({
       value={value ?? 'all'}
       onValueChange={(next) => onChange(next === 'all' ? undefined : next)}
     >
-      <SelectTrigger className={className ?? 'w-full sm:w-48'} aria-label={t('statuses.filter')}>
+      <SelectTrigger
+        id={id}
+        className={className ?? 'w-full sm:w-48'}
+        aria-label={t('statuses.filter')}
+      >
         <SelectValue placeholder={t('statuses.filter')} />
       </SelectTrigger>
 

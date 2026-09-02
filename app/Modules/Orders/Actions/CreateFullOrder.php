@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Orders\Actions;
 
 use App\Modules\Audit\Actions\WriteAuditLog;
+use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Enums\OrderSource;
@@ -48,7 +49,7 @@ final readonly class CreateFullOrder
                 $this->guard->depot($data->depotId, $organizationId);
             }
 
-            $order = Order::create($this->headerAttributes($data, $organizationId, $user));
+            $order = Order::create($this->headerAttributes($data, $customer, $organizationId, $user));
 
             $lines = $this->lines->execute($order, $customer, $data->lines);
             $packages = $this->packages->execute($order, $data->packages, $lines);
@@ -97,8 +98,12 @@ final readonly class CreateFullOrder
     /**
      * @return array<string, mixed>
      */
-    private function headerAttributes(CreateOrderData $data, string $organizationId, User $user): array
-    {
+    private function headerAttributes(
+        CreateOrderData $data,
+        Customer $customer,
+        string $organizationId,
+        User $user,
+    ): array {
         $attributes = $data->attributes;
         $orderDate = $attributes['order_date'] ?? now();
 
@@ -113,8 +118,13 @@ final readonly class CreateFullOrder
             'depot_id' => $data->depotId,
             'order_date' => $orderDate,
             // Le numéro fourni par l'appelant est ignoré : il est attribué par
-            // la séquence, sous verrou, pour garantir l'unicité.
-            'order_number' => $this->numbers->execute($organizationId, (int) date('Y', strtotime((string) $orderDate))),
+            // la séquence, sous verrou, pour garantir l'unicité. Le code client
+            // en fait la série — chacun numérote la sienne.
+            'order_number' => $this->numbers->execute(
+                $organizationId,
+                (int) date('Y', strtotime((string) $orderDate)),
+                $customer->code,
+            ),
             'created_by' => $user->id,
         ]);
     }

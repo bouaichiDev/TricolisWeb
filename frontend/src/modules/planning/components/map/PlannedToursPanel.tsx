@@ -1,8 +1,11 @@
 import { Crosshair, IdCard, Package, Truck } from 'lucide-react'
+import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { TourBoardLeg } from '@/modules/tours/components/TourBoardLeg'
 import { TourBoardStop } from '@/modules/tours/components/TourBoardStop'
 import type { Tour } from '@/modules/tours/types/tour'
+import { legsByStop } from '@/modules/tours/utils/tourLegs'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { Button } from '@/shared/components/ui/button'
 
@@ -43,6 +46,10 @@ export function PlannedToursPanel({
   const { t } = useTranslation()
 
   const selected = tours.find((tour) => tour.id === selectedTourId) ?? null
+
+  // Rangés une fois pour la tournée ouverte : le cumul se lit sur l'ordre du
+  // serveur, pas sur celui de l'affichage.
+  const legs = useMemo(() => legsByStop(selected?.legs ?? []), [selected?.legs])
   const others = tours.filter((tour) => tour.id !== selectedTourId)
 
   if (tours.length === 0) {
@@ -132,6 +139,11 @@ export function PlannedToursPanel({
               <p className="text-xs text-muted-foreground">{t('tours.noStop')}</p>
             ) : (
               (selected.stops ?? []).map((stop) => {
+                // Le trajet qui mene a cet arret, cumul compris. Le mode carte
+                // le montre comme la vue en colonnes : c'est la meme decision
+                // qu'on y prend, sur les memes chiffres.
+                const arrival = legs.get(stop.id)
+
                 const placed =
                   stop.latitude !== null &&
                   stop.latitude !== undefined &&
@@ -139,29 +151,35 @@ export function PlannedToursPanel({
                   stop.longitude !== undefined
 
                 return (
-                  <div key={stop.id} className="flex items-start gap-1">
-                    <div className="min-w-0 flex-1">
-                      <TourBoardStop
-                        stop={stop}
-                        onUnplan={
-                          onUnplan === undefined ? undefined : (ids) => onUnplan(selected.id, ids)
-                        }
-                      />
-                    </div>
+                  <Fragment key={stop.id}>
+                    {arrival === undefined ? null : (
+                      <TourBoardLeg leg={arrival.leg} cumulative={arrival.cumulative} />
+                    )}
 
-                    {/* Un bouton, pas un double-clic : le second ne se devine
-                        pas, et le clic simple deplie deja l'arret. */}
-                    <button
-                      type="button"
-                      disabled={!placed}
-                      title={placed ? t('planning.showOnMap') : t('planning.notPlaceable')}
-                      aria-label={t('planning.showOnMap')}
-                      className="mt-1.5 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
-                      onClick={() => onFocusStop(stop.latitude as number, stop.longitude as number)}
-                    >
-                      <Crosshair className="size-3.5" aria-hidden />
-                    </button>
-                  </div>
+                    <div className="flex items-start gap-1">
+                      <div className="min-w-0 flex-1">
+                        <TourBoardStop
+                          stop={stop}
+                          onUnplan={
+                            onUnplan === undefined ? undefined : (ids) => onUnplan(selected.id, ids)
+                          }
+                        />
+                      </div>
+
+                      {/* Un bouton, pas un double-clic : le second ne se devine
+                          pas, et le clic simple deplie deja l'arret. */}
+                      <button
+                        type="button"
+                        disabled={!placed}
+                        title={placed ? t('planning.showOnMap') : t('planning.notPlaceable')}
+                        aria-label={t('planning.showOnMap')}
+                        className="mt-1.5 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+                        onClick={() => onFocusStop(stop.latitude as number, stop.longitude as number)}
+                      >
+                        <Crosshair className="size-3.5" aria-hidden />
+                      </button>
+                    </div>
+                  </Fragment>
                 )
               })
             )}

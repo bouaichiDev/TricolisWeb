@@ -16,6 +16,7 @@ import {
   INVOICE_STARTER_VARIABLES,
 } from '../utils/invoiceVariables'
 import { ORDER_VARIABLES } from '../utils/orderVariables'
+import { PASSWORD_RESET_VARIABLES } from '../utils/passwordResetVariables'
 
 interface TemplateFormProps {
   values: TemplateFormValues
@@ -36,7 +37,7 @@ interface TemplateFormProps {
  *
  * `availableVariables` déclare ce que le modèle sait recevoir. Les deux listes
  * proposées viennent du **contexte réel du serveur** — celui d'une commande
- * pour un message, celui d'une facture pour un document. Déclarer un nom qu'il
+ * selon le sujet du modèle — commande, facture, ou réinitialisation. Déclarer un nom qu'il
  * ne fournit pas fait échouer le rendu au moment de l'envoi, quand il est trop
  * tard pour le corriger.
  *
@@ -165,10 +166,13 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
         description={document ? t('templates.invoiceBodyHint') : undefined}
       />
 
+      {/* Les variables dependent du sujet : un modele de reinitialisation ne
+          parle d'aucune commande, et lui proposer `order_number` menerait a un
+          rendu en echec. */}
       <TemplateVariablePicker
         variables={values.availableVariables}
         onChange={(availableVariables) => onChange({ availableVariables })}
-        suggestions={document ? INVOICE_PATHS : [...ORDER_VARIABLES]}
+        suggestions={suggestionsFor(values.templateType)}
       />
 
       <div className="flex flex-wrap gap-6 border-t pt-4">
@@ -192,4 +196,18 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
       </div>
     </div>
   )
+}
+
+/**
+ * Les variables à proposer, selon ce dont le modèle parle.
+ *
+ * Une facture nomme ses lignes, une communication sa commande, une
+ * réinitialisation son lien. Proposer une seule liste obligeait à trier
+ * soi-même — et rien ne disait ce qui était valable.
+ */
+function suggestionsFor(templateType: string): string[] {
+  if (templateType === 'invoice') return [...INVOICE_PATHS]
+  if (templateType === 'password_reset') return [...PASSWORD_RESET_VARIABLES]
+
+  return [...ORDER_VARIABLES]
 }

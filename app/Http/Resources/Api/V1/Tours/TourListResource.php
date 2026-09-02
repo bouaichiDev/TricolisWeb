@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Tours;
 
+use App\Modules\Planning\Actions\RecalculateTourRoute;
 use App\Modules\Planning\Services\ConfirmedContent;
 use App\Modules\Tours\Models\Tour;
 use Illuminate\Http\Request;
@@ -55,6 +56,34 @@ class TourListResource extends JsonResource
                 || $this->includePending
                 || $resource->toArray(request())['serviceCount'] > 0)
             ->map(fn (TourStopResource $resource) => $resource->toArray(request()))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Les trajets entre arrets, indexes sur l'arret d'arrivee.
+     *
+     * Une periode de conduite porte l'arret vers lequel elle mene : c'est ce
+     * qui permet a l'ecran de glisser le trajet **avant** le bon arret, sans
+     * supposer que les arrets sont contigus. Un arret masque pendant une
+     * composition emporte donc son trajet, puisque plus rien ne s'y raccroche.
+     *
+     * Seules les periodes de conduite sont rendues ici : une pause ou une
+     * attente ne sont pas un trajet, et les melanger ferait annoncer une
+     * distance nulle entre deux arrets eloignes.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function drivingLegs(): array
+    {
+        return $this->periods
+            ->where('period_type', RecalculateTourRoute::PERIOD_TYPE)
+            ->sortBy('sequence')
+            ->map(fn ($period): array => [
+                'tourStopId' => $period->tour_stop_id,
+                'distanceMeters' => $period->distance_meters,
+                'travelMinutes' => $period->travel_minutes,
+            ])
             ->values()
             ->all();
     }
@@ -132,6 +161,9 @@ class TourListResource extends JsonResource
                 fn (): int => app(ConfirmedContent::class)->pendingCount($this->resource),
             ),
             'periodCount' => $this->whenCounted('periods'),
+            // Le temps et la distance entre deux arrets. Rendus a part des
+            // arrets : un trajet n'appartient a aucun des deux, il les relie.
+            'legs' => $this->whenLoaded('periods', fn () => $this->drivingLegs()),
         ];
     }
 }

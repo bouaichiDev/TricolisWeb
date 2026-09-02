@@ -27,6 +27,12 @@ class TrackingEventDefinitionResource extends JsonResource
             'icon' => $this->icon,
             'position' => $this->position,
             'apiConfigurationId' => $this->api_configuration_id,
+            'serviceId' => $this->service_id,
+            // Nomme, et pas seulement identifie : un ecran qui liste des etapes
+            // ne doit pas charger le catalogue pour dire de quoi elles parlent.
+            'serviceName' => $this->whenLoaded('service', fn (): ?string => $this->service?->name),
+            'visibleToCustomer' => $this->visible_to_customer,
+            'showsProofOfDelivery' => $this->shows_proof_of_delivery,
             // Derive : une etape est suivie en direct si une API la renseigne.
             'isLive' => $this->api_configuration_id !== null,
             'active' => $this->active,

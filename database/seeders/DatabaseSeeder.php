@@ -26,6 +26,9 @@ class DatabaseSeeder extends Seeder
             PlatformAdminSeeder::class,
             DemoAgencySeeder::class,
             DemoCustomerSeeder::class,
+            // Le courriel de reinitialisation, pose pour etre modifie : un
+            // modele vide ne se modifie pas.
+            PasswordResetTemplateSeeder::class,
             DemoFleetSeeder::class,
             // Les deux services GPS : sans eux, geocodage et itineraires
             // s'executent sans rien changer, ce qui ressemble a une panne.

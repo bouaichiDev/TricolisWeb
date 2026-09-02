@@ -10,6 +10,13 @@ export interface PlanningSettings {
   planning?: {
     /** Codes des services reconnus comme chargement. */
     loadingServiceCodes?: string[]
+    /**
+     * Crée le chargement manquant d'une commande au moment de la planifier.
+     *
+     * Absent vaut « non » : une organisation qui n'a jamais réglé la question
+     * ne doit pas voir des prestations apparaître dans ses commandes.
+     */
+    autoCreateLoadingService?: boolean
   }
 }
 
@@ -56,6 +63,40 @@ export function useUpdateLoadingServiceCodes() {
 
       return organizationsApi.update(organizationId as string, {
         settings: { ...settings, planning: { ...settings.planning, loadingServiceCodes: codes } },
+      })
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: planningSettingKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['organizations'] })
+      toast.success(t('toast.updated'))
+    },
+  })
+}
+
+/**
+ * Active ou coupe la création automatique du chargement.
+ *
+ * Enregistrée au basculement, sans bouton : c'est un interrupteur, et une
+ * option qu'on croit active parce qu'on l'a cochée sans enregistrer est pire
+ * que pas d'option du tout.
+ */
+export function useUpdateAutoCreateLoading() {
+  const queryClient = useQueryClient()
+  const { organizationId } = useAuth()
+  const { t } = useTranslation()
+  const current = useOrganizationSettings()
+
+  return useMutation({
+    mutationFn: (enabled: boolean) => {
+      // `PATCH` remplace `settings` en entier : n'envoyer que cette option
+      // effacerait les codes de chargement et tout le reste.
+      const settings = { ...(current.data?.settings ?? {}) }
+
+      return organizationsApi.update(organizationId as string, {
+        settings: {
+          ...settings,
+          planning: { ...settings.planning, autoCreateLoadingService: enabled },
+        },
       })
     },
     onSuccess: () => {

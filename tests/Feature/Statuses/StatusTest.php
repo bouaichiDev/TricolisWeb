@@ -60,8 +60,31 @@ describe('lecture', function (): void {
     });
 
     it('sème les statuts issus des énumérations existantes', function (): void {
+        // Dix pour la prestation depuis que « client ne répond pas » la
+        // rejoint : une tentative infructueuse n'est ni un echec de notre
+        // cote, ni une livraison faite.
         expect(Status::where('source', MorphMap::ORDER)->count())->toBe(10)
-            ->and(Status::where('source', MorphMap::ORDER_SERVICE)->count())->toBe(9);
+            ->and(Status::where('source', MorphMap::ORDER_SERVICE)->count())->toBe(10);
+    });
+
+    /**
+     * Le referentiel separe le code du libelle : c'est ce qui permet au terrain
+     * de lire « En route » sans que le code cesse de s'appuyer sur
+     * `in_progress`. Faute de libelle, l'ecran affichait `IN_PROGRESS`.
+     */
+    it('donne un libellé français à chaque état de prestation', function (): void {
+        $labels = Status::where('source', MorphMap::ORDER_SERVICE)->pluck('label', 'code');
+
+        expect($labels['in_progress'])->toBe('En route')
+            ->and($labels['completed'])->toBe('Effectué')
+            ->and($labels['customer_no_response'])->toBe('Client ne répond pas')
+            ->and($labels['planned'])->toBe('Planifié');
+    });
+
+    /** Sans motif, « client ne répond pas » ne dit pas s'il faut repasser. */
+    it('exige un motif sur une tentative infructueuse', function (): void {
+        expect(Status::where('source', MorphMap::ORDER_SERVICE)
+            ->where('code', 'customer_no_response')->value('requires_reason'))->toBeTruthy();
     });
 });
 

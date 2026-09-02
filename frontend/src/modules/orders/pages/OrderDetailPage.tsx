@@ -132,7 +132,17 @@ export function OrderDetailPage() {
         </TabsContent>
 
         <TabsContent value="tracking" className="mt-4">
-          <OrderTrackingTab orderId={order.id} active={tab === 'tracking'} />
+          {/* Les prestations de la commande filtrent le parcours : une etape
+              decrite pour un montage n'a rien a faire sur une commande qui n'en
+              porte pas. */}
+          <OrderTrackingTab
+            orderId={order.id}
+            services={(order.services ?? []).map((service) => ({
+              id: service.id,
+              serviceId: service.serviceId,
+            }))}
+            active={tab === 'tracking'}
+          />
         </TabsContent>
 
         <TabsContent value="claims" className="mt-4">

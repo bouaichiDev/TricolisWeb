@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tours\Queries;
 
 use App\Http\Requests\Api\V1\Tours\ListTourRequest;
+use App\Modules\Planning\Actions\RecalculateTourRoute;
 use App\Modules\Tours\Models\Tour;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -58,6 +59,13 @@ final readonly class TourListQuery
                     ])])
                 ->withCount(['services' => fn ($services) => $services->where('is_active_assignment', true)]),
             ]);
+
+            // Les trajets suivent les arrets qu'ils relient : les demander
+            // ensuite, colonne par colonne, ferait une requete de plus par
+            // tournee pour une poignee de lignes.
+            $query->with(['periods' => fn ($periods) => $periods
+                ->where('period_type', RecalculateTourRoute::PERIOD_TYPE)
+                ->orderBy('sequence')]);
         }
 
         if ($request->filled('search')) {

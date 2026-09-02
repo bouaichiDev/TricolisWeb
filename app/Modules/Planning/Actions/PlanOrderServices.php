@@ -6,8 +6,11 @@ namespace App\Modules\Planning\Actions;
 
 use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Orders\Enums\OrderServiceStatus;
+use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Organizations\Models\Organization;
 use App\Modules\Planning\Jobs\RecalculateTourRouteJob;
+use App\Modules\Planning\Services\DepotAddress;
 use App\Modules\Planning\Services\PlanningEligibility;
 use App\Modules\Planning\Services\StopGrouping;
 use App\Modules\Tours\Models\Tour;
@@ -42,6 +45,8 @@ final readonly class PlanOrderServices
         private StopGrouping $grouping,
         private TourTotals $totals,
         private WriteAuditLog $audit,
+        private EnsureLoadingService $loading,
+        private DepotAddress $depot,
     ) {}
 
     /**
@@ -65,6 +70,7 @@ final readonly class PlanOrderServices
 
             $planned = [];
             $rejected = [];
+            $eligible = [];
 
             foreach ($orderServiceIds as $id) {
                 $service = $services->get($id);
@@ -83,8 +89,17 @@ final readonly class PlanOrderServices
                     continue;
                 }
 
+                $eligible[] = $service;
+            }
+
+            // Les chargements manquants **avant** d'ecrire : une commande dont
+            // le chargement ne peut pas etre cree est refusee entiere, plutot
+            // que de laisser sa livraison seule dans la tournee.
+            [$eligible, $rejected] = $this->withLoadings($tour, $eligible, $rejected);
+
+            foreach ($eligible as $service) {
                 $this->assign($tour, $service);
-                $planned[] = $id;
+                $planned[] = $service->id;
             }
 
             if ($planned !== []) {
@@ -110,6 +125,76 @@ final readonly class PlanOrderServices
 
             return ['planned' => $planned, 'rejected' => $rejected];
         });
+    }
+
+    /**
+     * Ajoute les chargements manquants, ou refuse les commandes qui n'en
+     * peuvent pas avoir.
+     *
+     * L'option est par organisation : celle qui ne l'active pas garde le
+     * comportement d'avant, où une livraison se planifie seule.
+     *
+     * Le refus porte sur **toute la commande**, pas sur le seul chargement
+     * absent : planifier la livraison en annonçant que le chargement a échoué
+     * laisserait une tournée qu'on croit complète et qui ne l'est pas.
+     *
+     * @param  list<OrderService>  $eligible
+     * @param  list<array{orderServiceId: string, reason: string}>  $rejected
+     * @return array{0: list<OrderService>, 1: list<array{orderServiceId: string, reason: string}>}
+     */
+    private function withLoadings(Tour $tour, array $eligible, array $rejected): array
+    {
+        if ($eligible === []) {
+            return [$eligible, $rejected];
+        }
+
+        $organization = Organization::find($tour->organization_id);
+
+        if ($organization === null || ! $this->loading->isEnabled($organization)) {
+            return [$eligible, $rejected];
+        }
+
+        $orders = Order::whereIn('id', array_unique(array_map(
+            static fn (OrderService $service): string => $service->order_id,
+            $eligible,
+        )))->with('packages')->get();
+
+        // Une seule fois pour toute la fournee : le motif ne depend que de la
+        // tournee et de l'organisation, pas de la commande.
+        $refusal = $this->loading->refusalFor($tour, $organization);
+        $refused = [];
+
+        foreach ($orders as $order) {
+            if ($this->loading->alreadyCarried($order, $organization)) {
+                continue;
+            }
+
+            if ($refusal !== null) {
+                $refused[] = $order->id;
+
+                continue;
+            }
+
+            $eligible[] = $this->loading->create($tour, $order, $organization);
+        }
+
+        if ($refused === []) {
+            return [$eligible, $rejected];
+        }
+
+        foreach ($eligible as $service) {
+            if (in_array($service->order_id, $refused, true)) {
+                $rejected[] = ['orderServiceId' => $service->id, 'reason' => (string) $refusal];
+            }
+        }
+
+        return [
+            array_values(array_filter(
+                $eligible,
+                static fn (OrderService $service): bool => ! in_array($service->order_id, $refused, true),
+            )),
+            $rejected,
+        ];
     }
 
     /** Pose le service sur son arrêt, et le marque planifié. */
@@ -143,7 +228,7 @@ final readonly class PlanOrderServices
      */
     private function promoteDepotLoading(Tour $tour): void
     {
-        $depotAddressId = $this->depotAddressId($tour);
+        $depotAddressId = $this->depot->for($tour);
 
         if ($depotAddressId === null) {
             return;
@@ -170,19 +255,5 @@ final readonly class PlanOrderServices
         foreach ($ordered as $index => $stop) {
             $stop->forceFill(['sequence' => $index + 1])->save();
         }
-    }
-
-    private function depotAddressId(Tour $tour): ?string
-    {
-        if ($tour->depot_id === null) {
-            return null;
-        }
-
-        return DB::table('entity_addresses')
-            ->where('entity_type', 'depot')
-            ->where('entity_id', $tour->depot_id)
-            ->orderByDesc('is_default')
-            ->orderBy('id')
-            ->value('address_id');
     }
 }

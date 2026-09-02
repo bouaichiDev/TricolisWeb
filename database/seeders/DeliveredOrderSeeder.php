@@ -15,6 +15,7 @@ use App\Modules\Providers\Models\Provider;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Support\DeliveredOrderFactory;
 use Database\Seeders\Support\DeliveredTourBuilder;
+use Database\Seeders\Support\SeededCustomer;
 use Database\Seeders\Support\SwissCatalogue;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +107,7 @@ class DeliveredOrderSeeder extends Seeder
     }
 
     /**
-     * @param  list<string>  $customers
+     * @param  list<SeededCustomer>  $customers
      * @param  list<string>  $providerIds
      */
     private function fill(
@@ -135,11 +136,13 @@ class DeliveredOrderSeeder extends Seeder
                 $tour = $tours->open($date, $providerId);
 
                 for ($position = 0; $position < self::ORDERS_PER_DAY; $position++) {
+                    $customer = $customers[$index % count($customers)];
+
                     $created = $factory->create(
-                        $numbers->execute($organization->id, $date->year),
+                        $numbers->execute($organization->id, $date->year, $customer->code),
                         $date,
                         $index,
-                        $customers[$index % count($customers)],
+                        $customer,
                     );
 
                     $tours->attach($tour, $created['loading'], $created['delivery']);

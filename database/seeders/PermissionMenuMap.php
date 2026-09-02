@@ -59,6 +59,7 @@ final class PermissionMenuMap
 
         'tracking_event_definitions' => MenuSection::OPERATIONS,
         'api_configurations' => MenuSection::INTEGRATIONS,
+        'mail_configuration' => MenuSection::INTEGRATIONS,
 
         'stock_items' => MenuSection::STOCK,
         'stock_balances' => MenuSection::STOCK,

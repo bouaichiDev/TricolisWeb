@@ -116,3 +116,73 @@ it('rejects an unreadable answer', function (): void {
     expect(($this->service)->parse('<Result><Distance>abc</Distance><TravelTime>10</TravelTime></Result>'))
         ->toBeNull();
 });
+
+/**
+ * Le cache est ce qui permet de calculer pendant la planification.
+ *
+ * Sans lui, chaque mouvement rappelait le service autant de fois qu'il y a de
+ * segments — d'où le calcul en file d'attente, et une distance qui n'arrivait
+ * qu'après. Entre deux points fixes la route ne change pas : la redemander est
+ * du temps perdu que le planificateur attend.
+ */
+describe('cache des segments', function (): void {
+    it('ne redemande pas une paire déjà connue', function (): void {
+        ($this->configure)();
+        Http::fake(['*' => Http::response(
+            '<Result><Distance>465536</Distance><TravelTime>23611</TravelTime></Result>',
+        )]);
+
+        $first = $this->service->legs([$this->paris, $this->lyon], $this->organization->id);
+        $second = $this->service->legs([$this->paris, $this->lyon], $this->organization->id);
+
+        expect($second)->toEqual($first);
+        Http::assertSentCount(1);
+    });
+
+    /**
+     * Ajouter un arrêt ne redemande que le segment qu'il crée : c'est tout
+     * l'intérêt, un aller-retour au lieu de onze.
+     */
+    it('ne demande que le segment nouveau', function (): void {
+        ($this->configure)();
+        Http::fake(['*' => Http::response(
+            '<Result><Distance>465536</Distance><TravelTime>23611</TravelTime></Result>',
+        )]);
+
+        $this->service->legs([$this->paris, $this->lyon], $this->organization->id);
+        $this->service->legs([$this->paris, $this->lyon, [43.2965, 5.3698]], $this->organization->id);
+
+        Http::assertSentCount(2);
+    });
+
+    /** Une panne passagère figerait sinon la tournée sans itinéraire. */
+    it('ne retient pas un appel échoué', function (): void {
+        ($this->configure)();
+
+        // Une sequence, et non deux `fake` successifs : le second n'ecrase pas
+        // le premier, il s'ajoute derriere lui et ne sert jamais.
+        Http::fakeSequence()
+            ->push('', 503)
+            ->push('<Result><Distance>465536</Distance><TravelTime>23611</TravelTime></Result>');
+
+        expect($this->service->legs([$this->paris, $this->lyon], $this->organization->id))->toBe([]);
+
+        expect($this->service->legs([$this->paris, $this->lyon], $this->organization->id))
+            ->toHaveCount(1);
+    });
+
+    /** Deux organisations peuvent viser deux services distincts. */
+    it('ne partage pas un segment entre organisations', function (): void {
+        ($this->configure)();
+        Http::fake(['*' => Http::response(
+            '<Result><Distance>465536</Distance><TravelTime>23611</TravelTime></Result>',
+        )]);
+
+        $this->service->legs([$this->paris, $this->lyon], $this->organization->id);
+        $this->service->legs([$this->paris, $this->lyon], 'autre-organisation');
+
+        // Le second n'a pas de configuration : il n'appelle rien, mais il n'a
+        // surtout pas repris le segment du premier.
+        Http::assertSentCount(1);
+    });
+});

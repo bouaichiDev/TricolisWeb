@@ -8,6 +8,7 @@ import { memberFullName } from '../types/member'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
+import { MemberAccessCard } from '../components/MemberAccessCard'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { DetailField } from '@/shared/components/layout/DetailField'
 import { EntityHeader } from '@/shared/components/layout/EntityHeader'
@@ -56,6 +57,10 @@ export function UserDetailPage() {
           )
         }
       />
+
+      {/* Rendre l'acces avant de decrire l'identite : c'est ce qu'on vient
+          faire sur cette fiche quand quelqu'un appelle, bloque dehors. */}
+      <MemberAccessCard member={member} />
 
       <SectionCard title={t('users.sections.identity')}>
         <dl className="grid gap-x-8 sm:grid-cols-2">

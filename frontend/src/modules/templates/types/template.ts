@@ -22,6 +22,10 @@ export const TEMPLATE_TYPES = [
   'pod_available',
   'order_cancelled',
   'invoice',
+  // S'adresse a un membre de l'organisation, non a un client : le seul de cette
+  // liste qui ne parle pas d'une commande. Il y figure parce qu'il part au nom
+  // du transporteur, et qu'un texte signe « Laravel » ne rassure personne.
+  'password_reset',
   'custom',
 ] as const
 

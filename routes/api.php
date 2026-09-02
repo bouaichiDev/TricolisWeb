@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\V1\Drivers\DriverController;
 use App\Http\Controllers\Api\V1\Exports\ExportConfigurationController;
 use App\Http\Controllers\Api\V1\Exports\ExportJobController;
 use App\Http\Controllers\Api\V1\Fleet\VehicleController;
+use App\Http\Controllers\Api\V1\Identity\MemberPasswordController;
 use App\Http\Controllers\Api\V1\Identity\OrganizationUserController;
 use App\Http\Controllers\Api\V1\Identity\PermissionController;
 use App\Http\Controllers\Api\V1\Identity\RoleController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\ImportOrdersController;
 use App\Http\Controllers\Api\V1\Integrations\ImportPreviewController;
 use App\Http\Controllers\Api\V1\Integrations\OrganizationApiConfigurationController;
+use App\Http\Controllers\Api\V1\Integrations\OrganizationMailConfigurationController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
 use App\Http\Controllers\Api\V1\Orders\OrderDocumentController;
 use App\Http\Controllers\Api\V1\Orders\OrderHistoryController;
@@ -191,6 +193,11 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('permissions/{permission}', [PermissionController::class, 'show'])->name('permissions.show');
         Route::apiResource('roles', RoleController::class)->except(['create', 'edit']);
         Route::apiResource('users', UserController::class)->except(['create', 'edit']);
+        // Rendre l'acces a un membre : le lien par courriel d'abord, le mot de
+        // passe pose pour les comptes qui ne relevent pas de boite. Declarees
+        // avant la ressource, sinon `{organizationUser}` avalerait le segment.
+        Route::post('organization-users/{organizationUser}/password-reset-link', [MemberPasswordController::class, 'sendLink'])->name('organization-users.password-link');
+        Route::put('organization-users/{organizationUser}/password', [MemberPasswordController::class, 'set'])->name('organization-users.password');
         Route::apiResource('organization-users', OrganizationUserController::class)->except(['create', 'edit']);
         Route::apiResource('providers', ProviderController::class)->except(['create', 'edit']);
         Route::apiResource('drivers', DriverController::class)->except(['create', 'edit']);
@@ -378,6 +385,17 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('api-configurations', OrganizationApiConfigurationController::class)
             ->parameters(['api-configurations' => 'apiConfiguration'])
             ->except(['create', 'edit']);
+
+        // La boite d'envoi de l'organisation. Ressource unique et non liste :
+        // une organisation n'a qu'une identite d'expedition, et en autoriser
+        // deux poserait la question de savoir laquelle repond.
+        Route::get('mail-configuration', [OrganizationMailConfigurationController::class, 'show'])->name('mail-configuration.show');
+        Route::put('mail-configuration', [OrganizationMailConfigurationController::class, 'update'])->name('mail-configuration.update');
+        Route::delete('mail-configuration', [OrganizationMailConfigurationController::class, 'destroy'])->name('mail-configuration.destroy');
+        // L'essai avant la premiere facture : un port ferme ou un mot de passe
+        // perime echouent sinon au fond d'une file, sans que personne ne voie
+        // rien avant qu'un client ne reclame son courrier.
+        Route::post('mail-configuration/test', [OrganizationMailConfigurationController::class, 'test'])->name('mail-configuration.test');
 
         // Stock client
         Route::get('customers/{customer}/stock-items', [StockItemController::class, 'byCustomer'])->name('customers.stock-items.index');

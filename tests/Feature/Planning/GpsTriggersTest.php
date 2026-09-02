@@ -124,4 +124,14 @@ describe('itinéraire', function (): void {
 
         Queue::assertPushed(RecalculateTourRouteJob::class);
     });
+
+    /**
+     * **Sans processus de file d'attente.** Un temps de route qui n'arrive que
+     * si quelqu'un pense à lancer un worker n'arrive pas : le planificateur
+     * voit ses arrêts s'aligner sans rien apprendre du chemin, et rien ne lui
+     * dit qu'un calcul attend. Le Job vise `sync` pour cela.
+     */
+    it('calcule pendant la requête, sans processus de file', function (): void {
+        expect((new RecalculateTourRouteJob('01JQZ0000000000000TOUR9'))->connection)->toBe('sync');
+    });
 });

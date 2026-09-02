@@ -30,6 +30,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Integrations\Models\OrganizationApiConfiguration;
+use App\Modules\Integrations\Models\OrganizationMailConfiguration;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
@@ -81,6 +82,7 @@ use App\Policies\InvoicePolicy;
 use App\Policies\OrderCommunicationPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\OrganizationApiConfigurationPolicy;
+use App\Policies\OrganizationMailConfigurationPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
 use App\Policies\PriceListPolicy;
@@ -157,6 +159,7 @@ class AuthServiceProvider extends ServiceProvider
         ProviderSettlementLine::class => ProviderSettlementLinePolicy::class,
         StockItem::class => StockItemPolicy::class,
         OrganizationApiConfiguration::class => OrganizationApiConfigurationPolicy::class,
+        OrganizationMailConfiguration::class => OrganizationMailConfigurationPolicy::class,
         TrackingEventDefinition::class => TrackingEventDefinitionPolicy::class,
         StockLocation::class => StockLocationPolicy::class,
         StockBalance::class => StockBalancePolicy::class,

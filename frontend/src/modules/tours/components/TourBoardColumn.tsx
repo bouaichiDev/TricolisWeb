@@ -1,5 +1,5 @@
-import { Map, Pencil } from 'lucide-react'
-import { useState } from 'react'
+import { Map as MapIcon, Pencil } from 'lucide-react'
+import { Fragment, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -10,9 +10,11 @@ import {
 } from '@/modules/planning/dnd'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 
+import { TourBoardLeg } from './TourBoardLeg'
 import { TourBoardStop } from './TourBoardStop'
 import { TourColumnHeader } from './TourColumnHeader'
 import { TourStatusMenu } from './TourStatusMenu'
+import { legsByStop } from '../utils/tourLegs'
 import type { Tour } from '../types/tour'
 
 interface TourBoardColumnProps {
@@ -45,6 +47,12 @@ export function TourBoardColumn({
   const [over, setOver] = useState(false)
 
   const accepts = onPlanDrop !== undefined && tour.status === 'draft'
+
+  // Les trajets rangés par arrêt d'arrivée, chacun portant ce qui a été
+  // parcouru depuis le départ. Le cumul se calcule ici, sur l'ordre rendu par
+  // le serveur : le faire dans la bande obligerait chacune à connaître les
+  // précédentes.
+  const legs = useMemo(() => legsByStop(tour.legs ?? []), [tour.legs])
 
   // Ce qui a ete livre ne retourne pas dans le pool : seule une tournee non
   // terminee laisse retirer ce qu'elle porte. Le serveur applique la meme
@@ -105,8 +113,13 @@ export function TourBoardColumn({
             </button>
           )}
 
-          {/* Sans arret trace, la carte n'aurait rien a montrer. */}
-          {onShowMap !== undefined && (tour.stops ?? []).length > 0 ? (
+          {/* Proposee meme sur une tournee vide : la fenetre n'affiche pas
+              seulement l'itineraire, elle ouvre l'ecran de planification avec
+              son vivier de commandes. C'est justement la qu'on va pour remplir
+              une tournee qui n'a encore rien — la masquer tant qu'elle est vide
+              obligeait a planifier une premiere commande a l'aveugle, sans le
+              terrain sous les yeux. */}
+          {onShowMap !== undefined ? (
             <button
               type="button"
               title={t('tours.showMap')}
@@ -114,7 +127,7 @@ export function TourBoardColumn({
               className="rounded p-1 text-muted-foreground transition-colors hover:text-primary"
               onClick={() => onShowMap(tour)}
             >
-              <Map className="size-4" aria-hidden />
+              <MapIcon className="size-4" aria-hidden />
             </button>
           ) : null}
         </span>
@@ -130,13 +143,25 @@ export function TourBoardColumn({
             {accepts ? t('planning.dropHere') : t('tours.noStop')}
           </p>
         ) : (
-          (tour.stops ?? []).map((stop) => (
-            <TourBoardStop
-              key={stop.id}
-              stop={stop}
-              onUnplan={releasable ? (ids) => onUnplan(tour.id, ids) : undefined}
-            />
-          ))
+          (tour.stops ?? []).map((stop) => {
+            // Le trajet precede l'arret vers lequel il mene : le premier arret
+            // n'en a pas, et un arret masque pendant une composition emporte le
+            // sien puisque plus rien ne l'y raccroche.
+            const arrival = legs.get(stop.id)
+
+            return (
+              <Fragment key={stop.id}>
+                {arrival === undefined ? null : (
+                  <TourBoardLeg leg={arrival.leg} cumulative={arrival.cumulative} />
+                )}
+
+                <TourBoardStop
+                  stop={stop}
+                  onUnplan={releasable ? (ids) => onUnplan(tour.id, ids) : undefined}
+                />
+              </Fragment>
+            )
+          })
         )}
       </div>
     </li>

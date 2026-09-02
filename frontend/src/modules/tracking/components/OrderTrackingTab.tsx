@@ -13,11 +13,21 @@ import { TrackingEventCard } from './TrackingEventCard'
 import { TrackingEventDetailDrawer } from './TrackingEventDetailDrawer'
 import { VehiclePositionPanel } from './VehiclePositionPanel'
 import { useOrderTracking, useTrackingDefinitions } from '../hooks/useTracking'
-import { buildJourney, looseEvents } from '../schemas/journey'
+import { buildJourney, looseEvents, type CarriedService } from '../schemas/journey'
 import type { TrackingEvent } from '../types/trackingEvent'
 
 interface OrderTrackingTabProps {
   orderId: string
+  /**
+   * Les prestations que la commande porte.
+   *
+   * Elles servent deux fois : elles écartent du parcours les étapes décrites
+   * pour une prestation absente — une commande sans montage ne doit pas
+   * afficher « monté » comme une étape à venir qui n'arrivera jamais — et elles
+   * disent de quelle prestation vient chaque événement, pour qu'un « livré »
+   * publié par le chargement ne franchisse pas l'étape de la livraison.
+   */
+  services: CarriedService[]
   /** Faux tant que l'onglet n'a pas été ouvert : les requêtes attendent. */
   active: boolean
 }
@@ -41,7 +51,7 @@ interface OrderTrackingTabProps {
  * par les changements de statut. Un bouton par commande ferait de chaque
  * commande une exception à un parcours censé être commun.
  */
-export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
+export function OrderTrackingTab({ orderId, services, active }: OrderTrackingTabProps) {
   const { t } = useTranslation()
   const [opened, setOpened] = useState<TrackingEvent | null>(null)
 
@@ -53,8 +63,8 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
   )
 
   const events = data?.data ?? []
-  const steps = buildJourney(definitions.data?.data ?? [], events)
-  const loose = looseEvents(definitions.data?.data ?? [], events)
+  const steps = buildJourney(definitions.data?.data ?? [], events, services)
+  const loose = looseEvents(definitions.data?.data ?? [], events, services)
 
   // Une etape franchie mais pas depassee : c'est la que le camion roule.
   const currentIndex = steps.findIndex((step) => step.occurredAt === null)
@@ -97,11 +107,14 @@ export function OrderTrackingTab({ orderId, active }: OrderTrackingTabProps) {
 
           {steps.length > 0 ? <JourneyTimeline steps={steps} /> : null}
 
-          {loose.length > 0 ? (
+          {/* Le journal brut ne sort que faute de parcours. Des qu'un parcours
+              existe, il dit tout ce qu'il y a a dire : lui adjoindre une liste
+              d'evenements qu'aucune etape ne revendique — un « livre » publie
+              par le chargement, un code supprime depuis — redonnait le journal
+              que le parcours remplace, et rendait l'ecran illisible. */}
+          {steps.length === 0 && loose.length > 0 ? (
             <section className="flex flex-col gap-2 border-t pt-4">
-              <p className="text-sm font-medium">
-                {steps.length > 0 ? t('tracking.otherEvents') : t('tracking.rawJournal')}
-              </p>
+              <p className="text-sm font-medium">{t('tracking.rawJournal')}</p>
               <ol className="flex flex-col">
                 {loose.map((event) => (
                   <TrackingEventCard

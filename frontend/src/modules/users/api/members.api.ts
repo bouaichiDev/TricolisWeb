@@ -46,4 +46,27 @@ export const membersApi = {
     api.patch<ApiResource<Member>>(`/organization-users/${id}`, payload).then((r) => r.data),
 
   disable: (id: string) => api.delete<void>(`/organization-users/${id}`),
+
+  /**
+   * Envoie au membre un lien de réinitialisation.
+   *
+   * C'est le chemin par défaut : l'administrateur ne connaît jamais le mot de
+   * passe, et le membre le choisit lui-même.
+   */
+  sendPasswordResetLink: (id: string) =>
+    api
+      .post<ApiResource<{ email: string }>>(`/organization-users/${id}/password-reset-link`)
+      .then((response) => response.data),
+
+  /**
+   * Pose un mot de passe pour le membre.
+   *
+   * À réserver aux comptes qui ne relèvent pas de courriel : l'administrateur
+   * connaît alors le mot de passe, ce que le lien évite.
+   */
+  setPassword: (id: string, password: string) =>
+    api.put<void>(`/organization-users/${id}/password`, {
+      password,
+      password_confirmation: password,
+    }),
 }

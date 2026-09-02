@@ -11,7 +11,14 @@ import { TextField } from '@/shared/components/form/TextField'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
 
-import { NONE, optional, tourSchema, type TourFormValues } from './tourFormSchema'
+import {
+  defaultEndAt,
+  NONE,
+  optional,
+  tourDateOf,
+  tourSchema,
+  type TourFormValues,
+} from './tourFormSchema'
 import { TourResourceFields } from './TourResourceFields'
 import type { Tour, TourPayload } from '../types/tour'
 
@@ -40,7 +47,6 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
   const form = useForm<TourFormValues>({
     resolver: zodResolver(tourSchema),
     defaultValues: {
-      tourDate: tour?.tourDate ?? '',
       agencyId: tour?.agencyId ?? '',
       depotId: tour?.depotId ?? NONE,
       providerId: tour?.providerId ?? NONE,
@@ -63,8 +69,14 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
     clearError()
 
     try {
+      // La fin manquante ferme la journee a 20 h : une tournee sans fin ne se
+      // compare a aucune autre, et c'est a cela que servent ces horaires.
+      const plannedEndAt =
+        values.plannedEndAt === '' ? defaultEndAt(values.plannedStartAt) : values.plannedEndAt
+
       await onSubmit({
-        tourDate: values.tourDate,
+        // Le serveur exige toujours la date ; elle se lit sur le depart.
+        tourDate: tourDateOf(values.plannedStartAt),
         agencyId: values.agencyId,
         depotId: optional(values.depotId),
         providerId: optional(values.providerId),
@@ -72,8 +84,8 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
         driverId: optional(values.driverId),
         tourType: optional(values.tourType),
         instructions: optional(values.instructions),
-        plannedStartAt: optional(values.plannedStartAt),
-        plannedEndAt: optional(values.plannedEndAt),
+        plannedStartAt: values.plannedStartAt,
+        plannedEndAt,
       })
     } catch (error) {
       handleError(error)
@@ -100,14 +112,6 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
               <p className="font-medium">{tour.tourNumber}</p>
             </div>
           )}
-
-          <TextField
-            form={form}
-            name="tourDate"
-            type="date"
-            label={t('tours.fields.tourDate')}
-            required
-          />
 
           <AsyncSelect
             label={t('tours.fields.agency')}
@@ -151,17 +155,23 @@ export function TourForm({ tour, isPending, onSubmit, onCancel }: TourFormProps)
 
       <SectionCard title={t('tours.form.schedule')} description={t('tours.form.scheduleHint')}>
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* Le depart porte la date de la tournee : c'est pourquoi il est
+              obligatoire, et pourquoi la carte d'identification n'en demande
+              plus une seconde. */}
           <TextField
             form={form}
             name="plannedStartAt"
             type="datetime-local"
             label={t('tours.fields.plannedStartAt')}
+            description={t('tours.form.startCarriesDate')}
+            required
           />
           <TextField
             form={form}
             name="plannedEndAt"
             type="datetime-local"
             label={t('tours.fields.plannedEndAt')}
+            description={t('tours.form.endDefaultsToEvening')}
           />
           <TextField form={form} name="tourType" label={t('tours.fields.tourType')} />
           <TextField form={form} name="instructions" label={t('tours.fields.instructions')} />

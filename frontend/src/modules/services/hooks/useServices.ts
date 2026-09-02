@@ -12,11 +12,14 @@ export const serviceKeys = {
   detail: (id: string) => [...serviceKeys.all, 'detail', id] as const,
 }
 
-export function useServiceList(filters: ServiceFilters) {
+export function useServiceList(filters: ServiceFilters, enabled = true) {
   return useQuery({
     queryKey: serviceKeys.list(filters),
     queryFn: () => servicesApi.list(filters),
     placeholderData: (previous) => previous,
+    // Une fenetre fermee ne charge rien : `enabled` laisse l'appelant differer
+    // la requete jusqu'a ce que son ecran soit reellement ouvert.
+    enabled,
   })
 }
 

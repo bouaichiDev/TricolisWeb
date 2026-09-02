@@ -6,6 +6,7 @@ import { CommunicationHistoryPage } from '@/modules/communications/pages/Communi
 import { CommunicationRuleListPage } from '@/modules/communications/pages/CommunicationRuleListPage'
 import { TemplateListPage } from '@/modules/templates/pages/TemplateListPage'
 import { ApiConfigurationListPage } from '@/modules/integrations/pages/ApiConfigurationListPage'
+import { MailConfigurationPage } from '@/modules/integrations/pages/MailConfigurationPage'
 import { JourneyConfigurationPage } from '@/modules/tracking/pages/JourneyConfigurationPage'
 import { AuditLogPage } from '@/modules/audit/pages/AuditLogPage'
 import { MyOrganizationPage } from '@/modules/organizations/pages/MyOrganizationPage'
@@ -37,6 +38,14 @@ export const adminRoutes = [
     key="api-configurations"
     path="/api-configurations"
     element={guarded('api_configurations.view', <ApiConfigurationListPage />, {
+      organizationOnly: true,
+    })}
+  />,
+
+  <Route
+    key="mail-configuration"
+    path="/mail-configuration"
+    element={guarded('mail_configuration.view', <MailConfigurationPage />, {
       organizationOnly: true,
     })}
   />,

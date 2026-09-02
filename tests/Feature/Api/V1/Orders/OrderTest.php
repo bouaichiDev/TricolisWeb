@@ -30,9 +30,10 @@ it('creates a draft order with at least one line', function (): void {
             'services' => [$this->orderService],
         ]);
 
-    // Le numéro est attribué par la séquence, jamais par l'appelant.
+    // Le numéro est attribué par la séquence, jamais par l'appelant, et il
+    // porte le code du client : c'est par lui qu'on retrouve la commande.
     $response->assertCreated()
-        ->assertJsonPath('data.orderNumber', 'ORD-'.now()->format('Y').'-000001')
+        ->assertJsonPath('data.orderNumber', $this->customer->code.'-'.now()->format('Y').'-000001')
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonCount(1, 'data.lines')
         ->assertJsonCount(1, 'data.services');

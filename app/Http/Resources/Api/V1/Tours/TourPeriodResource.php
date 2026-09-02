@@ -33,6 +33,7 @@ class TourPeriodResource extends JsonResource
             'breakMinutes' => $this->break_minutes,
             'serviceMinutes' => $this->service_minutes,
             'waitingMinutes' => $this->waiting_minutes,
+            'travelMinutes' => $this->travel_minutes,
             'distanceMeters' => $this->distance_meters,
             'status' => $this->status,
             'assignmentCount' => $this->whenCounted('assignments'),

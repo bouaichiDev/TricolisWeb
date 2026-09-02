@@ -20,6 +20,13 @@ export interface TrackingEventDefinition {
   position: number
   apiConfigurationId: string | null
   isLive: boolean
+  /** La prestation visée ; nulle, l'étape vaut pour toutes. */
+  serviceId: string | null
+  serviceName?: string | null
+  /** Ce que le destinataire voit — distinct de ce que l'exploitation suit. */
+  visibleToCustomer: boolean
+  /** À cette étape, le client peut consulter la preuve de livraison. */
+  showsProofOfDelivery: boolean
   active: boolean
   createdAt: string
   updatedAt: string
@@ -41,6 +48,9 @@ export interface TrackingDefinitionPayload {
   icon?: string | null
   position?: number
   apiConfigurationId?: string | null
+  serviceId?: string | null
+  visibleToCustomer?: boolean
+  showsProofOfDelivery?: boolean
   active?: boolean
 }
 

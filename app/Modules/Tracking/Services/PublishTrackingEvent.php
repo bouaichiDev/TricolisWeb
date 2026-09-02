@@ -39,11 +39,19 @@ final readonly class PublishTrackingEvent
             return false;
         }
 
+        // L'etape de la prestation l'emporte sur l'etape generale : une
+        // organisation qui a decrit le parcours de sa livraison n'attend pas
+        // que le chargement produise les memes evenements. `service_id` nul
+        // vaut « toutes les prestations », et ne sert que faute de mieux.
         $definition = TrackingEventDefinition::query()
             ->where('organization_id', $organizationId)
             ->where('source_type', $alias)
             ->where('status_code', $status)
             ->where('active', true)
+            ->where(fn ($query) => $query
+                ->whereNull('service_id')
+                ->orWhere('service_id', $this->serviceOf($source, $alias)))
+            ->orderByRaw('service_id IS NULL')
             ->first();
 
         if ($definition === null) {
@@ -53,9 +61,18 @@ final readonly class PublishTrackingEvent
         // Un evenement par couple (commande, code) : repasser par un statut deja
         // franchi ne reecrit pas l'histoire. Le parcours dit ou on en est, pas
         // combien de fois on y est passe.
+        //
+        // **Sauf quand l'etape vise une prestation** : la garde se resserre
+        // alors sur elle. Sans cela, un « livre » publie par le chargement sous
+        // une configuration plus ancienne empechait la livraison de produire le
+        // sien, et l'etape restait a jamais marquee du mauvais moment.
         $already = TrackingEvent::query()
             ->where('order_id', $orderId)
             ->where('event_type', $definition->code)
+            ->when(
+                $definition->service_id !== null,
+                fn ($query) => $query->where('order_service_id', $source->getKey()),
+            )
             ->exists();
 
         if ($already) {
@@ -73,6 +90,23 @@ final readonly class PublishTrackingEvent
         ]);
 
         return true;
+    }
+
+    /**
+     * La prestation du catalogue derriere cette entite, quand il y en a une.
+     *
+     * Seul un `order_service` en porte : un colis ou une commande n'appartient
+     * a aucune prestation en particulier, et leurs etapes restent generales.
+     */
+    private function serviceOf(Model $source, ?string $alias): ?string
+    {
+        if ($alias !== MorphMap::ORDER_SERVICE) {
+            return null;
+        }
+
+        $serviceId = $source->getAttribute('service_id');
+
+        return is_string($serviceId) ? $serviceId : null;
     }
 
     /**

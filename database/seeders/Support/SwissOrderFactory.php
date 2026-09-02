@@ -12,10 +12,10 @@ use Carbon\CarbonImmutable;
 /**
  * Fabrique une commande de démonstration complète.
  *
- * Une commande, c'est ici : son adresse de livraison, son contact, ses articles,
- * ses colis, et **deux services** — le chargement au dépôt, la livraison chez le
- * client. C'est la forme qu'attend la planification : le chargement partage
- * l'adresse du dépôt, ce qui le fait remonter en tête de tournée.
+ * Une commande, c'est ici : le client et son adresse de livraison, ses articles,
+ * ses colis, et **de une à quatre prestations** — {@see SwissServiceMix} décide
+ * lesquelles. Le chargement, quand la commande en porte un, se fait à l'adresse
+ * du dépôt : c'est ce qui le fait remonter en tête de tournée.
  *
  * **Les totaux sont posés ici**, et non recalculés ensuite : la commande n'est
  * pas créée par `CreateFullOrder`, qui journaliserait neuf cents écritures
@@ -30,9 +30,7 @@ final readonly class SwissOrderFactory
         private string $organizationId,
         private string $agencyId,
         private string $depotId,
-        private string $depotAddressId,
-        private string $loadingServiceId,
-        private string $deliveryServiceId,
+        private SwissServiceMix $mix,
         private string $userId,
     ) {
         $this->parts = new SwissOrderParts($organizationId);
@@ -42,60 +40,54 @@ final readonly class SwissOrderFactory
         string $orderNumber,
         CarbonImmutable $date,
         int $index,
-        string $customerId,
+        SeededCustomer $customer,
     ): Order {
-        $address = $this->parts->address($index, $customerId);
-        $contact = $this->parts->contact($index, $customerId);
-
-        $weight = SwissOrderParts::PACKAGES * SwissOrderParts::PACKAGE_WEIGHT;
-        $volume = SwissOrderParts::PACKAGES * SwissOrderParts::PACKAGE_VOLUME;
+        [$weight, $volume] = SwissOrderParts::totals($index);
 
         $order = Order::create([
             'organization_id' => $this->organizationId,
-            'customer_id' => $customerId,
+            'customer_id' => $customer->id,
             'agency_id' => $this->agencyId,
             'depot_id' => $this->depotId,
             'order_number' => $orderNumber,
-            'customer_reference' => sprintf('REF-%s-%02d', $date->format('md'), $index + 1),
+            // Le code client préfixe la référence : c'est par elle qu'on
+            // retrouve une commande quand le client la réclame, et son propre
+            // code est le premier repère qu'il donne.
+            'customer_reference' => sprintf('%s-REF-%s-%02d', $customer->code, $date->format('md'), $index % 100 + 1),
             'order_type' => 'delivery',
             'order_date' => $date->setTime(8, 0),
             'source' => 'internal',
             'weight' => $weight,
             'volume' => $volume,
-            'package_count' => SwissOrderParts::PACKAGES,
+            'package_count' => SwissOrderParts::packageCount($index),
             'currency_code' => 'CHF',
             'status' => 'confirmed',
             'created_by' => $this->userId,
         ]);
 
-        $packages = $this->parts->packages($order);
-        $this->parts->lines($order);
+        $packages = $this->parts->packages($order, $index);
+        $this->parts->lines($order, $index);
 
-        // Le chargement d'abord : il se fait au depot, avant de partir.
-        $this->service($order, $this->loadingServiceId, $this->depotAddressId, 1, $date, $weight, $volume, $packages);
+        foreach ($this->mix->for($index, $customer) as $sequence => $specification) {
+            $service = $this->service($order, $specification, $sequence + 1, $date, $weight, $volume, $packages);
 
-        $delivery = $this->service($order, $this->deliveryServiceId, $address->id, 2, $date, $weight, $volume, $packages);
+            if ($specification['contactRole'] === null) {
+                continue;
+            }
 
-        $delivery->contacts()->create([
-            'contact_id' => $contact->id,
-            'contact_role' => 'delivery',
-            'is_primary' => true,
-            'first_name_snapshot' => $contact->first_name,
-            'last_name_snapshot' => $contact->last_name,
-            'phone_snapshot' => $contact->phone,
-            'email_snapshot' => $contact->email,
-        ]);
+            $this->attachContact($service, $customer, $specification['contactRole']);
+        }
 
         return $order;
     }
 
     /**
+     * @param  array{code: string, serviceId: string, addressId: string, minutes: int, contactRole: string|null}  $specification
      * @param  list<Package>  $packages
      */
     private function service(
         Order $order,
-        string $serviceId,
-        string $addressId,
+        array $specification,
         int $sequence,
         CarbonImmutable $date,
         float $weight,
@@ -104,8 +96,8 @@ final readonly class SwissOrderFactory
     ): OrderService {
         $service = OrderService::create([
             'order_id' => $order->id,
-            'service_id' => $serviceId,
-            'address_id' => $addressId,
+            'service_id' => $specification['serviceId'],
+            'address_id' => $specification['addressId'],
             'service_number' => sprintf('%s-S%d', $order->order_number, $sequence),
             'sequence' => $sequence,
             'requested_date' => $date->toDateString(),
@@ -113,8 +105,8 @@ final readonly class SwissOrderFactory
             'requested_to' => $date->setTime(18, 0),
             'quantity' => 1,
             'unit' => 'commande',
-            'required_time_minutes' => 30,
-            'remaining_time_minutes' => 30,
+            'required_time_minutes' => $specification['minutes'],
+            'remaining_time_minutes' => $specification['minutes'],
             'weight' => $weight,
             'volume' => $volume,
             'package_count' => count($packages),
@@ -133,5 +125,27 @@ final readonly class SwissOrderFactory
         }
 
         return $service;
+    }
+
+    /**
+     * Le contact prévenu pour cette prestation, figé au moment de la commande.
+     *
+     * Les instantanés ne sont pas une redondance : le contact du carnet peut
+     * changer de numéro l'an prochain, la commande doit garder celui qu'on avait
+     * appelé.
+     */
+    private function attachContact(OrderService $service, SeededCustomer $customer, string $role): void
+    {
+        $contact = $customer->contactFor($role);
+
+        $service->contacts()->create([
+            'contact_id' => $contact->id,
+            'contact_role' => $role,
+            'is_primary' => true,
+            'first_name_snapshot' => $contact->first_name,
+            'last_name_snapshot' => $contact->last_name,
+            'phone_snapshot' => $contact->phone,
+            'email_snapshot' => $contact->email,
+        ]);
     }
 }

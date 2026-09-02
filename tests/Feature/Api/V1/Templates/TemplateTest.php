@@ -189,8 +189,16 @@ describe('template crud, scope and deletion', function (): void {
         Template::factory(2)->forOrganization($this->organization)->create();
         Template::factory(3)->create();
 
-        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->getJson('/api/v1/templates')->assertOk()->assertJsonCount(3, 'data');
+        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson('/api/v1/templates')->assertOk();
+
+        // Ce qui compte est la portee, pas le nombre : les modeles d'un autre
+        // transporteur ne doivent pas y figurer. Figer un total cassait des que
+        // le semis en posait un de plus — celui de reinitialisation, par
+        // exemple — sans que rien ne soit reellement casse.
+        expect($response->json('data.*.id'))->toEqualCanonicalizing(
+            Template::where('organization_id', $this->organization->id)->pluck('id')->all(),
+        );
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->getJson('/api/v1/templates?search=zzz')->assertOk()->assertJsonCount(1, 'data');

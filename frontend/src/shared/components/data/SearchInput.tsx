@@ -18,6 +18,13 @@ interface SearchInputProps {
    * ce qu'il cherche.
    */
   label?: string
+  /**
+   * Identifiant du champ, pour qu'un libelle visible s'y associe.
+   *
+   * Sans lui, un `<Label htmlFor>` ne designe rien : cliquer dessus ne donne
+   * pas le focus, et le lecteur d'ecran ne fait pas le lien.
+   */
+  id?: string
 }
 
 /**
@@ -33,6 +40,7 @@ export function SearchInput({
   placeholder,
   delay = 350,
   label,
+  id,
 }: SearchInputProps) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(value)
@@ -54,6 +62,7 @@ export function SearchInput({
         aria-hidden
       />
       <Input
+        id={id}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         placeholder={placeholder ?? t('common.searchPlaceholder')}

@@ -63,7 +63,18 @@
     "profile": "Mon profil",
     "invalidCredentials": "Adresse e-mail ou mot de passe incorrect.",
     "noOrganization": "Votre compte n’est rattaché à aucune organisation.",
-    "sessionExpired": "Votre session a expiré, veuillez vous reconnecter."
+    "sessionExpired": "Votre session a expiré, veuillez vous reconnecter.",
+    "reset": {
+      "title": "Nouveau mot de passe",
+      "subtitle": "Choisissez le mot de passe du compte {{email}}.",
+      "missingToken": "Ce lien est incomplet. Demandez-en un nouveau à votre administrateur.",
+      "backToLogin": "Retour à la connexion",
+      "password": "Nouveau mot de passe",
+      "confirmation": "Confirmation",
+      "submit": "Enregistrer et se connecter",
+      "tooShort": "Au moins huit caractères.",
+      "mismatch": "Les deux saisies diffèrent."
+    }
   },
   "organization": {
     "switcher": "Organisation active",
@@ -126,7 +137,8 @@
     "templates": "Modèles",
     "communicationRules": "Règles automatiques",
     "communicationHistory": "Historique",
-    "invoiceTemplates": "Modèles de facture"
+    "invoiceTemplates": "Modèles de facture",
+    "mailConfiguration": "Messagerie d’envoi"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -238,9 +250,27 @@
       "identity": "Identité",
       "account": "Compte",
       "roles": "Rôles",
-      "driver": "Chauffeur"
+      "driver": "Chauffeur",
+      "access": "Accès"
     },
-    "assignableOnly": "Les rôles système et plateforme ne sont pas attribuables."
+    "assignableOnly": "Les rôles système et plateforme ne sont pas attribuables.",
+    "password": {
+      "hint": "Rendre l’accès à un membre qui l’a perdu.",
+      "sendLink": "Envoyer un lien de réinitialisation",
+      "sending": "Envoi…",
+      "willSendTo": "Le lien partira à {{email}}.",
+      "confirmLinkTitle": "Envoyer le lien de réinitialisation ?",
+      "confirmLinkBody": "Un courriel partira à {{email}}. Le membre choisira lui-même son nouveau mot de passe ; vous ne le connaîtrez pas.",
+      "linkSent": "Lien envoyé à {{email}}.",
+      "setTitle": "Définir un mot de passe",
+      "setHint": "À réserver aux comptes qui ne relèvent pas de courriel. Vous devrez le transmettre vous-même.",
+      "field": "Nouveau mot de passe",
+      "confirmField": "Confirmation",
+      "rules": "Au moins huit caractères, et pas un mot de passe connu des fuites.",
+      "mismatch": "Les deux saisies diffèrent.",
+      "revokesSessions": "Les sessions ouvertes du membre seront fermées : il devra se reconnecter, y compris sur mobile.",
+      "set": "Mot de passe défini."
+    }
   },
   "roles": {
     "title": "Rôles",
@@ -1110,7 +1140,6 @@
     "pending": "En attente",
     "upcoming": "À venir",
     "liveStep": "Suivi en direct",
-    "otherEvents": "Autres événements",
     "rawJournal": "Journal des événements",
     "vehiclePosition": "Position du véhicule",
     "positionNotConfigured": "Aucune API de position n’est déclarée. Ajoutez-en une avec le code driver_position depuis API externes.",
@@ -1563,8 +1592,15 @@
       "position": "Ordre",
       "trigger": "Déclencheur",
       "api": "Suivi en direct",
-      "active": "Active"
-    }
+      "active": "Active",
+      "service": "Prestation concernée",
+      "visibleToCustomer": "Visible par le client final",
+      "showsProof": "Donne accès à la preuve de livraison"
+    },
+    "allServices": "Toutes les prestations",
+    "serviceHint": "Une commande porte souvent chargement, livraison et montage. Limitez l’étape à celle que le destinataire suit.",
+    "visibleHint": "Le chargement au dépôt intéresse l’exploitation, rarement le destinataire.",
+    "showsProofHint": "À réserver aux étapes où la preuve existe déjà — « livré », typiquement."
   },
   "types": {
     "title": "Types",
@@ -1715,7 +1751,9 @@
       "status": "Service dans un état qui ne permet pas la planification.",
       "no_address": "Service sans adresse : impossible de le placer.",
       "not_found": "Service introuvable.",
-      "not_planned": "Ce service n’est pas planifié dans cette tournée."
+      "not_planned": "Ce service n’est pas planifié dans cette tournée.",
+      "tour_without_depot": "Tournée sans dépôt : le chargement à créer n’a pas de lieu. Affectez un dépôt à la tournée.",
+      "no_loading_service": "Aucun service n’est déclaré comme chargement. Réglez-le dans votre organisation."
     },
     "poolEmptyFiltered": "Aucun service ne correspond à vos filtres. Effacez la date ou la recherche pour voir tout ce qui attend.",
     "dateHint": "Laissez vide pour voir tout ce qui attend",
@@ -1773,7 +1811,10 @@
     "abandonPlanBody": "Les {{count}} services reviennent dans les commandes à planifier, et la tournée est rendue. Son statut ne change pas.",
     "planConfirmed": "Modifications confirmées. La tournée est rendue.",
     "planAbandoned": "Modifications abandonnées. Les commandes sont revenues à planifier.",
-    "working": "Planification en cours…"
+    "working": "Planification en cours…",
+    "autoLoading": "Créer le chargement manquant",
+    "autoLoadingHint": "À la planification, une commande qui n’a pas de chargement en reçoit un, posé à l’adresse du dépôt de la tournée.",
+    "autoLoadingDepotHint": "Une tournée sans dépôt refuse alors la commande entière : le chargement n’aurait pas de lieu où se poser."
   },
   "tours": {
     "title": "Tournées",
@@ -1827,7 +1868,9 @@
       "scheduleHint": "Les horaires prévus servent à comparer les tournées entre elles.",
       "none": "Aucun",
       "pickAgencyFirst": "Choisissez d’abord une agence.",
-      "numberAssigned": "Le numéro est attribué par le système à l’enregistrement."
+      "numberAssigned": "Le numéro est attribué par le système à l’enregistrement.",
+      "startCarriesDate": "La tournée est datée de son départ.",
+      "endDefaultsToEvening": "Laissée vide, la tournée est réputée finir à 20 h 00."
     },
     "showMap": "Voir la tournée sur la carte",
     "mapTitle": "Tournée {{number}} sur la carte",
@@ -1848,7 +1891,16 @@
     "editPlan": "Modifier la tournée",
     "changeStatus": "Changer le statut",
     "changeStatusTitle": "Changer le statut de la tournée ?",
-    "changeStatusBody": "La tournée {{number}} passera à « {{status}} »."
+    "changeStatusBody": "La tournée {{number}} passera à « {{status}} ».",
+    "leg": {
+      "route": "{{value}} de route",
+      "travelTime": "Temps de route jusqu’à cet arrêt",
+      "travelTimeMissing": "Relancez le calcul d’itinéraire pour l’obtenir : seule la distance avait été conservée.",
+      "distance": "Distance depuis l’arrêt précédent",
+      "cumulative": "Cumul depuis le départ",
+      "cumulativeHint": "Temps de route et distance additionnés depuis le premier arrêt, ce trajet compris.",
+      "notComputed": "Trajet non calculé"
+    }
   },
   "billing": {
     "invoices": {
@@ -2525,6 +2577,7 @@
     "delivery_failed": "Échec de livraison",
     "pod_available": "Preuve disponible",
     "order_cancelled": "Commande annulée",
+    "password_reset": "Réinitialisation de mot de passe",
     "custom": "Personnalisé",
     "invoice": "Facture"
   },
@@ -2677,5 +2730,43 @@
       "email": "E-mail du transporteur",
       "phone": "Téléphone du transporteur"
     }
+  },
+  "mailConfiguration": {
+    "title": "Messagerie d’envoi",
+    "subtitle": "D’où partent les courriers de votre organisation",
+    "usingProjectMailer": "Aucune boîte n’est réglée : vos courriers partent avec la messagerie du serveur. Renseignez votre serveur SMTP pour qu’ils partent de chez vous.",
+    "sections": {
+      "server": "Serveur d’envoi",
+      "serverHint": "Les coordonnées SMTP fournies par votre hébergeur de messagerie.",
+      "identity": "Identité affichée",
+      "identityHint": "Ce que voit le destinataire, et à qui il répond. Distinct du compte qui s’authentifie.",
+      "test": "Essai d’envoi",
+      "testHint": "Sans essai, la première preuve qu’un réglage est faux est une facture qui n’arrive pas."
+    },
+    "fields": {
+      "host": "Serveur",
+      "port": "Port",
+      "encryption": "Chiffrement",
+      "encryptionHint": "TLS pour le port 587, SSL pour le 465.",
+      "noEncryption": "Aucun",
+      "username": "Identifiant",
+      "usernameHint": "Souvent un compte technique, différent de l’adresse affichée.",
+      "password": "Mot de passe",
+      "passwordHint": "Chiffré à l’enregistrement, jamais réaffiché.",
+      "passwordKept": "Un mot de passe est enregistré. Laissez vide pour le conserver.",
+      "fromAddress": "Adresse d’expédition",
+      "fromName": "Nom affiché",
+      "replyTo": "Répondre à",
+      "replyToHint": "Facultatif : l’adresse qui reçoit les réponses, si elle diffère.",
+      "isActive": "Active",
+      "isActiveHint": "Décochée, vos courriers repartent avec la messagerie du serveur, sans perdre ces réglages."
+    },
+    "test": "Envoyer un essai",
+    "testing": "Envoi…",
+    "testRecipient": "Destinataire de l’essai",
+    "testSent": "Essai envoyé à {{recipient}}.",
+    "remove": "Supprimer la configuration",
+    "removeTitle": "Supprimer la messagerie d’envoi ?",
+    "removeBody": "Vos courriers repartiront avec la messagerie du serveur. Les réglages, mot de passe compris, seront perdus."
   }
 }

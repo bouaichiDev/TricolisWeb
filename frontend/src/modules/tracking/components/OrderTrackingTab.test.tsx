@@ -238,8 +238,14 @@ describe('parcours d’une commande', () => {
     expect(screen.getByText('Suivi en direct')).toBeInTheDocument()
   })
 
-  /** Un événement sans étape ne disparaît pas : il est survenu. */
-  it('montre à part un événement hors parcours', async () => {
+  /**
+   * Un parcours dit tout ce qu'il y a a dire.
+   *
+   * Lui adjoindre les evenements qu'aucune etape ne revendique — un « livre »
+   * publie par le chargement, un code supprime depuis — redonnait le journal
+   * brut que le parcours remplace, et rendait l'ecran illisible.
+   */
+  it('ne double pas le parcours d’un journal d’événements', async () => {
     renderDetail(
       ['orders.view', 'tracking_events.view'],
       [event({ eventType: 'incident_route' })],
@@ -248,8 +254,20 @@ describe('parcours d’une commande', () => {
 
     await openTracking()
 
-    expect(await screen.findByText('Autres événements')).toBeInTheDocument()
-    expect(screen.getByText('incident_route')).toBeInTheDocument()
+    expect(await screen.findByText('Livrée')).toBeInTheDocument()
+    expect(screen.queryByText('incident_route')).not.toBeInTheDocument()
+  })
+
+  /**
+   * Faute de parcours, le journal brut reprend la main : mieux vaut des
+   * evenements sans mise en scene qu'un ecran vide.
+   */
+  it('retombe sur le journal brut sans parcours configuré', async () => {
+    renderDetail(['orders.view', 'tracking_events.view'], [event({ eventType: 'incident_route' })], [])
+
+    await openTracking()
+
+    expect(await screen.findByText('incident_route')).toBeInTheDocument()
   })
 })
 

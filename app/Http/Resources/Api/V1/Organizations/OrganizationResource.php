@@ -30,6 +30,10 @@ class OrganizationResource extends JsonResource
             'currencyCode' => $this->currency_code,
             'status' => $this->status?->value,
             'settings' => $this->settings,
+            // Le chemin du fichier ne sort pas : l'écran n'en a pas besoin, et
+            // le publier révélerait la disposition du disque. Il lui suffit de
+            // savoir s'il doit demander l'image.
+            'hasLogo' => $this->logo_path !== null,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,
         ];

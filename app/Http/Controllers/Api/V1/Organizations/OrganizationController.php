@@ -10,7 +10,6 @@ use App\Http\Requests\Api\V1\Organizations\UpdateOrganizationRequest;
 use App\Http\Resources\Api\V1\Organizations\OrganizationResource;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\PlatformAccess;
-use App\Modules\Organizations\Actions\SyncOrganizationMenu;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Types\Actions\SeedSystemTypes;
@@ -123,7 +122,6 @@ class OrganizationController extends Controller
             // organisation créée sans lui n'aurait rien à montrer dans son
             // écran de réglage, et son administrateur ne saurait pas quelles
             // entrées existent.
-            app(SyncOrganizationMenu::class)->execute($organization->id);
             // Sans ses sources structurelles, l'organisation ne pourrait ni
             // creer un vehicule ni classer un colis.
             app(SeedSystemTypes::class)->execute($organization->id);

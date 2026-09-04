@@ -6,7 +6,7 @@ import { linkClass, NavGroup } from './NavGroup'
 import { homeRoute } from '@/app/router/navigation'
 import { menuIcon } from '@/modules/menu/components/menuIcons'
 import { useMenu } from '@/modules/menu/hooks/useMenu'
-import { buildMenuTree } from '@/modules/menu/types/menu'
+import { buildMenuTree, menuLabel } from '@/modules/menu/types/menu'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { usePermissions } from '@/shared/hooks/usePermission'
 
@@ -76,7 +76,7 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
                   className={({ isActive }) => linkClass(isActive)}
                 >
                   <Icon className="size-[18px] shrink-0" aria-hidden />
-                  <span className="truncate">{t(node.item.labelKey)}</span>
+                  <span className="truncate">{menuLabel(node.item, t)}</span>
                 </NavLink>
               )
             })}

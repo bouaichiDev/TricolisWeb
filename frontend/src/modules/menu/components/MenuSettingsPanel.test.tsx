@@ -3,39 +3,21 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 
-import { MenuSettingsPanel } from './MenuSettingsPanel'
-import { catalogueHandler, menuItem } from '@/app/layouts/menuTestData'
-import { withPermissions } from '@/test/fixtures'
-import { renderWithProviders } from '@/test/renderWithProviders'
+import { CATALOGUE, menuHandler, renderPanel, ROLE_ID } from './menuSettingsTestData'
 import { API, server } from '@/test/server'
 
-const CATALOGUE = [
-  menuItem('customers', { labelKey: 'nav.customers', position: 10 }),
-  menuItem('agencies', { labelKey: 'nav.agencies', position: 21, parent: 'resources' }),
-  menuItem('administration', {
-    labelKey: 'nav.administration',
-    route: null,
-    position: 80,
-    canHide: false,
-  }),
-]
-
-function panel() {
-  renderWithProviders(<MenuSettingsPanel />, {
-    membership: withPermissions(['organizations.update']),
-  })
-}
-
 /**
- * Réglage du menu par l'organisation.
+ * Réglage du menu par l'organisation : ce qu'elle voit.
  *
- * L'organisation choisit quelles entrées elle voit — pas leur libellé ni leur
- * destination, qui appartiennent au catalogue en code.
+ * Ce fichier tient la visibilité et l'enregistrement. Ce qui touche à
+ * l'apparence d'une entrée — son rang, son nom, son icône, son groupe — vit
+ * dans `MenuSettingsCustomization.test.tsx` : les deux sujets ne se lisent pas
+ * de la même façon, l'un dans l'écran, l'autre dans la charge utile.
  */
 describe('MenuSettingsPanel', () => {
   it('liste le catalogue avec son état', async () => {
-    server.use(catalogueHandler(CATALOGUE))
-    panel()
+    server.use(menuHandler(CATALOGUE))
+    renderPanel()
 
     expect(await screen.findByText('Clients')).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Clients' })).toBeChecked()
@@ -47,8 +29,8 @@ describe('MenuSettingsPanel', () => {
    * désactivé, et la raison affichée plutôt que laissée à deviner.
    */
   it('verrouille les entrées que l’organisation doit garder', async () => {
-    server.use(catalogueHandler(CATALOGUE))
-    panel()
+    server.use(menuHandler(CATALOGUE))
+    renderPanel()
 
     await screen.findByText('Clients')
 
@@ -57,8 +39,8 @@ describe('MenuSettingsPanel', () => {
   })
 
   it('n’active l’enregistrement qu’après un changement', async () => {
-    server.use(catalogueHandler(CATALOGUE))
-    panel()
+    server.use(menuHandler(CATALOGUE))
+    renderPanel()
 
     await screen.findByText('Clients')
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
@@ -70,14 +52,14 @@ describe('MenuSettingsPanel', () => {
   it('envoie la visibilité de toutes les entrées', async () => {
     const bodies: Record<string, unknown>[] = []
     server.use(
-      catalogueHandler(CATALOGUE),
-      http.patch(`${API}/menu`, async ({ request }) => {
+      menuHandler(CATALOGUE),
+      http.patch(`${API}/roles/${ROLE_ID}/menu`, async ({ request }) => {
         bodies.push((await request.json()) as Record<string, unknown>)
 
         return HttpResponse.json({ data: CATALOGUE, meta: [] })
       }),
     )
-    panel()
+    renderPanel()
 
     await screen.findByText('Clients')
     await userEvent.click(screen.getByRole('switch', { name: 'Clients' }))
@@ -93,8 +75,8 @@ describe('MenuSettingsPanel', () => {
   })
 
   it('permet d’abandonner les changements', async () => {
-    server.use(catalogueHandler(CATALOGUE))
-    panel()
+    server.use(menuHandler(CATALOGUE))
+    renderPanel()
 
     await screen.findByText('Clients')
     await userEvent.click(screen.getByRole('switch', { name: 'Clients' }))
@@ -104,13 +86,30 @@ describe('MenuSettingsPanel', () => {
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
   })
 
+  /**
+   * Un rôle système ou plateforme se consulte, il ne se règle pas : les mêmes
+   * trois conditions que `RolePolicy` côté serveur. Les répéter ici n'est pas
+   * une duplication de la sécurité — c'est éviter de proposer un bouton qui
+   * mènerait à un refus.
+   */
+  it('se consulte sans se régler sur un rôle verrouillé', async () => {
+    server.use(menuHandler(CATALOGUE))
+    renderPanel(false)
+
+    await screen.findByText('Clients')
+
+    expect(screen.getByRole('switch', { name: 'Clients' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Enregistrer' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Nouveau groupe' })).not.toBeInTheDocument()
+  })
+
   it('remonte l’échec de chargement', async () => {
     server.use(
-      http.get(`${API}/menu/catalogue`, () =>
+      http.get(`${API}/roles/${ROLE_ID}/menu`, () =>
         HttpResponse.json({ message: 'Service indisponible.' }, { status: 500 }),
       ),
     )
-    panel()
+    renderPanel()
 
     expect(await screen.findByText('Service indisponible.')).toBeInTheDocument()
   })

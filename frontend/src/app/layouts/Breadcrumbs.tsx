@@ -3,12 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
 import { organizationNavigation, platformNavigation } from '@/app/router/navigation'
+import { useMenu } from '@/modules/menu/hooks/useMenu'
+import { menuLabel, type MenuItem } from '@/modules/menu/types/menu'
 
 /**
  * Fil d'Ariane déduit de l'URL.
  *
- * Le premier segment est traduit à partir de la configuration du menu — une
- * seule source, donc un renommage se fait à un seul endroit. Les segments
+ * Le premier segment est nommé d'après le menu **effectif** : si l'organisation
+ * a renommé « Agences » en « Sites », le fil d'Ariane le dit aussi. Le lire
+ * seulement dans le catalogue livré donnerait deux noms pour un même écran, et
+ * l'organisation croirait son réglage à moitié pris en compte. Les segments
  * suivants sont affichés tels quels lorsqu'ils sont lisibles, et remplacés par
  * un libellé générique lorsqu'il s'agit d'un identifiant : afficher un ULID de
  * 26 caractères dans un fil d'Ariane n'aide personne.
@@ -21,41 +25,49 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 /**
- * Les deux menus sont parcourus, quelle que soit la portée du compte.
+ * Nom du premier segment : celui du menu reçu, sinon celui du menu livré.
  *
- * Le fil d'Ariane nomme la page atteinte ; borner la recherche au menu du
- * compte laisserait sans libellé une page accessible autrement que par le menu.
+ * Le repli est nécessaire — le menu de l'appelant ne porte que les entrées
+ * qu'il a le droit d'ouvrir, et une page atteinte autrement resterait sans
+ * nom. Les deux listes livrées sont parcourues quelle que soit la portée du
+ * compte, pour la même raison.
  */
-function labelForRoot(segment: string): string | null {
+function labelForRoot(segment: string, menu: MenuItem[], t: (key: string) => string): string {
   const path = `/${segment}`
 
+  const chosen = menu.find((item) => item.route === path)
+  if (chosen !== undefined) return menuLabel(chosen, t)
+
   for (const entry of [...organizationNavigation, ...platformNavigation]) {
-    if (entry.to === path) return entry.labelKey
+    if (entry.to === path) return t(entry.labelKey)
     const child = entry.children?.find((item) => item.to === path)
-    if (child) return child.labelKey
+    if (child) return t(child.labelKey)
   }
 
-  return null
+  return segment
 }
 
 export function Breadcrumbs() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
+  // La requête est partagée avec la barre latérale et longuement mise en
+  // cache : la lire ici ne déclenche pas d'appel supplémentaire.
+  const { data } = useMenu()
 
   const segments = pathname.split('/').filter(Boolean)
   if (segments.length === 0) return null
 
-  const rootKey = labelForRoot(segments[0])
+  const root = labelForRoot(segments[0], data ?? [], t)
 
   return (
     <nav aria-label="fil d’Ariane" className="min-w-0">
       <ol className="flex min-w-0 items-center gap-1.5 text-sm">
         <li className="min-w-0 truncate">
           {segments.length === 1 ? (
-            <span className="font-medium">{rootKey ? t(rootKey) : segments[0]}</span>
+            <span className="font-medium">{root}</span>
           ) : (
             <Link to={`/${segments[0]}`} className="text-muted-foreground hover:text-foreground">
-              {rootKey ? t(rootKey) : segments[0]}
+              {root}
             </Link>
           )}
         </li>

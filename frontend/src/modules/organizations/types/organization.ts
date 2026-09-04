@@ -13,6 +13,8 @@ export interface Organization {
   currencyCode: string | null
   status: string
   settings: Record<string, unknown> | null
+  /** Vrai si un logo est déposé. L'image se demande alors à part. */
+  hasLogo: boolean
   createdAt: string
   updatedAt: string
 }

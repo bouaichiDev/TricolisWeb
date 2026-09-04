@@ -6,6 +6,7 @@ namespace App\Modules\Billing\Services;
 
 use App\Modules\Billing\Models\Invoice;
 use App\Modules\Exports\DTOs\InvoiceExportData;
+use App\Modules\Organizations\Services\OrganizationLogo;
 
 /**
  * Les données qu'un modèle de facture a le droit de nommer.
@@ -23,9 +24,15 @@ use App\Modules\Exports\DTOs\InvoiceExportData;
  * L'adresse de chaque ligne vient du **cliché** pris à la création de la ligne,
  * jamais de l'adresse vivante : une facture d'août affiche l'adresse d'août,
  * même si le client a déménagé depuis.
+ *
+ * `organization.logo` fait exception à la règle des chaînes courtes : c'est le
+ * fichier entier, encodé. Il s'écrit `<img src="{{ organization.logo }}">` dans
+ * le modèle, et le document se suffit alors à lui-même.
  */
 final readonly class InvoiceRenderContext
 {
+    public function __construct(private OrganizationLogo $logo) {}
+
     /**
      * Clés d'une ligne, toujours toutes présentes.
      *
@@ -84,6 +91,13 @@ final readonly class InvoiceRenderContext
                 'name' => $organization?->name,
                 'email' => $organization?->email,
                 'phone' => $organization?->phone,
+                // Le logo part **encodé dans le document**, pas en lien. dompdf
+                // va chercher chaque ressource externe au moment du rendu : une
+                // URL le ferait dépendre d'un serveur joignable au bon moment,
+                // et d'une session qu'il n'a pas. `null` quand il n'y en a pas
+                // — une image manquante fait un trou, un `src` vide casse la
+                // mise en page.
+                'logo' => $this->logo->dataUri($organization),
             ],
         ];
     }
@@ -127,6 +141,7 @@ final readonly class InvoiceRenderContext
             'invoice.externalReference', 'invoice.remark',
             'customer.code', 'customer.name', 'customer.email', 'customer.phone', 'customer.legalName',
             'organization.code', 'organization.name', 'organization.email', 'organization.phone',
+            'organization.logo',
         ];
 
         $lines = [

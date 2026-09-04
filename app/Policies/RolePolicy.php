@@ -64,6 +64,36 @@ class RolePolicy extends BaseOrganizationPolicy
         return $this->mutate($user, $role, 'roles.update');
     }
 
+    /**
+     * Régler le **menu** d'un rôle, ce qui n'est pas le modifier.
+     *
+     * `update` protège le jeu de permissions : un rôle système le porte tout
+     * entier, et le laisser modifier ouvrirait une voie d'élévation. Le menu ne
+     * porte rien de tel — il range des écrans, il n'en ouvre aucun. Interdire de
+     * le régler sur le rôle `admin` privait l'administrateur du seul menu qu'il
+     * voit lui-même, pour une raison qui ne le concernait pas.
+     *
+     * Les deux autres conditions demeurent : le rôle doit appartenir à
+     * l'organisation de l'appelant, et rester de portée organisation — un rôle
+     * plateforme n'est pas le sien.
+     */
+    public function updateMenu(User $user, Role $role): Response|bool
+    {
+        if ($this->platform->isPlatformAdmin($user)) {
+            return true;
+        }
+
+        if (! $this->seesOrganization($user, $role->organization_id)) {
+            return $this->notFound();
+        }
+
+        if (RoleScope::tryFromValue($role->scope) !== RoleScope::ORGANIZATION) {
+            return false;
+        }
+
+        return $this->hasPermission($user, $role->organization_id, 'roles.update');
+    }
+
     public function delete(User $user, Role $role): Response|bool
     {
         return $this->mutate($user, $role, 'roles.delete');

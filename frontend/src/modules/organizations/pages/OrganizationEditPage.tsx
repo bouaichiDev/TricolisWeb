@@ -8,13 +8,24 @@ import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 
-export function OrganizationEditPage() {
+/**
+ * Modification d'une organisation.
+ *
+ * `organizationId` la réutilise pour « Mon organisation », comme la fiche :
+ * l'identifiant vient alors de l'appartenance active, et le retour se fait vers
+ * `/my-organization` — dont la route est ouverte à un organisme, là où
+ * `/organizations/{id}` est réservée à la plateforme.
+ */
+export function OrganizationEditPage({ organizationId }: { organizationId?: string } = {}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
 
-  const { data: organization, isPending, error, refetch } = useOrganization(id)
-  const update = useUpdateOrganization(id)
+  const target = organizationId ?? id
+  const back = organizationId === undefined ? `/organizations/${target}` : '/my-organization'
+
+  const { data: organization, isPending, error, refetch } = useOrganization(target)
+  const update = useUpdateOrganization(target)
 
   if (isPending) return <DetailSkeleton />
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />
@@ -29,10 +40,10 @@ export function OrganizationEditPage() {
       <OrganizationForm
         defaultValues={toOrganizationFormValues(organization)}
         submitLabel={t('common.save')}
-        onCancel={() => void navigate(`/organizations/${id}`)}
+        onCancel={() => void navigate(back)}
         onSubmit={async (values) => {
           await update.mutateAsync(toOrganizationPayload(values))
-          void navigate(`/organizations/${id}`)
+          void navigate(back)
         }}
       />
     </div>

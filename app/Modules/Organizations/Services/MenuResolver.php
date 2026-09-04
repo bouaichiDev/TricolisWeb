@@ -6,29 +6,40 @@ namespace App\Modules\Organizations\Services;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\PlatformAccess;
-use App\Modules\Organizations\Models\OrganizationMenuItem;
+use App\Modules\Identity\Services\RoleMenuGroups;
+use App\Modules\Identity\Services\RoleMenuOverrides;
+use App\Modules\Identity\Services\UserRoleMenus;
 use App\Policies\BaseOrganizationPolicy;
 use App\Shared\Enums\RoleScope;
 use App\Shared\Menu\MenuCatalogue;
 use App\Shared\Menu\MenuEntry;
-use Illuminate\Support\Collection;
 
 /**
- * Compose le menu effectif d'un utilisateur dans son organisation.
+ * Compose le menu effectif d'un utilisateur.
+ *
+ * **Le menu appartient au rôle.** Chaque rôle porte le sien en entier — ordre,
+ * noms, icônes, groupes, visibilité — et se règle depuis sa propre fiche. Il
+ * n'y a plus de réglage au niveau de l'organisation : deux endroits pour une
+ * même chose obligeaient à savoir lequel ouvrir pour obtenir quoi.
  *
  * Trois filtres, dans cet ordre :
  *
  * 1. **la portée** — un compte plateforme reçoit le menu plateforme, pas le
  *    menu d'organisme expurgé : les clients et les agences appartiennent aux
- *    organismes ;
- * 2. **les réglages de l'organisation** — ce qu'elle a choisi de masquer. Un
- *    transporteur qui n'utilise pas une fonction n'a pas à en voir l'entrée ;
+ *    organismes. N'ayant pas de rôle d'organisation, il reçoit le catalogue tel
+ *    qu'il est livré ;
+ * 2. **les rôles de l'utilisateur** — ce que son métier voit, et comment.
+ *    `UserRoleMenus` tient la règle : présentation du rôle principal,
+ *    visibilité par union ;
  * 3. **les permissions de l'utilisateur** — une entrée dont il n'a pas le droit
  *    ne lui est pas proposée.
  *
- * L'ordre compte : masquer une entrée au niveau de l'organisation la retire
- * pour tout le monde, y compris le propriétaire, alors qu'une permission
- * manquante ne concerne qu'un utilisateur.
+ * Le dernier ne se négocie pas : c'est lui qui fait du menu la projection des
+ * droits, et non l'inverse.
+ *
+ * Ce que l'écran de réglage affiche est autre chose, et vit ailleurs :
+ * `RoleMenuCatalogue` montre tout ce qui est **réglable**, là où celui-ci
+ * montre ce qui est **atteignable**.
  */
 class MenuResolver extends BaseOrganizationPolicy
 {
@@ -39,13 +50,33 @@ class MenuResolver extends BaseOrganizationPolicy
      */
     public function resolve(User $user, ?string $organizationId): array
     {
-        $scope = $this->platform->isPlatformAdmin($user) ? RoleScope::PLATFORM : RoleScope::ORGANIZATION;
-        $settings = $this->settingsFor($organizationId);
+        if ($this->platform->isPlatformAdmin($user)) {
+            return $this->compose($user, RoleScope::PLATFORM, $organizationId, UserRoleMenus::for($user->id, null));
+        }
+
+        return $this->compose(
+            $user,
+            RoleScope::ORGANIZATION,
+            $organizationId,
+            UserRoleMenus::for($user->id, $organizationId),
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function compose(User $user, RoleScope $scope, ?string $organizationId, UserRoleMenus $roles): array
+    {
+        $primary = $roles->primary();
+        $groups = RoleMenuGroups::for($primary?->id);
+        $chosen = RoleMenuOverrides::for($primary?->id, $groups->codes());
+        $rows = $groups->byCode();
+        $hidden = $roles->hiddenByEveryRole();
 
         $visible = [];
 
-        foreach (MenuCatalogue::forScope($scope) as $entry) {
-            if (! $this->isEnabled($entry, $settings)) {
+        foreach ([...MenuCatalogue::forScope($scope), ...$groups->entries()] as $entry) {
+            if (! $this->isVisible($entry, $rows[$entry->code] ?? null, $chosen, $roles, $hidden)) {
                 continue;
             }
 
@@ -53,7 +84,16 @@ class MenuResolver extends BaseOrganizationPolicy
                 continue;
             }
 
-            $visible[$entry->code] = $entry->toArray(true, $this->positionOf($entry, $settings));
+            $own = $rows[$entry->code] ?? null;
+
+            $visible[$entry->code] = $entry->toArray(
+                true,
+                $chosen->positionOf($entry),
+                $own?->label ?? $chosen->labelOf($entry),
+                $chosen->iconOf($entry),
+                $chosen->reparents($entry),
+                $chosen->parentOf($entry),
+            );
         }
 
         // Un groupe dont plus aucun enfant ne subsiste n'a rien à ouvrir : il
@@ -64,68 +104,51 @@ class MenuResolver extends BaseOrganizationPolicy
             }
         }
 
-        $items = array_values($visible);
-        usort($items, static fn (array $a, array $b): int => $a['position'] <=> $b['position']);
-
-        return $items;
+        return $this->sorted(array_values($visible));
     }
 
     /**
-     * Catalogue complet destiné à l'écran de configuration, avec l'état choisi.
+     * Une entrée figure-t-elle au menu de cet utilisateur ?
      *
-     * Non filtré par les permissions : configurer le menu de l'organisation
-     * n'est pas la même chose que le parcourir, et masquer les entrées qu'on ne
-     * peut pas ouvrir soi-même empêcherait de les régler pour les autres.
+     * Trois cas, dans cet ordre. Un **groupe créé** n'appartient qu'au rôle
+     * principal : sa propre ligne décide, les autres rôles n'en savent rien.
+     * **Sans autre rôle**, le principal décide seul. **Avec plusieurs**, c'est
+     * l'union qui tranche — une entrée ne tombe que si tous la masquent.
      *
-     * @return array<int, array<string, mixed>>
+     * `alwaysVisible` court-circuite tout, et ne concerne plus qu'une entrée :
+     * « Mon organisation ». Elle garde à chacun un pied dans l'administration,
+     * quels que soient les rôles qu'il porte.
+     *
+     * @param  object|null  $own  Ligne du groupe créé, s'il s'agit d'un groupe créé.
+     * @param  array<int, string>  $hidden
      */
-    public function catalogue(?string $organizationId): array
-    {
-        $settings = $this->settingsFor($organizationId);
-
-        $items = array_map(
-            fn (MenuEntry $entry): array => $entry->toArray(
-                $this->isEnabled($entry, $settings),
-                $this->positionOf($entry, $settings),
-            ),
-            MenuCatalogue::forScope(RoleScope::ORGANIZATION),
-        );
-
-        usort($items, static fn (array $a, array $b): int => $a['position'] <=> $b['position']);
-
-        return $items;
-    }
-
-    /**
-     * @return Collection<string, OrganizationMenuItem>
-     */
-    private function settingsFor(?string $organizationId): Collection
-    {
-        if ($organizationId === null) {
-            return collect();
-        }
-
-        return OrganizationMenuItem::where('organization_id', $organizationId)->get()->keyBy('code');
-    }
-
-    /**
-     * @param  Collection<string, OrganizationMenuItem>  $settings
-     */
-    private function isEnabled(MenuEntry $entry, Collection $settings): bool
-    {
+    private function isVisible(
+        MenuEntry $entry,
+        ?object $own,
+        RoleMenuOverrides $chosen,
+        UserRoleMenus $roles,
+        array $hidden,
+    ): bool {
         if ($entry->alwaysVisible) {
             return true;
         }
 
-        return $settings->get($entry->code)?->is_visible ?? true;
+        return match (true) {
+            $own !== null => (bool) $own->is_visible,
+            $roles->isEmpty() => $chosen->isEnabled($entry),
+            default => ! in_array($entry->code, $hidden, true),
+        };
     }
 
     /**
-     * @param  Collection<string, OrganizationMenuItem>  $settings
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
      */
-    private function positionOf(MenuEntry $entry, Collection $settings): int
+    private function sorted(array $items): array
     {
-        return $settings->get($entry->code)?->position ?? $entry->position;
+        usort($items, static fn (array $a, array $b): int => $a['position'] <=> $b['position']);
+
+        return $items;
     }
 
     /**

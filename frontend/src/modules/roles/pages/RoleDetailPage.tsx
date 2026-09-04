@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { MenuSettingsPanel } from '@/modules/menu/components/MenuSettingsPanel'
 import { RolePermissionsPanel } from '../components/RolePermissionsPanel'
 import { useDeleteRole, useRole } from '../hooks/useRoles'
-import { isEditableRole } from '../types/role'
+import { isEditableRole, isMenuEditableRole } from '../types/role'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
@@ -68,6 +69,16 @@ export function RoleDetailPage() {
 
       <SectionCard title={t('roles.sections.permissions')}>
         <RolePermissionsPanel permissions={role.permissions ?? []} />
+      </SectionCard>
+
+      {/* Les permissions disent ce que le rôle a le droit d’ouvrir ; le menu dit
+          ce qu’il a besoin de voir. Les deux se règlent sur la même page parce
+          qu’on les pense ensemble — un rôle qui gagne une permission veut
+          souvent l’entrée qui va avec. Le menu ne les remplace pas : masquer
+          une entrée ne retire aucun droit, l’écran reste atteignable par son
+          adresse. */}
+      <SectionCard title={t('roles.sections.menu')}>
+        <MenuSettingsPanel roleId={id} editable={isMenuEditableRole(role)} />
       </SectionCard>
 
       <ConfirmDialog

@@ -212,7 +212,16 @@
       "preferences": "Préférences"
     },
     "mine": "Mon organisation",
-    "noActive": "Aucune organisation active"
+    "noActive": "Aucune organisation active",
+    "logo": {
+      "title": "Logo",
+      "hint": "Il apparaît sur les documents dont le modèle l’appelle, par la variable « organization.logo ».",
+      "choose": "Choisir une image",
+      "replace": "Remplacer",
+      "formats": "PNG, JPEG ou GIF, 1 Mo maximum.",
+      "saved": "Logo enregistré.",
+      "removed": "Logo retiré."
+    }
   },
   "users": {
     "title": "Utilisateurs",
@@ -302,7 +311,8 @@
     "noPermissionsHint": "Ce rôle n’accorde actuellement aucun accès.",
     "sections": {
       "general": "Informations générales",
-      "permissions": "Permissions"
+      "permissions": "Permissions",
+      "menu": "Menu de navigation"
     },
     "readOnly": "Lecture seule",
     "systemLocked": "Rôle livré avec l’application : il n’est ni modifiable ni supprimable.",
@@ -660,10 +670,28 @@
     "other": "Autres"
   },
   "menu": {
-    "settings": "Menu de navigation",
-    "settingsHint": "Choisissez les entrées visibles par les utilisateurs de cette organisation. Les entrées masquées disparaissent pour tout le monde.",
-    "alwaysVisible": "Toujours visible — la masquer priverait l’organisation de ses écrans d’administration.",
-    "saved": "Menu enregistré."
+    "settingsHint": "Choisissez les entrées que ce rôle voit, leur ordre, leur nom et leur icône. Un utilisateur qui cumule plusieurs rôles voit une entrée dès qu’un seul de ses rôles la montre, présentée comme le veut le premier d’entre eux.",
+    "alwaysVisible": "Toujours visible — elle garde un pied dans l’administration, quels que soient les rôles.",
+    "saved": "Menu enregistré.",
+    "customize": "Personnaliser l’entrée",
+    "customizeHint": "Le nom et l’icône sont propres à cette organisation. La destination de l’entrée, elle, ne change pas.",
+    "customizeEntry": "Personnaliser « {{name}} »",
+    "label": "Nom affiché",
+    "labelHint": "Laissez vide pour garder le nom livré.",
+    "icon": "Icône",
+    "moveUp": "Monter « {{name}} »",
+    "moveDown": "Descendre « {{name}} »",
+    "parent": "Emplacement",
+    "parentRoot": "Menu principal",
+    "parentHint": "Placez l’entrée dans un groupe, ou remontez-la au menu principal.",
+    "newGroup": "Nouveau groupe",
+    "newGroupHint": "Un groupe rassemble des entrées sous un titre repliable. Il n’ouvre aucun écran : il apparaîtra dans la barre latérale dès que vous y aurez rangé une entrée.",
+    "groupCreated": "Groupe créé.",
+    "groupDeleted": "Groupe supprimé.",
+    "deleteGroup": "Supprimer « {{name}} »",
+    "deleteGroupHint": "Les entrées qu’il contient ne sont pas supprimées : elles retrouvent leur emplacement d’origine.",
+    "customGroup": "Groupe",
+    "emptyGroup": "Vide — masqué tant qu’aucune entrée n’y est rangée."
   },
   "services": {
     "title": "Services",

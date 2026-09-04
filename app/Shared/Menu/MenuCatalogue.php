@@ -508,7 +508,6 @@ final class MenuCatalogue
                 icon: 'Settings',
                 section: MenuSection::ADMINISTRATION,
                 position: 80,
-                alwaysVisible: true,
             ),
             new MenuEntry(
                 code: 'my-organization',
@@ -634,5 +633,55 @@ final class MenuCatalogue
     public static function codes(): array
     {
         return array_map(static fn (MenuEntry $entry): string => $entry->code, self::entries());
+    }
+
+    /**
+     * Codes des groupes, seules cibles possibles d'un rattachement.
+     *
+     * La barre latérale rend exactement **deux niveaux**. Un groupe qu'on
+     * rattacherait à un autre groupe placerait ses entrées au troisième, où
+     * rien ne les affiche : elles disparaîtraient sans qu'aucune erreur ne soit
+     * levée. C'est pourquoi seules les entrées qui portent une route se
+     * déplacent d'un groupe à l'autre, et pourquoi cette liste ne contient que
+     * des groupes.
+     *
+     * @return array<int, string>
+     */
+    public static function groupCodes(): array
+    {
+        return array_values(array_map(
+            static fn (MenuEntry $entry): string => $entry->code,
+            array_filter(self::entries(), static fn (MenuEntry $entry): bool => $entry->isGroup()),
+        ));
+    }
+
+    /**
+     * Une entrée peut-elle être rattachée à ce groupe ?
+     *
+     * Trois refus, pour trois façons de casser l'arbre : une entrée sans route
+     * est un groupe et ne se rattache pas ; une cible qui n'est pas un groupe
+     * n'existe pas ou ne peut rien contenir ; une entrée ne se contient pas
+     * elle-même.
+     *
+     * `$customGroupCodes` porte les groupes que l'organisation s'est créés. Ils
+     * accueillent des entrées exactement comme les groupes livrés — c'est tout
+     * l'intérêt d'en créer — mais le catalogue, qui vit en code, ne peut pas les
+     * connaître : l'appelant les lui donne.
+     *
+     * @param  array<int, string>  $customGroupCodes
+     */
+    public static function canReparent(MenuEntry $entry, ?string $parentCode, array $customGroupCodes = []): bool
+    {
+        if ($entry->isGroup()) {
+            return false;
+        }
+
+        if ($parentCode === null) {
+            return true;
+        }
+
+        $groups = [...self::groupCodes(), ...$customGroupCodes];
+
+        return $parentCode !== $entry->code && in_array($parentCode, $groups, true);
     }
 }

@@ -2,20 +2,12 @@ import { api } from '@/shared/api/client'
 import type { ApiResource } from '@/shared/api/types'
 import type { MenuItem } from '../types/menu'
 
-export interface MenuUpdateItem {
-  code: string
-  isVisible?: boolean
-  position?: number
-}
-
 export const menuApi = {
-  /** Menu effectif : catalogue ∩ réglages de l'organisation ∩ permissions. */
+  /**
+   * Menu effectif de l'appelant : catalogue ∩ rôles ∩ permissions.
+   *
+   * C'est la seule route de menu qui ne passe pas par un rôle. Le **réglage**,
+   * lui, vit entièrement sur la fiche du rôle — voir `roleMenu.api.ts`.
+   */
   effective: () => api.get<ApiResource<MenuItem[]>>('/menu').then((response) => response.data),
-
-  /** Catalogue configurable, non filtré par les permissions de l'appelant. */
-  catalogue: () =>
-    api.get<ApiResource<MenuItem[]>>('/menu/catalogue').then((response) => response.data),
-
-  update: (items: MenuUpdateItem[]) =>
-    api.patch<ApiResource<MenuItem[]>>('/menu', { items }).then((response) => response.data),
 }

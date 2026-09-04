@@ -67,6 +67,23 @@ export function isEditableRole(role: Role): boolean {
   return !role.isSystem && role.scope !== 'platform'
 }
 
+/**
+ * Le **menu** d'un rôle se règle-t-il ?
+ *
+ * Distinct de `isEditableRole`, et volontairement plus large : un rôle système
+ * ne se modifie pas — il porte toutes les permissions, et les toucher ouvrirait
+ * une voie d'élévation — mais son menu ne porte rien de tel. L'interdire
+ * privait l'administrateur du seul menu qu'il voit lui-même, pour une raison
+ * qui ne le concernait pas.
+ *
+ * Reste exclu le rôle de portée plateforme : il n'appartient pas à
+ * l'organisation. Les mêmes conditions que `RolePolicy::updateMenu`, répétées
+ * ici pour ne pas proposer un bouton qui mènerait à un refus.
+ */
+export function isMenuEditableRole(role: Role): boolean {
+  return role.scope !== 'platform'
+}
+
 export interface RoleFilters {
   page: number
   perPage: number

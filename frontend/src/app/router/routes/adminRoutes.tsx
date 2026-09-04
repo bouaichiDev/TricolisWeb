@@ -9,6 +9,7 @@ import { ApiConfigurationListPage } from '@/modules/integrations/pages/ApiConfig
 import { MailConfigurationPage } from '@/modules/integrations/pages/MailConfigurationPage'
 import { JourneyConfigurationPage } from '@/modules/tracking/pages/JourneyConfigurationPage'
 import { AuditLogPage } from '@/modules/audit/pages/AuditLogPage'
+import { MyOrganizationEditPage } from '@/modules/organizations/pages/MyOrganizationEditPage'
 import { MyOrganizationPage } from '@/modules/organizations/pages/MyOrganizationPage'
 import { OrganizationCreatePage } from '@/modules/organizations/pages/OrganizationCreatePage'
 import { OrganizationDetailPage } from '@/modules/organizations/pages/OrganizationDetailPage'
@@ -159,6 +160,15 @@ export const adminRoutes = [
     key="my-organization"
     path="/my-organization"
     element={guarded('organizations.view', <MyOrganizationPage />, { organizationOnly: true })}
+  />,
+
+  // Le pendant de la fiche : `/organizations/{id}/edit` est reservee a la
+  // plateforme, et « Modifier » y menait un administrateur d'organisme vers
+  // « Acces refuse » sur sa propre organisation.
+  <Route
+    key="my-organization-edit"
+    path="/my-organization/edit"
+    element={guarded('organizations.update', <MyOrganizationEditPage />, { organizationOnly: true })}
   />,
 
   <Route key="audit" path="/audit" element={guarded('audit.view', <AuditLogPage />, { organizationOnly: true })} />,

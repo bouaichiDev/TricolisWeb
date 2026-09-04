@@ -18,6 +18,14 @@ import { formatDateTime } from '@/shared/utils/format'
  * `organizationId` permet de réutiliser la page pour « Mon organisation », où
  * l'identifiant ne vient pas de l'URL mais de l'appartenance active — ce qui
  * empêche d'atteindre l'organisation d'un tiers en modifiant l'adresse.
+ *
+ * **Le lien de modification suit ce mode.** Il menait toujours à
+ * `/organizations/{id}/edit`, une route réservée à la plateforme : un
+ * administrateur d'organisme cliquait « Modifier » sur sa propre fiche et
+ * tombait sur « Accès refusé ». L'API l'autorisait pourtant — c'est
+ * `OrganizationPolicy::update`, qui accepte le propriétaire et le porteur
+ * d'`organizations.update` sur sa propre organisation. Seul le chemin était
+ * faux.
  */
 export function OrganizationDetailPage({ organizationId }: { organizationId?: string } = {}) {
   const { t } = useTranslation()
@@ -40,7 +48,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId?: st
         title={organization.name}
         subtitle={organization.code}
         status={organization.status}
-        editTo={`/organizations/${target}/edit`}
+        editTo={organizationId === undefined ? `/organizations/${target}/edit` : '/my-organization/edit'}
         editPermission="organizations.update"
         // La suppression relève de la plateforme. Sans rappel, `EntityHeader`
         // n'affiche pas le bouton : un administrateur d'organisme ne se voit

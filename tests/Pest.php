@@ -1,12 +1,14 @@
 <?php
 
 use App\Modules\Identity\Models\Role;
+use App\Modules\Identity\Models\RoleMenuGroup;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserRole;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Shared\Enums\RoleScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /*
@@ -103,4 +105,67 @@ function organizationRole(Organization $organization, string $code = 'operateur'
         'is_system' => false,
         'status' => 'active',
     ]);
+}
+
+/**
+ * Donne à un membre exactement ces rôles.
+ *
+ * Le pivot `user_roles` porte un ULID sans valeur par défaut : `sync()` ne peut
+ * donc pas l'écrire, et le reste du code passe déjà par le modèle.
+ *
+ * @param  array<int, Role>  $roles
+ */
+function giveRoles(string $organizationId, string $userId, array $roles): void
+{
+    $membership = OrganizationUser::where('organization_id', $organizationId)
+        ->where('user_id', $userId)
+        ->firstOrFail();
+
+    UserRole::where('organization_user_id', $membership->id)->delete();
+
+    foreach ($roles as $role) {
+        UserRole::create(['organization_user_id' => $membership->id, 'role_id' => $role->id]);
+    }
+}
+
+/**
+ * Groupe de menu créé sur un rôle.
+ *
+ * Le code est tiré par le modèle, préfixé : il ne peut donc pas coïncider avec
+ * un code du catalogue, présent ou futur.
+ */
+function menuGroup(string $roleId, array $overrides = []): RoleMenuGroup
+{
+    return RoleMenuGroup::create([
+        'role_id' => $roleId,
+        'code' => RoleMenuGroup::newCode(),
+        'label' => 'Mon pôle',
+        'icon' => 'Folder',
+        'is_visible' => true,
+        'position' => 15,
+        ...$overrides,
+    ]);
+}
+
+/**
+ * Codes d'une réponse de menu, dans l'ordre où elle les rend.
+ *
+ * @param  array<int, array<string, mixed>>  $items
+ * @return array<int, string>
+ */
+function menuCodesOf(array $items): array
+{
+    return array_column($items, 'code');
+}
+
+/**
+ * Un logo d'essai, aux dimensions d'un vrai.
+ *
+ * `UploadedFile::fake()->image()` produit une image que GD reconnaît : la règle
+ * `image` de la validation la fait passer, là où un fichier au seul bon nom
+ * échouerait.
+ */
+function pngLogo(string $name = 'logo.png'): UploadedFile
+{
+    return UploadedFile::fake()->image($name, 200, 80);
 }

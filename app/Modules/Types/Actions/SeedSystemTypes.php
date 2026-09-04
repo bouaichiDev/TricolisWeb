@@ -15,7 +15,7 @@ use App\Modules\Types\Models\Type;
  * classer un colis, et l'écran des référentiels s'ouvrirait sur rien.
  *
  * Appelée à chaque création d'organisation, aux côtés de
- * `SyncOrganizationMenu`. `firstOrCreate` la rend rejouable sans dommage.
+ * le menu d'un rôle. `firstOrCreate` la rend rejouable sans dommage.
  */
 final readonly class SeedSystemTypes
 {

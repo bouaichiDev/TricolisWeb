@@ -2,14 +2,25 @@ import { HttpResponse, http } from 'msw'
 
 import { API } from '@/test/server'
 
-/** Entrée telle que la renvoie `GET /menu`. */
+/**
+ * Entrée telle que la renvoie `GET /menu`.
+ *
+ * `canReparent` est **déduit de la route**, comme le fait `MenuEntry` côté
+ * backend, et non posé en valeur par défaut : une entrée sans route est un
+ * groupe, et un groupe ne se déplace pas d'un niveau. Le laisser à `true` pour
+ * tout le monde ferait passer des tests sur un menu que le serveur n'enverrait
+ * jamais — un jeu d'essai qui ment sur l'invariant ne prouve rien.
+ *
+ * Il reste surchargeable, pour le test qui voudrait précisément le cas absurde.
+ */
 export function menuItem(
   code: string,
   overrides: Partial<Record<string, unknown>> = {},
 ): Record<string, unknown> {
-  return {
+  const item = {
     code,
     labelKey: `nav.${code}`,
+    label: null,
     icon: 'Boxes',
     route: `/${code}`,
     permission: null,
@@ -20,6 +31,8 @@ export function menuItem(
     canHide: true,
     ...overrides,
   }
+
+  return { canReparent: item.route !== null, isCustom: false, ...item }
 }
 
 export function menuHandler(items: unknown[]) {

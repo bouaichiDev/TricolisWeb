@@ -39,6 +39,8 @@ use App\Http\Controllers\Api\V1\Identity\MemberPasswordController;
 use App\Http\Controllers\Api\V1\Identity\OrganizationUserController;
 use App\Http\Controllers\Api\V1\Identity\PermissionController;
 use App\Http\Controllers\Api\V1\Identity\RoleController;
+use App\Http\Controllers\Api\V1\Identity\RoleMenuController;
+use App\Http\Controllers\Api\V1\Identity\RoleMenuGroupController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
 use App\Http\Controllers\Api\V1\Integrations\ApiConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
@@ -57,6 +59,7 @@ use App\Http\Controllers\Api\V1\Orders\OrderStockPlanController;
 use App\Http\Controllers\Api\V1\Orders\ServiceController;
 use App\Http\Controllers\Api\V1\Organizations\MenuController;
 use App\Http\Controllers\Api\V1\Organizations\OrganizationController;
+use App\Http\Controllers\Api\V1\Organizations\OrganizationLogoController;
 use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
@@ -139,6 +142,12 @@ Route::prefix('client')->name('client.')->group(static function (): void {
 });
 
 Route::middleware('auth:sanctum')->group(static function (): void {
+    // Declarees avant la ressource : `{organization}` avalerait le segment.
+    // Le logo se sert par ici et non sous /storage : un chemin devinable
+    // donnerait celui d'un organisme a qui l'essaie.
+    Route::get('organizations/{organization}/logo', [OrganizationLogoController::class, 'show'])->name('organizations.logo.show');
+    Route::post('organizations/{organization}/logo', [OrganizationLogoController::class, 'store'])->name('organizations.logo.store');
+    Route::delete('organizations/{organization}/logo', [OrganizationLogoController::class, 'destroy'])->name('organizations.logo.destroy');
     Route::apiResource('organizations', OrganizationController::class)->except(['create', 'edit']);
 
     // Le menu effectif se lit sans en-tete d'organisation : un compte
@@ -157,8 +166,6 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     Route::apiResource('statuses', StatusController::class)->except(['create', 'edit']);
 
     Route::middleware('organization')->group(static function (): void {
-        Route::get('menu/catalogue', [MenuController::class, 'catalogue'])->name('menu.catalogue');
-        Route::patch('menu', [MenuController::class, 'update'])->name('menu.update');
         Route::get('subscription', [SubscriptionController::class, 'show'])->name('subscription.show');
         Route::post('subscription', [SubscriptionController::class, 'store'])->name('subscription.store');
         Route::patch('subscription', [SubscriptionController::class, 'update'])->name('subscription.update');
@@ -191,6 +198,14 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
         Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
         Route::get('permissions/{permission}', [PermissionController::class, 'show'])->name('permissions.show');
+        // Declarees avant la ressource : `{role}` avalerait le segment `menu`.
+        // C'est ici, et nulle part ailleurs, que le menu se regle.
+        Route::get('roles/{role}/menu', [RoleMenuController::class, 'index'])->name('roles.menu.index');
+        Route::patch('roles/{role}/menu', [RoleMenuController::class, 'update'])->name('roles.menu.update');
+        // Un groupe n'ouvre rien : ni route, ni permission. C'est ce qui permet
+        // d'en creer, la ou le reste du catalogue reste en code.
+        Route::post('roles/{role}/menu/groups', [RoleMenuGroupController::class, 'store'])->name('roles.menu.groups.store');
+        Route::delete('roles/{role}/menu/groups/{code}', [RoleMenuGroupController::class, 'destroy'])->name('roles.menu.groups.destroy');
         Route::apiResource('roles', RoleController::class)->except(['create', 'edit']);
         Route::apiResource('users', UserController::class)->except(['create', 'edit']);
         // Rendre l'acces a un membre : le lien par courriel d'abord, le mot de

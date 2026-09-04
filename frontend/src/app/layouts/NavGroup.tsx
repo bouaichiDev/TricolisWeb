@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 
 import { menuIcon } from '@/modules/menu/components/menuIcons'
-import type { MenuTree } from '@/modules/menu/types/menu'
+import { menuLabel, type MenuTree } from '@/modules/menu/types/menu'
 import { cn } from '@/shared/utils/cn'
 
 /** Style commun aux entrées de premier niveau. */
@@ -53,7 +53,7 @@ export function NavGroup({
         )}
       >
         <Icon className="size-[18px] shrink-0" aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-left">{t(node.item.labelKey)}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{menuLabel(node.item, t)}</span>
         <ChevronDown
           className={cn('size-4 shrink-0 transition-transform', open && 'rotate-180')}
           aria-hidden
@@ -90,7 +90,7 @@ export function NavGroup({
               }
             >
               <span className="size-1.5 shrink-0 rounded-full bg-current opacity-60" aria-hidden />
-              <span className="truncate">{t(child.labelKey)}</span>
+              <span className="truncate">{menuLabel(child, t)}</span>
             </NavLink>
           ))}
         </div>

@@ -32,6 +32,15 @@ enum MenuSection: string
     case ADMINISTRATION = 'administration';
     case PLATFORM = 'platform';
 
+    /**
+     * Groupe créé par une organisation.
+     *
+     * Il n'appartient à aucune découpe métier — c'est l'organisation qui le
+     * découpe. La section n'a donc ici qu'une valeur de rangement, et aucune
+     * permission ne la porte.
+     */
+    case CUSTOM = 'custom';
+
     public function label(): string
     {
         return match ($this) {
@@ -43,8 +52,10 @@ enum MenuSection: string
             self::BILLING => 'Facturation',
             self::COMMUNICATIONS => 'Communications',
             self::INTEGRATIONS => 'Intégrations',
+            self::TRANSPORT => 'Transport',
             self::ADMINISTRATION => 'Administration',
             self::PLATFORM => 'Plateforme',
+            self::CUSTOM => 'Personnalisé',
         };
     }
 
@@ -53,6 +64,11 @@ enum MenuSection: string
      *
      * L'ordre alphabétique placerait « Administration » en tête, devant
      * « Clients » — ce que personne ne cherche en premier.
+     *
+     * `TRANSPORT` partage le rang de `OPERATIONS`, dont il est une part : les
+     * deux se lisent d'affilée. Il manquait à ce `match` comme à celui des
+     * libellés — un `match` sans défaut lève `UnhandledMatchError`, et trois
+     * entrées du catalogue portent déjà cette section.
      */
     public function position(): int
     {
@@ -65,8 +81,10 @@ enum MenuSection: string
             self::BILLING => 5,
             self::COMMUNICATIONS => 6,
             self::INTEGRATIONS => 7,
+            self::TRANSPORT => 3,
             self::ADMINISTRATION => 8,
             self::PLATFORM => 9,
+            self::CUSTOM => 10,
         };
     }
 

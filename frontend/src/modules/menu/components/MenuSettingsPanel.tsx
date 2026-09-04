@@ -1,97 +1,164 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useMenuCatalogue, useUpdateMenu } from '../hooks/useMenu'
-import { menuIcon } from './menuIcons'
-import type { MenuItem } from '../types/menu'
+import { MenuEntryDialog } from './MenuEntryDialog'
+import { MenuGroupDialog } from './MenuGroupDialog'
+import { MenuSettingsRow } from './MenuSettingsRow'
+import { useMenuDraft } from '../hooks/useMenuDraft'
+import { menuLabel } from '../types/menu'
+import { canMove, groupsOf } from '../types/menuOrder'
+import {
+  useCreateRoleMenuGroup,
+  useDeleteRoleMenuGroup,
+  useRoleMenu,
+  useUpdateRoleMenu,
+} from '@/modules/roles/hooks/useRoleMenu'
+import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { ListSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
 import { Button } from '@/shared/components/ui/button'
-import { Switch } from '@/shared/components/ui/switch'
+
+interface MenuSettingsPanelProps {
+  roleId: string
+  /** Un rôle système ou plateforme se consulte, il ne se règle pas. */
+  editable: boolean
+}
 
 /**
- * Réglage du menu de l'organisation.
+ * Réglage du menu d'un rôle.
  *
- * L'organisation choisit **quelles entrées elle voit**, pas leur libellé ni
- * leur destination : route, icône et clé i18n appartiennent au catalogue, en
- * code. Les laisser saisir permettrait d'écrire une route qui n'existe pas, et
- * l'écran afficherait « Page introuvable ».
+ * **C'est le seul écran où le menu se règle.** Il se réglait auparavant à deux
+ * endroits — l'organisation pour l'ordre et les noms, le rôle pour la seule
+ * visibilité — et il fallait savoir lequel ouvrir pour obtenir quoi. Chaque
+ * rôle porte désormais son menu entier : quelles entrées il voit, dans quel
+ * ordre, sous quel nom, quelle icône et dans quel groupe.
+ *
+ * Ce qu'il ne choisit pas, c'est la **destination** : route et permission
+ * vivent en code, et les laisser saisir permettrait de fabriquer une entrée qui
+ * mène à « Page introuvable » ou vers un écran interdit. Renommer « Agences »
+ * en « Sites » ou la sortir des « Ressources » ne casse rien ; en réécrire
+ * l'adresse, si.
  *
  * Certaines entrées ne se masquent pas — l'administration en fait partie. Un
- * organisme qui la retirerait n'aurait plus d'écran pour revenir en arrière ;
- * l'interrupteur est alors désactivé et la raison affichée.
+ * administrateur n'ayant que ce rôle n'aurait plus d'écran pour revenir en
+ * arrière ; l'interrupteur est alors désactivé et la raison affichée. Elles
+ * restent en revanche déplaçables et renommables : c'est l'accès qu'il faut
+ * préserver, pas son rang dans la liste.
  */
-export function MenuSettingsPanel() {
+export function MenuSettingsPanel({ roleId, editable }: MenuSettingsPanelProps) {
   const { t } = useTranslation()
-  const { data, isPending, error, refetch } = useMenuCatalogue()
-  const update = useUpdateMenu()
+  const { data, isPending, error, refetch } = useRoleMenu(roleId)
+  const update = useUpdateRoleMenu(roleId)
+  const createGroup = useCreateRoleMenuGroup(roleId)
+  const deleteGroup = useDeleteRoleMenuGroup(roleId)
 
-  const [draft, setDraft] = useState<Record<string, boolean> | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const draft = useMenuDraft(data ?? [])
 
   if (isPending) return <ListSkeleton rows={6} />
   if (error) return <ErrorState error={error} onRetry={() => void refetch()} />
 
-  const items = data ?? []
-  const visibility = draft ?? Object.fromEntries(items.map((item) => [item.code, item.isVisible]))
-  const dirty = items.some((item) => visibility[item.code] !== item.isVisible)
+  const { items, isDirty } = draft
+  const doomed = items.find((item) => item.code === deleting) ?? null
+  const busy = update.isPending || !editable
 
-  const toggle = (item: MenuItem) => {
-    setDraft({ ...visibility, [item.code]: !visibility[item.code] })
+  // Créer et supprimer prennent effet tout de suite, alors que le reste
+  // s'accumule : on ne range pas une entrée dans un groupe qui n'existe pas
+  // encore. Le brouillon est donc abandonné — la liste change de forme sous
+  // lui, et le rejouer déplacerait les mauvaises entrées.
+  const addGroup = (group: { label: string; icon: string }) => {
+    createGroup.mutate(group, {
+      onSuccess: () => {
+        draft.reset()
+        setCreating(false)
+      },
+    })
   }
 
-  const save = () => {
-    update.mutate(
-      items.map((item) => ({ code: item.code, isVisible: visibility[item.code] })),
-      { onSuccess: () => setDraft(null) },
-    )
+  const removeGroup = (code: string) => {
+    deleteGroup.mutate(code, {
+      onSuccess: () => {
+        draft.reset()
+        setDeleting(null)
+      },
+    })
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">{t('menu.settingsHint')}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{t('menu.settingsHint')}</p>
 
-      <ul className="flex flex-col divide-y rounded-lg border">
-        {items.map((item) => {
-          const Icon = menuIcon(item.icon)
-          const isChild = item.parent !== null
-
-          return (
-            <li
-              key={item.code}
-              className={`flex items-center justify-between gap-4 p-3 ${isChild ? 'pl-10' : ''}`}
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{t(item.labelKey)}</p>
-                  {item.canHide ? null : (
-                    <p className="text-xs text-muted-foreground">{t('menu.alwaysVisible')}</p>
-                  )}
-                </div>
-              </div>
-
-              <Switch
-                checked={visibility[item.code]}
-                disabled={!item.canHide || update.isPending}
-                onCheckedChange={() => toggle(item)}
-                aria-label={t(item.labelKey)}
-              />
-            </li>
-          )
-        })}
-      </ul>
-
-      <div className="flex justify-end gap-2">
-        {dirty ? (
-          <Button variant="outline" onClick={() => setDraft(null)} disabled={update.isPending}>
-            {t('common.cancel')}
+        {editable ? (
+          <Button variant="outline" onClick={() => setCreating(true)} disabled={update.isPending}>
+            <Plus className="size-4" aria-hidden />
+            {t('menu.newGroup')}
           </Button>
         ) : null}
-
-        <Button onClick={save} disabled={!dirty || update.isPending}>
-          {update.isPending ? t('common.saving') : t('common.save')}
-        </Button>
       </div>
+
+      <ul className="flex flex-col divide-y rounded-lg border">
+        {items.map((item) => (
+          <MenuSettingsRow
+            key={item.code}
+            item={item}
+            disabled={busy}
+            canMoveUp={canMove(items, item.code, -1)}
+            canMoveDown={canMove(items, item.code, 1)}
+            isEmptyGroup={item.isCustom && !items.some((child) => child.parent === item.code)}
+            onMove={(delta) => draft.move(item.code, delta)}
+            onCustomize={() => setEditing(item.code)}
+            onToggle={() => draft.toggle(item.code)}
+            onDelete={() => setDeleting(item.code)}
+          />
+        ))}
+      </ul>
+
+      {editable ? (
+        <div className="flex justify-end gap-2">
+          {isDirty ? (
+            <Button variant="outline" onClick={draft.reset} disabled={update.isPending}>
+              {t('common.cancel')}
+            </Button>
+          ) : null}
+
+          <Button
+            onClick={() => update.mutate(draft.payload(), { onSuccess: () => draft.reset() })}
+            disabled={!isDirty || update.isPending}
+          >
+            {update.isPending ? t('common.saving') : t('common.save')}
+          </Button>
+        </div>
+      ) : null}
+
+      <MenuEntryDialog
+        item={items.find((item) => item.code === editing) ?? null}
+        groups={groupsOf(items)}
+        onClose={() => setEditing(null)}
+        onSubmit={draft.customize}
+      />
+
+      <MenuGroupDialog
+        open={creating}
+        isPending={createGroup.isPending}
+        onOpenChange={setCreating}
+        onSubmit={addGroup}
+      />
+
+      <ConfirmDialog
+        open={doomed !== null}
+        onOpenChange={(open) => (open ? undefined : setDeleting(null))}
+        title={doomed === null ? '' : t('menu.deleteGroup', { name: menuLabel(doomed, t) })}
+        description={t('menu.deleteGroupHint')}
+        confirmLabel={t('common.delete')}
+        isPending={deleteGroup.isPending}
+        variant="destructive"
+        onConfirm={() => doomed !== null && removeGroup(doomed.code)}
+      />
     </div>
   )
 }

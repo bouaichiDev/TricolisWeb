@@ -129,7 +129,7 @@ montrer », et lui dire lequel des deux renseignerait sur ce qui existe ailleurs
 | `app/Policies/OrderCommunicationPolicy.php` | `markAsRead` |
 | `frontend/src/modules/notifications/components/NotificationBell.tsx` | la cloche et ses deux onglets |
 | `frontend/src/modules/notifications/components/NotificationList.tsx` | une moitié |
-| `frontend/src/modules/notifications/hooks/useNotifications.ts` | le flux, rafraîchi à la minute |
+| `frontend/src/modules/notifications/hooks/useNotifications.ts` | le flux, et ses trois rafraîchissements |
 
 ### Quand le flux se rafraîchit
 

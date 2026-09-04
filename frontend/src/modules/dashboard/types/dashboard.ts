@@ -56,8 +56,22 @@ export interface ChartSeries {
  * statut : le libellé vient alors de ce qu'un administrateur a réglé, et non
  * d'une traduction livrée qui l'ignorerait. `null` pour une série qui se nomme
  * d'elle-même — une devise, par exemple.
+ *
+ * `mode` dit si les valeurs **se comparent**, et le rendu en dépend
+ * entièrement :
+ *
+ * - `share` — des parts d'un même tout, qui s'additionnent : une barre de
+ *   composition les montre s'additionner ;
+ * - `amounts` — des montants dans des devises différentes : aucune barre, car
+ *   une longueur proportionnelle affirmerait une comparaison qui n'existe pas.
+ *
+ * Le serveur le déclare plutôt que de laisser le frontend le deviner : c'est
+ * lui qui sait que `currency_code` sépare des monnaies incomparables.
  */
+export type ChartMode = 'share' | 'amounts'
+
 export interface ChartData {
+  mode: ChartMode
   source: string | null
   series: ChartSeries[]
 }

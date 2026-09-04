@@ -105,21 +105,75 @@ produit un chiffre décoratif que quelqu'un finirait par citer en réunion.
 
 ---
 
-## 5. Les graphes, sans bibliothèque
+## 5. Les graphes
 
 Le projet n'embarque aucune bibliothèque de graphes — seul Leaflet est installé,
-pour les cartes. `ChartWidget` trace des barres proportionnelles avec trois
-`div` et une largeur en pourcentage.
+pour les cartes. `ChartWidget` s'en passe : une barre segmentée est trois `div`
+et une croissance en flex. En installer une pour cela aurait pesé quelques
+centaines de kilo-octets. Un histogramme temporel reposerait la question, et ce
+serait alors une décision de dépendance, prise comme telle.
 
-En ajouter une pour cela aurait pesé quelques centaines de kilo-octets pour ce
-que le CSS fait déjà. Le jour où un histogramme temporel ou un nuage de points
-sera demandé, la question se reposera pour de bon — et ce sera une décision de
-dépendance, prise comme telle.
+### Une barre de composition, puis sa légende chiffrée
 
-Les libellés viennent du **référentiel des statuts** (`useStatusOptions`), jamais
-d'une liste recopiée : un statut ajouté par un administrateur s'affiche alors
-avec le nom qu'il lui a donné. Une série sans `source` — les devises — parle
-d'elle-même.
+Une **seule barre segmentée**, et non une barre par statut. La question à
+laquelle « Commandes par statut » répond est *comment mes commandes se
+répartissent*, pas *laquelle est la plus longue* : les parts s'additionnent, et
+les voir s'additionner est l'information. Le total est rappelé au-dessus — la
+barre dit comment il se répartit, pas de combien il s'agit.
+
+Trois détails de rendu, et aucun n'est cosmétique :
+
+| Détail | Ce qu'il évite |
+| --- | --- |
+| **2 px de fond entre les segments**, jamais un trait | une bordure ajoute de l'encre qui n'est pas de la donnée ; le vide sépare aussi bien |
+| **extrémités arrondies, intérieur carré** | l'arrondi marque la fin de la donnée ; l'appliquer à chaque segment ferait mentir sur les frontières internes |
+| **10 px d'épaisseur** | un bloc épais et saturé se lit comme un bandeau décoratif |
+
+### La palette n'est pas choisie, elle est mesurée
+
+Les huit teintes de `--chart-1` … `--chart-8` passent six contrôles sur la
+surface réelle des cartes — bande de clarté, plancher de saturation, séparation
+sous daltonisme (ΔE 9,1 au pire couple voisin), plancher en vision normale
+(ΔE 19,6), contraste — en clair comme en sombre. Le mode sombre a ses **propres
+pas**, redressés pour son fond : une inversion automatique les ferait sortir de
+la bande.
+
+Deux règles en découlent, et elles ne se négocient pas :
+
+- **la couleur suit la série, jamais son rang.** Les teintes sont attribuées
+  dans l'ordre du cycle de vie, pas par valeur décroissante. Une commande de
+  plus repeindrait sinon la moitié du graphe, et un lecteur qui avait retenu
+  « les brouillons sont bleus » se tromperait le lendemain ;
+- **il n'y a pas de neuvième teinte.** Au-delà de huit séries, la queue fusionne
+  en « Autres », en gris. Une couleur générée serait indistinguable d'une autre
+  sous vision altérée, et la palette cesserait de garantir ce qu'elle garantit.
+
+### La légende est aussi le tableau
+
+Une même liste tient deux exigences. La **légende** est obligatoire dès deux
+séries : sans elle, l'identité reposerait sur la seule couleur. Le **tableau**
+rend chaque valeur lisible sans survoler quoi que ce soit — un chiffre qu'on ne
+peut atteindre qu'à la souris n'est pas accessible.
+
+La pastille de couleur est **à côté** du texte, jamais dedans : trois des huit
+teintes n'ont pas le contraste d'un texte sur fond blanc, et colorer le libellé
+les rendrait illisibles.
+
+L'ordre des lignes vient du **référentiel des statuts**, pas du tri par code que
+rend le serveur : `completed, confirmed, draft` prend le pipeline à l'envers.
+Les libellés en viennent aussi — un statut ajouté par un administrateur
+s'affiche avec le nom qu'il lui a donné.
+
+### Le graphe qui ne dessine aucune barre
+
+`closed_invoices_period_total` rend une liste de montants, une devise par ligne.
+Une longueur proportionnelle affirme une comparaison — deux fois plus long, deux
+fois plus — et 5 000 CHF ne se rangent pas sur la même règle que 5 000 MAD. On
+refuse déjà de sommer les devises dans une valeur unique ; les mettre sur une
+échelle commune reviendrait à le faire du regard.
+
+C'est le serveur qui le déclare, par `mode: 'amounts'` : c'est lui qui sait que
+`currency_code` sépare des monnaies incomparables.
 
 ---
 

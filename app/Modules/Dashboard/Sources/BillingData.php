@@ -65,7 +65,11 @@ final readonly class BillingData implements DashboardDataSource
                     ->whereBetween('created_at', $context->dayBounds())
                     ->count()
             ),
-            'closed_invoices_period_total' => DashboardPayload::chart($this->totalsByCurrency($context)),
+            // `amounts`, et non `chart` : une devise par ligne, sans barre
+            // proportionnelle. Deux montants libellés dans deux monnaies ne se
+            // rangent pas sur la même règle, et une longueur le laisserait
+            // pourtant croire.
+            'closed_invoices_period_total' => DashboardPayload::amounts($this->totalsByCurrency($context)),
             'invoices_by_status' => DashboardPayload::chart($this->invoicesByStatus($context), MorphMap::INVOICE),
             'recent_invoices' => DashboardPayload::list($this->lists->invoices($context)),
 

@@ -271,12 +271,28 @@ créent dans une boîte de dialogue posée sur leur liste ; inventer
 ```
 kpi           { value, unit }
 alert         { value }
-chart         { source, series: [{ code, value }] }
+chart         { mode, source, series: [{ code, value }] }
 list          { items: [{ id, title, subtitle, status, statusSource, date, route }] }
 quick_action  null
 ```
 
-Aucune ne transporte de **libellé traduit**. Le serveur rend un code — un
+`mode` dit si les valeurs **se comparent**, et le rendu en dépend entièrement :
+
+| mode | Ce que c'est | Ce que le frontend dessine |
+| --- | --- | --- |
+| `share` | des parts d'un même tout, qui s'additionnent | une barre de composition, puis la légende chiffrée |
+| `amounts` | des montants dans des devises différentes | **aucune barre** — une liste de montants |
+
+Le second n'a qu'un usage : `closed_invoices_period_total`. Une barre
+proportionnelle affirme une comparaison — deux fois plus long, deux fois plus —
+et 5 000 CHF ne se rangent pas sur la même règle que 5 000 MAD. On refuse déjà
+de sommer les devises dans une valeur unique ; les mettre sur une échelle
+commune reviendrait à le faire du regard.
+
+C'est le **serveur** qui le déclare, et non le frontend qui le devine : c'est
+lui qui sait que `currency_code` sépare des monnaies incomparables.
+
+Aucune forme ne transporte de **libellé traduit**. Le serveur rend un code — un
 statut, une devise, une clé i18n — et l'interface le nomme dans la langue de qui
 regarde. `source` désigne l'entité au référentiel des statuts, où un
 administrateur a pu régler le libellé : le frontend l'y lit plutôt que dans une

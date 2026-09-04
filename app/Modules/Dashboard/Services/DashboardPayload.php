@@ -42,19 +42,36 @@ final readonly class DashboardPayload
     }
 
     /**
-     * Des barres, et de quoi les nommer.
+     * Une **répartition** : des parts d'un même tout, qui s'additionnent.
      *
      * `source` désigne l'entité au référentiel des statuts : le frontend y lit
      * le libellé qu'un administrateur a pu régler, plutôt qu'une traduction
-     * livrée qui l'ignorerait. `null` pour une série qui n'est pas un statut —
-     * les devises, par exemple, se nomment d'elles-mêmes.
+     * livrée qui l'ignorerait.
      *
      * @param  array<int, array{code: string, value: int|float}>  $series
      * @return array<string, mixed>
      */
     public static function chart(array $series, ?string $source = null): array
     {
-        return ['source' => $source, 'series' => array_values($series)];
+        return ['mode' => 'share', 'source' => $source, 'series' => array_values($series)];
+    }
+
+    /**
+     * Des montants qui **ne se comparent pas** — une devise par ligne.
+     *
+     * Même forme que `chart()`, et c'est justement pourquoi le mode doit être
+     * dit : sans lui, le frontend dessinerait des barres proportionnelles, et
+     * une barre deux fois plus longue affirmerait qu'on a facturé deux fois
+     * plus. Or 5 000 CHF et 5 000 MAD ne se rangent pas sur la même règle. Le
+     * total toutes devises confondues est déjà exclu ; le suggérer par une
+     * longueur le serait tout autant.
+     *
+     * @param  array<int, array{code: string, value: int|float}>  $series
+     * @return array<string, mixed>
+     */
+    public static function amounts(array $series): array
+    {
+        return ['mode' => 'amounts', 'source' => null, 'series' => array_values($series)];
     }
 
     /**

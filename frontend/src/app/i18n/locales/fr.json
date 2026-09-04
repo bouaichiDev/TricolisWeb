@@ -151,7 +151,9 @@
     "configureRoles": "Configurer les rôles",
     "widgetEmpty": "Rien à afficher pour l'instant.",
     "seeAll": "Voir tout",
-    "quickAction": "Action rapide"
+    "quickAction": "Action rapide",
+    "otherSeries": "Autres",
+    "total": "Total"
   },
   "table": {
     "empty": "Aucun résultat",

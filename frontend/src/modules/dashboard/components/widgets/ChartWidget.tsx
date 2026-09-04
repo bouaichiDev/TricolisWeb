@@ -1,59 +1,110 @@
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AmountsList } from '../charts/AmountsList'
+import { ChartLegend } from '../charts/ChartLegend'
+import { CompositionBar } from '../charts/CompositionBar'
+import {
+  OTHER_KEY,
+  orderByLifecycle,
+  toSlices,
+  totalOf,
+  type ChartSlice,
+} from '../charts/chartPalette'
 import { WidgetCard } from '../WidgetCard'
-import type { ChartData, DashboardWidget } from '../../types/dashboard'
+import type { ChartData, ChartSeries, DashboardWidget } from '../../types/dashboard'
 import { useStatusOptions } from '@/modules/statuses/hooks/useStatuses'
 
+// Constante partagée plutôt qu'un `[]` littéral : un tableau neuf à chaque
+// rendu ferait recalculer les mémoïsations en continu, pour un résultat
+// identique.
+const NO_SERIES: ChartSeries[] = []
+
 /**
- * Une répartition, en barres.
+ * Une répartition : une barre de composition, puis sa légende chiffrée.
  *
  * **Sans bibliothèque de graphes**, et c'est un choix, pas un manque. Le projet
  * n'en embarque aucune — seul Leaflet est installé, pour les cartes — et en
- * ajouter une pour tracer des barres proportionnelles aurait pesé quelques
- * centaines de kilo-octets pour ce que trois `div` et une largeur en
- * pourcentage font déjà. Le jour où un histogramme temporel ou un nuage de
- * points sera demandé, la question se reposera pour de bon.
+ * ajouter une pour une barre segmentée aurait pesé quelques centaines de
+ * kilo-octets là où trois `div` suffisent. Un histogramme temporel reposerait la
+ * question ; ce serait alors une décision de dépendance, prise comme telle.
  *
- * Les libellés viennent du **référentiel des statuts**, jamais d'une liste
- * recopiée ici : un statut ajouté par un administrateur s'affiche alors avec le
- * nom qu'il lui a donné. `source` absent — les devises, par exemple — laisse le
- * code parler pour lui-même.
+ * Deux modes, parce que deux natures de données :
+ *
+ * - `share` — des parts d'un même tout, qui s'additionnent : la barre les montre
+ *   s'additionner ;
+ * - `amounts` — des montants dans des devises différentes : **pas de barre**,
+ *   une longueur affirmerait une comparaison qui n'existe pas.
+ *
+ * Les libellés viennent du référentiel des statuts, jamais d'une liste recopiée
+ * ici : un statut ajouté par un administrateur s'affiche avec le nom qu'il lui a
+ * donné.
  */
 export function ChartWidget({ widget }: { widget: DashboardWidget }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const [hovered, setHovered] = useState<string | null>(null)
+
   const data = widget.data as ChartData | null
-  const series = data?.series ?? []
+  const series = data?.series ?? NO_SERIES
 
   const { statuses } = useStatusOptions(data?.source ?? '')
-  const labelOf = (code: string) => statuses.find((status) => status.code === code)?.label ?? code
 
-  // La barre la plus longue occupe toute la largeur : c'est une comparaison
-  // entre les séries, pas une mesure absolue. Un maximum nul éviterait une
-  // division par zéro, et toutes les barres seraient vides — ce qui est exact.
-  const largest = series.reduce((max, item) => Math.max(max, item.value), 0)
+  // Le référentiel donne l'ordre du cycle de vie ; le serveur, lui, trie par
+  // code. `draft` avant `completed` n'a rien d'esthétique : c'est la lecture
+  // d'un pipeline, et l'ordre alphabétique la prenait à l'envers.
+  const ordered = useMemo(
+    () => orderByLifecycle(series, statuses.map((status) => status.code)),
+    [series, statuses],
+  )
+  const slices = useMemo(() => toSlices(ordered), [ordered])
+
+  const shareFormatter = useMemo(
+    () => new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 0 }),
+    [i18n.language],
+  )
+
+  const labelOf = (slice: ChartSlice) =>
+    slice.code === OTHER_KEY
+      ? t('dashboard.otherSeries')
+      : (statuses.find((status) => status.code === slice.code)?.label ?? slice.code)
+
+  if (series.length === 0) {
+    return (
+      <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+        <p className="text-sm text-muted-foreground">{t('dashboard.widgetEmpty')}</p>
+      </WidgetCard>
+    )
+  }
+
+  if (data?.mode === 'amounts') {
+    return (
+      <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+        <AmountsList series={series} />
+      </WidgetCard>
+    )
+  }
 
   return (
     <WidgetCard title={t(widget.labelKey)} to={widget.route}>
-      {series.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('dashboard.widgetEmpty')}</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {series.map((item) => (
-            <li key={item.code} className="flex flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-2 text-sm">
-                <span className="truncate">{labelOf(item.code)}</span>
-                <span className="font-medium tabular-nums">{item.value}</span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: largest === 0 ? '0%' : `${(item.value / largest) * 100}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Le total en tête : la barre dit comment il se répartit, elle ne dit
+          pas de combien il s'agit. Sans lui, deux tableaux de bord aux
+          proportions identiques mais aux volumes opposés se ressembleraient. */}
+      <span className="text-3xl font-semibold">{totalOf(series)}</span>
+
+      <CompositionBar
+        slices={slices}
+        hovered={hovered}
+        onHover={setHovered}
+        labelOf={labelOf}
+      />
+
+      <ChartLegend
+        slices={slices}
+        hovered={hovered}
+        onHover={setHovered}
+        labelOf={labelOf}
+        shareFormatter={shareFormatter}
+      />
     </WidgetCard>
   )
 }

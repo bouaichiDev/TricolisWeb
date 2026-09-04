@@ -63,9 +63,39 @@ Il s'ajoutera avec le contexte, le jour où il arrivera.
 
 Le besoin demande de réutiliser la bibliothèque de graphes déjà installée. **Il
 n'y en a aucune** — seul Leaflet est présent, pour les cartes. `ChartWidget`
-trace des barres proportionnelles en CSS plutôt que d'ajouter une dépendance qui
+dessine une barre de composition en CSS plutôt que d'ajouter une dépendance qui
 n'a pas été demandée. Un histogramme temporel ou un nuage de points reposerait
 la question, et ce serait alors une décision de dépendance, prise comme telle.
+
+### La palette des graphes est mesurée, pas choisie
+
+Les huit teintes de `--chart-1` … `--chart-8` passent six contrôles sur la
+surface réelle des cartes, en clair comme en sombre : bande de clarté, plancher
+de saturation, séparation sous daltonisme (ΔE 9,1 au pire couple voisin),
+plancher en vision normale (ΔE 19,6) et contraste. Le mode sombre a ses propres
+pas — une inversion automatique les ferait sortir de la bande.
+
+Trois conséquences, toutes contre-intuitives et toutes délibérées :
+
+- **la couleur suit la série, jamais son rang** — l'ordre vient du cycle de vie
+  du statut, pas de la valeur, sinon un enregistrement de plus repeindrait la
+  moitié du graphe ;
+- **il n'y a pas de neuvième teinte** — au-delà de huit séries la queue fusionne
+  en « Autres », en gris ; une couleur générée serait indistinguable d'une autre
+  sous vision altérée ;
+- **la légende est aussi le tableau** — chaque valeur est lisible sans survol, et
+  la pastille de couleur est à côté du texte, jamais dedans : trois des huit
+  teintes n'ont pas le contraste d'un texte.
+
+### `closed_invoices_period_total` ne dessine aucune barre
+
+C'est le seul graphe dans ce cas, et c'est le propos. Une longueur
+proportionnelle affirme une comparaison — deux fois plus long, deux fois plus —
+et 5 000 CHF ne se rangent pas sur la même règle que 5 000 MAD. On refuse déjà
+de sommer les devises dans une valeur unique ; les mettre sur une échelle
+commune reviendrait à le faire du regard. Le serveur le déclare par
+`mode: 'amounts'` — c'est lui qui sait que `currency_code` sépare des monnaies
+incomparables.
 
 ### `labelKey` plutôt qu'un libellé
 
@@ -133,7 +163,7 @@ Toutes exécutées sur cette copie de travail, branche
 | `php artisan route:list --path=api/v1/dashboard` | 2 routes |
 | `npm run typecheck` | conforme |
 | `npm run lint` | conforme — aucun avertissement dans `modules/dashboard` |
-| `npm run test` | **699 réussis**, 100 fichiers |
+| `npm run test` | **706 réussis**, 101 fichiers |
 | `npm run build` | conforme |
 
 Répartition des tests ajoutés :
@@ -145,6 +175,7 @@ Répartition des tests ajoutés :
 | `Hardening/DashboardCatalogueConsistencyTest.php` | 6 |
 | `dashboard/pages/DashboardPage.test.tsx` | 7 |
 | `dashboard/components/RoleDashboardPanel.test.tsx` | 7 |
+| `dashboard/components/widgets/ChartWidget.test.tsx` | 7 |
 
 Le test de cohérence joue **les soixante widgets** sur une base vide et refuse
 une donnée `null` : une clé déclarée sans calcul rendrait une carte vide qu'on

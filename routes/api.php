@@ -29,6 +29,8 @@ use App\Http\Controllers\Api\V1\Contacts\ContactController;
 use App\Http\Controllers\Api\V1\Contacts\ContactLinkController;
 use App\Http\Controllers\Api\V1\Customers\CustomerController;
 use App\Http\Controllers\Api\V1\Customers\CustomerSiteController;
+use App\Http\Controllers\Api\V1\Dashboard\DashboardController;
+use App\Http\Controllers\Api\V1\Dashboard\DashboardWidgetController;
 use App\Http\Controllers\Api\V1\Documents\DocumentController;
 use App\Http\Controllers\Api\V1\Documents\DocumentLinkController;
 use App\Http\Controllers\Api\V1\Drivers\DriverController;
@@ -39,6 +41,7 @@ use App\Http\Controllers\Api\V1\Identity\MemberPasswordController;
 use App\Http\Controllers\Api\V1\Identity\OrganizationUserController;
 use App\Http\Controllers\Api\V1\Identity\PermissionController;
 use App\Http\Controllers\Api\V1\Identity\RoleController;
+use App\Http\Controllers\Api\V1\Identity\RoleDashboardController;
 use App\Http\Controllers\Api\V1\Identity\RoleMenuController;
 use App\Http\Controllers\Api\V1\Identity\RoleMenuGroupController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
@@ -198,6 +201,14 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
         Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
         Route::get('permissions/{permission}', [PermissionController::class, 'show'])->name('permissions.show');
+        // Le tableau de bord est toujours porte par une organisation : les
+        // chiffres qu'il agrege en viennent tous. Il vit donc dans ce groupe,
+        // contrairement au menu, qu'un compte plateforme lit aussi.
+        // `dashboard/widgets` est declaree avant `dashboard` par habitude de
+        // lecture ; les deux chemins sont distincts, aucun n'avale l'autre.
+        Route::get('dashboard/widgets', [DashboardWidgetController::class, 'index'])->name('dashboard.widgets.index');
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
         // Declarees avant la ressource : `{role}` avalerait le segment `menu`.
         // C'est ici, et nulle part ailleurs, que le menu se regle.
         Route::get('roles/{role}/menu', [RoleMenuController::class, 'index'])->name('roles.menu.index');
@@ -206,6 +217,14 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // d'en creer, la ou le reste du catalogue reste en code.
         Route::post('roles/{role}/menu/groups', [RoleMenuGroupController::class, 'store'])->name('roles.menu.groups.store');
         Route::delete('roles/{role}/menu/groups/{code}', [RoleMenuGroupController::class, 'destroy'])->name('roles.menu.groups.destroy');
+        // Meme precaution que pour le menu, et meme endroit unique de reglage.
+        // `PUT` remplace la selection entiere : ce qui n'est pas envoye n'est
+        // pas conserve, c'est ainsi qu'on decoche. `DELETE` rend le role aux
+        // defauts du catalogue, ce qu'une liste vide ne dirait pas — elle dit
+        // « aucun widget ».
+        Route::get('roles/{role}/dashboard', [RoleDashboardController::class, 'index'])->name('roles.dashboard.index');
+        Route::put('roles/{role}/dashboard', [RoleDashboardController::class, 'update'])->name('roles.dashboard.update');
+        Route::delete('roles/{role}/dashboard', [RoleDashboardController::class, 'destroy'])->name('roles.dashboard.destroy');
         Route::apiResource('roles', RoleController::class)->except(['create', 'edit']);
         Route::apiResource('users', UserController::class)->except(['create', 'edit']);
         // Rendre l'acces a un membre : le lien par courriel d'abord, le mot de

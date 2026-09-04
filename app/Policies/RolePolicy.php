@@ -94,6 +94,45 @@ class RolePolicy extends BaseOrganizationPolicy
         return $this->hasPermission($user, $role->organization_id, 'roles.update');
     }
 
+    /**
+     * Régler le **tableau de bord** d'un rôle.
+     *
+     * Même raisonnement que `updateMenu`, et une différence : la permission.
+     * Le menu est réglé par qui règle le rôle, donc `roles.update` ; le tableau
+     * de bord a la sienne, `dashboard.configure`, parce que composer des cartes
+     * est un travail métier qu'on veut pouvoir confier sans donner du même
+     * geste le droit de modifier les permissions d'un rôle.
+     *
+     * Ce que cette autorisation ne fait **jamais**, c'est accorder : un widget
+     * dont le rôle n'a pas la permission peut être activé — l'interface le
+     * refuse, et le serveur le refuserait aussi — mais il ne s'affichera pas
+     * pour autant. L'intersection avec les permissions effectives a lieu à
+     * chaque chargement du tableau de bord, et elle n'est pas contournable
+     * depuis cet écran.
+     *
+     * Le rôle système y échappe comme pour le menu : `admin` porte toutes les
+     * permissions, et lui interdire de régler son propre tableau de bord aurait
+     * privé l'administrateur du seul qu'il voit. Restent les deux conditions
+     * qui protègent vraiment : le rôle est de son organisation, et de portée
+     * organisation.
+     */
+    public function configureDashboard(User $user, Role $role): Response|bool
+    {
+        if ($this->platform->isPlatformAdmin($user)) {
+            return true;
+        }
+
+        if (! $this->seesOrganization($user, $role->organization_id)) {
+            return $this->notFound();
+        }
+
+        if (RoleScope::tryFromValue($role->scope) !== RoleScope::ORGANIZATION) {
+            return false;
+        }
+
+        return $this->hasPermission($user, $role->organization_id, 'dashboard.configure');
+    }
+
     public function delete(User $user, Role $role): Response|bool
     {
         return $this->mutate($user, $role, 'roles.delete');

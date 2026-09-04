@@ -37,19 +37,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
  * La pastille ne montre pas de nombre au-delà de neuf : « 47 » dans un rond de
  * seize pixels se lit mal, et la différence entre quarante-sept et cinquante ne
  * change rien au geste.
+ *
+ * Le flux est redemandé **à chaque ouverture**. Le sondage tourne déjà toutes
+ * les trente secondes, mais il peut dater de vingt-neuf : ouvrir le panneau est
+ * le moment où l'on lit, et le seul où l'attente se remarque.
  */
 export function NotificationBell() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
-  const { data } = useNotifications()
+  const { data, refetch } = useNotifications()
   const markRead = useMarkNotificationRead()
   const markAllRead = useMarkAllNotificationsRead()
 
   const unread = data?.unread ?? 0
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        // Ouvrir le panneau est le moment où l'on lit, et le seul où l'attente
+        // coûte : le sondage a beau tourner, il peut dater de vingt-neuf
+        // secondes. On redemande donc à l'ouverture, jamais à la fermeture.
+        if (next) void refetch()
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="ghost"

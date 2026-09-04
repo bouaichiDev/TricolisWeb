@@ -19,14 +19,28 @@ export const notificationKeys = {
 /**
  * La cloche du bandeau.
  *
- * Elle se rafraîchit toute seule, à la minute. Les notifications arrivent
+ * Trois façons de se rafraîchir, et il en faut trois : une cloche qui ne bouge
+ * qu'au rechargement de la page ne sert à rien, et les notifications arrivent
  * pendant qu'on travaille — une communication échoue, une règle en déclenche
- * une — et une cloche qui ne bouge qu'au rechargement de la page ne sert à
- * rien. La minute est un compromis assumé : plus court ferait une requête pour
- * rien la plupart du temps, plus long ferait rater ce qui vient de se produire.
+ * une.
  *
- * `refetchOnWindowFocus` s'y ajoute : revenir sur l'onglet est le moment où
- * l'on regarde, et c'est là qu'un chiffre périmé se remarque.
+ * | Quand | Pourquoi |
+ * | --- | --- |
+ * | toutes les **30 secondes** | pour que la pastille bouge sans qu'on ait rien fait |
+ * | au **retour sur l'onglet** | c'est le moment où l'on regarde, et où un chiffre périmé se remarque |
+ * | à l'**ouverture du panneau** | c'est le moment où l'on lit, et le seul où l'attente coûte |
+ *
+ * **`staleTime: 0` est ce qui fait tenir les deux derniers.** Sans lui, la
+ * requête hérite des trente secondes du client, et React Query considère alors
+ * la réponse encore fraîche : le retour sur l'onglet ne redemande rien, et
+ * l'ouverture du panneau non plus. C'était le défaut — la cloche semblait
+ * n'obéir qu'au rechargement de la page. Un flux de notifications n'est
+ * **jamais** frais : c'est la seule donnée de l'application dont l'intérêt est
+ * précisément qu'elle a pu changer depuis la dernière seconde.
+ *
+ * Le sondage s'arrête quand l'onglet passe en arrière-plan
+ * (`refetchIntervalInBackground` reste faux) : personne ne regarde, et le
+ * retour sur l'onglet rattrape.
  */
 export function useNotifications() {
   const { organizationId } = useAuth()
@@ -34,8 +48,9 @@ export function useNotifications() {
   return useQuery({
     queryKey: notificationKeys.feed(organizationId),
     queryFn: notificationsApi.feed,
-    refetchInterval: 60 * 1000,
+    refetchInterval: 30 * 1000,
     refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 }
 

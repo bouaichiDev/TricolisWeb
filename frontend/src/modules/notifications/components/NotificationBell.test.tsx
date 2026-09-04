@@ -116,6 +116,48 @@ describe('cloche des notifications', () => {
     await waitFor(() => expect(read).toHaveBeenCalled())
   })
 
+  /**
+   * Le défaut constaté à l'usage : la cloche semblait n'obéir qu'au rechargement
+   * de la page. La requête héritait des trente secondes de `staleTime` du
+   * client, et React Query tenait alors la réponse pour fraîche — ni le retour
+   * sur l'onglet ni l'ouverture du panneau ne redemandaient quoi que ce soit.
+   *
+   * Un flux de notifications n'est jamais frais : c'est la seule donnée dont
+   * l'intérêt est précisément qu'elle a pu changer depuis la dernière seconde.
+   */
+  it('redemande le flux à chaque ouverture du panneau', async () => {
+    const user = userEvent.setup()
+    let calls = 0
+
+    server.use(
+      http.get(`${API}/notifications`, () => {
+        calls += 1
+
+        return HttpResponse.json({
+          data: {
+            unread: calls,
+            internal: [notification({ title: `Message ${calls}` })],
+            external: [],
+          },
+          meta: [],
+        })
+      }),
+      http.get(`${API}/statuses`, () => HttpResponse.json({ data: [], meta: {} })),
+    )
+
+    renderWithProviders(<NotificationBell />, {
+      membership: withPermissions(['order_communications.view']),
+    })
+
+    await screen.findByText('1')
+
+    await user.click(screen.getByRole('button', { name: /1 notification/ }))
+
+    // Le second appel part à l'ouverture, sans attendre les trente secondes du
+    // sondage.
+    expect(await screen.findByText('Message 2')).toBeInTheDocument()
+  })
+
   it('ne propose « tout marquer comme lu » que s’il reste quelque chose à lire', async () => {
     const user = userEvent.setup()
 

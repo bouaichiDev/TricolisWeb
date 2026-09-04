@@ -131,12 +131,30 @@ montrer », et lui dire lequel des deux renseignerait sur ce qui existe ailleurs
 | `frontend/src/modules/notifications/components/NotificationList.tsx` | une moitié |
 | `frontend/src/modules/notifications/hooks/useNotifications.ts` | le flux, rafraîchi à la minute |
 
-Le flux se rafraîchit **à la minute**, et au retour sur l'onglet. Les
-notifications arrivent pendant qu'on travaille — une communication échoue, une
-règle en déclenche une — et une cloche qui ne bouge qu'au rechargement de la
-page ne sert à rien. La minute est un compromis assumé : plus court ferait une
-requête pour rien la plupart du temps, plus long ferait rater ce qui vient de se
-produire.
+### Quand le flux se rafraîchit
+
+Trois façons, et il en faut trois : une cloche qui ne bouge qu'au rechargement
+de la page ne sert à rien, et les notifications arrivent pendant qu'on
+travaille.
+
+| Quand | Pourquoi |
+| --- | --- |
+| toutes les **30 secondes** | pour que la pastille bouge sans qu'on ait rien fait |
+| au **retour sur l'onglet** | c'est le moment où l'on regarde, et où un chiffre périmé se remarque |
+| à l'**ouverture du panneau** | c'est le moment où l'on lit, et le seul où l'attente coûte |
+
+**`staleTime: 0` est ce qui fait tenir les deux derniers**, et son absence était
+un vrai défaut : la requête héritait des trente secondes de `staleTime` du
+client, React Query tenait alors la réponse pour fraîche, et ni le retour sur
+l'onglet ni l'ouverture du panneau ne redemandaient quoi que ce soit. La cloche
+semblait n'obéir qu'au rechargement de la page.
+
+Un flux de notifications n'est **jamais** frais : c'est la seule donnée de
+l'application dont l'intérêt est précisément qu'elle a pu changer depuis la
+dernière seconde.
+
+Le sondage s'arrête quand l'onglet passe en arrière-plan : personne ne regarde,
+et le retour sur l'onglet rattrape.
 
 ---
 
@@ -155,6 +173,7 @@ produire.
 | `marks every one of mine at once, and none of theirs` | un « tout marquer » qui déborde |
 | `compte les internes non lues, et elles seules` | une pastille qu'aucun geste ne fait baisser |
 | `ne propose l'historique qu'avec la permission` | un lien menant à un écran qui refuse |
+| `redemande le flux à chaque ouverture du panneau` | une cloche qui n'obéit qu'au rechargement de la page |
 
 ---
 
@@ -164,6 +183,12 @@ produire.
   règle de communication qu'un organisme configure — canal « notification
   interne », destinataire « utilisateur interne ». Sans règle, la moitié interne
   reste vide, et c'est exact : personne n'a demandé à être prévenu.
+- **Pas de temps réel.** Le flux est sondé, non poussé : l'application n'a pas
+  de diffusion d'événements — ni Reverb, ni Pusher, ni canal WebSocket — et en
+  installer une pour une cloche demanderait un serveur de plus à faire tourner
+  à côté. Trente secondes, le retour sur l'onglet et l'ouverture du panneau
+  couvrent l'usage ; une notification vraiment instantanée est une décision
+  d'infrastructure, à prendre comme telle.
 - **Pas de notification de plateforme.** Un compte sans organisation active voit
   une cloche vide. Les événements qui le concerneraient — une organisation
   créée, un abonnement expiré — ne sont modélisés nulle part, et les inventer

@@ -7,6 +7,7 @@ namespace App\Modules\Dashboard\Sources;
 use App\Modules\Dashboard\Services\DashboardContext;
 use App\Modules\Dashboard\Services\DashboardDataSource;
 use App\Modules\Dashboard\Services\DashboardPayload;
+use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Orders\Models\OrderService;
 use App\Modules\Planning\Services\PlanningEligibility;
 use App\Modules\Tours\Enums\TourStatus;
@@ -74,7 +75,9 @@ final readonly class PlanningData implements DashboardDataSource
             'services_without_gps' => DashboardPayload::alert($this->withoutCoordinates($context)),
 
             'recent_tours' => DashboardPayload::list($this->recentTours($context)),
-            'tours_by_status' => DashboardPayload::chart($this->toursByStatus($context), MorphMap::TOUR),
+            'tours_by_status' => DashboardPayload::donut($this->toursByStatus($context), MorphMap::TOUR),
+
+            'planning_coverage_rate' => $this->planningCoverage($context),
 
             default => null,
         };
@@ -145,6 +148,29 @@ final readonly class PlanningData implements DashboardDataSource
                 'route' => '/tours/'.$tour->getKey(),
             ])
             ->all();
+    }
+
+    /**
+     * Ce qui est place, sur ce qui reste a placer.
+     *
+     * Le tout n'est pas « tous les services » : un service en brouillon ou
+     * annule n'attend rien de la planification, et l'inclure ferait plafonner
+     * le taux bien en dessous de cent sans qu'on puisse rien y faire. Le
+     * denominateur est donc l'ensemble des services **planifiables** — ceux
+     * places, et ceux qui attendent de l'etre.
+     *
+     * @return array<string, mixed>
+     */
+    private function planningCoverage(DashboardContext $context): array
+    {
+        $waiting = $this->plannable($context)->count();
+
+        $placed = OrderService::query()
+            ->where('status', OrderServiceStatus::PLANNED->value)
+            ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
+            ->count();
+
+        return DashboardPayload::gauge($placed, $placed + $waiting);
     }
 
     /**

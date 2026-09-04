@@ -71,7 +71,7 @@ describe('tableau de bord', () => {
           key: 'orders_by_status',
           type: 'chart',
           labelKey: 'dashboardWidgets.orders_by_status.label',
-          data: { mode: 'share' as const, source: null, series: [{ code: 'draft', value: 4 }] },
+          data: { mode: 'share' as const, source: null, labels: null, series: [{ code: 'draft', value: 4 }] },
         },
         {
           ...kpi,

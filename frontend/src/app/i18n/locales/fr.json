@@ -153,7 +153,9 @@
     "seeAll": "Voir tout",
     "quickAction": "Action rapide",
     "otherSeries": "Autres",
-    "total": "Total"
+    "total": "Total",
+    "gaugeOutOf": "sur {{total}}",
+    "gaugeEmpty": "Rien à mesurer pour l’instant."
   },
   "table": {
     "empty": "Aucun résultat",
@@ -2832,7 +2834,9 @@
     "chart": "Graphique",
     "list": "Liste",
     "alert": "Alerte",
-    "quick_action": "Action rapide"
+    "quick_action": "Action rapide",
+    "donut": "Camembert",
+    "gauge": "Jauge"
   },
   "dashboardCategories": {
     "operations": "Exploitation",
@@ -3085,6 +3089,30 @@
     "new_communication_rule": {
       "label": "Nouvelle règle de communication",
       "description": "Ouvre la liste des règles, où l'on en crée une"
+    },
+    "orders_by_source": {
+      "label": "Commandes par provenance",
+      "description": "D’où viennent les commandes : saisie, portail client, API, imports"
+    },
+    "planning_coverage_rate": {
+      "label": "Taux de planification",
+      "description": "Services placés sur une tournée, rapportés à ceux qui attendent de l’être"
+    },
+    "pod_coverage_rate": {
+      "label": "Couverture des preuves de livraison",
+      "description": "Services achevés dont la preuve a été rapportée"
+    },
+    "stock_reserved_rate": {
+      "label": "Part du stock réservée",
+      "description": "Quantité engagée par des réservations, rapportée au stock total"
+    },
+    "communications_by_channel": {
+      "label": "Communications par canal",
+      "description": "Répartition des envois entre e-mail, SMS et notifications"
+    },
+    "export_success_rate": {
+      "label": "Taux de réussite des exports",
+      "description": "Envois partis aujourd’hui, rapportés à ceux qui se sont achevés"
     }
   }
 }

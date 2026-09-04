@@ -63,6 +63,8 @@ final readonly class IntegrationsData implements DashboardDataSource
             ),
             'recent_export_jobs' => DashboardPayload::list($this->recentJobs($context)),
 
+            'export_success_rate' => $this->successRate($context),
+
             'active_api_configurations' => DashboardPayload::kpi(
                 OrganizationApiConfiguration::query()
                     ->where('organization_id', $context->organizationId)
@@ -89,6 +91,31 @@ final readonly class IntegrationsData implements DashboardDataSource
     private function jobs(DashboardContext $context): Builder
     {
         return ExportJob::query()->inOrganization($context->organizationId);
+    }
+
+    /**
+     * Partis contre tentes, sur la journee.
+     *
+     * Le tout ne compte que les envois **acheves** — partis ou echoues. Y
+     * ajouter ceux qui attendent encore ferait baisser le taux a chaque depot
+     * de fichier, et remonter tout seul une minute plus tard : on lirait la
+     * file d'attente en croyant lire la fiabilite.
+     *
+     * @return array<string, mixed>
+     */
+    private function successRate(DashboardContext $context): array
+    {
+        $sent = $this->jobs($context)
+            ->where('status', self::SENT)
+            ->whereBetween('sent_at', $context->dayBounds())
+            ->count();
+
+        $failed = $this->jobs($context)
+            ->where('status', self::FAILED)
+            ->whereBetween('generated_at', $context->dayBounds())
+            ->count();
+
+        return DashboardPayload::gauge($sent, $sent + $failed);
     }
 
     /**

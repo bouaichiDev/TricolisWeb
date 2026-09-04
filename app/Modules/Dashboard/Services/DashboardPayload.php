@@ -44,16 +44,65 @@ final readonly class DashboardPayload
     /**
      * Une **répartition** : des parts d'un même tout, qui s'additionnent.
      *
-     * `source` désigne l'entité au référentiel des statuts : le frontend y lit
-     * le libellé qu'un administrateur a pu régler, plutôt qu'une traduction
-     * livrée qui l'ignorerait.
+     * Deux façons de nommer les codes, et une seule s'applique à la fois :
+     *
+     * - `source` désigne l'entité au **référentiel des statuts**. Le frontend y
+     *   lit le libellé qu'un administrateur a pu régler, plutôt qu'une
+     *   traduction livrée qui l'ignorerait ;
+     * - `labels` désigne un **espace de traduction** — `orderSources`,
+     *   `communicationChannels`. Ces codes-là viennent d'énumérations PHP :
+     *   personne ne les renomme, et le référentiel ne les connaît pas.
+     *
+     * Les deux `null` valent « le code se nomme lui-même », ce qui est le cas
+     * d'une devise.
      *
      * @param  array<int, array{code: string, value: int|float}>  $series
      * @return array<string, mixed>
      */
-    public static function chart(array $series, ?string $source = null): array
+    public static function chart(array $series, ?string $source = null, ?string $labels = null): array
     {
-        return ['mode' => 'share', 'source' => $source, 'series' => array_values($series)];
+        return [
+            'mode' => 'share',
+            'source' => $source,
+            'labels' => $labels,
+            'series' => array_values($series),
+        ];
+    }
+
+    /**
+     * La même répartition, **vue de face** : peu de parts, lues d'un coup d'œil.
+     *
+     * La forme de la donnée est identique à `chart()`, et c'est le **type du
+     * widget** qui choisit le rendu — pas un drapeau ici. Le camembert n'est
+     * pas une variante de la barre : c'est une décision de catalogue, prise une
+     * fois, sur le nombre de parts que la série peut atteindre.
+     *
+     * @param  array<int, array{code: string, value: int|float}>  $series
+     * @return array<string, mixed>
+     */
+    public static function donut(array $series, ?string $source = null, ?string $labels = null): array
+    {
+        return self::chart($series, $source, $labels);
+    }
+
+    /**
+     * **Un rapport**, et son tout.
+     *
+     * Le pourcentage n'est pas calculé ici : la part et le tout partent tous
+     * deux, et l'interface les affiche l'un et l'autre. Un taux seul se retient
+     * mal — « 72 % » ne dit pas si l'on parle de neuf cas sur douze ou de neuf
+     * cents sur mille deux cents, et la première mérite un haussement d'épaules
+     * quand la seconde mérite une réunion.
+     *
+     * Un tout à zéro est rendu tel quel, sans division : c'est au frontend de
+     * dire « rien à mesurer », pas au serveur d'inventer 0 % — qui se lirait
+     * comme un échec là où il n'y a simplement rien.
+     *
+     * @return array<string, mixed>
+     */
+    public static function gauge(int|float $value, int|float $total): array
+    {
+        return ['value' => $value, 'total' => $total];
     }
 
     /**
@@ -71,7 +120,12 @@ final readonly class DashboardPayload
      */
     public static function amounts(array $series): array
     {
-        return ['mode' => 'amounts', 'source' => null, 'series' => array_values($series)];
+        return [
+            'mode' => 'amounts',
+            'source' => null,
+            'labels' => null,
+            'series' => array_values($series),
+        ];
     }
 
     /**

@@ -24,7 +24,7 @@ Organisation active
 → un seul GET /dashboard
 ```
 
-Un seul appel, soixante widgets disponibles, neuf catégories.
+Un seul appel, soixante-six widgets disponibles, neuf catégories, sept formes de rendu.
 
 ---
 
@@ -66,6 +66,23 @@ n'y en a aucune** — seul Leaflet est présent, pour les cartes. `ChartWidget`
 dessine une barre de composition en CSS plutôt que d'ajouter une dépendance qui
 n'a pas été demandée. Un histogramme temporel ou un nuage de points reposerait
 la question, et ce serait alors une décision de dépendance, prise comme telle.
+
+### Trois formes de graphe, et le catalogue tranche
+
+Barre de composition, camembert, jauge. Ce ne sont pas trois habillages : chacun
+répond à une question que les deux autres posent mal, et le **catalogue** choisit
+une fois pour toutes, sur le nombre de parts que la série peut atteindre.
+
+| Forme | Où | Pourquoi pas une autre |
+| --- | --- | --- |
+| barre de composition | `orders_by_status`, `invoices_by_status` | dix statuts aux noms longs ; dix secteurs voisins seraient indistinguables |
+| camembert | `tours_by_status`, `orders_by_source`, `communications_by_channel` | six parts au plus ; une barre se lit de gauche à droite, pas comme un tout |
+| jauge | les quatre taux | un camembert à deux secteurs occupe deux fois la place et fait passer le reste pour une catégorie |
+
+La jauge porte **une seule teinte**, jamais de vert-orange-rouge : ces taux
+n'ont pas de bon sens universel. Une part de stock réservée élevée est
+excellente pour un commercial et inquiétante pour un logisticien ; en peindre un
+en rouge trancherait à leur place.
 
 ### La palette des graphes est mesurée, pas choisie
 
@@ -163,7 +180,7 @@ Toutes exécutées sur cette copie de travail, branche
 | `php artisan route:list --path=api/v1/dashboard` | 2 routes |
 | `npm run typecheck` | conforme |
 | `npm run lint` | conforme — aucun avertissement dans `modules/dashboard` |
-| `npm run test` | **706 réussis**, 101 fichiers |
+| `npm run test` | **713 réussis**, 102 fichiers |
 | `npm run build` | conforme |
 
 Répartition des tests ajoutés :
@@ -176,6 +193,7 @@ Répartition des tests ajoutés :
 | `dashboard/pages/DashboardPage.test.tsx` | 7 |
 | `dashboard/components/RoleDashboardPanel.test.tsx` | 7 |
 | `dashboard/components/widgets/ChartWidget.test.tsx` | 7 |
+| `dashboard/components/widgets/DonutWidget.test.tsx` | 7 |
 
 Le test de cohérence joue **les soixante widgets** sur une base vide et refuse
 une donnée `null` : une clé déclarée sans calcul rendrait une carte vide qu'on

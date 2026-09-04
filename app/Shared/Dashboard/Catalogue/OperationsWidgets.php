@@ -102,6 +102,19 @@ final class OperationsWidgets
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/orders',
             ),
+            // Camembert : la provenance se lit en proportion, et un organisme
+            // n'en emploie que deux ou trois sur les neuf possibles. Les
+            // statuts, eux, restent en barre — ils sont dix, et leurs noms
+            // sont longs.
+            new DashboardWidget(
+                key: 'orders_by_source',
+                type: DashboardWidgetType::DONUT,
+                category: DashboardWidgetCategory::OPERATIONS,
+                requiredPermission: 'orders.view',
+                defaultPosition: 9,
+                size: DashboardWidgetSize::MEDIUM,
+                route: '/orders',
+            ),
         ];
     }
 }

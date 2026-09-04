@@ -89,7 +89,15 @@ final readonly class OperationsData implements DashboardDataSource
             ),
 
             'recent_orders' => DashboardPayload::list($this->recentOrders($context)),
-            'orders_by_status' => DashboardPayload::chart($this->ordersByStatus($context), MorphMap::ORDER),
+            'orders_by_status' => DashboardPayload::chart($this->groupBy($context, 'status'), MorphMap::ORDER),
+
+            // `labels` et non `source` : la provenance vient d'une enumeration
+            // PHP, que personne ne renomme. Le referentiel des statuts ne la
+            // connait pas, et l'y chercher aurait rendu des codes bruts.
+            'orders_by_source' => DashboardPayload::donut(
+                $this->groupBy($context, 'source'),
+                labels: 'orderSources',
+            ),
 
             default => null,
         };
@@ -143,7 +151,7 @@ final readonly class OperationsData implements DashboardDataSource
     }
 
     /**
-     * Un `GROUP BY`, et non dix `COUNT` — un par statut connu.
+     * Un `GROUP BY`, et non dix `COUNT` — un par valeur connue.
      *
      * La requête part en `toBase()`, hors d'Eloquent : hydrater un modèle pour
      * lire un agrégat ferait passer `status` par sa conversion en énumération,
@@ -151,20 +159,22 @@ final readonly class OperationsData implements DashboardDataSource
      * statut retiré du code ferait alors échouer le tableau de bord entier,
      * pour une ligne.
      *
+     * Le nom de colonne ne vient jamais d'une requête : il est écrit dans les
+     * deux seuls appels qui existent. Une colonne choisie à l'extérieur serait
+     * une injection — `selectRaw` ne prend pas de liaison pour un identifiant.
+     *
      * @return array<int, array{code: string, value: int}>
      */
-    private function ordersByStatus(DashboardContext $context): array
+    private function groupBy(DashboardContext $context, string $column): array
     {
-        $rows = $this->orders($context)
+        return $this->orders($context)
             ->toBase()
-            ->selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->orderBy('status')
-            ->get();
-
-        return $rows
+            ->selectRaw("{$column}, COUNT(*) as total")
+            ->groupBy($column)
+            ->orderBy($column)
+            ->get()
             ->map(static fn (object $row): array => [
-                'code' => (string) $row->status,
+                'code' => (string) $row->{$column},
                 'value' => (int) $row->total,
             ])
             ->all();

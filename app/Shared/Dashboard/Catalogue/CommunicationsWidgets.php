@@ -59,6 +59,17 @@ final class CommunicationsWidgets
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/communications/history',
             ),
+            // Cinq canaux, pas un de plus : l'enumeration les fixe, et cinq
+            // parts se lisent d'un coup d'oeil.
+            new DashboardWidget(
+                key: 'communications_by_channel',
+                type: DashboardWidgetType::DONUT,
+                category: DashboardWidgetCategory::COMMUNICATIONS,
+                requiredPermission: 'order_communications.view',
+                defaultPosition: 504,
+                size: DashboardWidgetSize::MEDIUM,
+                route: '/communications/history',
+            ),
         ];
     }
 }

@@ -66,6 +66,13 @@ final readonly class StockData implements DashboardDataSource
 
             'recent_stock_movements' => DashboardPayload::list($this->recentMovements($context)),
 
+            // La part engagee sur le total, en un seul geste : trois compteurs
+            // cote a cote obligeaient a faire la division de tete.
+            'stock_reserved_rate' => DashboardPayload::gauge(
+                $this->sum('reserved_quantity', $organizationId),
+                $this->sum('quantity', $organizationId),
+            ),
+
             default => null,
         };
     }

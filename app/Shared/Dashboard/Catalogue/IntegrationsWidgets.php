@@ -76,6 +76,18 @@ final class IntegrationsWidgets
                 defaultPosition: 605,
                 route: '/billing/export-configurations',
             ),
+            // Partis contre tentes, sur la journee. Le compteur d'echecs dit
+            // combien il y en a ; celui-ci dit si c'est beaucoup — trois echecs
+            // sur cinq envois et trois sur trois cents ne demandent pas la meme
+            // reaction.
+            new DashboardWidget(
+                key: 'export_success_rate',
+                type: DashboardWidgetType::GAUGE,
+                category: DashboardWidgetCategory::INTEGRATIONS,
+                requiredPermission: 'export_jobs.view',
+                defaultPosition: 606,
+                route: '/integrations/export-jobs',
+            ),
         ];
     }
 }

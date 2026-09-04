@@ -71,6 +71,14 @@ final readonly class CommunicationsData implements DashboardDataSource
 
             'recent_communications' => DashboardPayload::list($this->recent($context)),
 
+            // `labels` et non `source` : les canaux viennent d'une enumeration
+            // PHP, que personne ne renomme. Le referentiel des statuts ne les
+            // connait pas, et l'y chercher aurait rendu des codes bruts.
+            'communications_by_channel' => DashboardPayload::donut(
+                $this->byChannel($context),
+                labels: 'communicationChannels',
+            ),
+
             default => null,
         };
     }
@@ -81,6 +89,31 @@ final readonly class CommunicationsData implements DashboardDataSource
     private function communications(DashboardContext $context): Builder
     {
         return OrderCommunication::query()->where('organization_id', $context->organizationId);
+    }
+
+    /**
+     * La repartition par canal.
+     *
+     * Hors d'Eloquent, comme les autres agregats : hydrater un modele pour lire
+     * un `GROUP BY` ferait passer `channel` par sa conversion en enumeration,
+     * qui leve sur une valeur qu'elle ne connait pas. Un canal retire du code
+     * ferait alors echouer le tableau de bord entier, pour une ligne.
+     *
+     * @return array<int, array{code: string, value: int}>
+     */
+    private function byChannel(DashboardContext $context): array
+    {
+        return $this->communications($context)
+            ->toBase()
+            ->selectRaw('channel, COUNT(*) as total')
+            ->groupBy('channel')
+            ->orderBy('channel')
+            ->get()
+            ->map(static fn (object $row): array => [
+                'code' => (string) $row->channel,
+                'value' => (int) $row->total,
+            ])
+            ->all();
     }
 
     /**

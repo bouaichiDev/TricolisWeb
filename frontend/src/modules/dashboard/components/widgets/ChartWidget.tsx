@@ -11,9 +11,9 @@ import {
   totalOf,
   type ChartSlice,
 } from '../charts/chartPalette'
+import { useSeriesLabel } from '../charts/useSeriesLabel'
 import { WidgetCard } from '../WidgetCard'
 import type { ChartData, ChartSeries, DashboardWidget } from '../../types/dashboard'
-import { useStatusOptions } from '@/modules/statuses/hooks/useStatuses'
 
 // Constante partagée plutôt qu'un `[]` littéral : un tableau neuf à chaque
 // rendu ferait recalculer les mémoïsations en continu, pour un résultat
@@ -47,14 +47,14 @@ export function ChartWidget({ widget }: { widget: DashboardWidget }) {
   const data = widget.data as ChartData | null
   const series = data?.series ?? NO_SERIES
 
-  const { statuses } = useStatusOptions(data?.source ?? '')
+  const { labelOfCode, referentialOrder } = useSeriesLabel(data)
 
   // Le référentiel donne l'ordre du cycle de vie ; le serveur, lui, trie par
   // code. `draft` avant `completed` n'a rien d'esthétique : c'est la lecture
   // d'un pipeline, et l'ordre alphabétique la prenait à l'envers.
   const ordered = useMemo(
-    () => orderByLifecycle(series, statuses.map((status) => status.code)),
-    [series, statuses],
+    () => orderByLifecycle(series, referentialOrder),
+    [series, referentialOrder],
   )
   const slices = useMemo(() => toSlices(ordered), [ordered])
 
@@ -64,9 +64,7 @@ export function ChartWidget({ widget }: { widget: DashboardWidget }) {
   )
 
   const labelOf = (slice: ChartSlice) =>
-    slice.code === OTHER_KEY
-      ? t('dashboard.otherSeries')
-      : (statuses.find((status) => status.code === slice.code)?.label ?? slice.code)
+    slice.code === OTHER_KEY ? t('dashboard.otherSeries') : labelOfCode(slice.code)
 
   if (series.length === 0) {
     return (

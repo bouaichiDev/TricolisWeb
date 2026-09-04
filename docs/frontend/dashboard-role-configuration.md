@@ -81,9 +81,9 @@ organisation crée elle-même.
 
 ---
 
-## 4. Le rendu : cinq types, cinq composants
+## 4. Le rendu : sept types, sept composants
 
-`DashboardWidgetRenderer` fait correspondre `widget.type` à l'un de cinq
+`DashboardWidgetRenderer` fait correspondre `widget.type` à l'un de sept
 composants écrits dans le dossier. Un `components[widget.component]` aurait
 suffi à ouvrir la porte à un nom venu de la base ; le `switch` la ferme.
 
@@ -95,7 +95,9 @@ version le verrait, et une carte manquante vaut mieux qu'un écran blanc.
 | --- | --- | --- |
 | `kpi` | un chiffre | `null` affiche un tiret, jamais zéro : « aucun client » et « le chiffre n'a pas pu être lu » ne sont pas la même information |
 | `alert` | un compte qui appelle une action | zéro est une bonne nouvelle, et se rend sobrement |
-| `chart` | des barres | **sans bibliothèque** : voir §5 |
+| `chart` | une barre de composition | **sans bibliothèque** : voir §5 |
+| `donut` | un anneau, six parts au plus | ce n'est pas une variante de la barre : voir §5 |
+| `gauge` | un rapport, et son tout | une seule teinte, jamais de vert-orange-rouge : voir §5 |
 | `list` | six lignes, et « Voir tout » | la seule carte non cliquable : voir §6 |
 | `quick_action` | un libellé, une destination | le seul dont `data` vaut `null` |
 
@@ -163,6 +165,35 @@ L'ordre des lignes vient du **référentiel des statuts**, pas du tri par code q
 rend le serveur : `completed, confirmed, draft` prend le pipeline à l'envers.
 Les libellés en viennent aussi — un statut ajouté par un administrateur
 s'affiche avec le nom qu'il lui a donné.
+
+### Trois formes, et ce qui les sépare
+
+Elles portent la même donnée pour deux d'entre elles, et ce n'est pas la donnée
+qui choisit : c'est le **catalogue**, une fois, sur le nombre de parts que la
+série peut atteindre.
+
+| Forme | Quand | Pourquoi pas une autre |
+| --- | --- | --- |
+| barre de composition | dix statuts de commande, aux noms longs | dix secteurs voisins deviennent indistinguables |
+| camembert | six statuts de tournée, cinq canaux d'envoi | une barre se lit de gauche à droite, pas comme un tout |
+| jauge | **un** rapport : ce qui est planifié, ce qui est couvert | un camembert à deux secteurs occupe deux fois la place et fait passer le reste pour une catégorie |
+
+Le camembert est **évidé**, et non plein : un disque plein demande de comparer
+des angles au sommet, ce que l'œil fait mal ; un anneau les rend en longueurs
+d'arc, qu'il lit bien mieux. Le centre libéré porte le total, qui n'a nulle part
+ailleurs où aller sans occuper une ligne de plus.
+
+Il garde **la même légende** que la barre, et c'est voulu : un camembert seul ne
+permet pas de comparer deux parts proches — c'est son défaut connu, et la liste
+chiffrée à côté est la réponse, pas un ornement.
+
+La jauge affiche le taux **et** le compte, jamais l'un sans l'autre : « 72 % »
+ne dit pas si l'on parle de neuf cas sur douze ou de neuf cents sur mille deux
+cents. Elle porte **une seule teinte**, jamais de vert-orange-rouge : ces taux
+n'ont pas de bon sens universel — une part de stock réservée élevée est
+excellente pour un commercial et inquiétante pour un logisticien, et en peindre
+un en rouge trancherait à leur place. Et zéro sur zéro n'affiche pas 0 %, qui se
+lirait comme un échec, mais « rien à mesurer ».
 
 ### Le graphe qui ne dessine aucune barre
 
@@ -330,3 +361,5 @@ interdire aurait privé l'administrateur du seul tableau de bord qu'il voit.
 | --- | --- |
 | `dashboard/pages/DashboardPage.test.tsx` | qu'un type ne se rende pas ; que les anciennes cartes reparaissent pendant le chargement ; qu'une erreur soit comblée ; que le raccourci de réglage soit proposé sans la permission |
 | `dashboard/components/RoleDashboardPanel.test.tsx` | qu'un widget sans permission soit activable ; qu'un clic enregistre ; que les rangs partent non renumérotés ; qu'un rôle non réglable propose des actions |
+| `dashboard/components/widgets/ChartWidget.test.tsx` | qu'une série ne soit nommée que par sa couleur ; qu'une neuvième teinte soit inventée ; que des devises partagent une échelle |
+| `dashboard/components/widgets/DonutWidget.test.tsx` | qu'une jauge rende 0 % faute de données ; qu'elle dépasse le tour complet ; qu'un code d'énumération s'affiche brut |

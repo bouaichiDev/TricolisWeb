@@ -101,14 +101,31 @@ final class PlanningWidgets
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/tours',
             ),
+            // Camembert et non barre de composition : une tournee a six statuts,
+            // pas dix. C'est la borne au-dela de laquelle deux secteurs voisins
+            // deviennent indistinguables — les commandes, elles, restent en
+            // barre pour cette raison.
             new DashboardWidget(
                 key: 'tours_by_status',
-                type: DashboardWidgetType::CHART,
+                type: DashboardWidgetType::DONUT,
                 category: DashboardWidgetCategory::PLANNING,
                 requiredPermission: 'tours.view',
                 defaultPosition: 108,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/tours',
+            ),
+
+            // Un seul rapport : ce qui est place, sur ce qui reste a placer.
+            // Un camembert a deux secteurs repondrait a la meme question en
+            // occupant deux fois la place, et ferait passer le reste pour une
+            // categorie alors qu'il n'est qu'un reste.
+            new DashboardWidget(
+                key: 'planning_coverage_rate',
+                type: DashboardWidgetType::GAUGE,
+                category: DashboardWidgetCategory::PLANNING,
+                requiredPermission: 'tours.view',
+                defaultPosition: 109,
+                route: '/planning',
             ),
         ];
     }

@@ -72,6 +72,17 @@ final class ClaimsWidgets
                 requiredPermission: 'proofs_of_delivery.view',
                 defaultPosition: 204,
             ),
+            // Le meme constat que `services_without_pod`, dans l'autre sens :
+            // celui-la compte ce qui manque, celui-ci dit ou l'on en est. Les
+            // deux se completent — un chiffre brut ne dit pas s'il est gros,
+            // un taux ne dit pas combien de dossiers il represente.
+            new DashboardWidget(
+                key: 'pod_coverage_rate',
+                type: DashboardWidgetType::GAUGE,
+                category: DashboardWidgetCategory::CLAIMS,
+                requiredPermission: 'proofs_of_delivery.view',
+                defaultPosition: 205,
+            ),
         ];
     }
 }

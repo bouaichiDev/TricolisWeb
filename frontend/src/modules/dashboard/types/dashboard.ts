@@ -15,13 +15,27 @@
  */
 
 /**
- * Les cinq formes qu'un widget peut prendre.
+ * Les sept formes qu'un widget peut prendre.
  *
  * Jeu fermé, et c'est ce qui rend le rendu sûr : `DashboardWidgetRenderer` fait
- * correspondre ces valeurs à cinq composants écrits ici. Aucun nom de composant
+ * correspondre ces valeurs à sept composants écrits ici. Aucun nom de composant
  * ne voyage depuis la base.
+ *
+ * Trois se ressemblent et ne se remplacent pas — c'est le catalogue qui
+ * tranche, sur le nombre de parts que la série peut atteindre :
+ *
+ * - `chart` — une barre de composition : beaucoup de parts, aux noms longs ;
+ * - `donut` — un camembert : six parts au plus, lues d'un coup d'œil ;
+ * - `gauge` — un seul rapport, une part contre son tout.
  */
-export type DashboardWidgetType = 'kpi' | 'chart' | 'list' | 'alert' | 'quick_action'
+export type DashboardWidgetType =
+  | 'kpi'
+  | 'chart'
+  | 'donut'
+  | 'gauge'
+  | 'list'
+  | 'alert'
+  | 'quick_action'
 
 export type DashboardWidgetSize = 'small' | 'medium' | 'large' | 'full'
 
@@ -72,8 +86,32 @@ export type ChartMode = 'share' | 'amounts'
 
 export interface ChartData {
   mode: ChartMode
+  /** Entité au référentiel des statuts, dont les libellés sont réglables. */
   source: string | null
+  /**
+   * Espace de traduction livré — `orderSources`, `communicationChannels`.
+   *
+   * Exclusif avec `source` : ces codes viennent d'énumérations PHP, que
+   * personne ne renomme et que le référentiel ne connaît pas. Les deux absents,
+   * le code se nomme lui-même — une devise, par exemple.
+   */
+  labels: string | null
   series: ChartSeries[]
+}
+
+/**
+ * Un rapport, et son tout.
+ *
+ * Le pourcentage n'est **pas** transmis : la part et le tout le sont, et
+ * l'interface affiche les deux. « 72 % » ne dit pas si l'on parle de neuf cas
+ * sur douze ou de neuf cents sur mille deux cents.
+ *
+ * Un `total` à zéro est une réponse valide — « rien à mesurer » — et non une
+ * division à faire quand même.
+ */
+export interface GaugeData {
+  value: number
+  total: number
 }
 
 export interface ListItem {
@@ -92,7 +130,13 @@ export interface ListData {
   items: ListItem[]
 }
 
-export type DashboardWidgetData = KpiData | AlertData | ChartData | ListData | null
+export type DashboardWidgetData =
+  | KpiData
+  | AlertData
+  | ChartData
+  | GaugeData
+  | ListData
+  | null
 
 /**
  * Un widget servi.

@@ -34,7 +34,7 @@ sélection d'un rôle, dans `role_dashboard_configurations`.
 | Fichier | Rôle |
 | --- | --- |
 | `app/Shared/Dashboard/DashboardWidget.php` | une définition |
-| `app/Shared/Dashboard/DashboardWidgetType.php` | les cinq formes : `kpi`, `chart`, `list`, `alert`, `quick_action` |
+| `app/Shared/Dashboard/DashboardWidgetType.php` | les sept formes : `kpi`, `chart`, `donut`, `gauge`, `list`, `alert`, `quick_action` |
 | `app/Shared/Dashboard/DashboardWidgetSize.php` | `small`, `medium`, `large`, `full` |
 | `app/Shared/Dashboard/DashboardWidgetCategory.php` | le regroupement de l'écran de réglage |
 | `app/Shared/Dashboard/DashboardWidgetRegistry.php` | le catalogue, source unique |
@@ -99,7 +99,7 @@ L'intersection avec les permissions s'applique aux défauts comme au reste.
 
 ## 5. Le catalogue livré
 
-Soixante widgets, neuf catégories. Chacun avec sa permission — jamais nulle : un
+Soixante-six widgets, neuf catégories. Chacun avec sa permission — jamais nulle : un
 widget sans permission serait visible de tous, y compris de rôles qui n'ont pas
 le droit d'ouvrir l'écran d'où le chiffre vient.
 
@@ -116,6 +116,7 @@ le droit d'ouvrir l'écran d'où le chiffre vient.
 | `services_failed` | alert | `order_services.view` | — | statut `failed` |
 | `recent_orders` | list | `orders.view` | `/orders` | six dernières par `order_date` |
 | `orders_by_status` | chart | `orders.view` | `/orders` | `GROUP BY status` |
+| `orders_by_source` | donut | `orders.view` | `/orders` | `GROUP BY source` |
 
 Les widgets de service n'ont **pas** de route : `/services` est le catalogue des
 prestations vendues, pas la liste des services d'une commande.
@@ -132,7 +133,8 @@ prestations vendues, pas la liste des services d'une commande.
 | `unplanned_services` | kpi | `tours.view` | `/planning` | `PLANNABLE_STATUSES` sans affectation active |
 | `services_without_gps` | alert | `tours.view` | `/planning` | idem, adresse sans latitude ou longitude |
 | `recent_tours` | list | `tours.view` | `/tours` | six dernières par `tour_date` |
-| `tours_by_status` | chart | `tours.view` | `/tours` | `GROUP BY status` |
+| `tours_by_status` | donut | `tours.view` | `/tours` | `GROUP BY status` — six statuts, donc un camembert |
+| `planning_coverage_rate` | gauge | `tours.view` | `/planning` | services placés / (placés + en attente) |
 
 `unplanned_services` et `services_without_gps` reprennent
 `PlanningEligibility::PLANNABLE_STATUSES` — la règle qu'applique la
@@ -152,6 +154,7 @@ figure pas.
 | `recent_claims` | list | `claims.view` | `/claims` | six dernières |
 | `pod_created_today` | kpi | `proofs_of_delivery.view` | — | `delivered_at` du jour |
 | `services_without_pod` | alert | `proofs_of_delivery.view` | — | services achevés sans preuve |
+| `pod_coverage_rate` | gauge | `proofs_of_delivery.view` | — | services achevés avec preuve / achevés |
 
 « Ouverte » se lit dans `closed_at`, **jamais** dans `claims.status` : cette
 colonne est une chaîne libre que chaque organisme remplit à sa façon, et
@@ -191,6 +194,7 @@ menant à un refus.
 | `stock_available_quantity` | kpi | `stock_balances.view` | `/stock/balances` | `SUM(available_quantity)` |
 | `active_stock_reservations` | kpi | `stock_reservations.view` | `/stock/reservations` | `released_at IS NULL` |
 | `recent_stock_movements` | list | `stock_movements.view` | `/stock/movements` | six derniers |
+| `stock_reserved_rate` | gauge | `stock_balances.view` | `/stock/balances` | `SUM(reserved_quantity)` / `SUM(quantity)` |
 
 **Pas de « stock bas ».** Aucune colonne ne porte de seuil : ni l'article, ni
 l'emplacement, ni le solde. Le calculer demanderait d'en inventer un — dix
@@ -209,6 +213,7 @@ jointure.
 | `communications_failed` | alert | `order_communications.view` | `/communications/history` | statut `failed` |
 | `communications_sent_today` | kpi | `order_communications.view` | `/communications/history` | `sent`, `delivered`, `read`, `sent_at` du jour |
 | `recent_communications` | list | `order_communications.view` | `/communications/history` | six dernières |
+| `communications_by_channel` | donut | `order_communications.view` | `/communications/history` | `GROUP BY channel` — cinq canaux |
 
 « Envoyée » couvre les trois états qui suivent le départ : ne compter que `sent`
 aurait fait **baisser** le chiffre du jour à mesure que les accusés de réception
@@ -224,6 +229,7 @@ arrivaient.
 | `recent_export_jobs` | list | `export_jobs.view` | `/integrations/export-jobs` | six derniers |
 | `active_api_configurations` | kpi | `api_configurations.view` | `/api-configurations` | `is_active` |
 | `active_export_configurations` | kpi | `customer_export_configurations.view` | `/billing/export-configurations` | `is_active` |
+| `export_success_rate` | gauge | `export_jobs.view` | `/integrations/export-jobs` | partis / (partis + échoués), sur la journée |
 
 ### Administration
 
@@ -271,10 +277,33 @@ créent dans une boîte de dialogue posée sur leur liste ; inventer
 ```
 kpi           { value, unit }
 alert         { value }
-chart         { mode, source, series: [{ code, value }] }
+chart         { mode, source, labels, series: [{ code, value }] }
+donut         { mode, source, labels, series: [{ code, value }] }
+gauge         { value, total }
 list          { items: [{ id, title, subtitle, status, statusSource, date, route }] }
 quick_action  null
 ```
+
+**`chart` et `donut` portent la même donnée**, et c'est voulu : ce n'est pas la
+donnée qui choisit le rendu, c'est le **type du widget** — une décision de
+catalogue, prise une fois, sur le nombre de parts que la série peut atteindre.
+
+| Forme | Quand | Pourquoi pas l'autre |
+| --- | --- | --- |
+| `chart` — barre de composition | beaucoup de parts, aux noms longs, qu'on veut lire au chiffre près | dix secteurs voisins deviennent indistinguables |
+| `donut` — camembert | six parts au plus, dont on veut la proportion d'un coup d'œil | une barre dit mal une proportion : elle se lit de gauche à droite, pas comme un tout |
+| `gauge` — jauge | **un seul** rapport, une part contre son tout | un camembert à deux secteurs occupe deux fois la place et fait passer le reste pour une catégorie |
+
+`gauge` transporte la part **et** le tout, jamais le pourcentage : « 72 % » ne
+dit pas si l'on parle de neuf cas sur douze ou de neuf cents sur mille deux
+cents. Un `total` à zéro est rendu tel quel — c'est au frontend de dire « rien à
+mesurer », pas au serveur d'inventer 0 %, qui se lirait comme un échec.
+
+Deux façons de nommer les codes d'une série, et une seule s'applique à la fois :
+`source` désigne l'entité au **référentiel des statuts**, dont un administrateur
+règle les libellés et le rang ; `labels` désigne un **espace de traduction**
+livré — `orderSources`, `communicationChannels` — pour les codes qui viennent
+d'énumérations PHP et que le référentiel ne connaît pas.
 
 `mode` dit si les valeurs **se comparent**, et le rendu en dépend entièrement :
 

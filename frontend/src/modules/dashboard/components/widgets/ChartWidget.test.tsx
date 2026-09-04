@@ -23,7 +23,7 @@ function chartWidget(series: ChartSeries[], mode: 'share' | 'amounts' = 'share')
     size: 'medium',
     position: 1,
     route: null,
-    data: { mode, source: null, series },
+    data: { mode, source: null, labels: null, series },
   }
 }
 
@@ -135,7 +135,12 @@ describe('graphe de répartition', () => {
       { code: 'confirmed', value: 901 },
       { code: 'draft', value: 2 },
     ])
-    widget.data = { mode: 'share', source: 'order', series: (widget.data as never as { series: ChartSeries[] }).series }
+    widget.data = {
+      mode: 'share',
+      source: 'order',
+      labels: null,
+      series: (widget.data as never as { series: ChartSeries[] }).series,
+    }
 
     renderChart(widget, [
       { code: 'draft', label: 'Brouillon' },

@@ -64,6 +64,8 @@ final readonly class ClaimsData implements DashboardDataSource
 
             'services_without_pod' => DashboardPayload::alert($this->servicesWithoutProof($context)),
 
+            'pod_coverage_rate' => $this->proofCoverage($context),
+
             default => null,
         };
     }
@@ -97,6 +99,26 @@ final readonly class ClaimsData implements DashboardDataSource
                 ->from('proofs_of_delivery')
                 ->whereColumn('proofs_of_delivery.order_service_id', 'order_services.id'))
             ->count();
+    }
+
+    /**
+     * Le meme constat que `services_without_pod`, dans l'autre sens.
+     *
+     * Celui-la compte ce qui manque, celui-ci dit ou l'on en est. Les deux se
+     * completent : un chiffre brut ne dit pas s'il est gros, un taux ne dit pas
+     * combien de dossiers il represente. C'est pourquoi la jauge transporte la
+     * part **et** le tout.
+     *
+     * @return array<string, mixed>
+     */
+    private function proofCoverage(DashboardContext $context): array
+    {
+        $completed = OrderService::query()
+            ->where('status', OrderServiceStatus::COMPLETED->value)
+            ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
+            ->count();
+
+        return DashboardPayload::gauge($completed - $this->servicesWithoutProof($context), $completed);
     }
 
     /**

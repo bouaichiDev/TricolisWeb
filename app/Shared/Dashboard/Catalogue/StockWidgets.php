@@ -79,6 +79,17 @@ final class StockWidgets
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/stock/movements',
             ),
+            // La part reservee sur le total : c'est un rapport contre une
+            // limite, ce que trois compteurs cote a cote obligeaient a calculer
+            // de tete.
+            new DashboardWidget(
+                key: 'stock_reserved_rate',
+                type: DashboardWidgetType::GAUGE,
+                category: DashboardWidgetCategory::STOCK,
+                requiredPermission: 'stock_balances.view',
+                defaultPosition: 406,
+                route: '/stock/balances',
+            ),
         ];
     }
 }

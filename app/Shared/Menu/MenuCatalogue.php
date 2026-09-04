@@ -589,6 +589,20 @@ final class MenuCatalogue
                 scope: RoleScope::PLATFORM,
                 alwaysVisible: true,
             ),
+            // La configuration de l'installation : son logo par defaut, et ce
+            // qui s'y ajoutera. Elle ferme la liste — on y vient rarement, et
+            // les organisations restent la premiere chose qu'on cherche.
+            new MenuEntry(
+                code: 'configuration',
+                labelKey: 'nav.configuration',
+                icon: 'Settings',
+                section: MenuSection::PLATFORM,
+                position: 30,
+                route: '/configuration',
+                permission: 'platform_settings.update',
+                scope: RoleScope::PLATFORM,
+            ),
+
             // Referentiel des statuts : commun a toute la plateforme, donc
             // gere depuis le perimetre plateforme et non par organisation.
             new MenuEntry(

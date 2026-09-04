@@ -71,6 +71,11 @@ l'aveugle et essuyer un 404 par organisation sans logo.
 Dans l'en-tête de la barre latérale, à la place de l'identité de Tricolis, quand
 l'organisation active en a un.
 
+Il n'y arrive pourtant qu'en **premier de trois** : sans lui, la barre latérale
+se replie sur le logo par défaut de l'installation, puis sur l'icône livrée. Ce
+second niveau se règle sur la page **Configuration** — voir
+`platform-configuration.md`.
+
 Trois précautions l'encadrent, et chacune évite un défaut qu'on ne verrait pas
 en le réglant :
 
@@ -82,6 +87,12 @@ en le réglant :
 
 Le `alt` de l'image est **vide**, délibérément : le nom de l'organisation est
 juste à côté, et le répéter le ferait annoncer deux fois par un lecteur d'écran.
+
+Il paraît aussi dans la **liste des organisations**, côté plateforme, en petit.
+L'image n'y est demandée que pour les lignes dont `hasLogo` est vrai : c'est ce
+qui rend la colonne tenable sur une page de vingt-cinq. Aucun repli sur le logo
+de l'installation ici — il rendrait toutes les lignes identiques, ce qui est le
+contraire de ce que la colonne sert à faire.
 
 ---
 

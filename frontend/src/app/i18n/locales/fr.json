@@ -138,7 +138,8 @@
     "communicationRules": "Règles automatiques",
     "communicationHistory": "Historique",
     "invoiceTemplates": "Modèles de facture",
-    "mailConfiguration": "Messagerie d’envoi"
+    "mailConfiguration": "Messagerie d’envoi",
+    "configuration": "Configuration"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -3132,5 +3133,11 @@
   "orderTrend": {
     "created": "Créées",
     "completed": "Achevées"
+  },
+  "configuration": {
+    "title": "Configuration",
+    "subtitle": "Les réglages de l'installation, communs à toutes les organisations",
+    "defaultLogo": "Logo par défaut",
+    "defaultLogoHint": "Affiché dans la barre latérale des organisations qui n'ont pas encore le leur. Il ne paraît sur aucun document : les factures portent le logo de l'organisation qui les émet, ou aucun."
   }
 }

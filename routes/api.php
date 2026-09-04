@@ -67,6 +67,7 @@ use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Planning\PlanningPoolController;
+use App\Http\Controllers\Api\V1\Platform\ConfigurationController;
 use App\Http\Controllers\Api\V1\Pricing\FormulaController;
 use App\Http\Controllers\Api\V1\Pricing\PrebillingController;
 use App\Http\Controllers\Api\V1\Pricing\PriceListController;
@@ -152,6 +153,19 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     Route::post('organizations/{organization}/logo', [OrganizationLogoController::class, 'store'])->name('organizations.logo.store');
     Route::delete('organizations/{organization}/logo', [OrganizationLogoController::class, 'destroy'])->name('organizations.logo.destroy');
     Route::apiResource('organizations', OrganizationController::class)->except(['create', 'edit']);
+
+    // La configuration de la plateforme, hors du groupe `organization` : elle
+    // ne concerne aucune organisation en particulier, et exiger l'en-tete
+    // interdirait l'acces a un compte plateforme, qui n'en a pas.
+    //
+    // Lire est ouvert a tout compte authentifie : la barre laterale de chacun
+    // demande s'il y a un logo par defaut, et proteger cette question
+    // obligerait a distribuer une permission plateforme pour afficher une
+    // image de marque. Ecrire exige `platform_settings.update`.
+    Route::get('configuration', [ConfigurationController::class, 'show'])->name('configuration.show');
+    Route::get('configuration/logo', [ConfigurationController::class, 'showLogo'])->name('configuration.logo.show');
+    Route::post('configuration/logo', [ConfigurationController::class, 'storeLogo'])->name('configuration.logo.store');
+    Route::delete('configuration/logo', [ConfigurationController::class, 'destroyLogo'])->name('configuration.logo.destroy');
 
     // Le menu effectif se lit sans en-tete d'organisation : un compte
     // plateforme n'en a pas, et le resolveur choisit le catalogue d'apres la

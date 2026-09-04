@@ -16,15 +16,28 @@ import type { AuthMembership } from '@/shared/types/auth'
  * est celui d'un administrateur plateforme — il administre l'outil, pas un
  * organisme, et lui poser le logo d'une organisation quelconque serait faux.
  */
+const PNG = () =>
+  HttpResponse.arrayBuffer(new Uint8Array([137, 80, 78, 71]).buffer, {
+    headers: { 'Content-Type': 'image/png' },
+  })
+
 function logoHandler(organizationId: string) {
-  return http.get(`${API}/organizations/${organizationId}/logo`, () =>
-    HttpResponse.arrayBuffer(new Uint8Array([137, 80, 78, 71]).buffer, {
-      headers: { 'Content-Type': 'image/png' },
-    }),
+  return http.get(`${API}/organizations/${organizationId}/logo`, PNG)
+}
+
+/**
+ * La configuration de l'installation est demandée à chaque rendu de l'en-tête :
+ * c'est elle qui dit s'il existe un logo par défaut vers lequel se replier.
+ */
+function configurationHandler(hasDefaultLogo: boolean) {
+  return http.get(`${API}/configuration`, () =>
+    HttpResponse.json({ data: { hasDefaultLogo }, meta: [] }),
   )
 }
 
-function render(membership: AuthMembership) {
+function render(membership: AuthMembership, hasDefaultLogo = false) {
+  server.use(configurationHandler(hasDefaultLogo))
+
   return renderWithProviders(<SidebarBrand />, { membership })
 }
 
@@ -57,6 +70,21 @@ describe('identité de la barre latérale', () => {
     await waitFor(() => expect(logoOf(container)).not.toBeNull())
     expect(screen.getByText('Atlas Transport')).toBeInTheDocument()
     expect(screen.queryByText('Tricolis')).not.toBeInTheDocument()
+  })
+
+  /**
+   * Le deuxième niveau de repli : l'identité que pose un intégrateur sur l'outil
+   * qu'il revend. Le nom reste celui de l'application — celui de l'organisation
+   * ferait passer l'image pour la sienne.
+   */
+  it('se replie sur le logo de l’installation quand l’organisation n’en a pas', async () => {
+    server.use(http.get(`${API}/configuration/logo`, PNG))
+
+    const { container } = render(makeMembership({ hasLogo: false, name: 'Atlas Transport' }), true)
+
+    await waitFor(() => expect(logoOf(container)).not.toBeNull())
+    expect(screen.getByText('Tricolis')).toBeInTheDocument()
+    expect(screen.queryByText('Atlas Transport')).not.toBeInTheDocument()
   })
 
   /**

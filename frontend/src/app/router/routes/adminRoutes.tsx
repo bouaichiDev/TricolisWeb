@@ -1,6 +1,7 @@
 import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { ConfigurationPage } from '@/modules/configuration/pages/ConfigurationPage'
 import { PricingVariablesPage } from '@/modules/pricing/pages/PricingVariablesPage'
 import { CommunicationHistoryPage } from '@/modules/communications/pages/CommunicationHistoryPage'
 import { CommunicationRuleListPage } from '@/modules/communications/pages/CommunicationRuleListPage'
@@ -134,6 +135,11 @@ export const adminRoutes = [
     key="organization-create"
     path="/organizations/create"
     element={guarded('organizations.create', <OrganizationCreatePage />, { platformOnly: true })}
+  />,
+  <Route
+    key="configuration"
+    path="/configuration"
+    element={guarded('platform_settings.update', <ConfigurationPage />, { platformOnly: true })}
   />,
   <Route
     key="organization-detail"

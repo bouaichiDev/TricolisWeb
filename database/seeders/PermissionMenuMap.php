@@ -69,6 +69,10 @@ final class PermissionMenuMap
 
         'price_lists' => MenuSection::BILLING,
         'pricing_variables' => MenuSection::PLATFORM,
+
+        // La configuration de l'installation elle-meme : elle ne concerne
+        // aucune organisation en particulier.
+        'platform_settings' => MenuSection::PLATFORM,
         'pricing_calculations' => MenuSection::BILLING,
         'invoices' => MenuSection::BILLING,
         'invoice_lines' => MenuSection::BILLING,

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { OrganizationAvatar } from '../components/OrganizationAvatar'
 import { useOrganizationList } from '../hooks/useOrganizations'
 import type { Organization, OrganizationFilters } from '../types/organization'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -33,6 +34,15 @@ export function OrganizationListPage() {
   const { data, isPending, error, refetch } = useOrganizationList(filters)
 
   const columns: Column<Organization>[] = [
+    {
+      // Sans en-tête : une colonne d'images n'a rien à annoncer, et « Logo »
+      // au-dessus de neuf pixels d'icône pèserait plus que ce qu'il nomme.
+      key: 'logo',
+      header: '',
+      cell: (row) => (
+        <OrganizationAvatar organizationId={row.id} hasLogo={row.hasLogo} name={row.name} />
+      ),
+    },
     {
       key: 'code',
       header: t('organizations.fields.code'),

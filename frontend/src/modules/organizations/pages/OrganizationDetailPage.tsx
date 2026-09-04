@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { OrganizationLogoPanel } from '../components/OrganizationLogoPanel'
 import { useDeleteOrganization, useOrganization } from '../hooks/useOrganizations'
+import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { DetailSkeleton } from '@/shared/components/feedback/LoadingSkeleton'
@@ -73,6 +75,19 @@ export function OrganizationDetailPage({ organizationId }: { organizationId?: st
           <DetailField label={t('organizations.fields.phone')}>{organization.phone}</DetailField>
         </dl>
       </SectionCard>
+
+      {/* Le logo se règle ici, et non plus sur la seule fiche « Mon
+          organisation ». La plateforme administre les organismes — dont ceux
+          qui n'ont pas encore d'administrateur local — et elle était la seule à
+          ne pas pouvoir leur en poser un. Le panneau est le même des deux
+          côtés : c'est `OrganizationPolicy::update` qui décide, et elle accepte
+          l'administrateur plateforme comme le porteur d'`organizations.update`
+          sur sa propre organisation. */}
+      <PermissionGuard permission="organizations.update">
+        <SectionCard title={t('organizations.logo.title')}>
+          <OrganizationLogoPanel organizationId={target} hasLogo={organization.hasLogo} />
+        </SectionCard>
+      </PermissionGuard>
 
       <SectionCard title={t('organizations.sections.preferences')}>
         <dl className="grid gap-x-8 sm:grid-cols-3">

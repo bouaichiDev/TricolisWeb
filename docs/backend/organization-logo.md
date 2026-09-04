@@ -1,7 +1,9 @@
 # Logo d'une organisation
 
-Un logo n'est pas un ornement : les modèles de facture l'appellent, et le PDF
-l'embarque. Il se règle sur **Mon organisation**, à côté de l'identité.
+Un logo n'est pas un ornement : les modèles de facture l'appellent, le PDF
+l'embarque, et la barre latérale le porte. Il se règle sur la **fiche d'une
+organisation** — celle de la plateforme comme « Mon organisation », qui la
+réutilise.
 
 ---
 
@@ -11,6 +13,7 @@ l'embarque. Il se règle sur **Mon organisation**, à côté de l'identité.
 | --- | --- | --- |
 | L'écran | Une image à afficher | `GET /organizations/{organization}/logo`, le fichier |
 | Le PDF de facture | Des octets à embarquer | `organization.logo`, un `data:` URI |
+| La barre latérale | Savoir s'il y en a un, puis l'image | `hasLogo` sur l'appartenance, puis la même route |
 
 **Le PDF ne peut pas aller chercher une URL.** dompdf résout chaque ressource
 externe au moment du rendu : il n'a pas de session, et une facture qui pointerait
@@ -56,6 +59,30 @@ Le chemin ne sort jamais par l'API : la fiche expose `hasLogo`, un booléen. Le
 publier révélerait la disposition du disque, et l'écran n'en a pas besoin — il
 lui suffit de savoir s'il doit demander l'image.
 
+**`hasLogo` figure aussi sur chaque appartenance**, dans `/auth/me`. La barre
+latérale est rendue avant toute autre requête : sans ce booléen, elle devrait
+charger la fiche entière pour un seul champ, ou tenter le téléchargement à
+l'aveugle et essuyer un 404 par organisation sans logo.
+
+---
+
+## 3 bis. Où il s'affiche
+
+Dans l'en-tête de la barre latérale, à la place de l'identité de Tricolis, quand
+l'organisation active en a un.
+
+Trois précautions l'encadrent, et chacune évite un défaut qu'on ne verrait pas
+en le réglant :
+
+| Précaution | Ce qu'elle évite |
+| --- | --- |
+| Le logo est posé sur une **tuile blanche** | la barre est bleu nuit, et un logo est dessiné pour du papier : à même le fond, tout logo à encre foncée disparaîtrait — sans qu'on puisse le deviner depuis l'écran de réglage, où l'aperçu est blanc |
+| Le **nom accompagne toujours** le logo | beaucoup de logos ne sont qu'un symbole, et l'afficher seul laisserait une barre latérale que rien ne nomme |
+| Un **compte plateforme garde l'identité de l'application** | il administre l'outil, pas un organisme : lui poser le logo d'une organisation laisserait croire qu'il en administre une en particulier |
+
+Le `alt` de l'image est **vide**, délibérément : le nom de l'organisation est
+juste à côté, et le répéter le ferait annoncer deux fois par un lecteur d'écran.
+
 ---
 
 ## 4. L'employer dans un modèle
@@ -87,10 +114,16 @@ clé est écrite à la main comme les autres.
 | `answers 404 when there is none` | Une balise `<img>` sans réponse claire |
 | `gives nothing when the file is gone` | Un `data:` URI vide dans le PDF |
 | `offers the path to the template editor` | Une variable qui marche sans être proposée |
+| `says whether the organization has a logo` | Une barre latérale qui charge une fiche entière pour un booléen |
+| `never carries the file path` | La disposition du disque, publiée dans `/auth/me` |
+| `porte le logo et le nom de l'organisation quand elle en a un` | Un en-tête qui reste celui de l'application |
+| `garde l'identité de l'application pour un compte plateforme` | Le logo d'un organisme sur un compte qui n'en administre aucun |
 
 Fichiers : `app/Modules/Organizations/Services/OrganizationLogo.php`,
 `app/Http/Controllers/Api/V1/Organizations/OrganizationLogoController.php`,
 `app/Http/Requests/Api/V1/Organizations/StoreOrganizationLogoRequest.php`,
-`frontend/src/modules/organizations/components/OrganizationLogoPanel.tsx`.
+`app/Http/Resources/Api/V1/Auth/UserResource.php` (le `hasLogo` de
+l'appartenance), `frontend/src/modules/organizations/components/OrganizationLogoPanel.tsx`,
+`frontend/src/app/layouts/SidebarBrand.tsx`.
 
 Migration : `2026_09_04_110000_add_logo_to_organizations_table.php`.

@@ -35,6 +35,16 @@ class UserResource extends JsonResource
                 'name' => $membership->organization->name,
                 'isOwner' => $membership->is_owner,
                 'isPrimary' => $membership->is_primary,
+                // La barre latérale porte le logo de l'organisation active, et
+                // elle est rendue avant toute autre requête. Sans ce booléen,
+                // elle devrait charger la fiche entière — quatre-vingts champs
+                // pour savoir s'il faut demander une image — ou tenter le
+                // téléchargement à l'aveugle et accepter un 404 par
+                // organisation sans logo.
+                //
+                // Le chemin du fichier ne sort toujours pas : il révélerait la
+                // disposition du disque, et l'écran n'en a pas besoin.
+                'hasLogo' => $membership->organization->logo_path !== null,
                 // `scope` et `isSystem` accompagnent chaque rôle : le frontend
                 // en a besoin pour distinguer l'administration de la plateforme
                 // de celle d'un organisme, et pour verrouiller les rôles livrés

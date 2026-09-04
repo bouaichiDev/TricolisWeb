@@ -16,6 +16,7 @@ export function makeMembership(overrides: Partial<AuthMembership> = {}): AuthMem
     name: 'Tricolis SAS',
     isOwner: false,
     isPrimary: true,
+    hasLogo: false,
     roles: [
       {
         id: '01JQZ00000000000000ROLE1',

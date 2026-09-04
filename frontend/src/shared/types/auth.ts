@@ -45,6 +45,15 @@ export interface AuthMembership {
   name: string
   isOwner: boolean
   isPrimary: boolean
+  /**
+   * L'organisation a-t-elle un logo ?
+   *
+   * Porté par l'appartenance et non chargé à la demande : la barre latérale
+   * l'affiche avant toute autre requête, et sans ce booléen elle devrait soit
+   * charger la fiche entière pour un seul champ, soit tenter le téléchargement
+   * à l'aveugle et essuyer un 404 par organisation sans logo.
+   */
+  hasLogo: boolean
   roles: AuthRole[]
   permissions: AuthPermission[]
   agencies: AuthAgency[]

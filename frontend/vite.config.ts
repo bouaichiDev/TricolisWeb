@@ -20,6 +20,17 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+
+    /**
+     * Les parcours Playwright ne sont pas des tests Vitest.
+     *
+     * Sans cette exclusion, le motif par defaut ramasse `e2e/*.spec.ts` et
+     * Vitest les execute : `test.describe()` de Playwright y leve « did not
+     * expect test.describe() to be called here », et `npm run test` echoue sur
+     * deux fichiers qu'il n'avait pas a ouvrir. Ils se lancent par
+     * `npm run test:e2e`, avec leur propre configuration.
+     */
+    exclude: ['node_modules/**', 'dist/**', 'e2e/**'],
     /**
      * 20 secondes au lieu de 5.
      *

@@ -145,7 +145,13 @@
     "subtitle": "Vue d’ensemble de l’organisation active",
     "recentActivity": "Activité récente",
     "noActivity": "Aucune activité enregistrée.",
-    "welcome": "Bonjour {{name}}"
+    "welcome": "Bonjour {{name}}",
+    "empty": "Votre tableau de bord ne contient actuellement aucun widget.",
+    "emptyHint": "Les widgets se choisissent sur chaque rôle, et restent limités à ses permissions.",
+    "configureRoles": "Configurer les rôles",
+    "widgetEmpty": "Rien à afficher pour l'instant.",
+    "seeAll": "Voir tout",
+    "quickAction": "Action rapide"
   },
   "table": {
     "empty": "Aucun résultat",
@@ -312,7 +318,8 @@
     "sections": {
       "general": "Informations générales",
       "permissions": "Permissions",
-      "menu": "Menu de navigation"
+      "menu": "Menu de navigation",
+      "dashboard": "Tableau de bord"
     },
     "readOnly": "Lecture seule",
     "systemLocked": "Rôle livré avec l’application : il n’est ni modifiable ni supprimable.",
@@ -584,7 +591,9 @@
     "updated": "Modification",
     "deleted": "Suppression",
     "status_changed": "Changement de statut",
-    "restored": "Restauration"
+    "restored": "Restauration",
+    "role_dashboard_updated": "Tableau de bord d'un rôle modifié",
+    "role_dashboard_reset": "Tableau de bord d'un rôle réinitialisé"
   },
   "permissionModules": {
     "organizations": "Organisations",
@@ -2796,5 +2805,284 @@
     "remove": "Supprimer la configuration",
     "removeTitle": "Supprimer la messagerie d’envoi ?",
     "removeBody": "Vos courriers repartiront avec la messagerie du serveur. Les réglages, mot de passe compris, seront perdus."
+  },
+  "dashboardSettings": {
+    "title": "Configuration du tableau de bord — {{name}}",
+    "description": "Choisissez les informations visibles sur le tableau de bord pour les utilisateurs ayant ce rôle. La visibilité reste limitée par les permissions du rôle.",
+    "hint": "Activer un widget ne donne aucun droit : il ne s'affichera que si le rôle détient la permission qu'il exige.",
+    "order": "Ordre d'affichage",
+    "preview": "Aperçu du tableau de bord de ce rôle",
+    "catalogue": "Widgets disponibles",
+    "noneActive": "Aucun widget activé : ce rôle verra un tableau de bord vide.",
+    "previewEmpty": "Rien à prévisualiser tant qu'aucun widget n'est activé.",
+    "permissionRequired": "Permission requise : {{permission}}",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "save": "Enregistrer la configuration",
+    "saved": "Configuration du tableau de bord enregistrée.",
+    "resetAction": "Réinitialiser",
+    "resetTitle": "Réinitialiser le tableau de bord de ce rôle ?",
+    "resetHint": "La configuration est supprimée : le rôle retrouve les widgets par défaut du catalogue, et profitera de ceux ajoutés plus tard.",
+    "reset": "Configuration réinitialisée."
+  },
+  "dashboardWidgetTypes": {
+    "kpi": "Compteur",
+    "chart": "Graphique",
+    "list": "Liste",
+    "alert": "Alerte",
+    "quick_action": "Action rapide"
+  },
+  "dashboardCategories": {
+    "operations": "Exploitation",
+    "planning": "Planning",
+    "claims": "Réclamations et preuves de livraison",
+    "billing": "Facturation",
+    "stock": "Stock",
+    "communications": "Communications",
+    "integrations": "Intégrations",
+    "administration": "Administration",
+    "quick_actions": "Actions rapides"
+  },
+  "dashboardWidgets": {
+    "orders_today": {
+      "label": "Commandes du jour",
+      "description": "Commandes dont la date est aujourd'hui"
+    },
+    "orders_to_plan": {
+      "label": "Commandes à planifier",
+      "description": "Commandes prêtes ou partiellement planifiées"
+    },
+    "orders_in_progress": {
+      "label": "Commandes en cours",
+      "description": "Commandes dont l'exécution a commencé"
+    },
+    "orders_completed_today": {
+      "label": "Commandes achevées aujourd'hui",
+      "description": "Commandes passées à l'état achevé dans la journée"
+    },
+    "services_ready_to_plan": {
+      "label": "Services prêts à planifier",
+      "description": "Services en attente d'une tournée"
+    },
+    "services_in_progress": {
+      "label": "Services en cours",
+      "description": "Services dont l'exécution a commencé"
+    },
+    "services_failed": {
+      "label": "Services en échec",
+      "description": "Services à reprendre avant de pouvoir être replanifiés"
+    },
+    "recent_orders": {
+      "label": "Dernières commandes",
+      "description": "Les six commandes les plus récentes"
+    },
+    "orders_by_status": {
+      "label": "Commandes par statut",
+      "description": "Répartition des commandes de l'organisation"
+    },
+    "tours_today": {
+      "label": "Tournées du jour",
+      "description": "Tournées datées d'aujourd'hui"
+    },
+    "draft_tours": {
+      "label": "Tournées en brouillon",
+      "description": "Tournées commencées, pas encore planifiées"
+    },
+    "planned_tours": {
+      "label": "Tournées planifiées",
+      "description": "Tournées planifiées ou confirmées, pas encore parties"
+    },
+    "tours_in_progress": {
+      "label": "Tournées en cours",
+      "description": "Tournées démarrées"
+    },
+    "completed_tours_today": {
+      "label": "Tournées achevées aujourd'hui",
+      "description": "Tournées du jour arrivées à leur terme"
+    },
+    "unplanned_services": {
+      "label": "Services non planifiés",
+      "description": "Services planifiables qu'aucune tournée ne porte encore"
+    },
+    "services_without_gps": {
+      "label": "Services sans coordonnées",
+      "description": "Services en attente dont l'adresse n'a ni latitude ni longitude"
+    },
+    "recent_tours": {
+      "label": "Dernières tournées",
+      "description": "Les six tournées les plus récentes"
+    },
+    "tours_by_status": {
+      "label": "Tournées par statut",
+      "description": "Répartition des tournées de l'organisation"
+    },
+    "open_claims": {
+      "label": "Réclamations ouvertes",
+      "description": "Réclamations sans date de clôture"
+    },
+    "claims_created_today": {
+      "label": "Réclamations du jour",
+      "description": "Réclamations enregistrées aujourd'hui"
+    },
+    "recent_claims": {
+      "label": "Dernières réclamations",
+      "description": "Les six réclamations les plus récentes"
+    },
+    "pod_created_today": {
+      "label": "Preuves de livraison du jour",
+      "description": "Preuves dont la remise est datée d'aujourd'hui"
+    },
+    "services_without_pod": {
+      "label": "Services sans preuve de livraison",
+      "description": "Services achevés dont aucune preuve n'a été rapportée"
+    },
+    "prebilling_services": {
+      "label": "Services à préfacturer",
+      "description": "Services achevés qui n'ont pas encore de ligne de facture"
+    },
+    "draft_invoices": {
+      "label": "Factures en brouillon",
+      "description": "Factures qui ne sont pas encore closes"
+    },
+    "closed_invoices_today": {
+      "label": "Factures closes aujourd'hui",
+      "description": "Factures arrêtées dans la journée"
+    },
+    "closed_invoices_period_total": {
+      "label": "Facturé ce mois-ci",
+      "description": "Total des factures closes du mois, une barre par devise"
+    },
+    "invoices_by_status": {
+      "label": "Factures par statut",
+      "description": "Répartition des factures de l'organisation"
+    },
+    "recent_invoices": {
+      "label": "Dernières factures",
+      "description": "Les six factures les plus récentes"
+    },
+    "draft_provider_settlements": {
+      "label": "Décomptes fournisseurs en brouillon",
+      "description": "Décomptes qui ne sont pas encore arrêtés"
+    },
+    "recent_provider_settlements": {
+      "label": "Derniers décomptes fournisseurs",
+      "description": "Les six décomptes les plus récents"
+    },
+    "stock_items_count": {
+      "label": "Articles en stock",
+      "description": "Articles suivis pour les clients de l'organisation"
+    },
+    "stock_total_quantity": {
+      "label": "Quantité totale",
+      "description": "Somme des soldes de stock"
+    },
+    "stock_reserved_quantity": {
+      "label": "Quantité réservée",
+      "description": "Part des soldes engagée par des réservations"
+    },
+    "stock_available_quantity": {
+      "label": "Quantité disponible",
+      "description": "Part des soldes libre de toute réservation"
+    },
+    "active_stock_reservations": {
+      "label": "Réservations actives",
+      "description": "Réservations qui n'ont pas été libérées"
+    },
+    "recent_stock_movements": {
+      "label": "Derniers mouvements de stock",
+      "description": "Les six mouvements les plus récents"
+    },
+    "communications_scheduled": {
+      "label": "Communications à partir",
+      "description": "Communications programmées ou en file d'attente"
+    },
+    "communications_failed": {
+      "label": "Communications en échec",
+      "description": "Envois à relancer"
+    },
+    "communications_sent_today": {
+      "label": "Communications envoyées aujourd'hui",
+      "description": "Envois partis dans la journée"
+    },
+    "recent_communications": {
+      "label": "Dernières communications",
+      "description": "Les six communications les plus récentes"
+    },
+    "export_jobs_failed": {
+      "label": "Exports en échec",
+      "description": "Envois de fichiers à relancer"
+    },
+    "export_jobs_pending": {
+      "label": "Exports en attente",
+      "description": "Envois de fichiers pas encore traités"
+    },
+    "exports_sent_today": {
+      "label": "Exports envoyés aujourd'hui",
+      "description": "Fichiers partis dans la journée"
+    },
+    "recent_export_jobs": {
+      "label": "Derniers exports",
+      "description": "Les six envois les plus récents"
+    },
+    "active_api_configurations": {
+      "label": "Accès API actifs",
+      "description": "Configurations d'API de l'organisation en service"
+    },
+    "active_export_configurations": {
+      "label": "Configurations d'export actives",
+      "description": "Configurations d'export des clients en service"
+    },
+    "customers_count": {
+      "label": "Clients",
+      "description": "Clients de l'organisation"
+    },
+    "agencies_count": {
+      "label": "Agences",
+      "description": "Agences de l'organisation"
+    },
+    "users_count": {
+      "label": "Utilisateurs",
+      "description": "Membres de l'organisation"
+    },
+    "roles_count": {
+      "label": "Rôles",
+      "description": "Rôles définis dans l'organisation"
+    },
+    "providers_count": {
+      "label": "Fournisseurs",
+      "description": "Fournisseurs de l'organisation"
+    },
+    "drivers_count": {
+      "label": "Chauffeurs",
+      "description": "Chauffeurs de l'organisation"
+    },
+    "vehicles_count": {
+      "label": "Véhicules",
+      "description": "Véhicules de l'organisation"
+    },
+    "new_order": {
+      "label": "Nouvelle commande",
+      "description": "Ouvre le formulaire de création d'une commande"
+    },
+    "new_invoice": {
+      "label": "Nouvelle facture",
+      "description": "Ouvre le formulaire de création d'une facture"
+    },
+    "open_planning": {
+      "label": "Ouvrir le planning",
+      "description": "Ouvre l'écran de planification des tournées"
+    },
+    "new_stock_movement": {
+      "label": "Nouveau mouvement de stock",
+      "description": "Ouvre le formulaire de mouvement de stock"
+    },
+    "new_claim": {
+      "label": "Nouvelle réclamation",
+      "description": "Ouvre la liste des réclamations, où l'on en crée une"
+    },
+    "new_communication_rule": {
+      "label": "Nouvelle règle de communication",
+      "description": "Ouvre la liste des règles, où l'on en crée une"
+    }
   }
 }

@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\Client\ClientIdentityController;
 use App\Http\Controllers\Api\V1\Client\ClientOrderController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationAttachmentController;
 use App\Http\Controllers\Api\V1\Communications\CommunicationRuleController;
+use App\Http\Controllers\Api\V1\Communications\NotificationController;
 use App\Http\Controllers\Api\V1\Communications\OrderCommunicationController;
 use App\Http\Controllers\Api\V1\Communications\OrderCommunicationStateController;
 use App\Http\Controllers\Api\V1\Contacts\ContactController;
@@ -153,6 +154,15 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     Route::post('organizations/{organization}/logo', [OrganizationLogoController::class, 'store'])->name('organizations.logo.store');
     Route::delete('organizations/{organization}/logo', [OrganizationLogoController::class, 'destroy'])->name('organizations.logo.destroy');
     Route::apiResource('organizations', OrganizationController::class)->except(['create', 'edit']);
+
+    // La cloche du bandeau, hors du groupe `organization` : elle est rendue sur
+    // chaque page, y compris pour un compte plateforme qui n'agit dans aucune
+    // organisation. Exiger l'en-tete lui rendrait une erreur la ou la reponse
+    // juste est « rien a signaler ».
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    // Declaree apres `read-all` : `{orderCommunication}` avalerait le segment.
+    Route::post('notifications/{orderCommunication}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
     // La configuration de la plateforme, hors du groupe `organization` : elle
     // ne concerne aucune organisation en particulier, et exiger l'en-tete

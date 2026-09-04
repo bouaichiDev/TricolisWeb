@@ -26,6 +26,7 @@ use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Identity\Models\Role;
+use App\Modules\Identity\Models\RoleDashboardConfiguration;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
@@ -71,6 +72,7 @@ use App\Policies\CustomerExportConfigurationPolicy;
 use App\Policies\CustomerImportConfigurationPolicy;
 use App\Policies\CustomerPolicy;
 use App\Policies\CustomerSitePolicy;
+use App\Policies\DashboardPolicy;
 use App\Policies\DepotPolicy;
 use App\Policies\DocumentPolicy;
 use App\Policies\DriverPolicy;
@@ -177,6 +179,7 @@ class AuthServiceProvider extends ServiceProvider
         AuditLog::class => AuditLogPolicy::class,
         OrganizationUser::class => OrganizationUserPolicy::class,
         Role::class => RolePolicy::class,
+        RoleDashboardConfiguration::class => DashboardPolicy::class,
     ];
 
     public function register(): void

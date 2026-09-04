@@ -84,6 +84,22 @@ export function isMenuEditableRole(role: Role): boolean {
   return role.scope !== 'platform'
 }
 
+/**
+ * Le **tableau de bord** d'un rôle se règle-t-il ?
+ *
+ * La même règle que pour son menu, et pour la même raison : un rôle système ne
+ * se modifie pas, mais composer son tableau de bord n'accorde aucun droit —
+ * chaque widget reste soumis à sa propre permission. L'interdire aurait privé
+ * l'administrateur du seul tableau de bord qu'il voit lui-même.
+ *
+ * Reste exclu le rôle de portée plateforme : il n'appartient pas à
+ * l'organisation. Les mêmes conditions que `RolePolicy::configureDashboard`,
+ * répétées ici pour ne pas proposer un réglage qui mènerait à un refus.
+ */
+export function isDashboardEditableRole(role: Role): boolean {
+  return role.scope !== 'platform'
+}
+
 export interface RoleFilters {
   page: number
   perPage: number

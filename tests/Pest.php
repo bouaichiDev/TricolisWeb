@@ -1,7 +1,9 @@
 <?php
 
+use App\Modules\Identity\Models\Permission;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\RoleMenuGroup;
+use App\Modules\Identity\Models\RolePermission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserRole;
 use App\Modules\Organizations\Models\Organization;
@@ -125,6 +127,22 @@ function giveRoles(string $organizationId, string $userId, array $roles): void
 
     foreach ($roles as $role) {
         UserRole::create(['organization_user_id' => $membership->id, 'role_id' => $role->id]);
+    }
+}
+
+/**
+ * Attache des permissions à un rôle, par leur code.
+ *
+ * Le pivot `role_permissions` porte un ULID sans valeur par défaut : `sync()`
+ * ne peut donc pas l'écrire, et sept fichiers de test recopiaient déjà la même
+ * boucle.
+ *
+ * @param  array<int, string>  $codes
+ */
+function givePermissions(Role $role, array $codes): void
+{
+    foreach (Permission::whereIn('code', $codes)->pluck('id') as $permissionId) {
+        RolePermission::firstOrCreate(['role_id' => $role->id, 'permission_id' => $permissionId]);
     }
 }
 

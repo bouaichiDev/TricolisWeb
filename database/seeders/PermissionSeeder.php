@@ -21,6 +21,13 @@ class PermissionSeeder extends Seeder
     private array $permissions = [
         ['code' => 'dashboard.view', 'name' => 'Voir le tableau de bord', 'module' => 'dashboard', 'action' => 'view'],
 
+        // Régler ce qu'un rôle voit sur son tableau de bord. Distincte de
+        // `roles.update`, qui gouverne le jeu de permissions : composer un
+        // tableau de bord ne donne aucun droit — chaque widget reste soumis à
+        // sa propre permission — et devoir accorder `roles.update` pour ranger
+        // des cartes aurait obligé à confier bien plus que ce qu'on voulait.
+        ['code' => 'dashboard.configure', 'name' => 'Configurer le tableau de bord d\'un rôle', 'module' => 'dashboard', 'action' => 'configure'],
+
         ['code' => 'organizations.view', 'name' => 'Voir les organisations', 'module' => 'organizations', 'action' => 'view'],
         ['code' => 'organizations.create', 'name' => 'Créer une organisation', 'module' => 'organizations', 'action' => 'create'],
         ['code' => 'organizations.update', 'name' => 'Modifier une organisation', 'module' => 'organizations', 'action' => 'update'],

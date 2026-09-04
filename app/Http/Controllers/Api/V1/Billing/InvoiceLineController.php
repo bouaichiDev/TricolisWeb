@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Billing;
 
 use App\Http\Controllers\Api\V1\Concerns\BuildsAuditContext;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesInvoiceScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Billing\StoreInvoiceLineRequest;
 use App\Http\Requests\Api\V1\Billing\UpdateInvoiceLineRequest;
@@ -28,6 +29,7 @@ use Illuminate\Http\Request;
 class InvoiceLineController extends Controller
 {
     use BuildsAuditContext;
+    use ResolvesInvoiceScope;
 
     /**
      * Lister les lignes d'une facture, par numéro croissant.
@@ -56,6 +58,7 @@ class InvoiceLineController extends Controller
     public function store(StoreInvoiceLineRequest $request, Invoice $invoice, AddInvoiceLineAction $action): JsonResponse
     {
         $organizationId = $this->guardInvoice($invoice);
+        $this->guardOpenInvoice($invoice);
         $this->authorize('create', [InvoiceLine::class, $organizationId]);
 
         $line = $action->execute(
@@ -89,6 +92,7 @@ class InvoiceLineController extends Controller
     public function update(UpdateInvoiceLineRequest $request, Invoice $invoice, InvoiceLine $line, UpdateInvoiceLineAction $action): JsonResponse
     {
         $organizationId = $this->guardLine($invoice, $line);
+        $this->guardOpenInvoice($invoice);
         $this->authorize('update', $line);
 
         $updated = $action->execute(
@@ -111,6 +115,8 @@ class InvoiceLineController extends Controller
     public function destroy(Request $request, Invoice $invoice, InvoiceLine $line, RemoveInvoiceLineAction $action): JsonResponse
     {
         $organizationId = $this->guardLine($invoice, $line);
+        // Une facture cloturee est figee, lignes comprises : le §22 l'enumere.
+        $this->guardOpenInvoice($invoice);
         $this->authorize('delete', $line);
 
         try {
@@ -120,14 +126,6 @@ class InvoiceLineController extends Controller
         }
 
         return ApiResponse::noContent();
-    }
-
-    private function guardInvoice(Invoice $invoice): string
-    {
-        $organizationId = $this->requireOrganizationId();
-        abort_unless($invoice->organization_id === $organizationId, 404, 'Facture introuvable.');
-
-        return $organizationId;
     }
 
     private function guardLine(Invoice $invoice, InvoiceLine $line): string

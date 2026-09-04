@@ -9,8 +9,10 @@ use App\Http\Requests\Api\V1\Organizations\StoreOrganizationRequest;
 use App\Http\Requests\Api\V1\Organizations\UpdateOrganizationRequest;
 use App\Http\Resources\Api\V1\Organizations\OrganizationResource;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\Types\Actions\SeedSystemTypes;
 use App\Shared\Enums\OrganizationStatus;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Http\Requests\ListRequest;
@@ -27,11 +29,19 @@ use Illuminate\Support\Facades\DB;
  */
 class OrganizationController extends Controller
 {
+    public function __construct(private readonly PlatformAccess $platform) {}
+
     /**
-     * Lister ses organisations.
+     * Lister les organisations.
      *
-     * Aucune permission métier : seules les organisations dont l'utilisateur est
-     * membre sont renvoyées. Recherche sur `name` et `code`, filtre `status`.
+     * Deux portées, et une seule requête : un administrateur plateforme les voit
+     * toutes, tout autre utilisateur ne voit que celles dont il est membre.
+     *
+     * Le bornage est fait ici, pas dans la policy : `viewAny` doit rester
+     * autorisé pour tous, cette liste servant précisément à choisir son
+     * organisation active.
+     *
+     * Recherche sur `name` et `code`, filtre `status`.
      */
     public function index(ListRequest $request): JsonResponse
     {
@@ -40,9 +50,13 @@ class OrganizationController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $query = Organization::whereHas('organizationUsers', static function ($query) use ($user): void {
-            $query->where('user_id', $user->id);
-        });
+        $query = Organization::query();
+
+        if (! $this->platform->isPlatformAdmin($user)) {
+            $query->whereHas('organizationUsers', static function ($query) use ($user): void {
+                $query->where('user_id', $user->id);
+            });
+        }
 
         if ($request->filled('search')) {
             $search = $request->validated('search');
@@ -103,6 +117,14 @@ class OrganizationController extends Controller
                 'status' => UserStatus::ACTIVE,
                 'joined_at' => now(),
             ]);
+
+            // Le menu de base est posé dans la même transaction : une
+            // organisation créée sans lui n'aurait rien à montrer dans son
+            // écran de réglage, et son administrateur ne saurait pas quelles
+            // entrées existent.
+            // Sans ses sources structurelles, l'organisation ne pourrait ni
+            // creer un vehicule ni classer un colis.
+            app(SeedSystemTypes::class)->execute($organization->id);
 
             return $organization;
         });

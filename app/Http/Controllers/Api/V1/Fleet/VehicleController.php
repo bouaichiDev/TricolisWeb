@@ -120,7 +120,7 @@ class VehicleController extends Controller
     private function guardScope(Vehicle $vehicle): string
     {
         $organizationId = $this->requireOrganizationId();
-        abort_unless($vehicle->provider?->organization_id === $organizationId, 404, 'Véhicule introuvable.');
+        abort_unless($vehicle->organization_id === $organizationId, 404, 'Véhicule introuvable.');
 
         return $organizationId;
     }

@@ -20,8 +20,18 @@ describe('organizations', function (): void {
             ->assertJsonPath('data.0.id', $this->organization->id);
     });
 
-    it('creates an organization and makes the author its owner', function (): void {
-        $response = $this->actingAs($this->user, 'sanctum')->postJson('/api/v1/organizations', [
+    /**
+     * Créer une organisation relève de la plateforme.
+     *
+     * Ce test attendait auparavant un 201 pour un simple propriétaire
+     * d'organisme : `OrganizationPolicy::create()` renvoyait `true` sans
+     * condition. C'était la voie d'élévation principale — un administrateur
+     * local se dotait d'un périmètre qui ne lui revenait pas.
+     */
+    it('creates an organization and makes the author its owner when the user administers the platform', function (): void {
+        $admin = makePlatformAdmin($this->user);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/organizations', [
             'code' => 'new-org',
             'name' => 'Nouvelle organisation',
         ]);
@@ -30,7 +40,7 @@ describe('organizations', function (): void {
 
         $this->assertDatabaseHas('organization_users', [
             'organization_id' => $response->json('data.id'),
-            'user_id' => $this->user->id,
+            'user_id' => $admin->id,
             'is_owner' => true,
         ]);
     });
@@ -55,15 +65,33 @@ describe('organizations', function (): void {
         ]);
     });
 
-    it('deletes an organization owned by the user', function (): void {
+    /**
+     * Supprimer une organisation relève de la plateforme.
+     *
+     * La qualité de propriétaire suffisait auparavant : un organisme pouvait se
+     * supprimer lui-même, avec ses commandes, ses factures et son journal
+     * d'audit.
+     */
+    it('deletes an organization when the user administers the platform', function (): void {
+        $admin = makePlatformAdmin($this->user);
+        $organization = Organization::factory()->create();
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/v1/organizations/{$organization->id}")
+            ->assertNoContent();
+
+        $this->assertDatabaseMissing('organizations', ['id' => $organization->id]);
+    });
+
+    it('forbids an owner from deleting their own organization', function (): void {
         $organization = Organization::factory()->create();
         OrganizationUser::factory()->owner()->forOrganization($organization)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user, 'sanctum')
             ->deleteJson("/api/v1/organizations/{$organization->id}")
-            ->assertNoContent();
+            ->assertForbidden();
 
-        $this->assertDatabaseMissing('organizations', ['id' => $organization->id]);
+        $this->assertDatabaseHas('organizations', ['id' => $organization->id]);
     });
 
     it('hides an organization the user does not belong to', function (): void {

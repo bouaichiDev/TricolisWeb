@@ -6,6 +6,8 @@ namespace App\Modules\Packages\Models;
 
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderLine;
+use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
+use App\Modules\Types\Models\TypeItem;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,6 +41,7 @@ class Package extends Model
 {
     use HasFactory;
     use HasUlid;
+    use TracksStatusChanges;
 
     /**
      * Profondeur maximale de l'imbrication.
@@ -96,19 +99,19 @@ class Package extends Model
     }
 
     /**
-     * @return BelongsTo<PackageType, $this>
+     * @return BelongsTo<TypeItem, $this>
      */
     public function packageType(): BelongsTo
     {
-        return $this->belongsTo(PackageType::class, 'package_type_id');
+        return $this->belongsTo(TypeItem::class, 'package_type_id');
     }
 
     /**
-     * @return BelongsTo<GroupingType, $this>
+     * @return BelongsTo<TypeItem, $this>
      */
     public function groupingType(): BelongsTo
     {
-        return $this->belongsTo(GroupingType::class, 'grouping_type_id');
+        return $this->belongsTo(TypeItem::class, 'grouping_type_id');
     }
 
     /**

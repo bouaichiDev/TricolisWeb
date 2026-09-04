@@ -12,11 +12,35 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
+            // Referentiel commun a la plateforme : seme a partir des
+            // enumerations existantes, avant toute donnee de demonstration.
+            StatusSeeder::class,
+            StatusTransitionSeeder::class,
+            // Le catalogue de variables tarifaires : un referentiel de
+            // plateforme, qui doit exister avant le premier bareme.
+            PricingVariableSeeder::class,
             DevelopmentOrganizationSeeder::class,
             RoleSeeder::class,
+            // Après RoleSeeder : le compte s'accroche au rôle plateforme que
+            // celui-ci vient de créer.
+            PlatformAdminSeeder::class,
             DemoAgencySeeder::class,
             DemoCustomerSeeder::class,
+            // Le courriel de reinitialisation, pose pour etre modifie : un
+            // modele vide ne se modifie pas.
+            PasswordResetTemplateSeeder::class,
             DemoFleetSeeder::class,
+            // Les deux services GPS : sans eux, geocodage et itineraires
+            // s'executent sans rien changer, ce qui ressemble a une panne.
+            GpsApiConfigurationSeeder::class,
+            // Un mois de commandes suisses, pretes a planifier : depot d'abord,
+            // les commandes s'y accrochent.
+            SwissDepotSeeder::class,
+            SwissOrderSeeder::class,
+            // Et l'autre bout du parcours : un mois deja livre, sur lequel la
+            // facturation a prise. Apres les commandes a planifier, dont il
+            // reutilise le depot et le carnet d'adresses.
+            DeliveredOrderSeeder::class,
         ]);
     }
 }

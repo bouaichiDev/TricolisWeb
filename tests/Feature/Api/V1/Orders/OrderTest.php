@@ -30,9 +30,10 @@ it('creates a draft order with at least one line', function (): void {
             'services' => [$this->orderService],
         ]);
 
-    // Le numéro est attribué par la séquence, jamais par l'appelant.
+    // Le numéro est attribué par la séquence, jamais par l'appelant, et il
+    // porte le code du client : c'est par lui qu'on retrouve la commande.
     $response->assertCreated()
-        ->assertJsonPath('data.orderNumber', 'ORD-'.now()->format('Y').'-000001')
+        ->assertJsonPath('data.orderNumber', $this->customer->code.'-'.now()->format('Y').'-000001')
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonCount(1, 'data.lines')
         ->assertJsonCount(1, 'data.services');
@@ -78,4 +79,75 @@ it('lists only orders from the active organization', function (): void {
     $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
         ->getJson('/api/v1/orders')->assertOk();
     expect(Order::where('organization_id', $this->organization->id)->count())->toBeGreaterThanOrEqual(0);
+});
+
+/**
+ * La vignette d'un service montre son adresse : deux services d'une même
+ * commande portent souvent le même nom, et seule l'adresse les distingue.
+ * Sans le chargement de la relation, l'écran n'aurait qu'un identifiant.
+ */
+it('exposes the address of every service in the order detail', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 2]],
+            'services' => [$this->orderService],
+        ])->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/orders/'.$created)
+        ->assertOk()
+        ->assertJsonPath('data.services.0.address.id', $this->address->id)
+        ->assertJsonPath('data.services.0.address.addressLine1', $this->address->address_line_1);
+});
+
+/**
+ * Le contenu d'un colis doit voyager avec la commande.
+ *
+ * `PackageResource` n'expose `lines` que `whenLoaded('packageOrderLines')` :
+ * sans le chargement, tout colis paraissait vide et « Affecte 0 » restait
+ * affiche alors que la ligne y etait bien rattachee.
+ */
+it('exposes the content of every package in the order detail', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 4]],
+            'packages' => [['key' => 'p1', 'barcode' => 'PKG-A', 'lines' => [['lineKey' => '0', 'quantity' => 3]]]],
+            'services' => [$this->orderService],
+        ])->assertCreated()->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/orders/'.$created)
+        ->assertOk()
+        ->assertJsonCount(1, 'data.packages.0.lines')
+        ->assertJsonPath('data.packages.0.lines.0.quantity', '3.000');
+});
+
+/**
+ * Meme piege que ci-dessus, sur une autre relation.
+ *
+ * `OrderServiceResource` n'expose `packages` que `whenLoaded('servicePackages')`.
+ * La fiche d'un colis doit pouvoir dire quels services le prennent en charge :
+ * sans ce chargement, elle n'en trouve aucun.
+ */
+it('exposes the packages taken by every service in the order detail', function (): void {
+    $created = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'articleCode' => 'CAN-1', 'quantity' => 4]],
+            'packages' => [['key' => 'p1', 'barcode' => 'PKG-A']],
+            'services' => [$this->orderService + ['packages' => [['packageKey' => 'p1', 'quantity' => 1]]]],
+        ])->assertCreated()->json('data.id');
+
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->getJson('/api/v1/orders/'.$created)
+        ->assertOk()
+        ->assertJsonCount(1, 'data.services.0.packages');
 });

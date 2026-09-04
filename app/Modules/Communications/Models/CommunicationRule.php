@@ -8,6 +8,7 @@ use App\Modules\Communications\Enums\CommunicationEventType;
 use App\Modules\Communications\Enums\RecipientRole;
 use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
+use App\Modules\Templates\Models\Template;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -78,11 +79,11 @@ class CommunicationRule extends Model
     }
 
     /**
-     * @return BelongsTo<CommunicationTemplate, $this>
+     * @return BelongsTo<Template, $this>
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(CommunicationTemplate::class, 'template_id');
+        return $this->belongsTo(Template::class, 'template_id');
     }
 
     /**

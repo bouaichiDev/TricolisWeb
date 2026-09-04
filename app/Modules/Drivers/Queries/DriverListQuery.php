@@ -21,7 +21,7 @@ final readonly class DriverListQuery
 
     public function paginate(ListDriverRequest $request, string $organizationId): LengthAwarePaginator
     {
-        $query = Driver::inOrganization($organizationId)->with('provider:id,code,name');
+        $query = Driver::inOrganization($organizationId)->with(['provider:id,code,name', 'user:id,first_name,last_name,email']);
 
         if ($request->filled('search')) {
             $search = $request->validated('search');

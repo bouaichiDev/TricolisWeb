@@ -78,18 +78,27 @@ enum OrderStatus: string
     }
 
     /**
-     * La commande accepte-t-elle encore des modifications de contenu ?
+     * Valeur de départ de « le contenu reste-t-il modifiable ? ».
      *
-     * Au-delà de `READY`, lignes, colis et services sont figés : ils sont
-     * engagés auprès de la planification et de l'exploitation.
+     * **Ce n'est plus la règle appliquée.** À l'exécution, c'est
+     * `statuses.allows_content_changes` que lit `StatusMachine` : le cycle de
+     * vie appartient au référentiel, que l'administrateur plateforme règle. Ce
+     * qui suit ne sert qu'au semis d'une base neuve.
+     *
+     * L'exploitation demande à pouvoir corriger une commande déjà prête ou
+     * déjà commencée — un colis ajouté au dernier moment, un article rectifié
+     * sur le terrain. `PLANNED` et au-delà restent fermés : la tournée
+     * construite dessus ne serait pas prévenue du changement.
      */
     public function allowsContentChanges(): bool
     {
-        return in_array($this, [self::DRAFT, self::CONFIRMED], true);
+        return in_array($this, [self::DRAFT, self::CONFIRMED, self::READY, self::IN_PROGRESS], true);
     }
 
     /**
-     * Un motif est-il exigé pour passer à ce statut ?
+     * Valeur de départ de « ce statut exige-t-il un motif ? ».
+     *
+     * Même remarque : le référentiel fait foi à l'exécution.
      */
     public function requiresReason(): bool
     {

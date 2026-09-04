@@ -12,7 +12,11 @@ use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Packages\Models\Package;
+use App\Modules\Statuses\Services\StatusMachine;
+use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
 use App\Shared\Database\Concerns\HasUlid;
+use App\Shared\Database\MorphMap;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -53,6 +57,7 @@ class Order extends Model
 {
     use HasFactory;
     use HasUlid;
+    use TracksStatusChanges;
 
     protected $keyType = 'string';
 
@@ -161,8 +166,18 @@ class Order extends Model
         return $this->hasMany(self::class, 'parent_order_id');
     }
 
+    /**
+     * Le contenu de la commande est-il encore modifiable ?
+     *
+     * La reponse vient du referentiel des statuts, pas de l'enumeration : c'est
+     * l'administrateur plateforme qui decide jusqu'ou lignes, colis et services
+     * restent ouverts, et une regle figee dans le code contredirait son ecran.
+     */
     public function allowsContentChanges(): bool
     {
-        return $this->status->allowsContentChanges();
+        /** @var StatusMachine $machine */
+        $machine = Container::getInstance()->make(StatusMachine::class);
+
+        return $machine->allowsContentChanges(MorphMap::ORDER, $this->status?->value);
     }
 }

@@ -57,8 +57,30 @@ describe('order numbering', function (): void {
             ->assertCreated();
 
         $year = now()->format('Y');
-        expect($first->json('data.orderNumber'))->toBe("ORD-$year-000001")
-            ->and($second->json('data.orderNumber'))->toBe("ORD-$year-000002");
+        $code = $this->customer->code;
+
+        expect($first->json('data.orderNumber'))->toBe("$code-$year-000001")
+            ->and($second->json('data.orderNumber'))->toBe("$code-$year-000002");
+    });
+
+    /**
+     * Chaque client numérote la sienne.
+     *
+     * Un compteur commun ferait sauter les rangs — un client passerait de sa
+     * commande 12 à sa commande 431 sans rien comprendre. Le code préfixe le
+     * numéro **et** sert de clé au compteur ; les deux vont ensemble.
+     */
+    it('repart de un pour un autre client', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/orders', ($this->payload)())->assertCreated();
+
+        $other = Customer::factory()->create(['organization_id' => $this->organization->id]);
+
+        $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/orders', ($this->payload)(['customerId' => $other->id]))
+            ->assertCreated();
+
+        expect($response->json('data.orderNumber'))->toBe($other->code.'-'.now()->format('Y').'-000001');
     });
 });
 
@@ -192,6 +214,22 @@ describe('order status', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson("/api/v1/orders/{$order->id}/lines", ['name' => 'Ajout tardif', 'quantity' => 1])
             ->assertStatus(409);
+    });
+
+    /**
+     * L'exploitation corrige jusqu'a l'execution : un colis s'ajoute au dernier
+     * moment, un article se rectifie sur le terrain. La regle vient du
+     * referentiel, pas d'une constante.
+     */
+    it('keeps the content open while ready or in progress', function (): void {
+        foreach ([OrderStatus::READY, OrderStatus::IN_PROGRESS] as $status) {
+            $order = Order::factory()->forOrganization($this->organization)
+                ->withStatus($status)->create(['created_by' => $this->user->id]);
+
+            $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+                ->postJson("/api/v1/orders/{$order->id}/lines", ['name' => 'Ajout tardif', 'quantity' => 1])
+                ->assertCreated();
+        }
     });
 });
 

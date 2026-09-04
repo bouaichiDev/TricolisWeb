@@ -154,6 +154,7 @@ package "Clients du transporteur" {
     +length: decimal
     +width: decimal
     +height: decimal
+    +assemblyTimeMinutes: int
     +status: string
   }
 
@@ -267,21 +268,8 @@ package "Commandes, articles et colis" {
     +status: string
   }
 
-  class PackageType {
-    +id: ULID
-    +organizationId: ULID
-    +code: string
-    +name: string
-    +status: string
-  }
-
-  class GroupingType {
-    +id: ULID
-    +organizationId: ULID
-    +code: string
-    +name: string
-    +status: string
-  }
+  ' Les referentiels de type sont reunis dans Type / TypeItem : voir plus bas.
+  ' PackageType et GroupingType sont devenus les sources `package` et `grouping`.
 
   class Package {
     +id: ULID 
@@ -460,12 +448,29 @@ package "Fournisseurs et ressources" {
   +status: string
 }
 
-  class VehicleType {
+  ' Referentiels de type, communs a toute l'organisation.
+  '
+  ' Type porte la source (vehicule, colis, groupage, et celles que l'organisme
+  ' ajoute), TypeItem ses valeurs. Les trois tables jumelles d'origine
+  ' (VehicleType, PackageType, GroupingType) y ont ete fondues : ajouter un
+  ' referentiel ne demande plus de migration.
+  class Type {
     +id: ULID
     +organizationId: ULID
     +code: string
     +name: string
     +status: string
+    +isSystem: bool
+  }
+
+  class TypeItem {
+    +id: ULID
+    +organizationId: ULID
+    +typeId: ULID
+    +code: string
+    +name: string
+    +status: string
+    +position: int
   }
 
   class Vehicle {
@@ -624,7 +629,7 @@ package "Communication et templates" {
     INTERNAL_NOTIFICATION
   }
 
-  enum CommunicationTemplateType {
+  enum TemplateType {
     APPOINTMENT_REQUEST
     APPOINTMENT_CONFIRMATION
     APPOINTMENT_REMINDER
@@ -636,6 +641,7 @@ package "Communication et templates" {
     DELIVERY_FAILED
     POD_AVAILABLE
     ORDER_CANCELLED
+    INVOICE
     CUSTOM
   }
 
@@ -674,14 +680,15 @@ package "Communication et templates" {
     CUSTOM
   }
 
-  class CommunicationTemplate {
+  class Template {
     +id: ULID
     +organizationId: ULID
+    +customerId: ULID
     +serviceId: ULID
     +code: string
     +name: string
     +channel: CommunicationChannel
-    +templateType: CommunicationTemplateType
+    +templateType: TemplateType
     +subjectTemplate: text
     +bodyTemplate: longtext
     +language: string
@@ -715,7 +722,7 @@ package "Communication et templates" {
     +templateId: ULID
     +communicationRuleId: ULID
     +channel: CommunicationChannel
-    +communicationType: CommunicationTemplateType
+    +communicationType: TemplateType
     +recipientRole: RecipientRole
     +recipientName: string
     +recipientEmail: string
@@ -765,6 +772,9 @@ package "Facturation client et fournisseur" {
     +externalReference: string
     +remark: text
     +status: string
+    +templateId: ULID
+    +renderedBody: longtext
+    +renderedAt: datetime
     +createdAt: datetime
   }
 
@@ -822,15 +832,113 @@ package "Facturation client et fournisseur" {
     +totalCost: decimal
   }
 }
-Organization "1" -- "0..*" CommunicationTemplate
+package "Tarification client" {
+
+  class PriceList {
+    +id: ULID
+    +organizationId: ULID
+    +code: string
+    +name: string
+    +scope: string
+    +validFrom: date
+    +validTo: date
+    +isActive: boolean
+  }
+
+  class CustomerPriceList {
+    +id: ULID
+    +priceListId: ULID
+    +customerId: ULID
+  }
+
+  class PriceRule {
+    +id: ULID
+    +priceListId: ULID
+    +serviceId: ULID
+    +code: string
+    +name: string
+    +formula: text
+    +priority: int
+    +isActive: boolean
+  }
+
+  class PriceRuleCondition {
+    +id: ULID
+    +priceRuleId: ULID
+    +variable: string
+    +operator: string
+    +valueFrom: string
+    +valueTo: string
+  }
+
+  class PriceMatrix {
+    +id: ULID
+    +priceListId: ULID
+    +serviceId: ULID
+    +code: string
+    +name: string
+    +dimension: string
+    +isActive: boolean
+  }
+
+  class PriceMatrixRow {
+    +id: ULID
+    +priceMatrixId: ULID
+    +priceRuleId: ULID
+    +label: string
+    +matchMode: string
+    +rangeFrom: string
+    +rangeTo: string
+    +priority: int
+  }
+
+  class PricingCalculation {
+    +id: ULID
+    +organizationId: ULID
+    +orderServiceId: ULID
+    +customerId: ULID
+    +priceListId: ULID
+    +priceRuleId: ULID
+    +priceMatrixId: ULID
+    +priceMatrixRowId: ULID
+    +scope: string
+    +serviceCode: string
+    +formulaSnapshot: text
+    +variablesSnapshot: JSON
+    +result: decimal
+    +currencyCode: string
+    +calculatedAt: datetime
+  }
+}
+
+Organization "1" -- "0..*" PriceList
+PriceList "1" -- "0..*" CustomerPriceList
+Customer "1" -- "0..*" CustomerPriceList
+PriceList "1" *-- "0..*" PriceRule
+PriceList "1" *-- "0..*" PriceMatrix
+Service "0..1" -- "0..*" PriceRule
+Service "0..1" -- "0..*" PriceMatrix
+PriceRule "1" *-- "0..*" PriceRuleCondition
+PriceMatrix "1" *-- "1..*" PriceMatrixRow
+PriceRule "1" -- "0..*" PriceMatrixRow
+OrderService "1" -- "0..*" PricingCalculation
+Customer "1" -- "0..*" PricingCalculation
+PriceList "0..1" -- "0..*" PricingCalculation
+PriceRule "0..1" -- "0..*" PricingCalculation
+PriceMatrix "0..1" -- "0..*" PricingCalculation
+PriceMatrixRow "0..1" -- "0..*" PricingCalculation
+
+Organization "1" -- "0..*" Template
+Customer "0..1" -- "0..*" Template
 Organization "1" -- "0..*" CommunicationRule
 Organization "1" -- "0..*" OrderCommunication
 
-Service "0..1" -- "0..*" CommunicationTemplate
+Service "0..1" -- "0..*" Template
 Service "0..1" -- "0..*" CommunicationRule
 
-CommunicationTemplate "1" -- "0..*" CommunicationRule
-CommunicationTemplate "0..1" -- "0..*" OrderCommunication
+Template "1" -- "0..*" CommunicationRule
+Template "0..1" -- "0..*" OrderCommunication
+Template "0..1" -- "0..*" Invoice
 CommunicationRule "0..1" -- "0..*" OrderCommunication
 
 Order "1" -- "0..*" OrderCommunication
@@ -862,8 +970,9 @@ CustomerCatalogItem "0..1" -- "0..*" OrderLine
 
 Order "1" *-- "0..*" Package
 Package "0..1" --> "0..*" Package : parent
-PackageType "1" -- "0..*" Package
-GroupingType "1" -- "0..*" Package
+Type "1" -- "0..*" TypeItem
+TypeItem "1" -- "0..*" Package : packageTypeId
+TypeItem "1" -- "0..*" Package : groupingTypeId
 Package "1" -- "0..*" PackageOrderLine
 OrderLine "1" -- "0..*" PackageOrderLine
 StockLocation "0..1" -- "0..*" Package : currentLocation
@@ -892,7 +1001,7 @@ Provider "0..*" --> "0..1" Contact
 Provider "1" -- "0..*" Driver
 Provider "1" -- "0..*" Vehicle
 
-VehicleType "1" -- "0..*" Vehicle
+TypeItem "1" -- "0..*" Vehicle : vehicleTypeId
 
 Organization "1" -- "0..*" Tour
 Agency "1" -- "0..*" Tour

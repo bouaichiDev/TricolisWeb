@@ -29,6 +29,9 @@ class ListOrderRequest extends ListRequest
             'requestedDate' => ['sometimes', 'date'],
             'city' => ['sometimes', 'string', 'max:255'],
             'fromCatalog' => ['sometimes', 'boolean'],
+            // Les commandes importees arrivent sans depot : c'est ce qui reste
+            // a faire dessus, et donc ce qu'on vient chercher dans la liste.
+            'withoutDepot' => ['sometimes', 'boolean'],
         ]);
     }
 }

@@ -6,7 +6,7 @@ namespace App\Modules\Communications\Actions;
 
 use App\Modules\Communications\DTOs\CreateCommunicationRuleData;
 use App\Modules\Communications\DTOs\UpdateCommunicationRuleData;
-use App\Modules\Communications\Exceptions\CommunicationTemplateInUse;
+use App\Modules\Communications\Exceptions\CommunicationRuleInUse;
 use App\Modules\Communications\Models\CommunicationRule;
 use App\Modules\Communications\Services\CommunicationRuleConditionEvaluator;
 use App\Modules\Communications\Services\CommunicationScopeGuard;
@@ -87,7 +87,7 @@ final readonly class ManageCommunicationRuleAction
     public function delete(CommunicationRule $rule, AuditContext $context): void
     {
         if ($rule->communications()->exists()) {
-            throw CommunicationTemplateInUse::ruleHasCommunications();
+            throw CommunicationRuleInUse::hasCommunications();
         }
 
         DB::transaction(function () use ($rule, $context): void {

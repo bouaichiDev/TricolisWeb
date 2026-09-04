@@ -32,6 +32,18 @@ class InvoicePolicy extends BaseOrganizationPolicy
         return $this->hasPermission($user, $invoice->organization_id, 'invoices.update');
     }
 
+    /**
+     * Clôturer est un droit à part.
+     *
+     * Le §111 le demande : figer un document et le transmettre au client n'est
+     * pas du même ordre que corriger une ligne, et `invoices.update` ne doit pas
+     * l'accorder par ricochet.
+     */
+    public function close(User $user, Invoice $invoice): bool
+    {
+        return $this->hasPermission($user, $invoice->organization_id, 'invoices.close');
+    }
+
     public function delete(User $user, Invoice $invoice): bool
     {
         return $this->hasPermission($user, $invoice->organization_id, 'invoices.delete');

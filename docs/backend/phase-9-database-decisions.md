@@ -240,3 +240,77 @@ Aucune n'est créée. Un test le vérifie table par table.
 Les destinataires sont portés par `OrderCommunication` (§22), la file par la
 table `jobs` de Laravel (§25), l'historique par `audit_logs` (§39), et les
 notifications internes par `order_communications` elle-même (§26).
+
+---
+
+## 9. Évolution du 1er septembre 2026 — modèles unifiés
+
+Quatre migrations, toutes non destructives. Le détail est dans
+`docs/backend/phase-9-template-unification.md` ; voici les décisions de schéma.
+
+### `communication_templates` devient `templates`
+
+Un **renommage**, pas une recréation. `RENAME TABLE` conserve les identifiants,
+et MySQL réoriente de lui-même les clés étrangères qui la visaient :
+`communication_rules.template_id` et `order_communications.template_id`
+continuent de désigner les mêmes lignes. Aucune communication historique n'est
+perdue, aucun doublon n'est créé.
+
+Les migrations d'origine (`2026_08_07_100001`, `2026_08_25_100000`) ne sont
+**pas** réécrites : elles décrivent l'état d'où l'on part, et les modifier
+casserait une installation neuve, où le renommage s'exécute après elles.
+
+### `templates.customer_id`, nullable, RESTRICT
+
+Nul, le modèle vaut pour toute l'organisation ; renseigné, il ne vaut que pour
+ce client. C'est ce qui permet le repli « client → global » sans jamais servir
+le modèle d'un tiers.
+
+RESTRICT et non CASCADE : supprimer un client ne doit pas effacer en silence une
+mise en page dont d'autres factures dépendent.
+
+### `templates.channel` devient nullable
+
+Une facture est un document, pas un message : elle n'a ni canal, ni objet, ni
+destinataire. Lui inventer `channel = email` mentirait sur sa nature et la
+ferait apparaître dans les sélecteurs de messagerie — ce que le §0.7 interdit
+nommément.
+
+L'unicité `(organization_id, code)` est inchangée : elle suffit, les codes des
+modèles de facture étant distincts (`INVOICE_DEFAULT`, `INVOICE_IKEA`).
+
+### `invoices.template_id`, `rendered_body`, `rendered_at`
+
+Trois colonnes sur une table existante — la « structure minimale validée » du
+§0.23, point 3.
+
+`rendered_body` fige **le document produit** à la clôture, pas une copie du
+modèle : le §0.23 interdit d'y répondre par une seconde table de modèles.
+`template_id` ne sert qu'à l'audit et reste en RESTRICT ; le document, lui, ne
+dépend plus de lui une fois figé.
+
+Les trois sont nulles pour un brouillon : il se rend à la demande, depuis le
+modèle du moment, et c'est bien ce qu'un aperçu doit montrer.
+
+### `audit_logs.entity_type` et `permissions.code`
+
+Deux mises à jour de chaînes. L'alias polymorphe passe de
+`communication_template` à `template` ; les quatre permissions de
+`communication_templates.*` à `templates.*`, **module compris**.
+
+Les rôles sont préservés : `role_permissions` pointe sur l'identifiant, que rien
+ne touche. Un administrateur qui pouvait éditer les modèles hier le peut encore,
+et sur les modèles de facture par la même permission.
+
+### Tables toujours absentes
+
+Aux vingt de la section 8 s'ajoutent celles que l'évolution aurait pu faire
+naître, et qui n'existent pas :
+
+```text
+invoice_templates    customer_invoice_templates    invoice_template_lines
+email_templates      sms_templates                 whatsapp_templates
+document_templates
+```
+
+Un test les vérifie table par table.

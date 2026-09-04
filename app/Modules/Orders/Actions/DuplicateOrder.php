@@ -78,7 +78,13 @@ final readonly class DuplicateOrder
             'customer_id' => $source->customer_id,
             'agency_id' => $source->agency_id,
             'depot_id' => $source->depot_id,
-            'order_number' => $this->numbers->execute($source->organization_id, (int) now()->format('Y')),
+            // La copie prend son rang dans la serie du meme client : c'est une
+            // commande de plus pour lui, pas la reprise du numero d'origine.
+            'order_number' => $this->numbers->execute(
+                $source->organization_id,
+                (int) now()->format('Y'),
+                $source->customer->code,
+            ),
             'customer_reference' => $source->customer_reference,
             'order_type' => $source->order_type,
             'group_code' => $source->group_code,

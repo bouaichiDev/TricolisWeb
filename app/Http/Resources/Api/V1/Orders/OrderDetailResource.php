@@ -9,6 +9,10 @@ use App\Http\Resources\Api\V1\Agencies\DepotResource;
 use App\Http\Resources\Api\V1\Customers\CustomerCompactResource;
 use App\Http\Resources\Api\V1\Packages\PackageResource;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Statuses\Models\Status;
+use App\Modules\Statuses\Services\StatusMachine;
+use App\Shared\Database\MorphMap;
+use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +31,9 @@ class OrderDetailResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var StatusMachine $machine */
+        $machine = Container::getInstance()->make(StatusMachine::class);
+
         return [
             'id' => $this->id,
             'organizationId' => $this->organization_id,
@@ -40,14 +47,15 @@ class OrderDetailResource extends JsonResource
             'source' => $this->source?->value,
             'status' => $this->status?->value,
             'statusLabel' => $this->status?->label(),
-            'allowsContentChanges' => $this->status?->allowsContentChanges(),
-            'allowedTransitions' => array_values(array_map(
-                static fn ($status): string => $status->value,
-                array_filter(
-                    $this->status?->allowedTransitions() ?? [],
-                    static fn ($status): bool => $status->isManuallyAssignable(),
-                ),
-            )),
+            // Comportement et transitions viennent du referentiel : c'est
+            // l'administrateur plateforme qui dessine le cycle de vie, et une
+            // regle figee ici contredirait son ecran des le premier statut
+            // ajoute.
+            'allowsContentChanges' => $machine->allowsContentChanges(MorphMap::ORDER, $this->status?->value),
+            'allowedTransitions' => array_map(
+                static fn (Status $status): string => $status->code,
+                $machine->transitionsFrom(MorphMap::ORDER, $this->status?->value),
+            ),
             'internalRemark' => $this->internal_remark,
             'workerRemark' => $this->worker_remark,
             'weight' => $this->weight,

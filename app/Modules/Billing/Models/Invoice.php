@@ -6,6 +6,7 @@ namespace App\Modules\Billing\Models;
 
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Organizations\Models\Organization;
+use App\Modules\Templates\Models\Template;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,6 +41,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'external_reference',
     'remark',
     'status',
+    'template_id',
+    'rendered_body',
+    'rendered_at',
     'created_at',
 ])]
 class Invoice extends Model
@@ -68,6 +72,7 @@ class Invoice extends Model
             'tax_total' => 'decimal:2',
             'total' => 'decimal:2',
             'created_at' => 'datetime',
+            'rendered_at' => 'datetime',
         ];
     }
 
@@ -85,6 +90,19 @@ class Invoice extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    /**
+     * Modele ayant produit le document fige a la cloture.
+     *
+     * Reference d'audit : le document lui-meme vit dans `rendered_body` et ne
+     * depend plus de ce modele une fois pose.
+     *
+     * @return BelongsTo<Template, $this>
+     */
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(Template::class, 'template_id');
     }
 
     /**

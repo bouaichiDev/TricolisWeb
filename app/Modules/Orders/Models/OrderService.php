@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Orders\Models;
 
 use App\Modules\Addresses\Models\Address;
+use App\Modules\Billing\Models\InvoiceLine;
 use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Packages\Models\Package;
+use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Tours\Models\TourStopService;
+use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Service d'une commande — unité principale de planification.
@@ -49,6 +54,7 @@ class OrderService extends Model
 {
     use HasFactory;
     use HasUlid;
+    use TracksStatusChanges;
 
     protected $keyType = 'string';
 
@@ -125,5 +131,43 @@ class OrderService extends Model
     {
         return $this->belongsToMany(Package::class, 'order_service_packages', 'order_service_id', 'package_id')
             ->withPivot(['id', 'quantity', 'handling_instructions', 'status']);
+    }
+
+    /**
+     * Affectations de ce service, actives comme historiques.
+     *
+     * Un service peut avoir ete planifie plusieurs fois : c'est la
+     * replanification. Une seule de ces affectations est active a la fois.
+     *
+     * @return HasMany<TourStopService, $this>
+     */
+    /**
+     * La ligne de facture qui porte ce service, s'il est facturé.
+     *
+     * `hasOne` et non `hasMany` : le §10 impose qu'un service ne soit facturé
+     * qu'une fois, et la base le tient par une contrainte d'unicité.
+     *
+     * @return HasOne<InvoiceLine, $this>
+     */
+    public function invoiceLine(): HasOne
+    {
+        return $this->hasOne(InvoiceLine::class, 'order_service_id');
+    }
+
+    /**
+     * La ligne de décompte qui règle ce service à un fournisseur.
+     *
+     * Même raison, §16 : un service ne se règle pas deux fois.
+     *
+     * @return HasOne<ProviderSettlementLine, $this>
+     */
+    public function settlementLine(): HasOne
+    {
+        return $this->hasOne(ProviderSettlementLine::class, 'order_service_id');
+    }
+
+    public function tourStopServices(): HasMany
+    {
+        return $this->hasMany(TourStopService::class, 'order_service_id');
     }
 }

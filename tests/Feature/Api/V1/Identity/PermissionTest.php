@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Identity\Models\Permission;
+use App\Modules\Identity\Services\PlatformAccess;
 
 beforeEach(function (): void {
     $this->seed();
@@ -10,11 +11,20 @@ beforeEach(function (): void {
 });
 
 describe('permissions', function (): void {
-    it('lists the global permission catalogue', function (): void {
+    /**
+     * Le référentiel est global, la réponse ne l'est pas.
+     *
+     * L'appelant est propriétaire d'un organisme : il voit tout sauf les
+     * permissions réservées à la plateforme. Renvoyer l'intégralité du
+     * référentiel lui donnerait de quoi les proposer dans un formulaire de rôle.
+     */
+    it('lists the permissions the caller may delegate', function (): void {
+        $delegable = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
+
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->getJson('/api/v1/permissions')
             ->assertOk()
-            ->assertJsonCount(Permission::count(), 'data');
+            ->assertJsonCount($delegable, 'data');
     });
 
     it('filters permissions by module', function (): void {

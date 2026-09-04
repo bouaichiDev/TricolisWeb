@@ -29,8 +29,22 @@ class DocumentPolicy extends BaseOrganizationPolicy
         return $this->hasPermission($user, $organizationId, 'documents.upload');
     }
 
+    /**
+     * Type de document qu'aucune permission ne permet d'effacer.
+     *
+     * Une preuve de livraison est deposee par le chauffeur et fait foi : la
+     * supprimer detruirait la seule trace de ce qui a ete remis, et laisserait
+     * une commande livree sans preuve. Une preuve erronee se conteste par une
+     * reclamation, elle ne s'efface pas.
+     */
+    public const string PROTECTED_TYPE = 'pod';
+
     public function delete(User $user, Document $document): Response|bool
     {
+        if (strtolower((string) $document->document_type) === self::PROTECTED_TYPE) {
+            return Response::deny('Une preuve de livraison ne peut pas etre supprimee.');
+        }
+
         return $this->scoped($user, $document, 'documents.delete');
     }
 

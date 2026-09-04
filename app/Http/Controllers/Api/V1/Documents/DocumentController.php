@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Documents;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Documents\ListDocumentRequest;
 use App\Http\Requests\Api\V1\Documents\StoreDocumentRequest;
 use App\Http\Resources\Api\V1\Documents\DocumentResource;
 use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Documents\Models\Document;
 use App\Shared\Database\EntityLinkResolver;
-use App\Shared\Http\Requests\ListRequest;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -32,7 +32,7 @@ class DocumentController extends Controller
      * Permission requise : `documents.view`. Les documents supprimés
      * logiquement sont exclus. Recherche sur `reference_number` et `file_name`.
      */
-    public function index(ListRequest $request): JsonResponse
+    public function index(ListDocumentRequest $request): JsonResponse
     {
         $org = $this->requireOrganizationId();
         $this->authorize('viewAny', [Document::class, $org]);
@@ -43,6 +43,16 @@ class DocumentController extends Controller
         }
         if ($request->filled('status')) {
             $query->where('status', $request->validated('status'));
+        }
+        if ($request->filled('documentType')) {
+            $query->where('document_type', $request->validated('documentType'));
+        }
+        // Les pieces d'une entite : le lien est polymorphe, il n'etait
+        // simplement pas interrogeable.
+        if ($request->filled('entityType')) {
+            $query->whereHas('links', fn ($link) => $link
+                ->where('entity_type', $request->validated('entityType'))
+                ->where('entity_id', $request->validated('entityId')));
         }
 
         return ApiResponse::paginated($query->latest()->paginate($request->getPerPage())->through(fn ($document) => new DocumentResource($document)));

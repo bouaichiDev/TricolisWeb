@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tours\Actions;
 
 use App\Modules\Audit\Actions\WriteAuditLog;
+use App\Modules\Planning\Jobs\RecalculateTourRouteJob;
 use App\Modules\Tours\DTOs\CreateTourStopData;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourStop;
@@ -74,6 +75,10 @@ final readonly class CreateTourStopAction
         });
 
         $this->totals->execute($tour);
+        // La geometrie de la tournee a change : l'itineraire connu decrit
+        // un ordre qui n'existe plus. Le calcul part en file, apres la
+        // transaction, pour ne pas faire attendre le geste.
+        RecalculateTourRouteJob::dispatch($tour->id)->afterCommit();
 
         return $stop;
     }

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Fleet;
 
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
+use App\Shared\Http\Rules\IsTypeItemOf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,17 +27,18 @@ class UpdateVehicleRequest extends FormRequest
         $providerId = $this->input('providerId', $vehicle?->provider_id);
 
         return [
+            // Facultatif : le transporteur possede ses propres camions.
             'providerId' => [
-                'sometimes', 'ulid',
+                'nullable', 'ulid',
                 new BelongsToActiveOrganization(Provider::class, null, 'Ce fournisseur n’appartient pas à l’organisation active.'),
             ],
             'vehicleTypeId' => [
                 'sometimes', 'ulid',
-                new BelongsToActiveOrganization(VehicleType::class, null, 'Ce type de véhicule n’appartient pas à l’organisation active.'),
+                new IsTypeItemOf('vehicle', 'Ce type de véhicule n’appartient pas à l’organisation active.'),
             ],
             'code' => [
                 'sometimes', 'string', 'max:64',
-                Rule::unique('vehicles', 'code')->where('provider_id', $providerId)->ignore($vehicle?->id),
+                Rule::unique('vehicles', 'code')->where('organization_id', $vehicle?->organization_id)->ignore($vehicle?->id),
             ],
             'registrationNumber' => [
                 'sometimes', 'string', 'max:32',
@@ -45,7 +47,7 @@ class UpdateVehicleRequest extends FormRequest
             'payloadCapacity' => ['sometimes', 'numeric', 'min:0'],
             'volumeCapacity' => ['sometimes', 'numeric', 'min:0'],
             'palletCapacity' => ['sometimes', 'integer', 'min:0'],
-            'status' => ['sometimes', 'string', 'max:32'],
+            'status' => ['sometimes', 'string', 'max:32', new ExistsInStatusReferential('vehicle')],
         ];
     }
 }

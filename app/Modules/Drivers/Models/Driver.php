@@ -6,7 +6,9 @@ namespace App\Modules\Drivers\Models;
 
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Contacts\Models\Contact;
+use App\Modules\Identity\Models\User;
 use App\Modules\Organizations\Models\Organization;
+use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Providers\Models\Provider;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Chauffeur d'un fournisseur (`Provider 1 — 0..* Driver`).
@@ -29,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'organization_id',
     'provider_id',
+    'user_id',
     'address_id',
     'contact_id',
     'code',
@@ -88,5 +92,33 @@ class Driver extends Model
     public function scopeInOrganization(Builder $query, string $organizationId): void
     {
         $query->where('organization_id', $organizationId);
+    }
+
+    /**
+     * Compte avec lequel le chauffeur ouvre l'application.
+     *
+     * Nul pour les chauffeurs enregistres avant que le lien n'existe : toute
+     * creation passe desormais par `CreateDriverAccount`, qui le remplit.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Appartenance du compte a cette organisation.
+     *
+     * C'est elle que l'interface ouvre, pas l'utilisateur : la fiche d'un membre
+     * s'adresse par `organization-users/{id}`, et un meme compte a une
+     * appartenance par organisation. Renvoyer l'identifiant de l'utilisateur
+     * menait a une page introuvable.
+     *
+     * @return HasOne<OrganizationUser, $this>
+     */
+    public function membership(): HasOne
+    {
+        return $this->hasOne(OrganizationUser::class, 'user_id', 'user_id');
     }
 }

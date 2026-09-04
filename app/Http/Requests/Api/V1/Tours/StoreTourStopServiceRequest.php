@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Tours;
 
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,7 @@ class StoreTourStopServiceRequest extends FormRequest
                 Rule::unique('tour_stop_services', 'sequence_within_stop')->where('tour_stop_id', $stopId),
             ],
             'isActiveAssignment' => ['sometimes', 'boolean'],
-            'status' => ['required', 'string', 'max:32'],
+            'status' => ['required', 'string', 'max:32', new ExistsInStatusReferential('tour_stop_service')],
         ];
     }
 }

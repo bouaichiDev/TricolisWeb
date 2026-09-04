@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Providers;
 
+use App\Modules\Addresses\Models\Address;
+use App\Modules\Contacts\Models\Contact;
+use App\Shared\Http\Rules\BelongsToActiveOrganization;
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use App\Shared\Organizations\CurrentOrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,14 +35,20 @@ class UpdateProviderRequest extends FormRequest
         $providerId = $this->route('provider')?->id;
 
         return [
-            'addressId' => ['sometimes', 'nullable', 'string', Rule::exists('addresses', 'id')],
-            'contactId' => ['sometimes', 'nullable', 'string', Rule::exists('contacts', 'id')],
+            'addressId' => [
+                'sometimes', 'nullable', 'ulid',
+                new BelongsToActiveOrganization(Address::class, 'entityAddresses', 'Cette adresse n’appartient pas à l’organisation active.'),
+            ],
+            'contactId' => [
+                'sometimes', 'nullable', 'ulid',
+                new BelongsToActiveOrganization(Contact::class, 'entityContacts', 'Ce contact n’appartient pas à l’organisation active.'),
+            ],
             'code' => [
                 'sometimes', 'string', 'max:64',
                 Rule::unique('providers', 'code')->where('organization_id', $organizationId)->ignore($providerId),
             ],
             'name' => ['sometimes', 'string', 'max:255'],
-            'status' => ['sometimes', 'string', 'max:32'],
+            'status' => ['sometimes', 'string', 'max:32', new ExistsInStatusReferential('provider')],
         ];
     }
 }

@@ -6,9 +6,9 @@ namespace App\Http\Controllers\Api\V1\Communications;
 
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Templates\Models\Template;
 
 /**
  * Vérifie qu'une ressource de communication relève de l'organisation active.
@@ -23,7 +23,7 @@ use App\Modules\Orders\Models\Order;
  */
 trait ResolvesCommunicationScope
 {
-    protected function guardTemplate(CommunicationTemplate $template): string
+    protected function guardTemplate(Template $template): string
     {
         $organizationId = $this->requireOrganizationId();
         abort_unless($template->organization_id === $organizationId, 404, 'Modèle de message introuvable.');

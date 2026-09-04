@@ -18,12 +18,29 @@ class UpdateOrderStatusRequest extends FormRequest
     /**
      * @return array<string, array<int, mixed>>
      */
+    /**
+     * Emplacements choisis, indexes par ligne de commande.
+     *
+     * @return array<string, string>
+     */
+    public function stockLocations(): array
+    {
+        $choices = $this->validated('stockLocations') ?? [];
+
+        return array_column($choices, 'stockLocationId', 'orderLineId');
+    }
+
     public function rules(): array
     {
         return [
             'status' => ['required', Rule::enum(OrderStatus::class)],
             'reasonCode' => ['nullable', 'string', 'max:64'],
             'reasonText' => ['nullable', 'string', 'max:1000'],
+            // Emplacement a vider pour une ligne stockee dans plusieurs
+            // endroits. Inutile quand il n'y en a qu'un : le serveur le trouve.
+            'stockLocations' => ['sometimes', 'array'],
+            'stockLocations.*.orderLineId' => ['required', 'ulid'],
+            'stockLocations.*.stockLocationId' => ['required', 'ulid'],
         ];
     }
 }

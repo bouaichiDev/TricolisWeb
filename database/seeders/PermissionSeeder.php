@@ -10,6 +10,12 @@ use Illuminate\Database\Seeder;
 class PermissionSeeder extends Seeder
 {
     /**
+     * Référentiel des permissions.
+     *
+     * La section de menu n'y figure pas : elle est déduite du module par
+     * `PermissionMenuMap`, avec les rares exceptions déclarées par code. La
+     * répéter sur 188 lignes inviterait à l'incohérence.
+     *
      * @var array<int, array{code: string, name: string, module: string, action: string}>
      */
     private array $permissions = [
@@ -18,6 +24,12 @@ class PermissionSeeder extends Seeder
         ['code' => 'organizations.view', 'name' => 'Voir les organisations', 'module' => 'organizations', 'action' => 'view'],
         ['code' => 'organizations.create', 'name' => 'Créer une organisation', 'module' => 'organizations', 'action' => 'create'],
         ['code' => 'organizations.update', 'name' => 'Modifier une organisation', 'module' => 'organizations', 'action' => 'update'],
+        ['code' => 'organizations.delete', 'name' => 'Supprimer une organisation', 'module' => 'organizations', 'action' => 'delete'],
+
+        ['code' => 'statuses.view', 'name' => 'Voir les statuts', 'module' => 'statuses', 'action' => 'view'],
+        ['code' => 'statuses.create', 'name' => 'Créer un statut', 'module' => 'statuses', 'action' => 'create'],
+        ['code' => 'statuses.update', 'name' => 'Modifier un statut', 'module' => 'statuses', 'action' => 'update'],
+        ['code' => 'statuses.delete', 'name' => 'Supprimer un statut', 'module' => 'statuses', 'action' => 'delete'],
 
         ['code' => 'subscriptions.view', 'name' => 'Voir l\'abonnement', 'module' => 'subscriptions', 'action' => 'view'],
         ['code' => 'subscriptions.create', 'name' => 'Souscrire un abonnement', 'module' => 'subscriptions', 'action' => 'create'],
@@ -29,6 +41,10 @@ class PermissionSeeder extends Seeder
         ['code' => 'users.update', 'name' => 'Modifier un utilisateur', 'module' => 'users', 'action' => 'update'],
         ['code' => 'users.disable', 'name' => 'Désactiver un utilisateur', 'module' => 'users', 'action' => 'disable'],
         ['code' => 'users.assign_roles', 'name' => 'Affecter des rôles', 'module' => 'users', 'action' => 'assign_roles'],
+        // Distincte de `users.update` : renommer un compte et pouvoir entrer
+        // dedans ne sont pas le meme pouvoir. Un role qui corrige une faute de
+        // frappe n'a pas a pouvoir prendre la place de quelqu'un.
+        ['code' => 'users.reset_password', 'name' => 'Réinitialiser un mot de passe', 'module' => 'users', 'action' => 'reset_password'],
 
         ['code' => 'roles.view', 'name' => 'Voir les rôles', 'module' => 'roles', 'action' => 'view'],
         ['code' => 'roles.create', 'name' => 'Créer un rôle', 'module' => 'roles', 'action' => 'create'],
@@ -121,10 +137,13 @@ class PermissionSeeder extends Seeder
         ['code' => 'drivers.update', 'name' => 'Modifier un chauffeur', 'module' => 'drivers', 'action' => 'update'],
         ['code' => 'drivers.delete', 'name' => 'Supprimer un chauffeur', 'module' => 'drivers', 'action' => 'delete'],
 
-        ['code' => 'vehicle_types.view', 'name' => 'Voir les types de véhicule', 'module' => 'vehicle_types', 'action' => 'view'],
-        ['code' => 'vehicle_types.create', 'name' => 'Créer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'create'],
-        ['code' => 'vehicle_types.update', 'name' => 'Modifier un type de véhicule', 'module' => 'vehicle_types', 'action' => 'update'],
-        ['code' => 'vehicle_types.delete', 'name' => 'Supprimer un type de véhicule', 'module' => 'vehicle_types', 'action' => 'delete'],
+        // Un seul module pour tous les référentiels de type : un référentiel
+        // ajouté par l'organisme serait sinon inaccessible jusqu'à ce qu'on lui
+        // écrive sa permission.
+        ['code' => 'types.view', 'name' => 'Voir les types', 'module' => 'types', 'action' => 'view'],
+        ['code' => 'types.create', 'name' => 'Créer un type', 'module' => 'types', 'action' => 'create'],
+        ['code' => 'types.update', 'name' => 'Modifier un type', 'module' => 'types', 'action' => 'update'],
+        ['code' => 'types.delete', 'name' => 'Supprimer un type', 'module' => 'types', 'action' => 'delete'],
 
         ['code' => 'vehicles.view', 'name' => 'Voir les véhicules', 'module' => 'vehicles', 'action' => 'view'],
         ['code' => 'vehicles.create', 'name' => 'Créer un véhicule', 'module' => 'vehicles', 'action' => 'create'],
@@ -162,6 +181,25 @@ class PermissionSeeder extends Seeder
         ['code' => 'tracking_events.view', 'name' => 'Voir les événements de suivi', 'module' => 'tracking_events', 'action' => 'view'],
         ['code' => 'tracking_events.create', 'name' => 'Créer un événement de suivi', 'module' => 'tracking_events', 'action' => 'create'],
 
+        // Le parcours client : quels statuts deviennent des etapes visibles.
+        ['code' => 'tracking_event_definitions.view', 'name' => 'Voir le parcours client', 'module' => 'tracking_event_definitions', 'action' => 'view'],
+        ['code' => 'tracking_event_definitions.create', 'name' => 'Ajouter une etape au parcours', 'module' => 'tracking_event_definitions', 'action' => 'create'],
+        ['code' => 'tracking_event_definitions.update', 'name' => 'Modifier une etape du parcours', 'module' => 'tracking_event_definitions', 'action' => 'update'],
+        ['code' => 'tracking_event_definitions.delete', 'name' => 'Supprimer une etape du parcours', 'module' => 'tracking_event_definitions', 'action' => 'delete'],
+
+        // Les API externes appelees par l'organisme.
+        ['code' => 'api_configurations.view', 'name' => 'Voir les API externes', 'module' => 'api_configurations', 'action' => 'view'],
+        ['code' => 'api_configurations.create', 'name' => 'Ajouter une API externe', 'module' => 'api_configurations', 'action' => 'create'],
+        ['code' => 'api_configurations.update', 'name' => 'Modifier une API externe', 'module' => 'api_configurations', 'action' => 'update'],
+        ['code' => 'api_configurations.delete', 'name' => 'Supprimer une API externe', 'module' => 'api_configurations', 'action' => 'delete'],
+
+        // La boite d'envoi de l'organisation : d'ou partent ses courriers.
+        // Pas de `create` — la configuration est unique, l'ecrire et la
+        // modifier sont le meme geste.
+        ['code' => 'mail_configuration.view', 'name' => 'Voir la messagerie d’envoi', 'module' => 'mail_configuration', 'action' => 'view'],
+        ['code' => 'mail_configuration.update', 'name' => 'Régler la messagerie d’envoi', 'module' => 'mail_configuration', 'action' => 'update'],
+        ['code' => 'mail_configuration.delete', 'name' => 'Supprimer la messagerie d’envoi', 'module' => 'mail_configuration', 'action' => 'delete'],
+
         ['code' => 'proofs_of_delivery.view', 'name' => 'Voir les preuves de livraison', 'module' => 'proofs_of_delivery', 'action' => 'view'],
         ['code' => 'proofs_of_delivery.create', 'name' => 'Créer une preuve de livraison', 'module' => 'proofs_of_delivery', 'action' => 'create'],
 
@@ -174,6 +212,10 @@ class PermissionSeeder extends Seeder
         ['code' => 'invoices.create', 'name' => 'Créer une facture', 'module' => 'invoices', 'action' => 'create'],
         ['code' => 'invoices.update', 'name' => 'Modifier une facture', 'module' => 'invoices', 'action' => 'update'],
         ['code' => 'invoices.delete', 'name' => 'Supprimer une facture', 'module' => 'invoices', 'action' => 'delete'],
+        // La clôture est à part, comme le §111 le demande : elle fige la facture
+        // et déclenche son envoi chez le client. Qui corrige une ligne ne devrait
+        // pas, du même droit, transmettre un document irréversible.
+        ['code' => 'invoices.close', 'name' => 'Clôturer une facture', 'module' => 'invoices', 'action' => 'close'],
 
         ['code' => 'invoice_lines.view', 'name' => 'Voir les lignes de facture', 'module' => 'invoice_lines', 'action' => 'view'],
         ['code' => 'invoice_lines.create', 'name' => 'Ajouter une ligne de facture', 'module' => 'invoice_lines', 'action' => 'create'],
@@ -230,10 +272,28 @@ class PermissionSeeder extends Seeder
         ['code' => 'export_jobs.create', 'name' => 'Déclencher un export', 'module' => 'export_jobs', 'action' => 'create'],
         ['code' => 'export_jobs.retry', 'name' => 'Relancer un export', 'module' => 'export_jobs', 'action' => 'retry'],
 
-        ['code' => 'communication_templates.view', 'name' => 'Voir les modèles de message', 'module' => 'communication_templates', 'action' => 'view'],
-        ['code' => 'communication_templates.create', 'name' => 'Créer un modèle de message', 'module' => 'communication_templates', 'action' => 'create'],
-        ['code' => 'communication_templates.update', 'name' => 'Modifier un modèle de message', 'module' => 'communication_templates', 'action' => 'update'],
-        ['code' => 'communication_templates.delete', 'name' => 'Supprimer un modèle de message', 'module' => 'communication_templates', 'action' => 'delete'],
+        // Tarification — phase 6 V2. Les listes, regles et matrices se
+        // gouvernent ensemble : separer leurs droits obligerait a en accorder
+        // trois pour composer un seul bareme.
+        ['code' => 'price_lists.view', 'name' => 'Voir les tarifs', 'module' => 'price_lists', 'action' => 'view'],
+        ['code' => 'price_lists.create', 'name' => 'Créer un tarif', 'module' => 'price_lists', 'action' => 'create'],
+        ['code' => 'price_lists.update', 'name' => 'Modifier un tarif', 'module' => 'price_lists', 'action' => 'update'],
+        ['code' => 'price_lists.delete', 'name' => 'Supprimer un tarif', 'module' => 'price_lists', 'action' => 'delete'],
+
+        // Le catalogue des variables est un referentiel de plateforme, comme
+        // les statuts : un organisme le lit pour ecrire ses baremes, il ne
+        // l'ecrit pas. Sans cela, une formule ne voudrait plus dire la meme
+        // chose d'un organisme a l'autre.
+        ['code' => 'pricing_variables.view', 'name' => 'Voir les variables tarifaires', 'module' => 'pricing_variables', 'action' => 'view'],
+        ['code' => 'pricing_variables.manage', 'name' => 'Gerer les variables tarifaires', 'module' => 'pricing_variables', 'action' => 'manage'],
+
+        ['code' => 'pricing_calculations.view', 'name' => 'Historique des calculs tarifaires', 'module' => 'pricing_calculations', 'action' => 'view'],
+        ['code' => 'pricing_calculations.calculate', 'name' => 'Calculer un tarif', 'module' => 'pricing_calculations', 'action' => 'calculate'],
+
+        ['code' => 'templates.view', 'name' => 'Voir les modèles', 'module' => 'templates', 'action' => 'view'],
+        ['code' => 'templates.create', 'name' => 'Créer un modèle', 'module' => 'templates', 'action' => 'create'],
+        ['code' => 'templates.update', 'name' => 'Modifier un modèle', 'module' => 'templates', 'action' => 'update'],
+        ['code' => 'templates.delete', 'name' => 'Supprimer un modèle', 'module' => 'templates', 'action' => 'delete'],
 
         ['code' => 'communication_rules.view', 'name' => 'Voir les règles de communication', 'module' => 'communication_rules', 'action' => 'view'],
         ['code' => 'communication_rules.create', 'name' => 'Créer une règle de communication', 'module' => 'communication_rules', 'action' => 'create'],
@@ -253,15 +313,27 @@ class PermissionSeeder extends Seeder
         ['code' => 'communication_attachments.delete', 'name' => 'Supprimer une pièce jointe', 'module' => 'communication_attachments', 'action' => 'delete'],
     ];
 
+    /**
+     * La section de menu est **réappliquée** à chaque exécution, alors que le
+     * reste ne l'est qu'à la création.
+     *
+     * `firstOrCreate` ne touche pas une ligne existante : sur une base déjà
+     * semée, la colonne resterait vide et le formulaire de rôle n'aurait rien
+     * pour grouper. Le reclassement d'une permission d'une section à l'autre
+     * doit d'ailleurs pouvoir se rejouer.
+     */
     public function run(): void
     {
         foreach ($this->permissions as $permission) {
-            Permission::firstOrCreate(
+            $section = PermissionMenuMap::sectionFor($permission['code'], $permission['module']);
+
+            Permission::updateOrCreate(
                 ['code' => $permission['code']],
                 [
                     'name' => $permission['name'],
                     'module' => $permission['module'],
                     'action' => $permission['action'],
+                    'menu_section' => $section->value,
                 ]
             );
         }

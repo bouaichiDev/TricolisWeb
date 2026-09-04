@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Database;
 
-use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
-use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Models\CustomerSite;
 use App\Modules\Identity\Models\User;
 use App\Modules\Organizations\Models\Organization;
@@ -66,15 +64,26 @@ final class EntityLinkResolver
         return $model;
     }
 
+    /**
+     * Une cible appartient a l'organisation active si elle en porte
+     * l'identifiant, ou si celle qui la porte est atteignable.
+     *
+     * Le cas general vient en dernier et couvre toute entite dotee d'une
+     * colonne `organization_id` — commande, colis, reclamation, tournee. Une
+     * liste fermee aurait refuse chaque nouvelle entite en silence, avec un
+     * message d'appartenance qui aurait fait chercher du cote des droits.
+     *
+     * Une entite sans cette colonne et sans cas dedie reste refusee : rien
+     * n'etablit alors son appartenance, et la deviner serait pire que refuser.
+     */
     private function belongsToOrganization(Model $model, string $organizationId): bool
     {
         return match (true) {
             $model instanceof Organization => $model->id === $organizationId,
-            $model instanceof Agency, $model instanceof Customer => $model->organization_id === $organizationId,
             $model instanceof Depot => $model->agency->organization_id === $organizationId,
             $model instanceof CustomerSite => $model->customer->organization_id === $organizationId,
             $model instanceof User => $model->organizationUsers()->where('organization_id', $organizationId)->exists(),
-            default => false,
+            default => $model->getAttribute('organization_id') === $organizationId,
         };
     }
 }

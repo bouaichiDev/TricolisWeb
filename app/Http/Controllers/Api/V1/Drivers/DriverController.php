@@ -80,7 +80,10 @@ class DriverController extends Controller
         $this->guardScope($driver);
         $this->authorize('view', $driver);
 
-        return ApiResponse::ok(new DriverDetailResource($driver->load(['provider', 'address', 'contact'])));
+        return ApiResponse::ok(new DriverDetailResource($driver->load([
+            'provider', 'address', 'contact', 'user',
+            'membership' => fn ($membership) => $membership->where('organization_id', $driver->organization_id),
+        ])));
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Modules\Customers\Models\Customer;
 use App\Modules\Exports\Enums\ExportFormat;
 use App\Modules\Exports\Enums\ExportTransport;
 use App\Shared\Database\Concerns\HasUlid;
+use App\Shared\Support\Secret;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
@@ -95,6 +96,24 @@ class CustomerExportConfiguration extends Model
     public function hasPassword(): bool
     {
         return $this->encrypted_password !== null;
+    }
+
+    /**
+     * Le secret en clair, pour le transporteur qui va s'en servir.
+     *
+     * **N'appartient qu'au moteur d'export.** Il ne passe par aucune Resource,
+     * n'entre dans aucun journal et ne figure dans aucun message d'erreur : le
+     * §124 l'interdit, et une exception de pilote reprend volontiers l'URL de
+     * connexion, mot de passe compris.
+     *
+     * Sert aussi de secret REST : le modèle n'a pas d'autre emplacement chiffré,
+     * le §73 interdit de détourner `apiKeyHash` — un hachage ne se relit pas —
+     * et le §72 refuse d'inventer une colonne sans validation de conception.
+     * Écart consigné dans `phase-6-analysis.md`.
+     */
+    public function password(): ?string
+    {
+        return Secret::decrypt($this->encrypted_password);
     }
 
     /**

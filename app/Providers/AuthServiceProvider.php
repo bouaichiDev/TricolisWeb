@@ -15,7 +15,6 @@ use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Claims\Models\Claim;
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
@@ -26,40 +25,45 @@ use App\Modules\Drivers\Models\Driver;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
+use App\Modules\Integrations\Models\OrganizationApiConfiguration;
+use App\Modules\Integrations\Models\OrganizationMailConfiguration;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
-use App\Modules\Packages\Models\GroupingType;
-use App\Modules\Packages\Models\PackageType;
+use App\Modules\Pricing\Models\PriceList;
+use App\Modules\Pricing\Models\PricingVariable;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Statuses\Models\Status;
 use App\Modules\Stock\Models\StockBalance;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
 use App\Modules\Stock\Models\StockMovement;
 use App\Modules\Stock\Models\StockReservation;
+use App\Modules\Templates\Models\Template;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
 use App\Modules\Tracking\Models\TrackingEvent;
+use App\Modules\Tracking\Models\TrackingEventDefinition;
+use App\Modules\Types\Models\Type;
+use App\Modules\Types\Models\TypeItem;
 use App\Policies\AddressPolicy;
 use App\Policies\AgencyPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\ClaimPolicy;
 use App\Policies\CommunicationAttachmentPolicy;
 use App\Policies\CommunicationRulePolicy;
-use App\Policies\CommunicationTemplatePolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\CustomerApiConfigurationPolicy;
 use App\Policies\CustomerCatalogPolicy;
@@ -77,30 +81,37 @@ use App\Policies\InvoiceLinePolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\OrderCommunicationPolicy;
 use App\Policies\OrderPolicy;
+use App\Policies\OrganizationApiConfigurationPolicy;
+use App\Policies\OrganizationMailConfigurationPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
-use App\Policies\PackageReferentialPolicy;
+use App\Policies\PriceListPolicy;
+use App\Policies\PricingVariablePolicy;
 use App\Policies\ProofOfDeliveryPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\ProviderSettlementLinePolicy;
 use App\Policies\ProviderSettlementPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
+use App\Policies\StatusPolicy;
 use App\Policies\StockBalancePolicy;
 use App\Policies\StockItemPolicy;
 use App\Policies\StockLocationPolicy;
 use App\Policies\StockMovementPolicy;
 use App\Policies\StockReservationPolicy;
 use App\Policies\SubscriptionPolicy;
+use App\Policies\TemplatePolicy;
 use App\Policies\TourPeriodAssignmentPolicy;
 use App\Policies\TourPeriodPolicy;
 use App\Policies\TourPolicy;
 use App\Policies\TourStopPolicy;
 use App\Policies\TourStopServicePolicy;
+use App\Policies\TrackingEventDefinitionPolicy;
 use App\Policies\TrackingEventPolicy;
+use App\Policies\TypeItemPolicy;
+use App\Policies\TypePolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VehiclePolicy;
-use App\Policies\VehicleTypePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Opcodes\LogViewer\LogFile;
@@ -113,6 +124,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Organization::class => OrganizationPolicy::class,
+        Status::class => StatusPolicy::class,
         Subscription::class => SubscriptionPolicy::class,
         User::class => UserPolicy::class,
         Agency::class => AgencyPolicy::class,
@@ -126,11 +138,10 @@ class AuthServiceProvider extends ServiceProvider
         Order::class => OrderPolicy::class,
         Service::class => ServicePolicy::class,
         CustomerCatalog::class => CustomerCatalogPolicy::class,
-        PackageType::class => PackageReferentialPolicy::class,
-        GroupingType::class => PackageReferentialPolicy::class,
         Provider::class => ProviderPolicy::class,
         Driver::class => DriverPolicy::class,
-        VehicleType::class => VehicleTypePolicy::class,
+        Type::class => TypePolicy::class,
+        TypeItem::class => TypeItemPolicy::class,
         Vehicle::class => VehiclePolicy::class,
         Tour::class => TourPolicy::class,
         TourStop::class => TourStopPolicy::class,
@@ -141,10 +152,15 @@ class AuthServiceProvider extends ServiceProvider
         ProofOfDelivery::class => ProofOfDeliveryPolicy::class,
         Claim::class => ClaimPolicy::class,
         Invoice::class => InvoicePolicy::class,
+        PriceList::class => PriceListPolicy::class,
+        PricingVariable::class => PricingVariablePolicy::class,
         InvoiceLine::class => InvoiceLinePolicy::class,
         ProviderSettlement::class => ProviderSettlementPolicy::class,
         ProviderSettlementLine::class => ProviderSettlementLinePolicy::class,
         StockItem::class => StockItemPolicy::class,
+        OrganizationApiConfiguration::class => OrganizationApiConfigurationPolicy::class,
+        OrganizationMailConfiguration::class => OrganizationMailConfigurationPolicy::class,
+        TrackingEventDefinition::class => TrackingEventDefinitionPolicy::class,
         StockLocation::class => StockLocationPolicy::class,
         StockBalance::class => StockBalancePolicy::class,
         StockMovement::class => StockMovementPolicy::class,
@@ -153,7 +169,7 @@ class AuthServiceProvider extends ServiceProvider
         CustomerApiConfiguration::class => CustomerApiConfigurationPolicy::class,
         CustomerExportConfiguration::class => CustomerExportConfigurationPolicy::class,
         ExportJob::class => ExportJobPolicy::class,
-        CommunicationTemplate::class => CommunicationTemplatePolicy::class,
+        Template::class => TemplatePolicy::class,
         CommunicationRule::class => CommunicationRulePolicy::class,
         OrderCommunication::class => OrderCommunicationPolicy::class,
         CommunicationAttachment::class => CommunicationAttachmentPolicy::class,

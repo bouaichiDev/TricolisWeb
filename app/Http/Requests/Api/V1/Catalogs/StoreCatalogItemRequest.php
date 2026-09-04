@@ -28,6 +28,7 @@ class StoreCatalogItemRequest extends FormRequest
             'length' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'width' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'height' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'assemblyTimeMinutes' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:65535'],
             'status' => ['sometimes', 'string', 'max:32'],
         ];
     }

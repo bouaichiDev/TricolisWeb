@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\Orders\Actions;
 
 use App\Modules\Audit\Actions\WriteAuditLog;
+use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Enums\OrderStatus;
+use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Services\OrderScopeGuard;
+use App\Modules\Planning\Actions\GeocodeMissingAddresses;
+use App\Shared\Support\AuditContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,12 +35,13 @@ final readonly class CreateFullOrder
         private CreateOrderPackages $packages,
         private CreateOrderServices $services,
         private RecalculateOrderTotals $totals,
+        private GeocodeMissingAddresses $geocode,
         private WriteAuditLog $audit,
     ) {}
 
     public function execute(CreateOrderData $data, string $organizationId, User $user, ?Request $request = null): Order
     {
-        return DB::transaction(function () use ($data, $organizationId, $user, $request): Order {
+        $order = DB::transaction(function () use ($data, $organizationId, $user, $request): Order {
             $customer = $this->guard->customer($data->customerId, $organizationId);
             $this->guard->agency($data->agencyId, $organizationId);
 
@@ -44,13 +49,21 @@ final readonly class CreateFullOrder
                 $this->guard->depot($data->depotId, $organizationId);
             }
 
-            $order = Order::create($this->headerAttributes($data, $organizationId, $user));
+            $order = Order::create($this->headerAttributes($data, $customer, $organizationId, $user));
 
             $lines = $this->lines->execute($order, $customer, $data->lines);
             $packages = $this->packages->execute($order, $data->packages, $lines);
-            $this->services->execute($order, $data->services, $packages);
+            $services = $this->services->execute($order, $data->services, $packages);
 
             $this->totals->execute($order);
+
+            // Une commande dont l'adresse n'est pas situee ne peut ni se poser
+            // sur la carte ni entrer dans un calcul d'itineraire. Le geocodage
+            // part en file, apres validation de la transaction.
+            $this->geocode->execute(
+                collect($services)->pluck('address_id')->all(),
+                $organizationId,
+            );
 
             $this->audit->execute(
                 $organizationId,
@@ -70,13 +83,27 @@ final readonly class CreateFullOrder
 
             return $order;
         });
+
+        // Apres le commit, jamais pendant : un abonne qui ecrirait dans la
+        // transaction agirait a propos d'une commande que le rollback peut
+        // encore faire disparaitre.
+        OrderCreated::dispatch(
+            $order,
+            new AuditContext($organizationId, $user, $request?->ip()),
+        );
+
+        return $order;
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function headerAttributes(CreateOrderData $data, string $organizationId, User $user): array
-    {
+    private function headerAttributes(
+        CreateOrderData $data,
+        Customer $customer,
+        string $organizationId,
+        User $user,
+    ): array {
         $attributes = $data->attributes;
         $orderDate = $attributes['order_date'] ?? now();
 
@@ -91,8 +118,13 @@ final readonly class CreateFullOrder
             'depot_id' => $data->depotId,
             'order_date' => $orderDate,
             // Le numéro fourni par l'appelant est ignoré : il est attribué par
-            // la séquence, sous verrou, pour garantir l'unicité.
-            'order_number' => $this->numbers->execute($organizationId, (int) date('Y', strtotime((string) $orderDate))),
+            // la séquence, sous verrou, pour garantir l'unicité. Le code client
+            // en fait la série — chacun numérote la sienne.
+            'order_number' => $this->numbers->execute(
+                $organizationId,
+                (int) date('Y', strtotime((string) $orderDate)),
+                $customer->code,
+            ),
             'created_by' => $user->id,
         ]);
     }

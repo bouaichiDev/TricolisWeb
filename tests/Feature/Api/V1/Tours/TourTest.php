@@ -16,7 +16,6 @@ beforeEach(function (): void {
     $this->headers = ['X-Organization-Id' => $this->organization->id];
     $this->agency = Agency::factory()->create(['organization_id' => $this->organization->id]);
     $this->payload = fn (array $o = []): array => array_merge([
-        'tourNumber' => 'TRN-0001',
         'tourDate' => '2026-09-01',
         'agencyId' => $this->agency->id,
         'status' => 'draft',
@@ -28,7 +27,7 @@ describe('tours creation', function (): void {
         $response = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson('/api/v1/tours', ($this->payload)())
             ->assertCreated()
-            ->assertJsonPath('data.tourNumber', 'TRN-0001')
+            ->assertJsonPath('data.tourNumber', '1')
             ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.depotId', null)
             ->assertJsonPath('data.providerId', null);
@@ -91,6 +90,44 @@ describe('tours reference constraints', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('depotId');
     });
 
+    /**
+     * Un identifiant venant d'une autre organisation ne doit pas seulement
+     * exister : il doit exister *ici*. Sans cloisonnement, un simple ULID
+     * deviné rattacherait le dépôt, le véhicule ou le chauffeur d'un
+     * concurrent — et le confirmerait en répondant 201.
+     */
+    it('refuses a depot from another organization', function (): void {
+        $foreign = Depot::factory()->create([
+            'agency_id' => Agency::factory()->create([
+                'organization_id' => Organization::factory()->create()->id,
+            ])->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)(['depotId' => $foreign->id]))
+            ->assertStatus(422)->assertJsonValidationErrors('depotId');
+    });
+
+    it('refuses a vehicle from another organization', function (): void {
+        $foreign = Vehicle::factory()->create([
+            'organization_id' => Organization::factory()->create()->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)(['vehicleId' => $foreign->id]))
+            ->assertStatus(422)->assertJsonValidationErrors('vehicleId');
+    });
+
+    it('refuses a driver from another organization', function (): void {
+        $foreign = Driver::factory()->create([
+            'organization_id' => Organization::factory()->create()->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)(['driverId' => $foreign->id]))
+            ->assertStatus(422)->assertJsonValidationErrors('driverId');
+    });
+
     it('refuses a provider from another organization', function (): void {
         $foreign = Provider::factory()->create();
 
@@ -142,21 +179,65 @@ describe('tours validation', function (): void {
             ->assertStatus(422)->assertJsonValidationErrors('status');
     });
 
-    it('refuses a duplicated tour number in the organization', function (): void {
-        Tour::factory()->forAgency($this->agency)->create(['tour_number' => 'TRN-DUP']);
-
+    /**
+     * Le numéro n'est plus saisi : le serveur l'attribue.
+     *
+     * Le refuser plutôt que l'ignorer évite qu'un appelant croie l'avoir choisi
+     * et s'étonne d'en lire un autre.
+     */
+    it('refuses a tour number supplied by the caller', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/tours', ($this->payload)(['tourNumber' => 'TRN-DUP']))
+            ->postJson('/api/v1/tours', ($this->payload)(['tourNumber' => 'TRN-MOI']))
             ->assertStatus(422)->assertJsonValidationErrors('tourNumber');
     });
 
-    it('allows the same tour number in another organization', function (): void {
-        $other = Organization::factory()->create();
-        Tour::factory()->forOrganization($other)->create(['tour_number' => 'TRN-DUP']);
+    it('refuses to renumber an existing tour', function (): void {
+        $tour = Tour::factory()->forAgency($this->agency)->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-            ->postJson('/api/v1/tours', ($this->payload)(['tourNumber' => 'TRN-DUP']))
-            ->assertCreated();
+            ->patchJson("/api/v1/tours/{$tour->id}", ['tourNumber' => 'TRN-AUTRE'])
+            ->assertStatus(422)->assertJsonValidationErrors('tourNumber');
+    });
+});
+
+describe('tours numbering', function (): void {
+    it('numbers tours from one, by one', function (): void {
+        $numbers = [];
+
+        for ($created = 0; $created < 3; $created++) {
+            $numbers[] = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+                ->postJson('/api/v1/tours', ($this->payload)())
+                ->assertCreated()->json('data.tourNumber');
+        }
+
+        expect($numbers)->toBe(['1', '2', '3']);
+    });
+
+    /**
+     * Une organisation qui a saisi un numéro à la main le garde : la suite le
+     * saute plutôt que de repartir au-dessus, ce qui donnerait des numéros à
+     * sept chiffres pour toujours à cause d'une frappe d'essai.
+     */
+    it('skips a number already taken', function (): void {
+        Tour::factory()->forAgency($this->agency)->create(['tour_number' => '2']);
+
+        $first = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)())->assertCreated()->json('data.tourNumber');
+
+        $second = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)())->assertCreated()->json('data.tourNumber');
+
+        expect([$first, $second])->toBe(['1', '3']);
+    });
+
+    /** Chaque organisation a sa suite : la nôtre ne dépend pas de la sienne. */
+    it('counts per organization', function (): void {
+        $other = Organization::factory()->create();
+        Tour::factory()->forOrganization($other)->create(['tour_number' => '1']);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/tours', ($this->payload)())
+            ->assertCreated()->assertJsonPath('data.tourNumber', '1');
     });
 });
 
@@ -175,6 +256,30 @@ describe('tours read, update and delete', function (): void {
             ->deleteJson("/api/v1/tours/{$tour->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('tours', ['id' => $tour->id]);
+    });
+
+    /**
+     * La modification passe par des règles `sometimes`, écrites à part : le
+     * cloisonnement doit y être répété, faute de quoi ce qu'on refuse à la
+     * création redevient acceptable par une simple mise à jour.
+     */
+    it('refuses foreign resources on update', function (): void {
+        $tour = Tour::factory()->forAgency($this->agency)->create();
+        $other = Organization::factory()->create();
+
+        $foreign = [
+            'depotId' => Depot::factory()->create([
+                'agency_id' => Agency::factory()->create(['organization_id' => $other->id])->id,
+            ])->id,
+            'vehicleId' => Vehicle::factory()->create(['organization_id' => $other->id])->id,
+            'driverId' => Driver::factory()->create(['organization_id' => $other->id])->id,
+        ];
+
+        foreach ($foreign as $field => $id) {
+            $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+                ->patchJson("/api/v1/tours/{$tour->id}", [$field => $id])
+                ->assertStatus(422)->assertJsonValidationErrors($field);
+        }
     });
 
     it('hides a tour from another organization', function (): void {

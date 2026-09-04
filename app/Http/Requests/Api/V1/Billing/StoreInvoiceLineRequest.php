@@ -44,6 +44,10 @@ class StoreInvoiceLineRequest extends FormRequest
             'taxRate' => ['sometimes', 'numeric', 'between:0,100'],
             'serviceCompletedAt' => ['nullable', 'date'],
             'status' => ['required', 'string', 'max:32'],
+            // Assumer le prix soumis faute de bareme : un choix explicite,
+            // jamais un defaut. Sans lui, une prestation sans tarif est refusee
+            // plutot que facturee au hasard.
+            'priceOverride' => ['sometimes', 'boolean'],
 
             'addressSnapshot' => ['sometimes', 'array'],
             'addressSnapshot.addressCode' => ['nullable', 'string', 'max:64'],

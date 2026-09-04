@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Addresses;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Addresses\ListAddressRequest;
 use App\Http\Requests\Api\V1\Addresses\StoreAddressRequest;
 use App\Http\Requests\Api\V1\Addresses\UpdateAddressRequest;
 use App\Http\Resources\Api\V1\Addresses\AddressResource;
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Addresses\Models\EntityAddress;
+use App\Modules\Planning\Jobs\GeocodeAddressJob;
 use App\Shared\Database\EntityLinkResolver;
-use App\Shared\Http\Requests\ListRequest;
 use App\Shared\Http\Responses\ApiResponse;
 use App\Shared\Support\InputMapper;
 use Illuminate\Http\JsonResponse;
@@ -30,12 +31,28 @@ class AddressController extends Controller
      * Permission requise : `addresses.view`. Une adresse est visible dès qu'une
      * liaison `EntityAddress` la rattache à l'organisation active. Recherche sur
      * `name`, `address_line_1`, `city`, `postal_code`.
+     *
+     * `entityType` / `entityId` bornent la liste aux adresses d'une entité —
+     * les adresses d'un client, celle d'un site. Les liaisons correspondantes
+     * sont alors chargées et exposées : c'est elles qui portent le type
+     * (`delivery`, `billing`) et le drapeau par défaut, pas l'adresse.
      */
-    public function index(ListRequest $request): JsonResponse
+    public function index(ListAddressRequest $request): JsonResponse
     {
         $org = $this->requireOrganizationId();
         $this->authorize('viewAny', [Address::class, $org]);
         $query = Address::whereHas('entityAddresses', fn ($q) => $q->where('organization_id', $org));
+
+        if ($request->hasEntityFilter()) {
+            $entityType = $request->validated('entityType');
+            $entityId = $request->validated('entityId');
+
+            $scope = fn ($q) => $q->where('organization_id', $org)
+                ->where('entity_type', $entityType)
+                ->where('entity_id', $entityId);
+
+            $query->whereHas('entityAddresses', $scope)->with(['entityAddresses' => $scope]);
+        }
         if ($request->filled('search')) {
             $search = $request->validated('search');
             $query->where(fn ($q) => $q->where('name', 'like', "%$search%")->orWhere('address_line_1', 'like', "%$search%")->orWhere('city', 'like', "%$search%")->orWhere('postal_code', 'like', "%$search%"));
@@ -69,6 +86,13 @@ class AddressController extends Controller
         });
         $this->audit($request, $org, 'created', $address, null, $address->toArray());
 
+        // Une adresse sans point n'existe pas sur la carte : le geocodage part
+        // en file, apres la transaction, pour ne pas faire attendre le
+        // formulaire le temps d'un aller-retour distant.
+        if ($address->latitude === null || $address->longitude === null) {
+            GeocodeAddressJob::dispatch($address->id, $org);
+        }
+
         return ApiResponse::created(new AddressResource($address));
     }
 
@@ -92,11 +116,54 @@ class AddressController extends Controller
     public function update(UpdateAddressRequest $request, Address $address): JsonResponse
     {
         $this->authorize('update', $address);
+        $organizationId = $this->requireOrganizationId();
+        $data = $request->validated();
         $old = $address->toArray();
-        $address->update(InputMapper::map($request->validated(), self::MAPPING));
-        $this->audit($request, $this->requireOrganizationId(), 'updated', $address, $old, $address->fresh()->toArray());
+        $address->update(InputMapper::map($data, self::MAPPING));
+        $this->audit($request, $organizationId, 'updated', $address, $old, $address->fresh()->toArray());
+
+        $this->relocate($address, $data, $organizationId);
 
         return ApiResponse::ok(new AddressResource($address->fresh()));
+    }
+
+    /**
+     * Champs qui situent l'adresse, par opposition à ceux qui la décrivent.
+     *
+     * `name` et `instructions` n'en sont pas : renommer « Entrepôt nord » en
+     * « Dépôt 2 » ne déplace pas les murs, et redemander un géocodage à chaque
+     * retouche de libellé consommerait le quota pour rien.
+     */
+    private const array LOCATING = [
+        'addressNumber', 'route', 'addressLine1', 'addressLine2', 'addressLine3',
+        'sublocality', 'postalCode', 'city', 'town', 'country',
+    ];
+
+    /**
+     * Redemande les coordonnées quand l'adresse a changé de place.
+     *
+     * Des coordonnées fournies à la main font foi : c'est une correction
+     * délibérée, et la remplacer par le résultat du service annulerait le geste.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function relocate(Address $address, array $data, string $organizationId): void
+    {
+        if (array_key_exists('latitude', $data) || array_key_exists('longitude', $data)) {
+            return;
+        }
+
+        $moved = array_intersect(self::LOCATING, array_keys($data)) !== [];
+
+        if ($moved) {
+            GeocodeAddressJob::dispatch($address->id, $organizationId, true);
+
+            return;
+        }
+
+        if ($address->latitude === null || $address->longitude === null) {
+            GeocodeAddressJob::dispatch($address->id, $organizationId);
+        }
     }
 
     /**

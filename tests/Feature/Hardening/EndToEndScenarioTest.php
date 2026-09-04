@@ -4,7 +4,6 @@ use App\Modules\Addresses\Models\Address;
 use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\Depot;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
@@ -12,6 +11,7 @@ use App\Modules\Orders\Models\Service;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
+use App\Modules\Templates\Models\Template;
 
 /**
  * Scénarios transversaux — §31.
@@ -81,7 +81,7 @@ describe('scenario 1 : de la commande a la facturation', function (): void {
 
         // 2. Tournee, puis arret portant le service de la commande.
         $tourId = ($this->api)('POST', '/api/v1/tours', [
-            'tourNumber' => 'TRN-E2E-1', 'tourDate' => now()->addDay()->toDateString(),
+            'tourDate' => now()->addDay()->toDateString(),
             'agencyId' => $this->agency->id, 'status' => 'draft',
         ])->assertCreated()->json('data.id');
 
@@ -113,6 +113,9 @@ describe('scenario 1 : de la commande a la facturation', function (): void {
                 'lineNumber' => 1, 'orderServiceId' => $orderServiceId,
                 'description' => 'Livraison Casablanca', 'quantity' => 1,
                 'unitPrice' => 450, 'status' => 'billable',
+                // Le scenario ne configure aucun bareme : la prestation se
+                // facture au prix de la commande, ce qui se declare.
+                'priceOverride' => true,
             ]],
         ])->assertCreated()->json('data.id');
 
@@ -140,13 +143,22 @@ describe('scenario 2 : fournisseur, chauffeur, vehicule, decompte', function ():
             'code' => 'TRANS-E2E', 'name' => 'Transports Atlas', 'status' => 'active',
         ])->assertCreated()->json('data.id');
 
+        // Creer un chauffeur cree aussi son compte : l'identite sert aux deux.
         ($this->api)('POST', '/api/v1/drivers', [
-            'providerId' => $providerId, 'code' => 'DRV-E2E-1', 'name' => 'Ali Ben Salah',
-            'status' => 'active',
-        ])->assertCreated()->assertJsonPath('data.providerId', $providerId);
+            'providerId' => $providerId, 'code' => 'DRV-E2E-1',
+            'firstName' => 'Ali', 'lastName' => 'Ben Salah',
+            'email' => 'ali.ben.salah@example.test', 'status' => 'active',
+        ])->assertCreated()
+            ->assertJsonPath('data.providerId', $providerId)
+            ->assertJsonPath('data.name', 'Ali Ben Salah');
 
-        $vehicleTypeId = ($this->api)('POST', '/api/v1/vehicle-types', [
-            'code' => 'VL-3T5', 'name' => 'Vehicule leger 3,5 t', 'status' => 'active',
+        // La source `vehicle` est livree avec l'organisation : on y ajoute une
+        // valeur, sans creer de table ni de route.
+        $vehicleType = ($this->api)('GET', '/api/v1/types?search=vehicle')
+            ->assertOk()->json('data.0.id');
+
+        $vehicleTypeId = ($this->api)('POST', '/api/v1/type-items', [
+            'typeId' => $vehicleType, 'code' => 'VL-3T5', 'name' => 'Vehicule leger 3,5 t',
         ])->assertCreated()->json('data.id');
 
         ($this->api)('POST', '/api/v1/vehicles', [
@@ -215,7 +227,7 @@ describe('scenario 4 : communication', function (): void {
         $orderId = $order->json('data.id');
         $orderNumber = $order->json('data.orderNumber');
 
-        $templateId = ($this->api)('POST', '/api/v1/communication-templates', [
+        $templateId = ($this->api)('POST', '/api/v1/templates', [
             'code' => 'pod-available-e2e', 'name' => 'POD disponible', 'channel' => 'email',
             'templateType' => 'pod_available', 'subjectTemplate' => 'POD {{ order_number }}',
             'bodyTemplate' => 'Bonjour, votre preuve {{ order_number }} est disponible.',
@@ -291,7 +303,7 @@ describe('isolation des scenarios', function (): void {
         $foreignItem = StockItem::factory()->create();
         $foreignLocation = StockLocation::factory()->create();
         $foreignConfiguration = CustomerExportConfiguration::factory()->create();
-        $foreignTemplate = CommunicationTemplate::factory()->create();
+        $foreignTemplate = Template::factory()->create();
 
         ($this->api)('POST', '/api/v1/orders', [
             'customerId' => $foreignCustomer->id, 'agencyId' => $this->agency->id,

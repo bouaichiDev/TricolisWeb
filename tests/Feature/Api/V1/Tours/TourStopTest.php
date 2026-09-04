@@ -1,12 +1,15 @@
 <?php
 
 use App\Modules\Addresses\Models\Address;
+use App\Modules\Addresses\Models\EntityAddress;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Organizations\Models\Organization;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourStop;
+use App\Shared\Database\MorphMap;
 
 beforeEach(function (): void {
     $this->seed();
@@ -15,7 +18,15 @@ beforeEach(function (): void {
     $this->headers = ['X-Organization-Id' => $this->organization->id];
     $this->agency = Agency::factory()->create(['organization_id' => $this->organization->id]);
     $this->tour = Tour::factory()->forAgency($this->agency)->create();
+    // Rattachee a l'organisation active : une adresse flottante n'appartient a
+    // personne, et l'API n'en cree pas — toute creation pose une liaison.
     $this->address = Address::factory()->create();
+    EntityAddress::create([
+        'organization_id' => $this->organization->id,
+        'address_id' => $this->address->id,
+        'entity_type' => MorphMap::ORGANIZATION,
+        'entity_id' => $this->organization->id,
+    ]);
 
     $this->orderService = fn (): OrderService => OrderService::factory()->create([
         'order_id' => Order::factory()->forOrganization($this->organization),
@@ -43,6 +54,31 @@ describe('tour stops creation', function (): void {
 
         $this->assertDatabaseHas('tour_stops', ['id' => $response->json('data.id'), 'tour_id' => $this->tour->id]);
         $this->assertDatabaseHas('tour_stop_services', ['tour_stop_id' => $response->json('data.id')]);
+    });
+
+    /**
+     * L'adresse d'un arret est cloisonnee par organisation.
+     *
+     * `addresses` n'a pas d'`organization_id` : elle le tient de ses liaisons.
+     * Une simple verification d'existence laissait poser sur une tournee
+     * l'adresse d'une autre organisation, que la tournee rendait ensuite
+     * lisible avec sa rue et sa ville.
+     */
+    it('refuses an address belonging to another organization', function (): void {
+        $other = Organization::factory()->create();
+        $foreign = Address::factory()->create();
+        EntityAddress::create([
+            'organization_id' => $other->id,
+            'address_id' => $foreign->id,
+            'entity_type' => MorphMap::ORGANIZATION,
+            'entity_id' => $other->id,
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson("/api/v1/tours/{$this->tour->id}/stops", ($this->payload)([
+                'addressId' => $foreign->id,
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('addressId');
     });
 
     it('refuses a stop without any service', function (): void {

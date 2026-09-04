@@ -35,8 +35,11 @@ class StoreInvoiceRequest extends FormRequest
 
         return [
             'customerId' => ['required', 'ulid'],
+            // Facultatif : laisse vide, il s'attribue tout seul. Fourni, il est
+            // conserve — une organisation qui reprend une serie existante doit
+            // pouvoir la continuer.
             'invoiceNumber' => [
-                'required', 'string', 'max:255',
+                'sometimes', 'nullable', 'string', 'max:255',
                 Rule::unique('invoices', 'invoice_number')->where('organization_id', $organizationId),
             ],
             'invoiceDate' => ['required', 'date'],
@@ -60,6 +63,10 @@ class StoreInvoiceRequest extends FormRequest
             'lines.*.taxRate' => ['sometimes', 'numeric', 'between:0,100'],
             'lines.*.serviceCompletedAt' => ['nullable', 'date'],
             'lines.*.status' => ['required', 'string', 'max:32'],
+            // Assumer le prix soumis faute de bareme : un choix explicite,
+            // jamais un defaut. Sans lui, une prestation sans tarif est refusee
+            // plutot que facturee au hasard.
+            'lines.*.priceOverride' => ['sometimes', 'boolean'],
 
             'lines.*.addressSnapshot' => ['sometimes', 'array'],
             'lines.*.addressSnapshot.addressCode' => ['nullable', 'string', 'max:64'],

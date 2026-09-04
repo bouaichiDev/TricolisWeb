@@ -44,12 +44,16 @@ describe('export configuration creation', function (): void {
     });
 
     it('does not require a host for email and manual', function (): void {
-        foreach (['email', 'manual'] as $transport) {
+        // L'e-mail exige en revanche un destinataire : c'est ce qui remplace
+        // l'hote, pas une exigence en moins.
+        $extra = ['email' => ['settings' => ['recipients' => 'compta@client.example']], 'manual' => []];
+
+        foreach ($extra as $transport => $fields) {
             $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
-                ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                ->postJson('/api/v1/customer-export-configurations', ($this->payload)(array_merge([
                     'name' => "Export {$transport}",
                     'transport' => $transport,
-                ]))
+                ], $fields)))
                 ->assertCreated();
         }
     });
@@ -202,5 +206,98 @@ describe('export configuration deletion and scope', function (): void {
         expect(Schema::hasTable('webhooks'))->toBeFalse()
             ->and(Schema::hasTable('api_tokens'))->toBeFalse()
             ->and(Schema::hasTable('export_templates'))->toBeFalse();
+    });
+});
+
+/**
+ * Les réglages que la plateforme sait interpréter.
+ *
+ * `settings` reste ouvert — le §66 en fait le sac où chaque client range ses
+ * conventions — mais les clés que le code lit vraiment sont vérifiées à la
+ * saisie. Une URL de jeton vide ou un séparateur de trois caractères ne se
+ * découvriraient sinon qu'à la première clôture, la facture déjà figée.
+ */
+describe('export settings', function (): void {
+    it('accepts the documented authentication settings', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'transport' => 'rest_api',
+                'format' => 'json',
+                'host' => 'https://api.client.example',
+                'settings' => [
+                    'authType' => 'oauth2',
+                    'tokenUrl' => 'https://auth.client.example/token',
+                    'clientId' => 'tricolis',
+                    'scope' => 'invoices.write',
+                ],
+            ]))
+            ->assertCreated()
+            ->assertJsonPath('data.settings.authType', 'oauth2');
+    });
+
+    it('refuses an unknown authentication mode', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'settings' => ['authType' => 'kerberos'],
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('settings');
+    });
+
+    it('refuses a token url that is not a url', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'settings' => ['authType' => 'oauth2', 'tokenUrl' => 'pas-une-url'],
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('settings');
+    });
+
+    it('refuses a header name that is not a header name', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'settings' => ['authType' => 'api_key', 'apiKeyHeader' => 'X Api Key: bonus'],
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('settings');
+    });
+
+    it('refuses a csv delimiter longer than one character', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'settings' => ['delimiter' => '||'],
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('settings');
+    });
+
+    it('refuses an email destination without recipients', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'transport' => 'email',
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('settings');
+    });
+
+    it('refuses a recipient that is not an address', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'transport' => 'email',
+                'settings' => ['recipients' => 'compta@client.example, pas-une-adresse'],
+            ]))
+            ->assertStatus(422)->assertJsonValidationErrors('settings');
+    });
+
+    /**
+     * Le sac reste ouvert, et rien n'en tombe.
+     *
+     * Des règles imbriquées — `settings.authType` — amèneraient `validated()`
+     * à ne rendre que les clés déclarées : le mapping du client disparaîtrait à
+     * la première sauvegarde, sans un mot.
+     */
+    it('leaves unknown settings keys alone', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->postJson('/api/v1/customer-export-configurations', ($this->payload)([
+                'settings' => ['fieldMapping' => ['invoiceNumber' => 'numero'], 'maisonTropRare' => true],
+            ]))
+            ->assertCreated()
+            ->assertJsonPath('data.settings.maisonTropRare', true)
+            ->assertJsonPath('data.settings.fieldMapping.invoiceNumber', 'numero');
     });
 });

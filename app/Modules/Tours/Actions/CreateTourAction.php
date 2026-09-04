@@ -22,6 +22,7 @@ final readonly class CreateTourAction
 {
     public function __construct(
         private TourReferenceResolver $references,
+        private GenerateTourNumber $numbers,
         private WriteAuditLog $audit,
     ) {}
 
@@ -32,6 +33,11 @@ final readonly class CreateTourAction
         $this->references->assert($attributes, $context->organizationId);
 
         return DB::transaction(function () use ($attributes, $context): Tour {
+            // Le numero est attribue ici, sous verrou : le laisser saisir
+            // produisait des doublons que la contrainte d'unicite refusait au
+            // pire moment, une fois le formulaire rempli.
+            $attributes['tour_number'] = $this->numbers->execute($context->organizationId);
+
             // Les sept totaux sont posés par défaut en base : sans relecture,
             // le modèle en mémoire les ignore et la réponse les rendrait nuls.
             $tour = Tour::create($attributes)->refresh();

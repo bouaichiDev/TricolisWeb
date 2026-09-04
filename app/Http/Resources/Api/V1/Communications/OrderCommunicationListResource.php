@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Communications;
 
+use App\Http\Resources\Api\V1\Templates\TemplateCompactResource;
 use App\Modules\Communications\Models\OrderCommunication;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -28,6 +29,7 @@ class OrderCommunicationListResource extends JsonResource
             'id' => $this->id,
             'organizationId' => $this->organization_id,
             'orderId' => $this->order_id,
+            'orderNumber' => $this->whenLoaded('order', fn (): ?string => $this->order?->order_number),
             'templateId' => $this->template_id,
             'communicationRuleId' => $this->communication_rule_id,
             'channel' => $this->channel?->value,
@@ -42,7 +44,7 @@ class OrderCommunicationListResource extends JsonResource
             'sentAt' => $this->sent_at?->toIso8601String(),
             'failedAt' => $this->failed_at?->toIso8601String(),
             'attachmentsCount' => $this->whenCounted('attachments'),
-            'template' => new CommunicationTemplateCompactResource($this->whenLoaded('template')),
+            'template' => new TemplateCompactResource($this->whenLoaded('template')),
             'createdAt' => $this->created_at?->toIso8601String(),
         ];
     }

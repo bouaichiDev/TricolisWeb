@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Communications\DTOs;
 
 use App\Modules\Communications\Enums\CommunicationChannel;
-use App\Modules\Communications\Enums\CommunicationTemplateType;
 use App\Modules\Communications\Enums\RecipientRole;
+use App\Modules\Templates\Enums\TemplateType;
 
 /**
  * Création d'une communication de commande.
@@ -26,7 +26,7 @@ final readonly class CreateOrderCommunicationData
     public function __construct(
         public string $orderId,
         public CommunicationChannel $channel,
-        public CommunicationTemplateType $communicationType,
+        public TemplateType $communicationType,
         public RecipientRole $recipientRole,
         public ?string $templateId,
         public ?string $communicationRuleId,
@@ -47,7 +47,7 @@ final readonly class CreateOrderCommunicationData
         return new self(
             orderId: $validated['orderId'],
             channel: CommunicationChannel::from($validated['channel']),
-            communicationType: CommunicationTemplateType::from($validated['communicationType']),
+            communicationType: TemplateType::from($validated['communicationType']),
             recipientRole: RecipientRole::from($validated['recipientRole']),
             templateId: $validated['templateId'] ?? null,
             communicationRuleId: $validated['communicationRuleId'] ?? null,

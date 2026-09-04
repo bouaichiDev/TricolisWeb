@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Organizations\Models;
 
+use App\Modules\Drivers\Models\Driver;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Shared\Database\Concerns\HasUlid;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'organization_id',
@@ -79,5 +81,19 @@ class OrganizationUser extends Model
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'organization_user_id', 'role_id');
+    }
+
+    /**
+     * Le chauffeur que ce membre est, s'il en est un.
+     *
+     * Le lien se fait par l'utilisateur, pas par l'appartenance : `drivers`
+     * porte `user_id`. L'organisation doit donc etre precisee au chargement —
+     * un meme compte peut conduire dans deux organisations.
+     *
+     * @return HasOne<Driver, $this>
+     */
+    public function driver(): HasOne
+    {
+        return $this->hasOne(Driver::class, 'user_id', 'user_id');
     }
 }

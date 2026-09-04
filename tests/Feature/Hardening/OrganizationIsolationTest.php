@@ -2,7 +2,6 @@
 
 use App\Modules\Claims\Models\Claim;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Documents\Models\Document;
@@ -10,13 +9,14 @@ use App\Modules\Drivers\Models\Driver;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Stock\Models\StockItem;
+use App\Modules\Templates\Models\Template;
 use App\Modules\Tours\Models\Tour;
+use App\Modules\Types\Models\TypeItem;
 
 /**
  * IDOR global — §32.
@@ -50,7 +50,7 @@ function foreignResources(): array
         'providers' => fn () => Provider::factory()->create(),
         'drivers' => fn () => Driver::factory()->create(),
         'vehicles' => fn () => Vehicle::factory()->create(),
-        'vehicle-types' => fn () => VehicleType::factory()->create(),
+        'type-items' => fn () => TypeItem::factory()->ofSystemType('vehicle')->create(),
         'tours' => fn () => Tour::factory()->create(),
         'claims' => fn () => Claim::factory()->create(),
         'documents' => fn () => Document::factory()->create(),
@@ -59,7 +59,7 @@ function foreignResources(): array
         'customer-api-configurations' => fn () => CustomerApiConfiguration::factory()->create(),
         'customer-export-configurations' => fn () => CustomerExportConfiguration::factory()->create(),
         'export-jobs' => fn () => ExportJob::factory()->create(),
-        'communication-templates' => fn () => CommunicationTemplate::factory()->create(),
+        'templates' => fn () => Template::factory()->create(),
         'communication-rules' => fn () => CommunicationRule::factory()->create(),
         'order-communications' => fn () => OrderCommunication::factory()->create(),
     ];

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Tours;
 
+use App\Modules\Addresses\Models\Address;
 use App\Modules\Tours\Enums\TourStopStatus;
+use App\Shared\Http\Rules\BelongsToActiveOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +26,10 @@ class UpdateTourStopRequest extends FormRequest
         $stopId = $this->route('tourStop')?->id;
 
         return [
-            'addressId' => ['sometimes', 'string', Rule::exists('addresses', 'id')],
+            'addressId' => [
+                'sometimes', 'ulid',
+                new BelongsToActiveOrganization(Address::class, 'entityAddresses', 'Cette adresse n’appartient pas à l’organisation active.'),
+            ],
             'sequence' => [
                 'sometimes', 'integer', 'min:1',
                 Rule::unique('tour_stops', 'sequence')->where('tour_id', $tourId)->ignore($stopId),

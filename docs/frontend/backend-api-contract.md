@@ -176,10 +176,32 @@ Ces messages sont rédigés pour être **affichés tels quels**.
 
 ## 6. Permissions
 
-187 permissions, de la forme `module.action`. Le backend ne renvoie pas la liste
-des permissions de l'utilisateur sur `/auth/me` : l'interface doit soit les
-demander à `GET /api/v1/roles`, soit — plus simplement — **tenter l'action et
-traiter le 403**.
+187 permissions, de la forme `module.action`.
+
+**`GET /auth/me` renvoie les permissions de l'utilisateur**, portées par chaque
+appartenance — pas par le compte :
+
+```jsonc
+"organizations": [
+  {
+    "id": "01JZ…", "code": "tricolis-dev", "name": "…",
+    "isOwner": true, "isPrimary": true,
+    "roles":       [{ "id": "…", "code": "admin", "name": "Administrateur" }],
+    "permissions": [{ "id": "…", "code": "customers.view" }],
+    "agencies":    [{ "id": "…", "code": "CASA", "name": "Casablanca" }]
+  }
+]
+```
+
+Trois conséquences pour l'interface :
+
+1. **les droits changent avec l'organisation active.** Un même compte peut être
+   propriétaire ici et simple lecteur ailleurs. Changer d'organisation doit donc
+   recharger les permissions en même temps que les données ;
+2. **`isOwner` court-circuite le contrôle**, exactement comme côté serveur : un
+   propriétaire a tout, sans que ses permissions soient énumérées ;
+3. **le 403 reste le filet, pas le mécanisme.** Masquer un bouton évite de
+   proposer une action vouée à l'échec ; le backend refuse de toute façon.
 
 Les actions qui ne sont pas du CRUD ont leur propre permission. À traiter comme
 des boutons distincts, pas comme des variantes d'« éditer » :
@@ -271,11 +293,22 @@ GET|POST /agencies/{agency}/depots     GET|PATCH|DELETE /agencies/{agency}/depot
 GET|POST /addresses             GET|PATCH|DELETE /addresses/{id}
 GET|POST /contacts              GET|PATCH|DELETE /contacts/{id}
 GET|POST /services              GET|PATCH|DELETE /services/{id}
-GET|POST /package-types         PATCH|DELETE /package-types/{id}
-GET|POST /package-grouping-types PATCH|DELETE /package-grouping-types/{id}
-GET|POST /vehicle-types         GET|PATCH|DELETE /vehicle-types/{id}
+GET|POST /types                 GET|PATCH|DELETE /types/{id}
+GET|POST /type-items            GET|PATCH|DELETE /type-items/{id}
 GET|POST /documents             GET|DELETE /documents/{id}     GET /documents/{id}/download
 ```
+
+Les référentiels de type tiennent en deux routes. `/types` porte les sources —
+`vehicle`, `package`, `grouping` sont livrées avec l'organisation, et un
+organisme en ajoute d'autres — `/type-items` leurs valeurs, filtrables par
+`?type=vehicle` (code de la source) ou `?typeId=`. Les anciennes routes
+`/package-types`, `/package-grouping-types` et `/vehicle-types` n'existent plus ;
+les identifiants, eux, n'ont pas changé.
+
+Le code d'une valeur est unique **au sein de sa source** : « STD » peut désigner
+un colis standard et un véhicule standard. Une valeur prise dans une autre
+source est refusée en 422 — `vehicleTypeId` n'accepte qu'une valeur de
+`vehicle`.
 
 ### Clients
 
@@ -533,7 +566,7 @@ communication, utilisez son `id`.
 | **Génération de fichier d'export** | `ExportJob.hasFile` reste `false` ; `generatedAt` et `sentAt` restent nuls. |
 | **Portails client, fournisseur et chauffeur** | Hors périmètre : cette API est celle de la **plateforme interne**. Aucun utilisateur ne peut être rattaché à un client, un fournisseur ou un chauffeur. Les portails feront l'objet d'un second backend. |
 | **Tableau de bord** | Aucun endpoint d'agrégation ; la permission `dashboard.view` existe mais ne garde rien. |
-| **Liste des permissions de l'utilisateur** | Non exposée sur `/auth/me`. Tentez l'action, traitez le 403. |
+| **Endpoint d'agrégation pour un tableau de bord** | Aucun. Les compteurs se lisent dans `meta.total` des listes existantes, une requête par compteur. |
 
 ---
 

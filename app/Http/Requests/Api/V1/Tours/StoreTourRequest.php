@@ -8,7 +8,6 @@ use App\Modules\Agencies\Models\Agency;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Shared\Http\Rules\BelongsToActiveOrganization;
-use App\Shared\Organizations\CurrentOrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,13 +34,11 @@ class StoreTourRequest extends FormRequest
      */
     public function rules(): array
     {
-        $organizationId = app(CurrentOrganizationContext::class)->getOrganizationId();
-
         return [
-            'tourNumber' => [
-                'required', 'string', 'max:255',
-                Rule::unique('tours', 'tour_number')->where('organization_id', $organizationId),
-            ],
+            // `tourNumber` n'est pas accepte : le serveur l'attribue. Le
+            // refuser plutot que l'ignorer evite qu'un appelant croie l'avoir
+            // choisi. Decision du 27 aout 2026.
+            'tourNumber' => ['prohibited'],
             'tourDate' => ['required', 'date'],
             'agencyId' => [
                 'required', 'ulid',

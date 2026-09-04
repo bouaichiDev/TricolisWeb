@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Api\V1\Communications;
 
 use App\Http\Resources\Api\V1\Identity\UserCompactResource;
+use App\Http\Resources\Api\V1\Templates\TemplateCompactResource;
 use App\Modules\Communications\Models\OrderCommunication;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -60,7 +61,7 @@ class OrderCommunicationDetailResource extends JsonResource
             'errorMessage' => $this->error_message,
             'createdBy' => $this->created_by,
             'creator' => new UserCompactResource($this->whenLoaded('creator')),
-            'template' => new CommunicationTemplateCompactResource($this->whenLoaded('template')),
+            'template' => new TemplateCompactResource($this->whenLoaded('template')),
             'attachments' => CommunicationAttachmentResource::collection($this->whenLoaded('attachments')),
             'attachmentsCount' => $this->whenCounted('attachments'),
             'createdAt' => $this->created_at?->toIso8601String(),

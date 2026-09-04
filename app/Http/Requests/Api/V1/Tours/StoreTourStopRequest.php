@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Tours;
 
+use App\Modules\Addresses\Models\Address;
 use App\Modules\Tours\Enums\TourStopStatus;
+use App\Shared\Http\Rules\BelongsToActiveOrganization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,9 +17,10 @@ use Illuminate\Validation\Rule;
  * `TourStop "1" *-- "1..*" TourStopService` interdit un arrêt sans service.
  * C'est ici que la règle se voit, avant même d'atteindre l'Action.
  *
- * `addressId` est validé par simple existence : `addresses` est une table
- * partagée sans `organization_id`, comme pour `customer_sites` et
- * `order_services` livrés en Phases 1 et 2.
+ * `addressId` est cloisonné par organisation. `addresses` n'a pas
+ * d'`organization_id` — elle le tient de ses liaisons — et une simple
+ * vérification d'existence laissait rattacher à un arrêt l'adresse d'une autre
+ * organisation, que la tournée rendait ensuite lisible.
  */
 class StoreTourStopRequest extends FormRequest
 {
@@ -34,7 +37,10 @@ class StoreTourStopRequest extends FormRequest
         $tourId = $this->route('tour')?->id;
 
         return [
-            'addressId' => ['required', 'string', Rule::exists('addresses', 'id')],
+            'addressId' => [
+                'required', 'ulid',
+                new BelongsToActiveOrganization(Address::class, 'entityAddresses', 'Cette adresse n’appartient pas à l’organisation active.'),
+            ],
             'sequence' => [
                 'required', 'integer', 'min:1',
                 Rule::unique('tour_stops', 'sequence')->where('tour_id', $tourId),

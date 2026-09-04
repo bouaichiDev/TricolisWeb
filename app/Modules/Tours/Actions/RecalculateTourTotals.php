@@ -34,6 +34,13 @@ final readonly class RecalculateTourTotals
 {
     public function execute(Tour $tour): Tour
     {
+        // Figés pendant une composition, comme {@see TourTotals} : un total qui
+        // bougerait trahirait dans les colonnes un plan que personne n'a encore
+        // confirmé. Ils sont repris quand la tournée est rendue.
+        if ($tour->locked_by !== null) {
+            return $tour;
+        }
+
         $totals = $this->serviceTotals($tour);
 
         $tour->update([

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Exports;
 
 use App\Modules\Exports\Enums\ExportFormat;
 use App\Modules\Exports\Enums\ExportTransport;
+use App\Shared\Http\Rules\ExportSettings;
 use App\Shared\Http\Rules\SafeFileNamePattern;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -67,7 +68,13 @@ class StoreExportConfigurationRequest extends FormRequest
             'fileNamePattern' => ['nullable', 'string', 'max:255', new SafeFileNamePattern],
             'encoding' => ['nullable', 'string', 'max:32'],
             'frequency' => ['nullable', 'string', 'max:64'],
-            'settings' => ['nullable', 'array', 'max:500'],
+            // Un transport courriel exige des reglages : sans destinataire,
+            // rien ne partirait jamais.
+            'settings' => [
+                'nullable', 'array', 'max:500',
+                Rule::requiredIf(fn (): bool => $this->input('transport') === ExportTransport::EMAIL->value),
+                new ExportSettings((string) $this->input('transport')),
+            ],
             'isActive' => ['sometimes', 'boolean'],
         ];
     }

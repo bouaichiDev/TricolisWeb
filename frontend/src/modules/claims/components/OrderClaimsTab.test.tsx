@@ -1,0 +1,364 @@
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { HttpResponse, http } from 'msw'
+import { describe, expect, it } from 'vitest'
+
+import { paginated, withPermissions } from '@/test/fixtures'
+import { renderWithProviders } from '@/test/renderWithProviders'
+import { API, server } from '@/test/server'
+
+import { OrderDetailPage } from '@/modules/orders/pages/OrderDetailPage'
+import { makeOrderDetail, ORDER_ID, PACKAGE_TREE } from '@/modules/orders/pages/orderDetailFixtures'
+
+const CLAIM_ID = '01JQZ0000000000000CLAIM1'
+const CUSTOMER_ID = '01JQZ000000000000000CUST'
+
+const claim = (overrides: Record<string, unknown> = {}) => ({
+  id: CLAIM_ID,
+  organizationId: '01JQZ0000000000000000ORG1',
+  customerId: CUSTOMER_ID,
+  orderId: ORDER_ID,
+  orderServiceId: null,
+  tourId: null,
+  title: 'Canapé livré rayé',
+  claimType: 'casse',
+  result: null,
+  cost: 250,
+  status: 'open',
+  responsibleUserId: null,
+  createdAt: '2026-08-06T09:00:00+00:00',
+  closedAt: null,
+  customerName: 'Client Alpha',
+  ...overrides,
+})
+
+const status = (code: string, label: string, position: number) => ({
+  id: `01JQZ000000000000CSTA${position}`,
+  source: 'claim',
+  status: position,
+  code,
+  label,
+  icon: null,
+  active: true,
+  isToSend: false,
+  allowsContentChanges: true,
+  requiresReason: false,
+  position: position * 10,
+  createdAt: '2026-08-01T09:00:00.000000Z',
+  updatedAt: '2026-08-01T09:00:00.000000Z',
+})
+
+function renderDetail(permissions: string[], statuses = [status('open', 'Ouverte', 1)]) {
+  const calls: URL[] = []
+
+  server.use(
+    http.get(`${API}/orders/${ORDER_ID}`, () =>
+      HttpResponse.json({ data: makeOrderDetail(), meta: [] }),
+    ),
+    http.get(`${API}/orders/${ORDER_ID}/packages/tree`, () =>
+      HttpResponse.json({ data: PACKAGE_TREE, meta: [] }),
+    ),
+    http.get(`${API}/orders/${ORDER_ID}/history`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/orders/${ORDER_ID}/services/:serviceId/packages`, () =>
+      HttpResponse.json({ data: [], meta: [] }),
+    ),
+    http.get(`${API}/orders/${ORDER_ID}/documents`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/audit-logs`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/statuses`, () => HttpResponse.json(paginated(statuses))),
+    http.get(`${API}/organization-users`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/documents`, () => HttpResponse.json(paginated([]))),
+    http.get(`${API}/audit-logs`, () =>
+      HttpResponse.json(
+        paginated([
+          {
+            id: '01JQZ0000000000000AUDI01',
+            organizationId: '01JQZ0000000000000000ORG1',
+            userId: null,
+            action: 'updated',
+            entityType: 'claim',
+            entityId: CLAIM_ID,
+            oldValues: { status: 'open' },
+            newValues: { status: 'closed' },
+            ipAddress: null,
+            createdAt: '2026-08-07T10:00:00+00:00',
+          },
+        ]),
+      ),
+    ),
+    // `ClaimListResource` n'expose ni description, ni cause, ni traitement :
+    // seul le detail les porte.
+    http.get(`${API}/claims/${CLAIM_ID}`, () =>
+      HttpResponse.json({
+        data: {
+          ...claim(),
+          description: 'Le revêtement est griffé sur tout un accoudoir.',
+          cause: 'Manutention',
+          decision: 'Remplacement accepté',
+          followUp: 'Nouveau canapé commandé',
+          orderServiceId: null,
+        },
+        meta: [],
+      }),
+    ),
+    http.get(`${API}/orders/${ORDER_ID}/claims`, ({ request }) => {
+      calls.push(new URL(request.url))
+
+      return HttpResponse.json(paginated([claim()]))
+    }),
+  )
+
+  renderWithProviders(<OrderDetailPage />, {
+    membership: withPermissions(permissions),
+    route: `/orders/${ORDER_ID}`,
+    routePath: '/orders/:id',
+  })
+
+  return calls
+}
+
+const openClaims = () =>
+  screen.findByRole('tab', { name: /^Réclamations/ }).then((tab) => userEvent.click(tab))
+
+describe('réclamations d’une commande', () => {
+  it('liste les réclamations de la commande', async () => {
+    renderDetail(['orders.view', 'claims.view'])
+
+    await openClaims()
+
+    expect(await screen.findByText('Canapé livré rayé')).toBeInTheDocument()
+    expect(screen.getByText('casse')).toBeInTheDocument()
+  })
+
+  /**
+   * Le client vient de la commande : la création passe par
+   * `POST /customers/{customer}/claims`, où il est dans l'URL. Aucun sélecteur
+   * de client n'existe — c'est la façon la plus sûre d'interdire d'en choisir
+   * un autre.
+   */
+  it('crée sans jamais demander le client', async () => {
+    let body: unknown = null
+    renderDetail(['orders.view', 'claims.view', 'claims.create'])
+
+    server.use(
+      http.post(`${API}/customers/${CUSTOMER_ID}/claims`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: claim(), meta: [] }, { status: 201 })
+      }),
+    )
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: /Nouvelle réclamation/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.queryByLabelText(/^Client/)).not.toBeInTheDocument()
+
+    await userEvent.type(dialog.getByLabelText(/^Titre/), 'Retard de livraison')
+    await userEvent.type(dialog.getByLabelText(/^Type/), 'retard')
+    await userEvent.click(dialog.getByLabelText(/^Statut/))
+    await userEvent.click(await screen.findByRole('option', { name: /Ouverte/ }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({
+      title: 'Retard de livraison',
+      claimType: 'retard',
+      status: 'open',
+      orderId: ORDER_ID,
+    })
+  })
+
+  /** Le traitement n'est pas accepté à la création : il n'est pas montré. */
+  it('cache le traitement à la création, le montre en modification', async () => {
+    renderDetail(['orders.view', 'claims.view', 'claims.create', 'claims.update'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: /Nouvelle réclamation/ }))
+
+    let dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.queryByLabelText(/^Décision/)).not.toBeInTheDocument()
+    await userEvent.click(dialog.getByRole('button', { name: 'Annuler' }))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    dialog = within(await screen.findByRole('dialog'))
+    expect(await dialog.findByLabelText(/^Décision/)).toBeInTheDocument()
+    expect(dialog.getByLabelText(/^Coût/)).toHaveValue(250)
+  })
+
+  /**
+   * La liste ne porte ni description, ni cause, ni traitement.
+   *
+   * Construire le formulaire depuis la ligne les affichait vides, et
+   * enregistrer les effaçait — une perte silencieuse. Le détail est donc
+   * rechargé avant d'ouvrir la saisie.
+   */
+  it('recharge le détail avant modification, sans effacer ce qui est absent de la liste', async () => {
+    let body: unknown = null
+    renderDetail(['orders.view', 'claims.view', 'claims.update'])
+
+    server.use(
+      http.patch(`${API}/claims/${CLAIM_ID}`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: claim(), meta: [] })
+      }),
+    )
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(await dialog.findByLabelText(/^Description/)).toHaveValue(
+      'Le revêtement est griffé sur tout un accoudoir.',
+    )
+
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).not.toBeNull())
+    expect(body).toMatchObject({
+      description: 'Le revêtement est griffé sur tout un accoudoir.',
+      cause: 'Manutention',
+      decision: 'Remplacement accepté',
+      followUp: 'Nouveau canapé commandé',
+    })
+  })
+
+  /** Affecter dès la création : le serveur accepte `responsibleUserId`. */
+  it('permet d’affecter la réclamation à un membre', async () => {
+    renderDetail(['orders.view', 'claims.view', 'claims.create'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: /Nouvelle réclamation/ }))
+
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByLabelText(/^Responsable/)).toBeInTheDocument()
+  })
+
+  /** Le référentiel est vide pour `claim` : le dire, pas inventer une liste. */
+  it('explique quand aucun statut n’est décrit', async () => {
+    renderDetail(['orders.view', 'claims.view', 'claims.create'], [])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: /Nouvelle réclamation/ }))
+
+    expect(
+      await screen.findByText(/Aucun statut n’est décrit pour les réclamations/),
+    ).toBeInTheDocument()
+  })
+
+  it('n’interroge les réclamations qu’une fois l’onglet ouvert', async () => {
+    const calls = renderDetail(['orders.view', 'claims.view'])
+
+    await screen.findByRole('tab', { name: /^Réclamations/ })
+    expect(calls).toHaveLength(0)
+
+    await openClaims()
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0))
+  })
+
+  it('masque création, modification et suppression sans les permissions', async () => {
+    renderDetail(['orders.view', 'claims.view'])
+
+    await openClaims()
+    await screen.findByText('Canapé livré rayé')
+
+    expect(screen.queryByRole('button', { name: /Nouvelle réclamation/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Modifier' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * La fiche d'une réclamation : ce qu'elle dit, ce qu'on en a fait, et par où
+ * elle est passée.
+ */
+describe('fiche d’une réclamation', () => {
+  /**
+   * Le titre ouvre aussi la fiche, mais rien ne le laisse deviner : c'est le
+   * bouton qui doit y mener, sinon la piece jointe et l'historique n'existent
+   * que pour qui a survole le bon endroit.
+   */
+  it('montre la description, le traitement et l’historique', async () => {
+    renderDetail(['orders.view', 'claims.view'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Voir le détail' }))
+
+    const drawer = within(await screen.findByRole('dialog'))
+
+    // Ces champs n'existent que sur le detail : la liste ne les porte pas.
+    expect(await drawer.findByText(/revêtement est griffé/)).toBeInTheDocument()
+    expect(drawer.getByText('Remplacement accepté')).toBeInTheDocument()
+
+    // L'historique vient du journal d'audit : aucune table dediee n'existe.
+    expect(drawer.getByText('Historique')).toBeInTheDocument()
+  })
+
+  /** Photos et vocaux sont des documents liés à la réclamation. */
+  it('offre d’ajouter une pièce jointe', async () => {
+    renderDetail(['orders.view', 'claims.view', 'documents.upload'])
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Voir le détail' }))
+
+    const drawer = within(await screen.findByRole('dialog'))
+    expect(await drawer.findByRole('button', { name: /Ajouter une pièce/ })).toBeInTheDocument()
+    expect(drawer.getByText(/Aucune pièce jointe/)).toBeInTheDocument()
+  })
+
+  /**
+   * Une photo se reconnait, un nom d'appareil non : la vue par defaut est en
+   * vignettes, et l'apercu s'ouvre sur place.
+   */
+  it('montre les pièces en vignettes, bascule en liste et ouvre l’aperçu', async () => {
+    renderDetail(['orders.view', 'claims.view'])
+
+    const document = {
+      id: '01JQZ0000000000000DOCU01',
+      organizationId: '01JQZ0000000000000000ORG1',
+      referenceNumber: null,
+      documentType: 'claim_evidence',
+      status: 'active',
+      fileName: 'rayure.jpg',
+      mimeType: 'image/jpeg',
+      size: 2048,
+      receivedAt: null,
+      createdBy: null,
+      createdAt: '2026-08-07T10:00:00+00:00',
+      updatedAt: '2026-08-07T10:00:00+00:00',
+    }
+
+    server.use(
+      http.get(`${API}/documents`, () =>
+        HttpResponse.json(
+          paginated([
+            document,
+            { ...document, id: '01JQZ0000000000000DOCU02', fileName: 'vocal.m4a', mimeType: 'audio/mp4' },
+          ]),
+        ),
+      ),
+      // La route de telechargement est authentifiee : l'apercu passe par le
+      // client HTTP, pas par un `src` direct.
+      http.get(`${API}/documents/:id/download`, () =>
+        new HttpResponse('binaire', { headers: { 'Content-Type': 'image/jpeg' } }),
+      ),
+    )
+
+    await openClaims()
+    await userEvent.click(await screen.findByRole('button', { name: 'Voir le détail' }))
+
+    const drawer = within(await screen.findByRole('dialog'))
+    expect(await drawer.findByText('rayure.jpg')).toBeInTheDocument()
+    expect(drawer.getByText('vocal.m4a')).toBeInTheDocument()
+
+    // Les deux vues montrent la meme chose : seule la mise en forme change.
+    await userEvent.click(drawer.getByRole('button', { name: 'Vue en liste' }))
+    expect(drawer.getByText('rayure.jpg')).toBeInTheDocument()
+    expect(drawer.getByText(/image\/jpeg/)).toBeInTheDocument()
+
+    await userEvent.click(drawer.getByRole('button', { name: /rayure\.jpg/ }))
+
+    const preview = await screen.findByRole('dialog', { name: /rayure\.jpg/ })
+    expect(await within(preview).findByAltText('rayure.jpg')).toBeInTheDocument()
+  })
+
+})

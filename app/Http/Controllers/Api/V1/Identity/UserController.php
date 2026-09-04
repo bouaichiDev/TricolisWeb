@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Identity\UpdateUserRequest;
 use App\Http\Resources\Api\V1\Identity\UserResource;
 use App\Modules\Identity\Actions\CreateOrganizationMember;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\RoleAssignmentGuard;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Http\Requests\ListRequest;
 use App\Shared\Http\Responses\ApiResponse;
@@ -74,12 +75,15 @@ class UserController extends Controller
      * `roleIds`. L'utilisateur et son rattachement sont créés dans la même
      * transaction : un compte sans rattachement serait inatteignable.
      */
-    public function store(StoreOrganizationUserRequest $request, CreateOrganizationMember $createMember): JsonResponse
+    public function store(StoreOrganizationUserRequest $request, CreateOrganizationMember $createMember, RoleAssignmentGuard $roleGuard): JsonResponse
     {
         $organizationId = $this->requireOrganizationId();
         $this->authorize('create', [User::class, $organizationId]);
 
-        $membership = $createMember->execute($request->validated(), $organizationId);
+        $data = $request->validated();
+        $roleGuard->assertAssignable($request->user(), $organizationId, $data['roleIds'] ?? []);
+
+        $membership = $createMember->execute($data, $organizationId);
         $user = $membership->user;
         $this->audit($request, $organizationId, 'created', $user, null, $user->toArray());
 

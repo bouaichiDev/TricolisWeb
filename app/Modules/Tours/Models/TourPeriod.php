@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'break_minutes',
     'service_minutes',
     'waiting_minutes',
+    'travel_minutes',
     'distance_meters',
     'internal_remark',
     'status',
@@ -63,6 +64,7 @@ class TourPeriod extends Model
             'break_minutes' => 'integer',
             'service_minutes' => 'integer',
             'waiting_minutes' => 'integer',
+            'travel_minutes' => 'integer',
             'distance_meters' => 'integer',
         ];
     }

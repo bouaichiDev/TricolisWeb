@@ -60,6 +60,7 @@ class TourPeriodAssignmentController extends Controller
     public function store(StoreTourPeriodAssignmentRequest $request, Tour $tour, TourPeriod $tourPeriod, CreateTourPeriodAssignmentAction $action): JsonResponse
     {
         $organizationId = $this->guardPeriod($tour, $tourPeriod);
+        $this->guardDraftOwner($tour);
         $this->authorize('create', [TourPeriodAssignment::class, $organizationId]);
 
         $assignment = $action->execute(
@@ -92,6 +93,7 @@ class TourPeriodAssignmentController extends Controller
     public function update(UpdateTourPeriodAssignmentRequest $request, Tour $tour, TourPeriod $tourPeriod, TourPeriodAssignment $assignment, UpdateTourPeriodAssignmentAction $action): JsonResponse
     {
         $organizationId = $this->guardAssignment($tour, $tourPeriod, $assignment);
+        $this->guardDraftOwner($tour);
         $this->authorize('update', $assignment);
 
         $updated = $action->execute(
@@ -113,6 +115,7 @@ class TourPeriodAssignmentController extends Controller
     public function destroy(Request $request, Tour $tour, TourPeriod $tourPeriod, TourPeriodAssignment $assignment, DeleteTourPeriodAssignmentAction $action): JsonResponse
     {
         $organizationId = $this->guardAssignment($tour, $tourPeriod, $assignment);
+        $this->guardDraftOwner($tour);
         $this->authorize('delete', $assignment);
 
         $action->execute($assignment, $this->auditContext($request, $organizationId));

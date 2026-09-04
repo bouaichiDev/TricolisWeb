@@ -28,6 +28,7 @@ class CatalogItemResource extends JsonResource
             'length' => $this->length,
             'width' => $this->width,
             'height' => $this->height,
+            'assemblyTimeMinutes' => $this->assembly_time_minutes,
             'status' => $this->status,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,

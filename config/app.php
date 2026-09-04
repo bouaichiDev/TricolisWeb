@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Adresse de l'interface
+    |--------------------------------------------------------------------------
+    |
+    | L'API et l'interface ne vivent pas a la meme adresse. Un lien envoye par
+    | courriel doit s'ouvrir dans le navigateur, donc pointer vers l'interface :
+    | les routes de l'API sont des `POST`, et n'affichent rien.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

@@ -86,7 +86,15 @@ class OrderController extends Controller
      * Consulter une commande.
      *
      * Permission requise : `orders.view`. Le détail inclut client, agence,
-     * dépôt, lignes, colis et services.
+     * dépôt, lignes, colis et services — chaque service avec son adresse et ses
+     * contacts, chaque colis avec son contenu, sans quoi la fiche n'aurait que
+     * des identifiants à montrer.
+     *
+     * Deux relations sont exposées `whenLoaded` et doivent donc être demandées
+     * ici, faute de quoi elles disparaissent silencieusement de la réponse :
+     * `packages.packageOrderLines` — le contenu d'un colis, sans quoi tout
+     * colis paraît vide — et `orderServices.servicePackages` — les colis pris
+     * en charge, sans quoi aucun service ne semble en transporter.
      */
     public function show(Request $request, Order $order): JsonResponse
     {
@@ -94,7 +102,7 @@ class OrderController extends Controller
         $this->authorize('view', $order);
 
         return ApiResponse::ok(new OrderDetailResource(
-            $order->load(['customer', 'agency', 'depot', 'lines', 'packages', 'orderServices.service', 'orderServices.contacts']),
+            $order->load(['customer', 'agency', 'depot', 'lines', 'packages.packageOrderLines', 'orderServices.service', 'orderServices.address', 'orderServices.contacts', 'orderServices.servicePackages']),
         ));
     }
 
@@ -145,7 +153,7 @@ class OrderController extends Controller
             $this->authorize('cancel', $order);
         }
 
-        $action->execute($order, $target, $request->user(), $data['reasonCode'] ?? null, $data['reasonText'] ?? null, $request);
+        $action->execute($order, $target, $request->user(), $data['reasonCode'] ?? null, $data['reasonText'] ?? null, $request, $request->stockLocations());
 
         return ApiResponse::ok(new OrderDetailResource($order->fresh()));
     }

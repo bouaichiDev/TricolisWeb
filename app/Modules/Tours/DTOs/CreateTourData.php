@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Tours\DTOs;
 
+use App\Modules\Tours\Actions\GenerateTourNumber;
+
 /**
  * Données de création d'une tournée.
  *
  * `organizationId` n'est pas dans le payload : il vient du contexte actif.
+ * `tourNumber` non plus : le serveur l'attribue, l'utilisateur ne le saisit
+ * pas — voir {@see GenerateTourNumber}.
  *
  * Les sept totaux ne sont pas acceptés en entrée hormis les deux que le projet
  * ne sait pas recalculer (`drivingTimeMinutes`, `workingTimeMinutes`) : les
@@ -16,7 +20,6 @@ namespace App\Modules\Tours\DTOs;
 final readonly class CreateTourData
 {
     public function __construct(
-        public string $tourNumber,
         public string $tourDate,
         public string $agencyId,
         public string $status,
@@ -40,7 +43,6 @@ final readonly class CreateTourData
     public static function fromValidated(array $validated): self
     {
         return new self(
-            tourNumber: $validated['tourNumber'],
             tourDate: $validated['tourDate'],
             agencyId: $validated['agencyId'],
             status: $validated['status'],
@@ -66,7 +68,6 @@ final readonly class CreateTourData
     {
         return [
             'organization_id' => $organizationId,
-            'tour_number' => $this->tourNumber,
             'tour_date' => $this->tourDate,
             'agency_id' => $this->agencyId,
             'depot_id' => $this->depotId,

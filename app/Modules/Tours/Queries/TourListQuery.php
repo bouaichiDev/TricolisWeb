@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tours\Queries;
 
 use App\Http\Requests\Api\V1\Tours\ListTourRequest;
+use App\Modules\Planning\Actions\RecalculateTourRoute;
 use App\Modules\Tours\Models\Tour;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -30,8 +31,42 @@ final readonly class TourListQuery
     public function paginate(ListTourRequest $request, string $organizationId): LengthAwarePaginator
     {
         $query = Tour::inOrganization($organizationId)
-            ->with(['agency:id,code,name'])
+            ->with([
+                'agency:id,code,name',
+                // Charges d'emblee : la colonne les montre, et les demander
+                // tournee par tournee ferait une requete par colonne.
+                'driver:id,code,name',
+                'vehicle:id,code,registration_number',
+            ])
             ->withCount(['stops', 'periods']);
+
+        // Chargement anticipe, pas une requete par colonne : la vue en
+        // colonnes affiche cinq tournees et leurs arrets d'un coup.
+        if ($request->boolean('withStops')) {
+            // Seules les affectations actives sont comptees : une tournee
+            // confirmee garde la trace des services qu'on lui a retires, et
+            // les compter ferait annoncer au camion un arret qu'il ne fait
+            // plus.
+            $query->with(['stops' => fn ($stops) => $stops
+                ->orderBy('sequence')
+                ->with(['address', 'services' => fn ($services) => $services
+                    ->where('is_active_assignment', true)
+                    ->with([
+                        'orderService:id,order_id,service_id,service_number,weight,volume,package_count,required_time_minutes,status',
+                        'orderService.order:id,order_number,customer_id,customer_reference',
+                        'orderService.order.customer:id,code,name',
+                        'orderService.service:id,code,name',
+                    ])])
+                ->withCount(['services' => fn ($services) => $services->where('is_active_assignment', true)]),
+            ]);
+
+            // Les trajets suivent les arrets qu'ils relient : les demander
+            // ensuite, colonne par colonne, ferait une requete de plus par
+            // tournee pour une poignee de lignes.
+            $query->with(['periods' => fn ($periods) => $periods
+                ->where('period_type', RecalculateTourRoute::PERIOD_TYPE)
+                ->orderBy('sequence')]);
+        }
 
         if ($request->filled('search')) {
             $search = $request->validated('search');

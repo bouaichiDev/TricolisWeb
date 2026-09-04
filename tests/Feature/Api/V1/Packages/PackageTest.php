@@ -3,7 +3,7 @@
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderLine;
 use App\Modules\Packages\Models\Package;
-use App\Modules\Packages\Models\PackageType;
+use App\Modules\Types\Models\TypeItem;
 
 beforeEach(function (): void {
     $this->seed();
@@ -15,7 +15,7 @@ beforeEach(function (): void {
 
 describe('packages', function (): void {
     it('creates a package', function (): void {
-        $type = PackageType::factory()->forOrganization($this->organization)->create();
+        $type = TypeItem::factory()->forOrganization($this->organization)->ofSystemType('package')->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson("/api/v1/orders/{$this->order->id}/packages", [
@@ -46,7 +46,7 @@ describe('packages', function (): void {
     });
 
     it('refuses a package type from another organization', function (): void {
-        $foreignType = PackageType::factory()->create();
+        $foreignType = TypeItem::factory()->ofSystemType('package')->create();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->postJson("/api/v1/orders/{$this->order->id}/packages", ['packageTypeId' => $foreignType->id])

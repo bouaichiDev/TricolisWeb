@@ -16,7 +16,6 @@ use App\Modules\Catalogs\Models\CustomerCatalogItem;
 use App\Modules\Claims\Models\Claim;
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\CommunicationRule;
-use App\Modules\Communications\Models\CommunicationTemplate;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\AddressContact;
 use App\Modules\Contacts\Models\Contact;
@@ -29,7 +28,6 @@ use App\Modules\Drivers\Models\Driver;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Models\ExportJob;
 use App\Modules\Fleet\Models\Vehicle;
-use App\Modules\Fleet\Models\VehicleType;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
@@ -43,25 +41,27 @@ use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
-use App\Modules\Packages\Models\GroupingType;
 use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
-use App\Modules\Packages\Models\PackageType;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
+use App\Modules\Statuses\Models\Status;
 use App\Modules\Stock\Models\StockBalance;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
 use App\Modules\Stock\Models\StockMovement;
 use App\Modules\Stock\Models\StockReservation;
+use App\Modules\Templates\Models\Template;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourPeriod;
 use App\Modules\Tours\Models\TourPeriodAssignment;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
 use App\Modules\Tracking\Models\TrackingEvent;
+use App\Modules\Types\Models\Type;
+use App\Modules\Types\Models\TypeItem;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
@@ -73,6 +73,8 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  */
 final class MorphMap
 {
+    public const string STATUS = 'status';
+
     public const string ORGANIZATION = 'organization';
 
     public const string USER = 'user';
@@ -115,17 +117,15 @@ final class MorphMap
 
     public const string PACKAGE = 'package';
 
-    public const string PACKAGE_TYPE = 'package_type';
+    public const string TYPE = 'type';
 
-    public const string GROUPING_TYPE = 'grouping_type';
+    public const string TYPE_ITEM = 'type_item';
 
     public const string PACKAGE_ORDER_LINE = 'package_order_line';
 
     public const string PROVIDER = 'provider';
 
     public const string DRIVER = 'driver';
-
-    public const string VEHICLE_TYPE = 'vehicle_type';
 
     public const string VEHICLE = 'vehicle';
 
@@ -181,7 +181,7 @@ final class MorphMap
 
     public const string EXPORT_JOB = 'export_job';
 
-    public const string COMMUNICATION_TEMPLATE = 'communication_template';
+    public const string TEMPLATE = 'template';
 
     public const string COMMUNICATION_RULE = 'communication_rule';
 
@@ -199,6 +199,7 @@ final class MorphMap
     public static function register(): void
     {
         Relation::morphMap([
+            self::STATUS => Status::class,
             self::ORGANIZATION => Organization::class,
             self::USER => User::class,
             self::ORGANIZATION_USER => OrganizationUser::class,
@@ -220,12 +221,11 @@ final class MorphMap
             self::CUSTOMER_CATALOG => CustomerCatalog::class,
             self::CUSTOMER_CATALOG_ITEM => CustomerCatalogItem::class,
             self::PACKAGE => Package::class,
-            self::PACKAGE_TYPE => PackageType::class,
-            self::GROUPING_TYPE => GroupingType::class,
+            self::TYPE => Type::class,
+            self::TYPE_ITEM => TypeItem::class,
             self::PACKAGE_ORDER_LINE => PackageOrderLine::class,
             self::PROVIDER => Provider::class,
             self::DRIVER => Driver::class,
-            self::VEHICLE_TYPE => VehicleType::class,
             self::VEHICLE => Vehicle::class,
             self::ENTITY_ADDRESS => EntityAddress::class,
             self::ENTITY_CONTACT => EntityContact::class,
@@ -253,7 +253,7 @@ final class MorphMap
             self::CUSTOMER_API_CONFIGURATION => CustomerApiConfiguration::class,
             self::CUSTOMER_EXPORT_CONFIGURATION => CustomerExportConfiguration::class,
             self::EXPORT_JOB => ExportJob::class,
-            self::COMMUNICATION_TEMPLATE => CommunicationTemplate::class,
+            self::TEMPLATE => Template::class,
             self::COMMUNICATION_RULE => CommunicationRule::class,
             self::ORDER_COMMUNICATION => OrderCommunication::class,
             self::COMMUNICATION_ATTACHMENT => CommunicationAttachment::class,
@@ -288,5 +288,21 @@ final class MorphMap
         $map = Relation::morphMap();
 
         return $map[$alias] ?? null;
+    }
+
+    /**
+     * Retourne l'alias morphique d'une classe Eloquent.
+     *
+     * Reciproque de `class()`. Sans elle, chaque appelant refaisait un
+     * `array_flip` de la morph map, ou pire, ecrivait l'alias en dur.
+     */
+    public static function aliasFor(string $class): ?string
+    {
+        /** @var array<string, class-string> $map */
+        $map = Relation::morphMap();
+
+        $alias = array_search($class, $map, true);
+
+        return $alias === false ? null : $alias;
     }
 }

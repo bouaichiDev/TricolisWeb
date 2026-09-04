@@ -10,7 +10,7 @@ namespace App\Modules\Fleet\DTOs;
 final readonly class CreateVehicleData
 {
     public function __construct(
-        public string $providerId,
+        public ?string $providerId,
         public string $vehicleTypeId,
         public string $code,
         public string $registrationNumber,
@@ -26,7 +26,7 @@ final readonly class CreateVehicleData
     public static function fromValidated(array $validated): self
     {
         return new self(
-            providerId: $validated['providerId'],
+            providerId: $validated['providerId'] ?? null,
             vehicleTypeId: $validated['vehicleTypeId'],
             code: $validated['code'],
             registrationNumber: $validated['registrationNumber'],
@@ -40,9 +40,13 @@ final readonly class CreateVehicleData
     /**
      * @return array<string, mixed>
      */
-    public function toAttributes(): array
+    /**
+     * @return array<string, mixed>
+     */
+    public function toAttributes(string $organizationId): array
     {
         return [
+            'organization_id' => $organizationId,
             'provider_id' => $this->providerId,
             'vehicle_type_id' => $this->vehicleTypeId,
             'code' => $this->code,

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\Communications;
 
 use App\Modules\Communications\Enums\CommunicationChannel;
-use App\Modules\Communications\Enums\CommunicationTemplateType;
 use App\Modules\Communications\Enums\RecipientRole;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Templates\Enums\TemplateType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -44,7 +44,7 @@ class StoreOrderCommunicationRequest extends FormRequest
             'templateId' => ['sometimes', 'nullable', 'ulid'],
             'communicationRuleId' => ['sometimes', 'nullable', 'ulid'],
             'channel' => ['required', Rule::in(CommunicationChannel::values())],
-            'communicationType' => ['required', Rule::in(CommunicationTemplateType::values())],
+            'communicationType' => ['required', Rule::in(TemplateType::values())],
             'recipientRole' => ['required', Rule::in(RecipientRole::values())],
             'recipientName' => ['sometimes', 'nullable', 'string', 'max:255'],
             'recipientEmail' => ['sometimes', 'nullable', 'email', 'max:255'],

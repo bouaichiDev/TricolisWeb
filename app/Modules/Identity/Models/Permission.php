@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'code',
     'name',
     'module',
+    'menu_section',
     'action',
 ])]
 class Permission extends Model

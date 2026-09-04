@@ -34,6 +34,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'currency_code',
     'status',
     'settings',
+    'logo_path',
+    'logo_mime_type',
 ])]
 class Organization extends Model
 {

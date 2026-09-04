@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Communications;
 
+use App\Http\Resources\Api\V1\Templates\TemplateCompactResource;
 use App\Modules\Communications\Models\CommunicationRule;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,6 +25,7 @@ class CommunicationRuleDetailResource extends JsonResource
             'id' => $this->id,
             'organizationId' => $this->organization_id,
             'serviceId' => $this->service_id,
+            'serviceName' => $this->whenLoaded('service', fn (): ?string => $this->service?->name),
             'templateId' => $this->template_id,
             'eventType' => $this->event_type?->value,
             'recipientRole' => $this->recipient_role?->value,
@@ -33,7 +35,7 @@ class CommunicationRuleDetailResource extends JsonResource
             'isAutomatic' => $this->is_automatic,
             'isActive' => $this->is_active,
             'communicationsCount' => $this->whenCounted('communications'),
-            'template' => new CommunicationTemplateCompactResource($this->whenLoaded('template')),
+            'template' => new TemplateCompactResource($this->whenLoaded('template')),
             'createdAt' => $this->created_at?->toIso8601String(),
             'updatedAt' => $this->updated_at?->toIso8601String(),
         ];

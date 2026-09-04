@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Tours;
 
+use App\Shared\Http\Rules\ExistsInStatusReferential;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -47,7 +48,7 @@ class StoreTourPeriodRequest extends FormRequest
             'waitingMinutes' => ['sometimes', 'integer', 'min:0'],
             'distanceMeters' => ['sometimes', 'integer', 'min:0'],
             'internalRemark' => ['nullable', 'string'],
-            'status' => ['required', 'string', 'max:32'],
+            'status' => ['required', 'string', 'max:32', new ExistsInStatusReferential('tour_period')],
         ];
     }
 }

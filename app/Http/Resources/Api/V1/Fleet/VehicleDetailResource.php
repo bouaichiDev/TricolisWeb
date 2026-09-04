@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Api\V1\Fleet;
 
 use App\Http\Resources\Api\V1\Providers\ProviderCompactResource;
+use App\Http\Resources\Api\V1\Types\TypeItemResource;
 use App\Modules\Fleet\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -19,6 +20,7 @@ class VehicleDetailResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'organizationId' => $this->organization_id,
             'providerId' => $this->provider_id,
             'vehicleTypeId' => $this->vehicle_type_id,
             'code' => $this->code,
@@ -28,7 +30,7 @@ class VehicleDetailResource extends JsonResource
             'palletCapacity' => $this->pallet_capacity,
             'status' => $this->status,
             'provider' => new ProviderCompactResource($this->whenLoaded('provider')),
-            'vehicleType' => new VehicleTypeCompactResource($this->whenLoaded('vehicleType')),
+            'vehicleType' => new TypeItemResource($this->whenLoaded('vehicleType')),
         ];
     }
 }

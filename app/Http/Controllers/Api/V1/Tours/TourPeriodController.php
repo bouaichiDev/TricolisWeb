@@ -61,6 +61,7 @@ class TourPeriodController extends Controller
     public function store(StoreTourPeriodRequest $request, Tour $tour, CreateTourPeriodAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
         $this->authorize('create', [TourPeriod::class, $organizationId]);
 
         $period = $action->execute(
@@ -95,6 +96,7 @@ class TourPeriodController extends Controller
     public function update(UpdateTourPeriodRequest $request, Tour $tour, TourPeriod $tourPeriod, UpdateTourPeriodAction $action): JsonResponse
     {
         $organizationId = $this->guardPeriod($tour, $tourPeriod);
+        $this->guardDraftOwner($tour);
         $this->authorize('update', $tourPeriod);
 
         $updated = $action->execute(
@@ -117,6 +119,7 @@ class TourPeriodController extends Controller
     public function destroy(Request $request, Tour $tour, TourPeriod $tourPeriod, DeleteTourPeriodAction $action): JsonResponse
     {
         $organizationId = $this->guardPeriod($tour, $tourPeriod);
+        $this->guardDraftOwner($tour);
         $this->authorize('delete', $tourPeriod);
 
         try {
@@ -138,6 +141,7 @@ class TourPeriodController extends Controller
     public function reorder(ReorderRequest $request, Tour $tour, ReorderTourPeriodsAction $action): JsonResponse
     {
         $organizationId = $this->guardTour($tour);
+        $this->guardDraftOwner($tour);
         $this->authorize('reorder', [TourPeriod::class, $organizationId]);
 
         $action->execute($tour, $request->orderedIds(), $this->auditContext($request, $organizationId));

@@ -70,6 +70,19 @@ final class CommunicationsWidgets
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/communications/history',
             ),
+
+            // Le volume quotidien, par canal. `created_at` et non `sent_at` :
+            // une communication programmee pour la semaine prochaine a bien ete
+            // produite aujourd'hui.
+            new DashboardWidget(
+                key: 'communications_per_day',
+                type: DashboardWidgetType::COLUMNS,
+                category: DashboardWidgetCategory::COMMUNICATIONS,
+                requiredPermission: 'order_communications.view',
+                defaultPosition: 505,
+                size: DashboardWidgetSize::LARGE,
+                route: '/communications/history',
+            ),
         ];
     }
 }

@@ -24,7 +24,7 @@ Organisation active
 → un seul GET /dashboard
 ```
 
-Un seul appel, soixante-six widgets disponibles, neuf catégories, sept formes de rendu.
+Un seul appel, soixante-neuf widgets disponibles, neuf catégories, neuf formes de rendu.
 
 ---
 
@@ -67,17 +67,30 @@ dessine une barre de composition en CSS plutôt que d'ajouter une dépendance qu
 n'a pas été demandée. Un histogramme temporel ou un nuage de points reposerait
 la question, et ce serait alors une décision de dépendance, prise comme telle.
 
-### Trois formes de graphe, et le catalogue tranche
+### Cinq formes de graphe, et le catalogue tranche
 
-Barre de composition, camembert, jauge. Ce ne sont pas trois habillages : chacun
-répond à une question que les deux autres posent mal, et le **catalogue** choisit
-une fois pour toutes, sur le nombre de parts que la série peut atteindre.
+Ce ne sont pas cinq habillages : chacune répond à une question que les autres
+posent mal, et le **catalogue** choisit une fois pour toutes.
 
 | Forme | Où | Pourquoi pas une autre |
 | --- | --- | --- |
 | barre de composition | `orders_by_status`, `invoices_by_status` | dix statuts aux noms longs ; dix secteurs voisins seraient indistinguables |
 | camembert | `tours_by_status`, `orders_by_source`, `communications_by_channel` | six parts au plus ; une barre se lit de gauche à droite, pas comme un tout |
 | jauge | les quatre taux | un camembert à deux secteurs occupe deux fois la place et fait passer le reste pour une catégorie |
+| colonnes empilées | `orders_per_day`, `communications_per_day` | seule forme qui dise le volume **et** sa composition, jour après jour |
+| courbes | `orders_trend` | l'œil suit une pente bien mieux qu'il ne compare trente hauteurs voisines |
+
+Les trois premières photographient l'instant ; les deux dernières portent le
+temps. Leurs jours creux valent **zéro**, jamais rien : un `GROUP BY` ne rend
+que les jours actifs, et les enchaîner tels quels rapprocherait un lundi d'un
+vendredi comme s'ils se suivaient. Un trou est une information.
+
+Les courbes tiennent **un seul axe**, toujours : deux échelles verticales sur un
+même graphe inventent une corrélation que les données ne portent pas. Les séries
+qu'on y sert sont donc de même nature — deux comptes de commandes, jamais des
+commandes contre des tournées. Cette contrainte-là a une seconde raison : un
+widget porte **une** permission requise, et mêler deux entités ferait fuiter
+l'une par la permission de l'autre.
 
 La jauge porte **une seule teinte**, jamais de vert-orange-rouge : ces taux
 n'ont pas de bon sens universel. Une part de stock réservée élevée est
@@ -180,7 +193,7 @@ Toutes exécutées sur cette copie de travail, branche
 | `php artisan route:list --path=api/v1/dashboard` | 2 routes |
 | `npm run typecheck` | conforme |
 | `npm run lint` | conforme — aucun avertissement dans `modules/dashboard` |
-| `npm run test` | **713 réussis**, 102 fichiers |
+| `npm run test` | **722 réussis**, 103 fichiers |
 | `npm run build` | conforme |
 
 Répartition des tests ajoutés :
@@ -194,8 +207,9 @@ Répartition des tests ajoutés :
 | `dashboard/components/RoleDashboardPanel.test.tsx` | 7 |
 | `dashboard/components/widgets/ChartWidget.test.tsx` | 7 |
 | `dashboard/components/widgets/DonutWidget.test.tsx` | 7 |
+| `dashboard/components/widgets/TimeseriesWidgets.test.tsx` | 9 |
 
-Le test de cohérence joue **les soixante widgets** sur une base vide et refuse
+Le test de cohérence joue **les soixante-neuf widgets** sur une base vide et refuse
 une donnée `null` : une clé déclarée sans calcul rendrait une carte vide qu'on
 prendrait pour une carte à zéro.
 

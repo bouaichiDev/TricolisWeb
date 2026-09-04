@@ -6,11 +6,13 @@ namespace App\Modules\Dashboard\Sources;
 
 use App\Modules\Communications\Enums\CommunicationStatus;
 use App\Modules\Communications\Models\OrderCommunication;
+use App\Modules\Dashboard\Services\DailySeries;
 use App\Modules\Dashboard\Services\DashboardContext;
 use App\Modules\Dashboard\Services\DashboardDataSource;
 use App\Modules\Dashboard\Services\DashboardPayload;
 use App\Shared\Database\MorphMap;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Communications envoyées aux clients.
@@ -26,6 +28,9 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final readonly class CommunicationsData implements DashboardDataSource
 {
+    /** Deux semaines pleines : assez pour voir un creux se repeter. */
+    private const int COLUMN_DAYS = 14;
+
     /**
      * @param  array<int, string>  $keys
      * @return array<string, mixed>
@@ -79,6 +84,8 @@ final readonly class CommunicationsData implements DashboardDataSource
                 labels: 'communicationChannels',
             ),
 
+            'communications_per_day' => $this->perDay($context),
+
             default => null,
         };
     }
@@ -89,6 +96,34 @@ final readonly class CommunicationsData implements DashboardDataSource
     private function communications(DashboardContext $context): Builder
     {
         return OrderCommunication::query()->where('organization_id', $context->organizationId);
+    }
+
+    /**
+     * Le volume quotidien des envois, par canal.
+     *
+     * `created_at` et non `sent_at` : la question est « combien en a-t-on
+     * produit ce jour-la », et une communication programmee pour la semaine
+     * prochaine compte aujourd'hui. La compter au depart aurait laisse les
+     * derniers jours vides, en donnant a croire que rien n'a ete prepare.
+     *
+     * @return array<string, mixed>
+     */
+    private function perDay(DashboardContext $context): array
+    {
+        $rows = $this->communications($context)
+            ->toBase()
+            ->whereBetween('created_at', $context->window(self::COLUMN_DAYS))
+            ->selectRaw('DATE(created_at) as day, channel as code, COUNT(*) as total')
+            ->groupBy(DB::raw('DATE(created_at)'), 'channel')
+            ->get();
+
+        $built = DailySeries::build($rows, $context->windowStart(self::COLUMN_DAYS), self::COLUMN_DAYS);
+
+        return DashboardPayload::timeseries(
+            $built['buckets'],
+            $built['series'],
+            labels: 'communicationChannels',
+        );
     }
 
     /**

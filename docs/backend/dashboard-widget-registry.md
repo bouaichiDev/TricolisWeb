@@ -34,7 +34,7 @@ sélection d'un rôle, dans `role_dashboard_configurations`.
 | Fichier | Rôle |
 | --- | --- |
 | `app/Shared/Dashboard/DashboardWidget.php` | une définition |
-| `app/Shared/Dashboard/DashboardWidgetType.php` | les sept formes : `kpi`, `chart`, `donut`, `gauge`, `list`, `alert`, `quick_action` |
+| `app/Shared/Dashboard/DashboardWidgetType.php` | les neuf formes : `kpi`, `chart`, `donut`, `gauge`, `columns`, `lines`, `list`, `alert`, `quick_action` |
 | `app/Shared/Dashboard/DashboardWidgetSize.php` | `small`, `medium`, `large`, `full` |
 | `app/Shared/Dashboard/DashboardWidgetCategory.php` | le regroupement de l'écran de réglage |
 | `app/Shared/Dashboard/DashboardWidgetRegistry.php` | le catalogue, source unique |
@@ -43,7 +43,8 @@ sélection d'un rôle, dans `role_dashboard_configurations`.
 | `app/Modules/Dashboard/Services/DashboardComposer.php` | les trois filtres |
 | `app/Modules/Dashboard/Services/DashboardDataSources.php` | l'aiguillage catégorie → source |
 | `app/Modules/Dashboard/Services/DashboardPayload.php` | les quatre formes de donnée |
-| `app/Modules/Dashboard/Services/DashboardContext.php` | organisation, et jour figé |
+| `app/Modules/Dashboard/Services/DashboardContext.php` | organisation, jour figé, fenêtres de N jours |
+| `app/Modules/Dashboard/Services/DailySeries.php` | les jours creux, remis à zéro |
 | `app/Modules/Identity/Models/RoleDashboardConfiguration.php` | la sélection d'un rôle |
 | `app/Modules/Identity/Services/RoleDashboardWidgets.php` | absente ≠ vide |
 | `app/Modules/Identity/Services/RoleDashboardCatalogue.php` | ce que l'écran de réglage affiche |
@@ -99,7 +100,7 @@ L'intersection avec les permissions s'applique aux défauts comme au reste.
 
 ## 5. Le catalogue livré
 
-Soixante-six widgets, neuf catégories. Chacun avec sa permission — jamais nulle : un
+Soixante-neuf widgets, neuf catégories. Chacun avec sa permission — jamais nulle : un
 widget sans permission serait visible de tous, y compris de rôles qui n'ont pas
 le droit d'ouvrir l'écran d'où le chiffre vient.
 
@@ -117,6 +118,8 @@ le droit d'ouvrir l'écran d'où le chiffre vient.
 | `recent_orders` | list | `orders.view` | `/orders` | six dernières par `order_date` |
 | `orders_by_status` | chart | `orders.view` | `/orders` | `GROUP BY status` |
 | `orders_by_source` | donut | `orders.view` | `/orders` | `GROUP BY source` |
+| `orders_per_day` | columns | `orders.view` | `/orders` | 14 jours, empilées par statut actuel |
+| `orders_trend` | lines | `orders.view` | `/orders` | 30 jours, créées et achevées |
 
 Les widgets de service n'ont **pas** de route : `/services` est le catalogue des
 prestations vendues, pas la liste des services d'une commande.
@@ -144,6 +147,14 @@ divergé au premier statut ajouté.
 **Pas de disponibilité chauffeur ou véhicule** : aucune table ne la porte, et la
 déduire des tournées du jour donnerait un chiffre faux dès qu'un congé n'y
 figure pas.
+
+**Deux approximations sont assumées**, et écrites dans le code :
+`orders_per_day` répartit chaque jour par le statut **actuel** des commandes —
+reconstituer l'état qu'elles avaient ce jour-là demanderait un journal des
+transitions que le domaine ne tient pas. Et « achevées » se lit dans
+`updated_at`, faute de date de clôture : une commande achevée hier puis corrigée
+aujourd'hui compte aujourd'hui. Une tendance supporte cette approximation mieux
+qu'un chiffre du jour.
 
 ### Réclamations et preuves de livraison
 
@@ -214,6 +225,7 @@ jointure.
 | `communications_sent_today` | kpi | `order_communications.view` | `/communications/history` | `sent`, `delivered`, `read`, `sent_at` du jour |
 | `recent_communications` | list | `order_communications.view` | `/communications/history` | six dernières |
 | `communications_by_channel` | donut | `order_communications.view` | `/communications/history` | `GROUP BY channel` — cinq canaux |
+| `communications_per_day` | columns | `order_communications.view` | `/communications/history` | 14 jours, empilées par canal, sur `created_at` |
 
 « Envoyée » couvre les trois états qui suivent le départ : ne compter que `sent`
 aurait fait **baisser** le chiffre du jour à mesure que les accusés de réception
@@ -280,9 +292,23 @@ alert         { value }
 chart         { mode, source, labels, series: [{ code, value }] }
 donut         { mode, source, labels, series: [{ code, value }] }
 gauge         { value, total }
+columns       { buckets, series: [{ code, values }], source, labels }
+lines         { buckets, series: [{ code, values }], source, labels }
 list          { items: [{ id, title, subtitle, status, statusSource, date, route }] }
 quick_action  null
 ```
+
+**`columns` et `lines` portent le temps**, ce qu'aucune autre forme ne fait —
+elles photographient l'instant. Deux tableaux **alignés** plutôt qu'une liste de
+points : `buckets` porte les jours, chaque série porte une suite de valeurs de
+même longueur. Une liste de `{date, valeurs}` aurait demandé au frontend de
+retrouver quelles séries existent et de gérer celles qui manquent certains
+jours.
+
+Les jours creux valent **zéro**, jamais rien. C'est l'objet de `DailySeries` :
+un `GROUP BY DATE(...)` ne rend que les jours où quelque chose s'est passé, et
+les enchaîner tels quels rapprocherait un lundi d'un vendredi comme s'ils se
+suivaient. **Un trou est une information.**
 
 **`chart` et `donut` portent la même donnée**, et c'est voulu : ce n'est pas la
 donnée qui choisit le rendu, c'est le **type du widget** — une décision de
@@ -292,6 +318,8 @@ catalogue, prise une fois, sur le nombre de parts que la série peut atteindre.
 | --- | --- | --- |
 | `chart` — barre de composition | beaucoup de parts, aux noms longs, qu'on veut lire au chiffre près | dix secteurs voisins deviennent indistinguables |
 | `donut` — camembert | six parts au plus, dont on veut la proportion d'un coup d'œil | une barre dit mal une proportion : elle se lit de gauche à droite, pas comme un tout |
+| `columns` — colonnes empilées | un volume quotidien **et** sa composition | aucune autre forme ne montre les deux à la fois |
+| `lines` — courbes | une tendance sur un mois | l'œil suit une pente bien mieux qu'il ne compare trente hauteurs voisines |
 | `gauge` — jauge | **un seul** rapport, une part contre son tout | un camembert à deux secteurs occupe deux fois la place et fait passer le reste pour une catégorie |
 
 `gauge` transporte la part **et** le tout, jamais le pourcentage : « 72 % » ne

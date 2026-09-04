@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Dashboard\Services;
 
 /**
- * Les quatre formes de donnée qu'un widget peut porter.
+ * Les six formes de donnée qu'un widget peut porter.
  *
  * Le type du widget les annonce, ces méthodes les produisent, et
  * `DashboardWidgetData` les relit côté frontend. Les écrire à la main dans huit
@@ -103,6 +103,37 @@ final readonly class DashboardPayload
     public static function gauge(int|float $value, int|float $total): array
     {
         return ['value' => $value, 'total' => $total];
+    }
+
+    /**
+     * Le **temps**, en jours.
+     *
+     * Deux tableaux alignés plutôt qu'une liste de points : `buckets` porte les
+     * jours, `series` porte une suite de valeurs de même longueur par série.
+     * Une liste de `{date, valeurs}` aurait demandé au frontend de retrouver
+     * quelles séries existent, et de gérer celles qui manquent à certains
+     * jours — ici, l'alignement est garanti à la construction.
+     *
+     * Les jours creux valent **zéro**, jamais rien : un `GROUP BY` ne rend que
+     * les jours actifs, et les enchaîner tels quels rapprocherait un lundi d'un
+     * vendredi comme s'ils se suivaient. `DailySeries` s'en charge.
+     *
+     * @param  array<int, string>  $buckets
+     * @param  array<int, array{code: string, values: array<int, int|float>}>  $series
+     * @return array<string, mixed>
+     */
+    public static function timeseries(
+        array $buckets,
+        array $series,
+        ?string $source = null,
+        ?string $labels = null,
+    ): array {
+        return [
+            'buckets' => array_values($buckets),
+            'series' => array_values($series),
+            'source' => $source,
+            'labels' => $labels,
+        ];
     }
 
     /**

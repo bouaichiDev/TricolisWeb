@@ -1,8 +1,10 @@
 import { AlertWidget } from './widgets/AlertWidget'
 import { ChartWidget } from './widgets/ChartWidget'
+import { ColumnsWidget } from './widgets/ColumnsWidget'
 import { DonutWidget } from './widgets/DonutWidget'
 import { GaugeWidget } from './widgets/GaugeWidget'
 import { KpiWidget } from './widgets/KpiWidget'
+import { LinesWidget } from './widgets/LinesWidget'
 import { ListWidget } from './widgets/ListWidget'
 import { QuickActionWidget } from './widgets/QuickActionWidget'
 import type { DashboardWidget } from '../types/dashboard'
@@ -10,9 +12,9 @@ import type { DashboardWidget } from '../types/dashboard'
 /**
  * Du type à son composant, et **rien d'autre**.
  *
- * Sept valeurs, sept composants écrits ici. Aucun nom de composant ne voyage
+ * Neuf valeurs, neuf composants écrits ici. Aucun nom de composant ne voyage
  * depuis la base : c'est la garantie qu'une configuration, même écrite à la
- * main dans la table, ne peut pas faire rendre autre chose que ces sept-là. Un
+ * main dans la table, ne peut pas faire rendre autre chose que ces neuf-là. Un
  * `components[widget.component]` aurait suffi à ouvrir cette porte.
  *
  * Un type inconnu ne rend **rien**. Le cas ne devrait pas se produire — le
@@ -32,6 +34,10 @@ export function DashboardWidgetRenderer({ widget }: { widget: DashboardWidget })
       return <DonutWidget widget={widget} />
     case 'gauge':
       return <GaugeWidget widget={widget} />
+    case 'columns':
+      return <ColumnsWidget widget={widget} />
+    case 'lines':
+      return <LinesWidget widget={widget} />
     case 'list':
       return <ListWidget widget={widget} />
     case 'quick_action':

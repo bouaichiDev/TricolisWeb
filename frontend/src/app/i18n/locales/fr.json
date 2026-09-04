@@ -2836,7 +2836,9 @@
     "alert": "Alerte",
     "quick_action": "Action rapide",
     "donut": "Camembert",
-    "gauge": "Jauge"
+    "gauge": "Jauge",
+    "columns": "Colonnes",
+    "lines": "Courbes"
   },
   "dashboardCategories": {
     "operations": "Exploitation",
@@ -3113,6 +3115,22 @@
     "export_success_rate": {
       "label": "Taux de réussite des exports",
       "description": "Envois partis aujourd’hui, rapportés à ceux qui se sont achevés"
+    },
+    "orders_per_day": {
+      "label": "Commandes par jour",
+      "description": "Volume quotidien sur quatorze jours, réparti par statut actuel"
+    },
+    "orders_trend": {
+      "label": "Tendance des commandes",
+      "description": "Créées et achevées, jour après jour, sur trente jours"
+    },
+    "communications_per_day": {
+      "label": "Communications par jour",
+      "description": "Volume quotidien sur quatorze jours, réparti par canal"
     }
+  },
+  "orderTrend": {
+    "created": "Créées",
+    "completed": "Achevées"
   }
 }

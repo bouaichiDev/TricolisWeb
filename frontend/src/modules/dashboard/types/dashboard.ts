@@ -15,24 +15,33 @@
  */
 
 /**
- * Les sept formes qu'un widget peut prendre.
+ * Les neuf formes qu'un widget peut prendre.
  *
  * Jeu fermé, et c'est ce qui rend le rendu sûr : `DashboardWidgetRenderer` fait
- * correspondre ces valeurs à sept composants écrits ici. Aucun nom de composant
+ * correspondre ces valeurs à neuf composants écrits ici. Aucun nom de composant
  * ne voyage depuis la base.
  *
- * Trois se ressemblent et ne se remplacent pas — c'est le catalogue qui
- * tranche, sur le nombre de parts que la série peut atteindre :
+ * Trois photographient l'instant, et ne se remplacent pas — c'est le catalogue
+ * qui tranche, sur le nombre de parts que la série peut atteindre :
  *
  * - `chart` — une barre de composition : beaucoup de parts, aux noms longs ;
  * - `donut` — un camembert : six parts au plus, lues d'un coup d'œil ;
  * - `gauge` — un seul rapport, une part contre son tout.
+ *
+ * Deux portent le **temps**, ce qu'aucune des précédentes ne fait :
+ *
+ * - `columns` — des colonnes empilées, un jour par colonne : combien, et de
+ *   quoi, jour après jour ;
+ * - `lines` — des courbes : une tendance, que l'œil suit bien mieux qu'il ne
+ *   compare trente hauteurs voisines.
  */
 export type DashboardWidgetType =
   | 'kpi'
   | 'chart'
   | 'donut'
   | 'gauge'
+  | 'columns'
+  | 'lines'
   | 'list'
   | 'alert'
   | 'quick_action'
@@ -114,6 +123,30 @@ export interface GaugeData {
   total: number
 }
 
+/**
+ * Le temps, en jours.
+ *
+ * Deux tableaux **alignés** : `buckets` porte les jours, et chaque série porte
+ * une suite de valeurs de même longueur. Une liste de `{date, valeurs}` aurait
+ * demandé de retrouver quelles séries existent et de gérer celles qui manquent
+ * certains jours ; ici l'alignement est garanti par le serveur.
+ *
+ * Les jours creux valent **zéro**, jamais rien : un trou est une information,
+ * et l'omettre rapprocherait un lundi d'un vendredi comme s'ils se suivaient.
+ */
+export interface TimeseriesSerie {
+  code: string
+  values: number[]
+}
+
+export interface TimeseriesData {
+  /** Jours au format ISO, du plus ancien au plus récent. */
+  buckets: string[]
+  series: TimeseriesSerie[]
+  source: string | null
+  labels: string | null
+}
+
 export interface ListItem {
   id: string
   title: string | null
@@ -135,6 +168,7 @@ export type DashboardWidgetData =
   | AlertData
   | ChartData
   | GaugeData
+  | TimeseriesData
   | ListData
   | null
 

@@ -115,6 +115,32 @@ final class OperationsWidgets
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/orders',
             ),
+
+            // Le temps, que rien d'autre ici ne montre : les autres widgets
+            // photographient l'instant. Quatorze colonnes tiennent sur une
+            // demi-largeur ; trente en auraient fait des traits.
+            new DashboardWidget(
+                key: 'orders_per_day',
+                type: DashboardWidgetType::COLUMNS,
+                category: DashboardWidgetCategory::OPERATIONS,
+                requiredPermission: 'orders.view',
+                defaultPosition: 10,
+                size: DashboardWidgetSize::LARGE,
+                route: '/orders',
+            ),
+
+            // Une tendance, pas un volume : l'oeil suit une pente bien mieux
+            // qu'il ne compare des hauteurs de colonnes voisines. D'ou trente
+            // jours ici, et quatorze au-dessus.
+            new DashboardWidget(
+                key: 'orders_trend',
+                type: DashboardWidgetType::LINES,
+                category: DashboardWidgetCategory::OPERATIONS,
+                requiredPermission: 'orders.view',
+                defaultPosition: 11,
+                size: DashboardWidgetSize::LARGE,
+                route: '/orders',
+            ),
         ];
     }
 }

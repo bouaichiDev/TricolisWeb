@@ -81,9 +81,9 @@ organisation crée elle-même.
 
 ---
 
-## 4. Le rendu : sept types, sept composants
+## 4. Le rendu : neuf types, neuf composants
 
-`DashboardWidgetRenderer` fait correspondre `widget.type` à l'un de sept
+`DashboardWidgetRenderer` fait correspondre `widget.type` à l'un de neuf
 composants écrits dans le dossier. Un `components[widget.component]` aurait
 suffi à ouvrir la porte à un nom venu de la base ; le `switch` la ferme.
 
@@ -98,6 +98,8 @@ version le verrait, et une carte manquante vaut mieux qu'un écran blanc.
 | `chart` | une barre de composition | **sans bibliothèque** : voir §5 |
 | `donut` | un anneau, six parts au plus | ce n'est pas une variante de la barre : voir §5 |
 | `gauge` | un rapport, et son tout | une seule teinte, jamais de vert-orange-rouge : voir §5 |
+| `columns` | un volume quotidien, empilé | la seule forme qui dise le temps **et** la composition : voir §5 |
+| `lines` | une tendance sur un mois | un seul axe, toujours : voir §5 |
 | `list` | six lignes, et « Voir tout » | la seule carte non cliquable : voir §6 |
 | `quick_action` | un libellé, une destination | le seul dont `data` vaut `null` |
 
@@ -194,6 +196,41 @@ n'ont pas de bon sens universel — une part de stock réservée élevée est
 excellente pour un commercial et inquiétante pour un logisticien, et en peindre
 un en rouge trancherait à leur place. Et zéro sur zéro n'affiche pas 0 %, qui se
 lirait comme un échec, mais « rien à mesurer ».
+
+### Les deux graphes qui portent le temps
+
+Toutes les formes précédentes photographient l'instant. Celles-ci montrent les
+jours.
+
+Les **colonnes empilées** disent un volume quotidien *et* sa composition : la
+hauteur totale dit combien, l'empilement dit de quoi. C'est la seule forme du
+catalogue à dire les deux. Les **courbes** disent une tendance, que l'œil suit
+bien mieux qu'il ne compare trente hauteurs voisines — d'où une fenêtre plus
+large, trente jours contre quatorze.
+
+Quatre décisions y sont prises, et aucune n'est cosmétique :
+
+| Décision | Ce qu'elle évite |
+| --- | --- |
+| **Les graduations sont choisies avant le plafond** — le pas d'abord, pris parmi 1, 2 et 5 fois une puissance de dix | diviser le plafond en trois donnait « 100 / 67 / 33 », des nombres exacts que personne ne lit |
+| **La hauteur de la carte inclut la bande des dates** | fixer la hauteur du tracé fait déborder les libellés, et le navigateur pose un minuscule ascenseur à l'intérieur de la carte |
+| **Le survol est capté par une bande large de tout l'intervalle** | viser une colonne de six pixels ou un point de courbe demanderait une précision que personne n'a |
+| **Des segments droits, jamais de lissage** | une interpolation invente un creux qui n'a pas eu lieu, ou un pic qui dépasse le maximum réel |
+
+Les points de survol sont dessinés **hors du SVG**, en HTML positionné en
+pourcentages : le tracé travaille en coordonnées relatives (`preserveAspectRatio="none"`),
+et un cercle dessiné dedans serait devenu une ellipse d'autant plus aplatie que
+la carte est large.
+
+Le jour survolé et ses valeurs s'écrivent **en tête de carte et dans la
+légende**, non dans une infobulle flottante : celle-ci aurait recouvert la
+donnée qu'on vient de viser, et demandé d'être placée sans jamais sortir de la
+carte — deux problèmes pour un gain nul.
+
+Les colonnes occupent le **milieu de leur intervalle**, les points de courbe se
+posent **sur le bord** — le premier à 0 %, le dernier à 100 %. Une convention
+unique aurait décalé l'une des deux visées d'une demi-case, exactement là où on
+regarde.
 
 ### Le graphe qui ne dessine aucune barre
 
@@ -363,3 +400,4 @@ interdire aurait privé l'administrateur du seul tableau de bord qu'il voit.
 | `dashboard/components/RoleDashboardPanel.test.tsx` | qu'un widget sans permission soit activable ; qu'un clic enregistre ; que les rangs partent non renumérotés ; qu'un rôle non réglable propose des actions |
 | `dashboard/components/widgets/ChartWidget.test.tsx` | qu'une série ne soit nommée que par sa couleur ; qu'une neuvième teinte soit inventée ; que des devises partagent une échelle |
 | `dashboard/components/widgets/DonutWidget.test.tsx` | qu'une jauge rende 0 % faute de données ; qu'elle dépasse le tour complet ; qu'un code d'énumération s'affiche brut |
+| `dashboard/components/widgets/TimeseriesWidgets.test.tsx` | qu'une graduation soit un nombre qu'on ne lit pas ; qu'un jour vide dessine une colonne ; qu'une courbe soit lissée |

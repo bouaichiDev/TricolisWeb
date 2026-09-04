@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Dashboard\Sources;
 
+use App\Modules\Dashboard\Services\DailySeries;
 use App\Modules\Dashboard\Services\DashboardContext;
 use App\Modules\Dashboard\Services\DashboardDataSource;
 use App\Modules\Dashboard\Services\DashboardPayload;
@@ -13,6 +14,9 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
 use App\Shared\Database\MorphMap;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Commandes et services.
@@ -30,6 +34,12 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final readonly class OperationsData implements DashboardDataSource
 {
+    /** Deux semaines pleines : assez pour voir un creux se repeter. */
+    private const int COLUMN_DAYS = 14;
+
+    /** Un mois : une tendance a besoin de plus de recul qu'un volume. */
+    private const int LINE_DAYS = 30;
+
     /**
      * @param  array<int, string>  $keys
      * @return array<string, mixed>
@@ -99,8 +109,107 @@ final readonly class OperationsData implements DashboardDataSource
                 labels: 'orderSources',
             ),
 
+            'orders_per_day' => $this->ordersPerDay($context),
+            'orders_trend' => $this->ordersTrend($context),
+
             default => null,
         };
+    }
+
+    /**
+     * Le volume quotidien, et sa composition.
+     *
+     * Quatorze jours : deux semaines pleines, de quoi voir un creux de week-end
+     * se repeter sans que les colonnes deviennent des traits. Sept en auraient
+     * montre un seul, trente auraient demande une colonne de six pixels.
+     *
+     * La repartition est celle du statut **actuel** — une commande du 12 y
+     * figure avec l'etat qu'elle porte aujourd'hui, pas avec celui qu'elle avait
+     * ce jour-la. Reconstituer l'histoire demanderait un journal des
+     * transitions, que le domaine ne tient pas ; l'inventer donnerait un graphe
+     * faux qui aurait l'air juste.
+     *
+     * @return array<string, mixed>
+     */
+    private function ordersPerDay(DashboardContext $context): array
+    {
+        $rows = $this->orders($context)
+            ->toBase()
+            ->whereBetween('order_date', $context->window(self::COLUMN_DAYS))
+            ->selectRaw('DATE(order_date) as day, status as code, COUNT(*) as total')
+            ->groupBy(DB::raw('DATE(order_date)'), 'status')
+            ->get();
+
+        $built = DailySeries::build($rows, $context->windowStart(self::COLUMN_DAYS), self::COLUMN_DAYS);
+
+        return DashboardPayload::timeseries($built['buckets'], $built['series'], MorphMap::ORDER);
+    }
+
+    /**
+     * Ce qui entre, et ce qui sort.
+     *
+     * Deux courbes sur **un seul axe** : ce sont deux comptes de commandes, donc
+     * deux grandeurs comparables. Y ajouter les services ou les tournees aurait
+     * demande une seconde echelle verticale, laquelle invente une correlation
+     * que les donnees ne portent pas.
+     *
+     * « Achevees » se lit dans `updated_at`, faute de date de cloture : une
+     * commande achevee hier puis corrigee aujourd'hui compte aujourd'hui. C'est
+     * la meme approximation que `orders_completed_today`, et elle est assumee —
+     * une tendance la supporte mieux qu'un chiffre du jour.
+     *
+     * @return array<string, mixed>
+     */
+    private function ordersTrend(DashboardContext $context): array
+    {
+        $start = $context->windowStart(self::LINE_DAYS);
+
+        $created = $this->perDay($context, 'order_date', self::LINE_DAYS);
+
+        $completed = $this->perDay(
+            $context,
+            'updated_at',
+            self::LINE_DAYS,
+            fn (QueryBuilder $orders) => $orders->where('status', OrderStatus::COMPLETED->value),
+        );
+
+        return DashboardPayload::timeseries(
+            array_map(
+                static fn (int $offset): string => $start->addDays($offset)->toDateString(),
+                range(0, self::LINE_DAYS - 1),
+            ),
+            [
+                ['code' => 'created', 'values' => DailySeries::values($created, $start, self::LINE_DAYS)],
+                ['code' => 'completed', 'values' => DailySeries::values($completed, $start, self::LINE_DAYS)],
+            ],
+            labels: 'orderTrend',
+        );
+    }
+
+    /**
+     * Comptes par jour sur une colonne de date, avec un filtre facultatif.
+     *
+     * Le nom de colonne est ecrit dans les deux seuls appels qui existent :
+     * `selectRaw` ne prend pas de liaison pour un identifiant, et une colonne
+     * choisie a l'exterieur serait une injection.
+     *
+     * @param  null|callable(QueryBuilder): mixed  $filter
+     * @return Collection<int, object>
+     */
+    private function perDay(DashboardContext $context, string $column, int $days, ?callable $filter = null): Collection
+    {
+        $query = $this->orders($context)
+            ->toBase()
+            ->whereBetween($column, $context->window($days));
+
+        if ($filter !== null) {
+            $filter($query);
+        }
+
+        return $query
+            ->selectRaw("DATE({$column}) as day, COUNT(*) as total")
+            ->groupBy(DB::raw("DATE({$column})"))
+            ->get();
     }
 
     /**

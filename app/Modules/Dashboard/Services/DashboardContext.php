@@ -32,6 +32,28 @@ final readonly class DashboardContext
     }
 
     /**
+     * Bornes d'une fenêtre de N jours **finissant aujourd'hui**, aujourd'hui
+     * compris.
+     *
+     * Le premier jour est donc `today - (days - 1)` : une fenêtre de sept jours
+     * qui commencerait à `today - 7` en compterait huit, et le graphe montrerait
+     * une colonne de plus que son titre n'en annonce.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    public function window(int $days): array
+    {
+        $start = $this->today->subDays($days - 1);
+
+        return [$start, $this->today->endOfDay()];
+    }
+
+    public function windowStart(int $days): CarbonImmutable
+    {
+        return $this->today->subDays($days - 1);
+    }
+
+    /**
      * Bornes de la journée, telles qu'un `whereBetween` les attend.
      *
      * `whereDate()` aurait été plus court, et aurait écarté l'index : la

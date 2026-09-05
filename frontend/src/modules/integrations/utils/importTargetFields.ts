@@ -11,14 +11,22 @@
  * est validé comme un tableau sans schéma, et le §11 interdit d'inventer un
  * langage de correspondance que le backend ne possède pas.
  *
- * **Aucun moteur ne lit encore ce mapping** : il n'existe ni table `Import`, ni
- * route de déclenchement. Cette référence sert à préparer et documenter une
- * intégration, pas à la faire fonctionner.
- *
  * Les identifiants — `customerId`, `agencyId`, `serviceId`, `addressId` — sont
  * volontairement absents : un fichier client porte des références métier, pas
- * les ULID de notre base. Ils devront être résolus par le futur moteur, et ce
- * point est le principal travail de conception qui reste.
+ * les ULID de notre base. `ImportReferenceResolver` les résout à l'import.
+ *
+ * **Ce qui les remplace est documenté**, et c'est la section « Destination » :
+ *
+ * - `services[].serviceCode` — le code d'une prestation de l'organisation ;
+ * - `services[].addressCode` — le code d'une adresse **du client**, pour un
+ *   point récurrent qu'il a enregistré ;
+ * - `services[].address.*` — l'adresse **elle-même**, quand le destinataire
+ *   change à chaque commande. L'import la crée pour cette prestation, sans la
+ *   verser au carnet d'adresses du donneur d'ordre : elle appartient à la
+ *   commande qui y va.
+ *
+ * Le code décide quand il est renseigné, l'adresse prend le relais sinon — si
+ * bien qu'une même correspondance sert les deux cas, ligne par ligne.
  *
  * **Les rattachements, eux, sont documentés**, parce qu'ils se font par des
  * clés locales au fichier et non par des identifiants :
@@ -152,6 +160,35 @@ export const IMPORT_TARGETS: ImportTarget[] = [
             ruleKey: 'optional',
             constraint: 'consigne propre à ce service',
           },
+        ],
+      },
+      {
+        // Ce que le fichier porte à la place des ULID. Sans cette section,
+        // l'écran documentait tout sauf les deux champs sans lesquels aucun
+        // import n'aboutit — et personne ne pouvait deviner qu'ils existaient.
+        key: 'destination',
+        fields: [
+          {
+            path: 'services[].serviceCode',
+            ruleKey: 'required',
+            constraint: 'code d’une prestation de l’organisation',
+          },
+          {
+            path: 'services[].addressCode',
+            ruleKey: 'conditional',
+            constraint: 'code d’une adresse du client ; sinon services[].address',
+          },
+          {
+            path: 'services[].address.addressLine1',
+            ruleKey: 'conditional',
+            constraint: 'obligatoire sans addressCode — l’adresse est créée',
+          },
+          { path: 'services[].address.name', ruleKey: 'optional', constraint: 'max 255' },
+          { path: 'services[].address.addressLine2', ruleKey: 'optional', constraint: 'max 255' },
+          { path: 'services[].address.postalCode', ruleKey: 'optional', constraint: 'max 64' },
+          { path: 'services[].address.city', ruleKey: 'optional', constraint: 'max 255' },
+          { path: 'services[].address.country', ruleKey: 'optional', constraint: '2 lettres' },
+          { path: 'services[].address.instructions', ruleKey: 'optional' },
         ],
       },
       {

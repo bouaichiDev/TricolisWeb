@@ -66,6 +66,20 @@ final readonly class ImportPreviewValidator
     ];
 
     /**
+     * Ce qui dispense du code, parce que la prestation porte la chose entière.
+     *
+     * Une adresse reprise du fichier n'a pas de code : l'import la crée pour
+     * cette prestation seule. Réclamer `addressCode` dans ce cas annoncerait un
+     * manque là où tout est là, et c'est le verdict le plus décourageant — il
+     * envoie corriger ce qui est déjà juste.
+     *
+     * @var array<string, string>
+     */
+    private const array SATISFIED_BY = [
+        'addressId' => 'address',
+    ];
+
+    /**
      * @param  array<string, mixed>  $payload
      * @param  array<string, mixed>  $rules  règles de `StoreOrderRequest`
      * @return array{errors: array<string, list<string>>, resolvedElsewhere: list<string>}
@@ -107,7 +121,8 @@ final readonly class ImportPreviewValidator
      * Les codes qui manquent pour résoudre un identifiant obligatoire.
      *
      * Le service porte déjà l'identifiant ? Rien à dire — une correspondance
-     * peut très bien le fournir directement. Sinon le code est requis, et
+     * peut très bien le fournir directement. Il porte l'adresse entière ?
+     * Rien non plus : l'import la créera. Sinon le code est requis, et
      * l'annoncer ici évite le « valide » suivi d'un refus à l'import.
      *
      * @param  array<string, mixed>  $payload
@@ -129,7 +144,13 @@ final readonly class ImportPreviewValidator
             }
 
             foreach (self::RESOLVED_FROM_CODE as $identifier => $code) {
-                if (isset($service[$identifier]) || isset($service[$code])) {
+                $inline = self::SATISFIED_BY[$identifier] ?? null;
+
+                if (
+                    isset($service[$identifier])
+                    || isset($service[$code])
+                    || ($inline !== null && isset($service[$inline]))
+                ) {
                     continue;
                 }
 

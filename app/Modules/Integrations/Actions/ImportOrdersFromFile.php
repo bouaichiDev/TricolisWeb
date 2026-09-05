@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Integrations\Actions;
 
-use App\Http\Requests\Api\V1\Orders\StoreOrderRequest;
 use App\Modules\Identity\Models\User;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
+use App\Modules\Integrations\Services\ImportPayloadValidator;
 use App\Modules\Integrations\Services\ImportReferenceResolver;
 use App\Modules\Integrations\Services\MappingInterpreter;
 use App\Modules\Orders\Actions\CreateFullOrder;
@@ -15,7 +15,6 @@ use App\Modules\Orders\Enums\OrderSource;
 use App\Modules\Orders\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -24,11 +23,17 @@ use Illuminate\Validation\ValidationException;
  * Le fichier a déjà été lu et la correspondance existe : ce qui se joue ici est
  * ce que la prévisualisation ne fait pas — écrire.
  *
- * **Tout ou rien.** Les commandes sont validées *avant* d'écrire quoi que ce
- * soit, puis créées dans une seule transaction. Un fichier à moitié importé
- * laisserait un état que personne ne saurait reprendre, et le §4 interdit la
- * table d'historique qui permettrait de le rattraper. Refuser en bloc est la
- * seule issue tenable sans elle.
+ * **Tout ou rien.** Un fichier à moitié importé laisserait un état que personne
+ * ne saurait reprendre, et le §4 interdit la table d'historique qui permettrait
+ * de le rattraper. Refuser en bloc est la seule issue tenable sans elle.
+ *
+ * La transaction enveloppe **toute** la méthode, et non la seule création des
+ * commandes : la résolution des références écrit elle aussi, depuis qu'une
+ * prestation dont le fichier porte l'adresse du destinataire la fait naître.
+ * N'ouvrir la transaction qu'après la validation laisserait ces adresses
+ * derrière un fichier refusé, sans commande pour les porter ni écran pour les
+ * retrouver. L'ordre, lui, ne change pas : rien n'est créé avant que tout soit
+ * validé.
  *
  * **Ce que le fichier ne dit pas, l'écran le fournit.** Le client vient de la
  * configuration — elle lui appartient — et l'agence est choisie à l'import,
@@ -40,6 +45,7 @@ final readonly class ImportOrdersFromFile
     public function __construct(
         private MappingInterpreter $interpreter,
         private ImportReferenceResolver $references,
+        private ImportPayloadValidator $validator,
         private CreateFullOrder $orders,
     ) {}
 
@@ -61,6 +67,37 @@ final readonly class ImportOrdersFromFile
         /** @var array<string, mixed> $mapping */
         $mapping = $configuration->mapping ?? [];
 
+        return DB::transaction(fn (): array => $this->build(
+            $mapping,
+            $rows,
+            $configuration,
+            $agencyId,
+            $depotId,
+            $organizationId,
+            $user,
+            $request,
+        ));
+    }
+
+    /**
+     * Le travail lui-même, sous la transaction ouverte par `execute()`.
+     *
+     * @param  array<string, mixed>  $mapping
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<Order>
+     *
+     * @throws ValidationException
+     */
+    private function build(
+        array $mapping,
+        array $rows,
+        CustomerImportConfiguration $configuration,
+        string $agencyId,
+        ?string $depotId,
+        string $organizationId,
+        User $user,
+        Request $request,
+    ): array {
         $payloads = [];
 
         foreach ($this->group($mapping, $rows) as $index => $group) {
@@ -84,9 +121,9 @@ final readonly class ImportOrdersFromFile
             ]);
         }
 
-        $this->refuseIfInvalid($payloads);
+        $this->validator->refuseIfInvalid($payloads);
 
-        return DB::transaction(fn (): array => array_map(
+        return array_map(
             fn (array $payload): Order => $this->orders->execute(
                 CreateOrderData::fromArray($payload),
                 $organizationId,
@@ -94,7 +131,7 @@ final readonly class ImportOrdersFromFile
                 $request,
             ),
             $payloads,
-        ));
+        );
     }
 
     /**
@@ -144,34 +181,5 @@ final readonly class ImportOrdersFromFile
             str_contains($format, 'xml') => OrderSource::XML_IMPORT,
             default => OrderSource::CSV_IMPORT,
         };
-    }
-
-    /**
-     * Refuse le fichier entier si une seule commande est invalide.
-     *
-     * Les erreurs sont préfixées par le rang de la commande dans le fichier —
-     * `orders.1.services.0.unit` — sans quoi on saurait qu'il manque une unité
-     * sans savoir laquelle des trente commandes la réclame.
-     *
-     * @param  list<array<string, mixed>>  $payloads
-     *
-     * @throws ValidationException
-     */
-    private function refuseIfInvalid(array $payloads): void
-    {
-        $rules = (new StoreOrderRequest)->rules();
-        $errors = [];
-
-        foreach ($payloads as $index => $payload) {
-            $validator = Validator::make($payload, $rules);
-
-            foreach ($validator->errors()->toArray() as $field => $messages) {
-                $errors["orders.{$index}.{$field}"] = $messages;
-            }
-        }
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
     }
 }

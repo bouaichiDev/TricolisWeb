@@ -2451,7 +2451,8 @@
           "services": "Services",
           "contacts": "Contacts d’un service",
           "claim": "Réclamation",
-          "claimLinks": "Rattachements"
+          "claimLinks": "Rattachements",
+          "destination": "Destination : prestation et adresse"
         },
         "rules": {
           "required": "obligatoire",

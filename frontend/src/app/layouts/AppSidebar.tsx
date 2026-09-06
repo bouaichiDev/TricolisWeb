@@ -1,14 +1,13 @@
-import { PanelLeftClose, Truck } from 'lucide-react'
+import { PanelLeftClose } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 
 import { linkClass, NavGroup } from './NavGroup'
-import { homeRoute } from '@/app/router/navigation'
+import { SidebarBrand } from './SidebarBrand'
 import { menuIcon } from '@/modules/menu/components/menuIcons'
 import { useMenu } from '@/modules/menu/hooks/useMenu'
 import { buildMenuTree, menuLabel } from '@/modules/menu/types/menu'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { usePermissions } from '@/shared/hooks/usePermission'
 
 interface AppSidebarProps {
   /** Appelé après un clic : ferme le tiroir sur mobile, sans effet ailleurs. */
@@ -30,7 +29,6 @@ interface AppSidebarProps {
  */
 export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
   const { t } = useTranslation()
-  const { isPlatformAdmin } = usePermissions()
   const location = useLocation()
 
   const { data, isPending } = useMenu()
@@ -38,16 +36,7 @@ export function AppSidebar({ onNavigate, onCollapse }: AppSidebarProps) {
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <Link
-        to={homeRoute(isPlatformAdmin)}
-        onClick={onNavigate}
-        className="flex h-16 shrink-0 items-center gap-2.5 px-5"
-      >
-        <Truck className="size-6 text-sidebar-primary" aria-hidden />
-        <span className="text-lg font-semibold tracking-tight">
-          {t('app.name')} <span className="text-sidebar-primary">V2</span>
-        </span>
-      </Link>
+      <SidebarBrand onNavigate={onNavigate} />
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4" aria-label={t('nav.main')}>
         {isPending

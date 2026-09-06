@@ -3,7 +3,7 @@ import type { ApiResource } from '@/shared/api/types'
 import type { LoginPayload, MePayload } from '@/shared/types/auth'
 
 /**
- * Les quatre appels d'authentification réellement exposés par le backend.
+ * Les appels d'authentification réellement exposés par le backend.
  *
  * Aucun n'exige l'en-tête d'organisation : ce sont des routes personnelles.
  */
@@ -18,6 +18,17 @@ export const authApi = {
       .then((response) => response.data),
 
   me: () => api.get<ApiResource<MePayload>>('/auth/me').then((response) => response.data),
+
+  /**
+   * Demander le lien qui rendra l'acces.
+   *
+   * La reponse est la meme pour une adresse connue et pour une inconnue :
+   * l'ecran ne peut donc pas dire si le compte existe, et c'est voulu.
+   */
+  forgotPassword: (email: string) =>
+    api
+      .post<ApiResource<{ message: string }>>('/auth/forgot-password', { email })
+      .then((response) => response.data),
 
   logout: () => api.post<void>('/auth/logout'),
 

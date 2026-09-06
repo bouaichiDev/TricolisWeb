@@ -22,16 +22,43 @@ use Illuminate\Validation\ValidationException;
  * métier — et ce service les remplace par leurs identifiants avant validation.
  *
  * **La portée est une contrainte, pas un filtre.** Un service est cherché dans
- * l'organisation ; une adresse doit être **rattachée au client** de la
- * configuration, ou à l'un de ses sites. Chercher une adresse par son seul code
- * permettrait d'importer chez un client une adresse qui appartient à un autre.
+ * l'organisation ; une adresse **désignée par un code** doit être rattachée au
+ * client de la configuration, ou à l'un de ses sites. Chercher une adresse par
+ * son seul code permettrait d'importer chez un client une adresse qui
+ * appartient à un autre.
  *
  * Un code inconnu **arrête le fichier**. Le deviner — prendre la première
  * adresse venue, créer un service à la volée — produirait des commandes fausses
  * que personne ne relirait.
+ *
+ * ---
+ *
+ * ## L'adresse du destinataire final
+ *
+ * Le code ne convient qu'aux points **récurrents**, que le client a enregistrés
+ * une fois. Une large part du transport ne fonctionne pas ainsi : chaque
+ * commande va chez quelqu'un d'autre. La correspondance porte alors l'adresse
+ * elle-même, sous `services[].address`, et `ImportedRecipientAddress` la crée —
+ * son docblock dit à qui elle appartient, et pourquoi ce n'est pas au client.
+ *
+ * ## Lequel des deux s'applique
+ *
+ * Le code décide **quand il est renseigné**, l'adresse prend le relais sinon :
+ *
+ * ```
+ * addressCode renseigné  → recherche, et refus s'il est inconnu
+ * sinon, address présent → création, pour cette prestation
+ * sinon                  → refus : la prestation n'a pas de destination
+ * ```
+ *
+ * Une cellule vide vaut « absent » — `MappingInterpreter` l'a déjà écartée — si
+ * bien qu'**une même correspondance sert les deux cas**, ligne par ligne : la
+ * colonne de code renseignée pour les points connus, vide pour les autres.
  */
 final readonly class ImportReferenceResolver
 {
+    public function __construct(private ImportedRecipientAddress $recipients) {}
+
     /**
      * Remplace les codes par des identifiants, dans les services d'une commande.
      *
@@ -70,6 +97,9 @@ final readonly class ImportReferenceResolver
                 }
             }
 
+            $inline = $service['address'] ?? null;
+            unset($service['address']);
+
             if (is_string($addressCode)) {
                 $id = $this->addressId($addressCode, $customerId, $organizationId);
 
@@ -78,6 +108,16 @@ final readonly class ImportReferenceResolver
                         ["Aucune adresse de ce client ne porte le code « {$addressCode} »."];
                 } else {
                     $service['addressId'] = $id;
+                }
+            } elseif (is_array($inline)) {
+                // Le refus nomme la colonne manquante. Laisser la validation
+                // parler d'un `addressId` absent enverrait chercher un
+                // identifiant Tricolis que le fichier n'a jamais eu à porter.
+                if (! $this->recipients->isDeliverable($inline)) {
+                    $errors["orders.{$order}.services.{$index}.address.addressLine1"] =
+                        ['Une adresse reprise du fichier doit au moins porter une rue.'];
+                } else {
+                    $service['addressId'] = $this->recipients->create($inline, $organizationId);
                 }
             }
 

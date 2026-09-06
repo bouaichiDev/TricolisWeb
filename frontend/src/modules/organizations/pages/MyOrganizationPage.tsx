@@ -2,13 +2,11 @@ import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 
 import { OrganizationDetailPage } from './OrganizationDetailPage'
-import { OrganizationLogoPanel } from '../components/OrganizationLogoPanel'
 import { AutoLoadingServicePanel } from '@/modules/planning/components/AutoLoadingServicePanel'
 import { LoadingServicesPanel } from '@/modules/planning/components/LoadingServicesPanel'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
-import { useOrganization } from '../hooks/useOrganizations'
 import { useAuth } from '@/shared/hooks/useAuth'
 
 /**
@@ -26,7 +24,6 @@ import { useAuth } from '@/shared/hooks/useAuth'
 export function MyOrganizationPage() {
   const { t } = useTranslation()
   const { organizationId, isLoading } = useAuth()
-  const { data: organization } = useOrganization(organizationId ?? '')
 
   if (isLoading) return null
 
@@ -37,17 +34,6 @@ export function MyOrganizationPage() {
   return (
     <div className="flex flex-col gap-6">
       <OrganizationDetailPage organizationId={organizationId} />
-
-      {/* Le logo n'est pas un ornement : les modèles de facture l'appellent, et
-          le PDF l'embarque. Il se règle donc avec le reste de l'identité. */}
-      <PermissionGuard permission="organizations.update">
-        <SectionCard title={t('organizations.logo.title')}>
-          <OrganizationLogoPanel
-            organizationId={organizationId}
-            hasLogo={organization?.hasLogo ?? false}
-          />
-        </SectionCard>
-      </PermissionGuard>
 
       {/* La planification a besoin de savoir quels services sont des
           chargements : sans ce reglage, le regroupement au depot ne peut pas

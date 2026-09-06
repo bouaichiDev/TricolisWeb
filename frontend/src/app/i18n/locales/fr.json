@@ -54,10 +54,45 @@
   "auth": {
     "login": "Connexion",
     "loginTitle": "Connexion à Tricolis",
-    "loginSubtitle": "Accédez à votre espace de gestion",
+    "loginSubtitle": "Accédez à votre espace sécurisé de gestion et de supervision logistique en temps réel.",
     "email": "Adresse e-mail",
     "password": "Mot de passe",
     "submit": "Se connecter",
+    "emailPlaceholder": "nom@entreprise.fr",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "revealEntry": "Afficher la saisie",
+    "hideEntry": "Masquer la saisie",
+    "secureConnection": "Connexion sécurisée et chiffrée",
+    "needHelp": "Besoin d’aide ? Contactez votre administrateur.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "enterpriseAccess": "Ou accès d’entreprise",
+    "requestAccess": "Demander un accès entreprise",
+    "forgot": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Indiquez l’adresse de votre compte administrateur : nous vous enverrons un lien pour en choisir un nouveau.",
+      "submit": "Envoyer le lien",
+      "adminOnly": "Réservé aux comptes administrateurs. Les autres utilisateurs demandent la réinitialisation à l’administrateur de leur organisation, qui la leur rend depuis leur fiche.",
+      "sent": "Si un compte administrateur existe pour cette adresse, un lien vient de lui être envoyé. Il est valable une heure ; pensez à regarder vos indésirables. Les autres comptes passent par leur administrateur."
+    },
+    "showcase": {
+      "network": "Réseau Digital Transport 4.0",
+      "tagline": "Traçabilité intelligente & décarbonation",
+      "title": "L’intelligence connectée au cœur de vos flux de transport.",
+      "body": "Synchronisez donneurs d’ordres, transporteurs et destinataires sur une interface unifiée. Réduisez vos coûts opérationnels tout en pilotant vos engagements RSE.",
+      "tours": {
+        "title": "Tournées en temps réel",
+        "body": "Recalcul dynamique d’itinéraires et ETA prédictif."
+      },
+      "carbon": {
+        "title": "Score carbone (CO2e)",
+        "body": "Mesure normée GLEC et reporting automatisé."
+      },
+      "metrics": {
+        "punctuality": { "value": "99,8 %", "label": "Ponctualité garantie" },
+        "fleets": { "value": "+500", "label": "Flottes connectées" },
+        "emissions": { "value": "-18 %", "label": "Émissions de CO2" }
+      }
+    },
     "submitting": "Connexion…",
     "logout": "Se déconnecter",
     "profile": "Mon profil",
@@ -86,6 +121,7 @@
     "dashboard": "Tableau de bord",
     "administration": "Administration",
     "organizations": "Organisations",
+    "accessRequests": "Demandes d’accès",
     "users": "Utilisateurs",
     "roles": "Rôles",
     "agencies": "Agences",
@@ -138,7 +174,8 @@
     "communicationRules": "Règles automatiques",
     "communicationHistory": "Historique",
     "invoiceTemplates": "Modèles de facture",
-    "mailConfiguration": "Messagerie d’envoi"
+    "mailConfiguration": "Messagerie d’envoi",
+    "configuration": "Configuration"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -186,6 +223,8 @@
     "closed": "Clôturé",
     "blocked": "Bloqué",
     "invited": "Invité",
+    "approved": "Acceptée",
+    "rejected": "Refusée",
     "disabled": "Désactivé"
   },
   "confirm": {
@@ -566,6 +605,43 @@
       "createdTo": "Jusqu’au"
     }
   },
+  "accessRequests": {
+    "title": "Demandes d’accès",
+    "subtitle": "Les demandes déposées depuis l’écran de connexion. Accepter crée l’organisation et son compte administrateur.",
+    "empty": "Aucune demande pour cet état.",
+    "submit": "Envoyer ma demande",
+    "note": "Motif (facultatif)",
+    "notePlaceholder": "Ce qui a motivé la décision — relu bien plus tard, par quelqu’un d’autre.",
+    "messagePlaceholder": "Votre activité, votre volume, ce qui vous amène.",
+    "approved": "Demande acceptée : l’accès a été envoyé par courriel.",
+    "rejected": "Demande refusée.",
+    "fields": {
+      "companyName": "Société",
+      "contactName": "Nom du contact",
+      "email": "Adresse e-mail",
+      "phone": "Téléphone",
+      "message": "Message (facultatif)",
+      "status": "État"
+    },
+    "public": {
+      "title": "Demander un accès entreprise",
+      "subtitle": "Laissez-nous vos coordonnées : notre équipe vérifie la demande, puis vous ouvre votre espace.",
+      "sent": "Votre demande a bien été transmise. Nous vous recontactons par courriel ou par téléphone après vérification — aucun compte n’est créé avant."
+    },
+    "approve": {
+      "action": "Accepter",
+      "title": "Accepter cette demande ?",
+      "description": "L’organisation « {{company}} » sera créée avec son compte administrateur, et {{email}} recevra un lien pour choisir son mot de passe.",
+      "confirm": "Accepter et créer l’organisation"
+    },
+    "reject": {
+      "action": "Refuser",
+      "title": "Refuser cette demande ?",
+      "description": "Rien ne sera créé. La demande reste consultable avec son motif, et la même adresse pourra en déposer une nouvelle.",
+      "confirm": "Refuser"
+    }
+  },
+
   "validation": {
     "required": "Ce champ est obligatoire.",
     "email": "Adresse e-mail invalide.",
@@ -2450,7 +2526,8 @@
           "services": "Services",
           "contacts": "Contacts d’un service",
           "claim": "Réclamation",
-          "claimLinks": "Rattachements"
+          "claimLinks": "Rattachements",
+          "destination": "Destination : prestation et adresse"
         },
         "rules": {
           "required": "obligatoire",
@@ -3132,5 +3209,23 @@
   "orderTrend": {
     "created": "Créées",
     "completed": "Achevées"
+  },
+  "configuration": {
+    "title": "Configuration",
+    "subtitle": "Les réglages de l'installation, communs à toutes les organisations",
+    "defaultLogo": "Logo par défaut",
+    "defaultLogoHint": "Affiché dans la barre latérale des organisations qui n'ont pas encore le leur. Il ne paraît sur aucun document : les factures portent le logo de l'organisation qui les émet, ou aucun."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "{{count}} notification non lue",
+    "unread_other": "{{count}} notifications non lues",
+    "internal": "Internes",
+    "external": "Externes",
+    "markAllRead": "Tout marquer comme lu",
+    "emptyInternal": "Aucune notification pour vous.",
+    "emptyExternal": "Aucun envoi en échec.",
+    "seeHistory": "Voir l'historique des communications",
+    "untitled": "Sans objet"
   }
 }

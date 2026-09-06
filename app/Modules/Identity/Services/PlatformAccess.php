@@ -47,6 +47,10 @@ class PlatformAccess
         // chemin vers la base, et laisser un organisme la choisir reviendrait
         // a lui ouvrir les colonnes des autres domaines.
         'pricing_variables.manage',
+        // La configuration de l'installation : son logo par defaut est celui
+        // que voient tous les organismes, et le deleguer localement laisserait
+        // l'un d'eux poser sa marque chez les autres.
+        'platform_settings.update',
     ];
 
     public function isPlatformAdmin(?User $user): bool

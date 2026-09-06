@@ -23,6 +23,45 @@ beforeEach(function (): void {
     Storage::fake('local');
 });
 
+/**
+ * La barre latérale porte le logo de l'organisation active, et elle est rendue
+ * avant toute autre requête. Sans ce booléen sur l'appartenance, elle devrait
+ * charger la fiche entière pour un seul champ — ou tenter le téléchargement à
+ * l'aveugle et essuyer un 404 par organisation sans logo.
+ */
+describe('the membership payload', function (): void {
+    it('says whether the organization has a logo', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.user.organizations.0.hasLogo', false);
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->post("/api/v1/organizations/{$this->organization->id}/logo", ['logo' => pngLogo()])
+            ->assertOk();
+
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.user.organizations.0.hasLogo', true);
+    });
+
+    /**
+     * Le chemin du fichier ne sort toujours pas : il révélerait la disposition
+     * du disque, et l'écran n'en a pas besoin.
+     */
+    it('never carries the file path', function (): void {
+        $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->post("/api/v1/organizations/{$this->organization->id}/logo", ['logo' => pngLogo()])
+            ->assertOk();
+
+        $body = $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+            ->getJson('/api/v1/auth/me')->assertOk()->getContent();
+
+        expect($body)->not->toContain('organization-logos');
+    });
+});
+
 describe('uploading a logo', function (): void {
     it('stores the file and flags the organization', function (): void {
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)

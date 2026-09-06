@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Breadcrumbs } from './Breadcrumbs'
 import { OrganizationSwitcher } from './OrganizationSwitcher'
 import { UserMenu } from './UserMenu'
+import { NotificationBell } from '@/modules/notifications/components/NotificationBell'
 import { Button } from '@/shared/components/ui/button'
 
 interface AppHeaderProps {
@@ -13,11 +14,15 @@ interface AppHeaderProps {
 /**
  * Bandeau supérieur.
  *
- * La recherche globale et les notifications figurent dans les maquettes, mais
- * **aucun endpoint ne les alimente** : il n'existe ni route de recherche
- * transverse ni route de notification dans les 308 de l'API. Les afficher
- * inertes serait un faux ; ils sont donc absents jusqu'à ce que le backend les
- * expose. Voir la section « API manquantes » du rapport de phase.
+ * **Les notifications y sont désormais.** Elles ont longtemps manqué, et pour
+ * une bonne raison : aucun endpoint ne les alimentait, et une cloche inerte est
+ * un faux. `GET /notifications` en sert maintenant deux moitiés que le domaine
+ * distingue depuis la Phase 9 — les notifications internes, qui sont des
+ * `order_communications` de canal `internal_notification`, et les envois
+ * externes qui ont échoué.
+ *
+ * La recherche globale reste absente, et pour la même raison qu'avant : il
+ * n'existe aucune route de recherche transverse.
  */
 export function AppHeader({ onOpenMobileMenu }: AppHeaderProps) {
   const { t } = useTranslation()
@@ -38,6 +43,7 @@ export function AppHeader({ onOpenMobileMenu }: AppHeaderProps) {
         <Breadcrumbs />
       </div>
 
+      <NotificationBell />
       <OrganizationSwitcher />
       <UserMenu />
     </header>

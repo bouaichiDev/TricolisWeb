@@ -1,6 +1,8 @@
 import { Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { AccessRequestListPage } from '@/modules/access-requests/pages/AccessRequestListPage'
+import { ConfigurationPage } from '@/modules/configuration/pages/ConfigurationPage'
 import { PricingVariablesPage } from '@/modules/pricing/pages/PricingVariablesPage'
 import { CommunicationHistoryPage } from '@/modules/communications/pages/CommunicationHistoryPage'
 import { CommunicationRuleListPage } from '@/modules/communications/pages/CommunicationRuleListPage'
@@ -134,6 +136,19 @@ export const adminRoutes = [
     key="organization-create"
     path="/organizations/create"
     element={guarded('organizations.create', <OrganizationCreatePage />, { platformOnly: true })}
+  />,
+  // Les demandes d'acces : c'est d'ici que naissent les organisations
+  // suivantes. `platformOnly` autant que la permission — masquer l'entree de
+  // menu suffisait a croire la route protegee.
+  <Route
+    key="access-requests"
+    path="/access-requests"
+    element={guarded('organizations.view', <AccessRequestListPage />, { platformOnly: true })}
+  />,
+  <Route
+    key="configuration"
+    path="/configuration"
+    element={guarded('platform_settings.update', <ConfigurationPage />, { platformOnly: true })}
   />,
   <Route
     key="organization-detail"

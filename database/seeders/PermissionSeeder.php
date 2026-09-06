@@ -28,6 +28,14 @@ class PermissionSeeder extends Seeder
         // des cartes aurait obligé à confier bien plus que ce qu'on voulait.
         ['code' => 'dashboard.configure', 'name' => 'Configurer le tableau de bord d\'un rôle', 'module' => 'dashboard', 'action' => 'configure'],
 
+        // La configuration de l'installation elle-meme : le logo par defaut,
+        // et ce qui s'y ajoutera. Reservee a la plateforme — un organisme n'a
+        // pas a decider de l'apparence de l'outil qu'il partage avec d'autres.
+        //
+        // Il n'y a pas de `platform_settings.view` : lire est ouvert a tout
+        // compte authentifie, la barre laterale de chacun en dependant.
+        ['code' => 'platform_settings.update', 'name' => 'Configurer la plateforme', 'module' => 'platform_settings', 'action' => 'update'],
+
         ['code' => 'organizations.view', 'name' => 'Voir les organisations', 'module' => 'organizations', 'action' => 'view'],
         ['code' => 'organizations.create', 'name' => 'Créer une organisation', 'module' => 'organizations', 'action' => 'create'],
         ['code' => 'organizations.update', 'name' => 'Modifier une organisation', 'module' => 'organizations', 'action' => 'update'],

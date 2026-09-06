@@ -37,6 +37,7 @@ use App\Modules\Orders\Models\Service;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
 use App\Modules\Organizations\Models\Subscription;
+use App\Modules\Platform\Models\AccessRequest;
 use App\Modules\Platform\Models\PlatformSetting;
 use App\Modules\Pricing\Models\PriceList;
 use App\Modules\Pricing\Models\PricingVariable;
@@ -88,6 +89,7 @@ use App\Policies\OrganizationApiConfigurationPolicy;
 use App\Policies\OrganizationMailConfigurationPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\OrganizationUserPolicy;
+use App\Policies\AccessRequestPolicy;
 use App\Policies\PlatformSettingPolicy;
 use App\Policies\PriceListPolicy;
 use App\Policies\PricingVariablePolicy;
@@ -182,6 +184,7 @@ class AuthServiceProvider extends ServiceProvider
         OrganizationUser::class => OrganizationUserPolicy::class,
         Role::class => RolePolicy::class,
         RoleDashboardConfiguration::class => DashboardPolicy::class,
+        AccessRequest::class => AccessRequestPolicy::class,
         PlatformSetting::class => PlatformSettingPolicy::class,
     ];
 

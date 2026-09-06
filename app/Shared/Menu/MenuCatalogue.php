@@ -603,6 +603,20 @@ final class MenuCatalogue
                 scope: RoleScope::PLATFORM,
             ),
 
+            // Les demandes d'acces, juste apres les organisations : c'est d'ici
+            // que naissent les suivantes, et une demande en attente est la
+            // seule chose de cet ecran qui appelle un geste le jour meme.
+            new MenuEntry(
+                code: 'access-requests',
+                labelKey: 'nav.accessRequests',
+                icon: 'Inbox',
+                section: MenuSection::PLATFORM,
+                position: 2,
+                route: '/access-requests',
+                permission: 'organizations.view',
+                scope: RoleScope::PLATFORM,
+            ),
+
             // Referentiel des statuts : commun a toute la plateforme, donc
             // gere depuis le perimetre plateforme et non par organisation.
             new MenuEntry(

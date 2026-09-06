@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\SelfServicePasswordReset;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -22,22 +23,51 @@ use Illuminate\Validation\ValidationException;
 class PasswordResetController extends Controller
 {
     /**
+     * La réponse rendue quoi qu'il arrive, sauf débit excessif.
+     *
+     * Elle ne dit pas si l'adresse est connue : c'est tout l'objet du choix
+     * ci-dessous.
+     */
+    private const string NEUTRAL_MESSAGE = 'Si un compte administrateur existe pour cette adresse, un lien de réinitialisation vient de lui être envoyé. Les autres comptes demandent la réinitialisation à leur administrateur.';
+
+    /**
      * Demander un lien de réinitialisation.
      *
      * Endpoint public. Aucune donnée sensible n'est renvoyée ni journalisée.
      *
+     * **Le lien ne part qu'aux administrateurs.** Les autres comptes demandent
+     * la réinitialisation à leur administrateur, qui la leur rend depuis leur
+     * fiche — `MemberPasswordController` porte ce chemin depuis toujours.
+     * `SelfServicePasswordReset` dit qui est administrateur, et ce n'est jamais
+     * un nom de rôle.
+     *
+     * **La réponse est la même dans tous les cas.** Répondre « nous ne
+     * connaissons pas cette adresse » transformait ce formulaire en annuaire :
+     * essayées une par une, les adresses d'une société révélaient lesquelles
+     * ont un compte chez nous — sans authentification, et sans que personne
+     * s'en aperçoive. Distinguer l'administrateur du simple membre en dirait
+     * tout autant : cela désignerait, dans une liste d'adresses, celles qui
+     * ouvrent le plus de portes. Le seul écart conservé est le débit excessif :
+     * là, taire la raison ferait croire à un envoi qui n'a pas eu lieu, et
+     * l'utilisateur réessaierait indéfiniment.
+     *
      * @response array{data: array{message: string}, meta: array{}}
      * @response 422 array{message: string, errors: array{email: array<int, string>}}
      */
-    public function forgot(ForgotPasswordRequest $request): JsonResponse
+    public function forgot(ForgotPasswordRequest $request, SelfServicePasswordReset $selfService): JsonResponse
     {
-        $status = Password::sendResetLink($request->validated());
+        $credentials = $request->validated();
+        $user = User::where('email', Str::lower((string) $credentials['email']))->first();
 
-        if ($status !== Password::RESET_LINK_SENT) {
-            throw ValidationException::withMessages(['email' => [__($status)]]);
+        if ($user !== null && $selfService->isAllowedFor($user)) {
+            $status = Password::sendResetLink($credentials);
+
+            if ($status === Password::RESET_THROTTLED) {
+                throw ValidationException::withMessages(['email' => [__($status)]]);
+            }
         }
 
-        return ApiResponse::ok(['message' => __($status)]);
+        return ApiResponse::ok(['message' => self::NEUTRAL_MESSAGE]);
     }
 
     /**

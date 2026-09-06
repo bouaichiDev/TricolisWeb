@@ -32,11 +32,15 @@ import { usePermissions } from '@/shared/hooks/usePermission'
  * poser à même le fond sombre rendrait invisible tout logo à encre foncée, sans
  * qu'on puisse le deviner depuis l'écran de réglage — où l'aperçu est blanc.
  *
- * **Un nom accompagne toujours l'image.** Beaucoup de logos ne sont qu'un
- * symbole, et l'afficher seul laisserait une barre latérale que rien ne nomme ;
- * ceux qui portent déjà leur nom le répètent, ce qui est le moindre des deux
- * défauts. Sous le logo de l'installation, c'est le nom de l'application qui
- * reste : celui de l'organisation ferait passer l'image pour la sienne.
+ * **Le logo occupe seul l'en-tête.** Le nom l'accompagnait, ce qui laissait à
+ * l'image une vignette de trente-deux pixels : la plupart des logos portent
+ * déjà leur nom, et le répéter à côté coûtait la place qui les rendait
+ * lisibles. Le nom n'est pas perdu pour autant — il devient le texte alternatif
+ * de l'image, donc le nom accessible du lien, ce que lisent un lecteur d'écran
+ * et un test. Sous le logo de l'installation, c'est celui de l'application qui
+ * le nomme : celui de l'organisation ferait passer l'image pour la sienne.
+ *
+ * Sans logo, l'icône livrée et le nom de l'application reprennent la place.
  */
 export function SidebarBrand({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
@@ -56,9 +60,27 @@ export function SidebarBrand({ onNavigate }: { onNavigate?: () => void }) {
   const url = organizationLogo ?? platformLogo
   const showsLogo = url !== null
 
-  // Le nom de l'organisation n'accompagne que **son** logo. Sous celui de
+  // Le nom de l'organisation ne nomme que **son** logo. Sous celui de
   // l'installation, il ferait passer l'image pour la sienne.
   const name = organizationLogo !== null ? membership?.name : null
+
+  if (showsLogo) {
+    return (
+      <Link
+        to={homeRoute(isPlatformAdmin)}
+        onClick={onNavigate}
+        className="flex h-16 shrink-0 items-center px-4"
+      >
+        <span className="flex h-12 w-full items-center justify-center overflow-hidden rounded-lg bg-white px-3 py-2">
+          <img
+            src={url}
+            alt={name ?? t('app.name')}
+            className="max-h-full max-w-full object-contain"
+          />
+        </span>
+      </Link>
+    )
+  }
 
   return (
     <Link
@@ -66,20 +88,10 @@ export function SidebarBrand({ onNavigate }: { onNavigate?: () => void }) {
       onClick={onNavigate}
       className="flex h-16 shrink-0 items-center gap-2.5 px-5"
     >
-      {showsLogo ? (
-        <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-1">
-          <img src={url} alt="" className="max-h-full max-w-full object-contain" />
-        </span>
-      ) : (
-        <Truck className="size-6 shrink-0 text-sidebar-primary" aria-hidden />
-      )}
+      <Truck className="size-6 shrink-0 text-sidebar-primary" aria-hidden />
 
       <span className="truncate text-lg font-semibold tracking-tight">
-        {name ?? (
-          <>
-            {t('app.name')} <span className="text-sidebar-primary">V2</span>
-          </>
-        )}
+        {t('app.name')} <span className="text-sidebar-primary">V2</span>
       </span>
     </Link>
   )

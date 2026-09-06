@@ -42,9 +42,11 @@ function render(membership: AuthMembership, hasDefaultLogo = false) {
 }
 
 /**
- * Le logo porte `alt=""` — il est décoratif, le nom de l'organisation étant
- * juste à côté. Il sort donc de l'arbre d'accessibilité, et `getByRole('img')`
- * ne le trouve pas : c'est le comportement voulu, et on l'interroge dans le DOM.
+ * Le logo occupe seul l'en-tête : plus aucun nom ne l'accompagne à l'écran.
+ * C'est son `alt` qui le nomme — donc le nom accessible du lien —, et c'est
+ * cela que ces tests interrogent. L'image est cherchée dans le DOM plutôt que
+ * par son rôle : les cas sans logo doivent pouvoir affirmer qu'il n'y en a
+ * aucune.
  */
 function logoOf(container: HTMLElement): HTMLImageElement | null {
   return container.querySelector('img')
@@ -61,21 +63,28 @@ describe('identité de la barre latérale', () => {
     expect(logoOf(container)).toBeNull()
   })
 
-  it('porte le logo et le nom de l’organisation quand elle en a un', async () => {
+  /**
+   * Le nom ne disparaît pas, il change de place : il devient le texte
+   * alternatif de l'image, seul moyen de nommer un lien qui n'affiche plus
+   * aucun mot.
+   */
+  it('n’affiche que le logo de l’organisation, nommé par son alt', async () => {
     const membership = makeMembership({ hasLogo: true, name: 'Atlas Transport' })
     server.use(logoHandler(membership.id))
 
     const { container } = render(membership)
 
     await waitFor(() => expect(logoOf(container)).not.toBeNull())
-    expect(screen.getByText('Atlas Transport')).toBeInTheDocument()
+    expect(logoOf(container)?.alt).toBe('Atlas Transport')
+    expect(screen.queryByText('Atlas Transport')).not.toBeInTheDocument()
     expect(screen.queryByText('Tricolis')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Atlas Transport' })).toBeInTheDocument()
   })
 
   /**
    * Le deuxième niveau de repli : l'identité que pose un intégrateur sur l'outil
-   * qu'il revend. Le nom reste celui de l'application — celui de l'organisation
-   * ferait passer l'image pour la sienne.
+   * qu'il revend. C'est le nom de l'application qui la nomme — celui de
+   * l'organisation ferait passer l'image pour la sienne.
    */
   it('se replie sur le logo de l’installation quand l’organisation n’en a pas', async () => {
     server.use(http.get(`${API}/configuration/logo`, PNG))
@@ -83,7 +92,7 @@ describe('identité de la barre latérale', () => {
     const { container } = render(makeMembership({ hasLogo: false, name: 'Atlas Transport' }), true)
 
     await waitFor(() => expect(logoOf(container)).not.toBeNull())
-    expect(screen.getByText('Tricolis')).toBeInTheDocument()
+    expect(logoOf(container)?.alt).toBe('Tricolis')
     expect(screen.queryByText('Atlas Transport')).not.toBeInTheDocument()
   })
 

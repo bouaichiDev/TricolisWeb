@@ -68,6 +68,7 @@ use App\Http\Controllers\Api\V1\Organizations\SubscriptionController;
 use App\Http\Controllers\Api\V1\Packages\PackageController;
 use App\Http\Controllers\Api\V1\Packages\PackageLineController;
 use App\Http\Controllers\Api\V1\Planning\PlanningPoolController;
+use App\Http\Controllers\Api\V1\Platform\AccessRequestController;
 use App\Http\Controllers\Api\V1\Platform\ConfigurationController;
 use App\Http\Controllers\Api\V1\Pricing\FormulaController;
 use App\Http\Controllers\Api\V1\Pricing\PrebillingController;
@@ -103,10 +104,40 @@ use App\Http\Controllers\Api\V1\Types\TypeController;
 use App\Http\Controllers\Api\V1\Types\TypeItemController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Ce qui se sert avant toute session
+|--------------------------------------------------------------------------
+|
+| L'ecran de connexion existe pour des gens qui n'ont pas de jeton : tout ce
+| qu'il affiche doit se servir sans en exiger un.
+|
+| **Le logo par defaut en fait partie.** C'est la marque que l'installation
+| pose sur elle-meme, celle que voit deja tout organisme dans sa barre
+| laterale ; la reserver aux comptes authentifies obligeait la page de
+| connexion a se signer d'une icone generique. Seul le depot et le retrait
+| exigent `platform_settings.update`, et ils restent derriere `auth:sanctum`.
+|
+| **La demande d'acces aussi**, par nature : elle est deposee par quelqu'un qui
+| n'a pas encore de compte. Elle ne cree rien — ni compte, ni organisation, ni
+| jeton —, et le debit est limite pour qu'un formulaire public ne devienne pas
+| un robinet a courriels.
+*/
+Route::get('configuration', [ConfigurationController::class, 'show'])->name('configuration.show');
+Route::get('configuration/logo', [ConfigurationController::class, 'showLogo'])->name('configuration.logo.show');
+
+Route::post('access-requests', [AccessRequestController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('access-requests.store');
+
 Route::prefix('auth')->name('auth.')->group(static function (): void {
     Route::post('register', [AuthController::class, 'register'])->name('register');
     Route::post('login', [AuthController::class, 'login'])->name('login');
-    Route::post('forgot-password', [PasswordResetController::class, 'forgot'])->name('password.email');
+    // Le debit est limite : ce formulaire declenche un envoi de courriel a une
+    // adresse que l'appelant choisit, et rien d'autre ne l'en empeche.
+    Route::post('forgot-password', [PasswordResetController::class, 'forgot'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
     Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('password.reset');
 
     Route::middleware('auth:sanctum')->group(static function (): void {
@@ -155,6 +186,13 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     Route::delete('organizations/{organization}/logo', [OrganizationLogoController::class, 'destroy'])->name('organizations.logo.destroy');
     Route::apiResource('organizations', OrganizationController::class)->except(['create', 'edit']);
 
+    // Les demandes d'acces : leur depot est public, leur examen ne l'est pas.
+    // Hors du groupe `organization` — une demande n'en concerne aucune, elle en
+    // fera naitre une.
+    Route::get('access-requests', [AccessRequestController::class, 'index'])->name('access-requests.index');
+    Route::post('access-requests/{accessRequest}/approve', [AccessRequestController::class, 'approve'])->name('access-requests.approve');
+    Route::post('access-requests/{accessRequest}/reject', [AccessRequestController::class, 'reject'])->name('access-requests.reject');
+
     // La cloche du bandeau, hors du groupe `organization` : elle est rendue sur
     // chaque page, y compris pour un compte plateforme qui n'agit dans aucune
     // organisation. Exiger l'en-tete lui rendrait une erreur la ou la reponse
@@ -172,8 +210,9 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     // demande s'il y a un logo par defaut, et proteger cette question
     // obligerait a distribuer une permission plateforme pour afficher une
     // image de marque. Ecrire exige `platform_settings.update`.
-    Route::get('configuration', [ConfigurationController::class, 'show'])->name('configuration.show');
-    Route::get('configuration/logo', [ConfigurationController::class, 'showLogo'])->name('configuration.logo.show');
+    // Lire est desormais public — l'ecran de connexion en depend, et les deux
+    // routes de lecture sont declarees en tete de fichier. Ecrire exige
+    // `platform_settings.update`.
     Route::post('configuration/logo', [ConfigurationController::class, 'storeLogo'])->name('configuration.logo.store');
     Route::delete('configuration/logo', [ConfigurationController::class, 'destroyLogo'])->name('configuration.logo.destroy');
 

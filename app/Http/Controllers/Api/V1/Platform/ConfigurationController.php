@@ -27,10 +27,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * organisation, et exiger l'en-tête interdirait l'accès à un compte qui n'en a
  * pas.
  *
- * **Lire est ouvert, écrire ne l'est pas.** La barre latérale de chacun demande
- * s'il y a un logo par défaut ; protéger cette question obligerait à distribuer
- * une permission plateforme pour afficher une image de marque. Le dépôt et le
- * retrait, eux, exigent `platform_settings.update`.
+ * **Lire est public, écrire ne l'est pas.** La barre latérale de chacun demande
+ * s'il y a un logo par défaut, et l'écran de connexion aussi — il s'affiche
+ * justement pour des gens sans jeton. Protéger cette question obligerait à
+ * distribuer une permission plateforme pour afficher une image de marque, et
+ * laisserait la page de connexion se signer d'une icône générique. Le dépôt et
+ * le retrait, eux, exigent `platform_settings.update`.
  */
 class ConfigurationController extends Controller
 {
@@ -38,6 +40,8 @@ class ConfigurationController extends Controller
 
     /**
      * Ce que l'application doit savoir de sa propre configuration.
+     *
+     * Public : la page de connexion la demande avant toute session.
      *
      * Un booléen, pas un chemin : le publier révélerait la disposition du
      * disque, et l'écran n'en a pas besoin — il lui suffit de savoir s'il doit

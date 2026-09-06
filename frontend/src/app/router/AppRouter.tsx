@@ -13,6 +13,8 @@ import { resourceRoutes } from './routes/resourceRoutes'
 import { ProtectedRoute } from '@/app/guards/ProtectedRoute'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { homeRoute } from '@/app/router/navigation'
+import { AccessRequestPage } from '@/modules/access-requests/pages/AccessRequestPage'
+import { ForgotPasswordPage } from '@/modules/auth/pages/ForgotPasswordPage'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { ResetPasswordPage } from '@/modules/auth/pages/ResetPasswordPage'
 import { DashboardPage } from '@/modules/dashboard/pages/DashboardPage'
@@ -33,9 +35,13 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      {/* Publique, et elle doit l'etre : on y arrive precisement parce qu'on ne
-          peut plus se connecter. Le jeton de l'URL fait l'authentification. */}
+      {/* Publiques, et elles doivent l'etre : on y arrive precisement parce
+          qu'on ne peut pas se connecter — mot de passe perdu, ou pas encore de
+          compte du tout. Sur `/reset-password`, le jeton de l'URL fait
+          l'authentification ; les deux autres ne creent rien. */}
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/request-access" element={<AccessRequestPage />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
       <Route

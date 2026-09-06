@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Storage;
  * La configuration de l'installation.
  *
  * Un seul réglage aujourd'hui — le logo par défaut — et une asymétrie qui porte
- * tout le reste : **lire est ouvert, écrire ne l'est pas**. La barre latérale de
- * chacun demande s'il existe un logo par défaut ; protéger cette question
- * obligerait à distribuer une permission plateforme pour afficher une image de
- * marque.
+ * tout le reste : **lire est public, écrire ne l'est pas**. La barre latérale de
+ * chacun demande s'il existe un logo par défaut, et l'écran de connexion aussi,
+ * qui s'affiche sans session ; protéger cette question obligerait à distribuer
+ * une permission plateforme pour afficher une image de marque.
  */
 beforeEach(function (): void {
     $this->seed();
@@ -41,8 +41,15 @@ describe('reading', function (): void {
             ->assertOk();
     });
 
-    it('refuses an anonymous caller', function (): void {
-        $this->getJson('/api/v1/configuration')->assertUnauthorized();
+    /**
+     * L'écran de connexion s'affiche pour des gens qui n'ont pas de jeton, et
+     * il y pose le logo de l'installation. Exiger une session ici l'obligerait
+     * à se signer d'une icône générique.
+     */
+    it('answers an anonymous caller, for the login screen', function (): void {
+        $this->getJson('/api/v1/configuration')
+            ->assertOk()
+            ->assertJsonPath('data.hasDefaultLogo', false);
     });
 
     it('answers 404 when there is no default logo', function (): void {

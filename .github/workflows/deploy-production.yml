@@ -1,0 +1,140 @@
+name: Deploy Tricolis production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: tricolis-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FRONTEND_PATH: /var/www/tricolis
+  BACKEND_PATH: /var/www/tricolisba
+  VITE_API_URL: https://tricolisba.bouaichibadr.com
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build React frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Prepare deployment directories
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "mkdir -p '$FRONTEND_PATH' '$BACKEND_PATH/storage/framework/cache' '$BACKEND_PATH/storage/framework/sessions' '$BACKEND_PATH/storage/framework/views' '$BACKEND_PATH/storage/logs' '$BACKEND_PATH/bootstrap/cache'"
+
+      - name: Deploy Laravel backend
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          rsync -az --delete \
+            --exclude='.env' \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='frontend/' \
+            --exclude='node_modules/' \
+            --exclude='vendor/' \
+            --exclude='storage/' \
+            --exclude='bootstrap/cache/' \
+            -e "ssh -i ~/.ssh/id_ed25519 -p $VPS_PORT" \
+            ./ "$VPS_USER@$VPS_HOST:$BACKEND_PATH/"
+
+      - name: Deploy React frontend
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -p $VPS_PORT" \
+            frontend/dist/ "$VPS_USER@$VPS_HOST:$FRONTEND_PATH/"
+
+      - name: Finalize Laravel deployment
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" <<'REMOTE'
+          set -euo pipefail
+          cd /var/www/tricolisba
+
+          test -f .env || {
+            echo "Missing /var/www/tricolisba/.env"
+            exit 1
+          }
+
+          chmod -R ug+rwX storage bootstrap/cache
+
+          if [ -f vendor/autoload.php ]; then
+            php artisan config:clear
+            php artisan event:clear
+            php artisan route:clear
+            php artisan view:clear
+          fi
+
+          composer install \
+            --no-dev \
+            --no-interaction \
+            --prefer-dist \
+            --optimize-autoloader
+
+          php artisan migrate --force --no-interaction
+          php artisan db:seed --class=ProductionSeeder --force
+          php artisan storage:link || true
+          php artisan config:cache
+          php artisan event:cache
+          php artisan view:cache
+          php artisan reload
+          php artisan schedule:interrupt || true
+          REMOTE
+
+      - name: Check backend health
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "curl --fail --silent --show-error -H 'Host: tricolisba.bouaichibadr.com' http://127.0.0.1/up >/dev/null"

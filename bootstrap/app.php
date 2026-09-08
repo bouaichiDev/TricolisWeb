@@ -27,7 +27,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ProcessScheduledCommunications::class,
         GrantPlatformAdmin::class,
         RepairSiteAddressLinks::class,
-        SyncOrganizationMenus::class,
         CheckStatusMachine::class,
         ImportStatusCodes::class,
     ])

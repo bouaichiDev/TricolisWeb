@@ -1,12 +1,13 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { useMemberList } from '../hooks/useMembers'
 import { memberFullName, type Member } from '../types/member'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -22,13 +23,13 @@ import { Button } from '@/shared/components/ui/button'
  */
 export function UserListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [search, setSearch] = useState('')
 
   const { data, isPending, error, refetch } = useMemberList({
     page,
-    perPage: 25,
+    perPage,
     search: search || undefined,
   })
 
@@ -104,8 +105,25 @@ export function UserListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/users/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/users/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/users/${row.id}/edit`,
+                permission: 'users.update',
+              },
+            ]}
+          />
+        )}
       />
     </div>
   )

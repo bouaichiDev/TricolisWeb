@@ -77,6 +77,7 @@ export function statusColumns(
     {
       key: 'actions',
       header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => (
         <span className="flex gap-1">
           <Button

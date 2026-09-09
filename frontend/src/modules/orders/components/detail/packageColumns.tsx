@@ -88,6 +88,7 @@ export function packageColumns(
     {
       key: 'actions',
       header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: ({ node }) => {
         const detail = byId.get(node.id)
 

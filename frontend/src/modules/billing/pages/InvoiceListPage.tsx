@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { ALL_CUSTOMERS, InvoiceFilterBar, type InvoiceFilterState } from '../components/InvoiceFilterBar'
 import { InvoiceEditDialog } from '../components/InvoiceEditDialog'
@@ -22,6 +22,22 @@ const INITIAL: InvoiceFilterState = {
 }
 
 /**
+ * Les filtres d'arrivée, lus sur l'URL.
+ *
+ * Une part de « Factures par statut » ouvre les factures **de ce statut** :
+ * sans cette lecture, le clic retombait sur la liste entière, et le facturier
+ * refaisait à la main le filtre que la carte venait de lui montrer.
+ */
+function initialFilters(params: URLSearchParams): InvoiceFilterState {
+  return {
+    ...INITIAL,
+    status: params.get('status') ?? undefined,
+    invoiceDateFrom: params.get('invoiceDateFrom') ?? '',
+    invoiceDateTo: params.get('invoiceDateTo') ?? '',
+  }
+}
+
+/**
  * Liste des factures clients.
  *
  * Le filtre client est facultatif : contrairement à la création, consulter
@@ -34,8 +50,10 @@ const INITIAL: InvoiceFilterState = {
  */
 export function InvoiceListPage() {
   const { t } = useTranslation()
-  const [filters, setFilters] = useState<InvoiceFilterState>(INITIAL)
+  const [params] = useSearchParams()
+  const [filters, setFilters] = useState<InvoiceFilterState>(() => initialFilters(params))
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [toDelete, setToDelete] = useState<Invoice | null>(null)
   // La liste ne porte pas les lignes : la fiche complete est chargee au moment
   // d'ouvrir le dialogue, qui en a besoin.
@@ -44,6 +62,7 @@ export function InvoiceListPage() {
 
   const { data, isPending, error, refetch } = useInvoiceList({
     page,
+    perPage,
     search: filters.search || undefined,
     customerId: filters.customerId === ALL_CUSTOMERS ? undefined : filters.customerId,
     status: filters.status,
@@ -84,6 +103,10 @@ export function InvoiceListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size: number) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
         onDelete={setToDelete}
         onEdit={(invoice) => setToEdit(invoice.id)}

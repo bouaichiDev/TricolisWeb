@@ -1,12 +1,13 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { useRoleList } from '../hooks/useRoles'
 import { isEditableRole, type Role } from '../types/role'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Badge } from '@/shared/components/ui/badge'
@@ -15,10 +16,10 @@ import { Button } from '@/shared/components/ui/button'
 /** `GET /roles` n'accepte ni tri ni recherche : la table n'en propose donc pas. */
 export function RoleListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
-  const { data, isPending, error, refetch } = useRoleList({ page, perPage: 25 })
+  const { data, isPending, error, refetch } = useRoleList({ page, perPage })
 
   const columns: Column<Role>[] = [
     {
@@ -97,8 +98,27 @@ export function RoleListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/roles/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/roles/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                // Un rôle système se consulte mais ne se modifie pas : le
+                // bouton disparaît plutôt que de mener à un écran qui refuse.
+                ...(isEditableRole(row) ? { to: `/roles/${row.id}/edit` } : { disabled: true }),
+                permission: 'roles.update',
+              },
+            ]}
+          />
+        )}
       />
     </div>
   )

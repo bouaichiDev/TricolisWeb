@@ -1,3 +1,4 @@
+import { Eye } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,6 +7,7 @@ import { AuditFilterBar } from '../components/AuditFilterBar'
 import { useAuditLogs } from '../hooks/useAuditLogs'
 import type { AuditFilters, AuditLog } from '../types/auditLog'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Badge } from '@/shared/components/ui/badge'
 import { formatDateTime } from '@/shared/utils/format'
@@ -78,8 +80,15 @@ export function AuditLogPage() {
         isLoading={isPending}
         error={error}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={setSelected}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), onClick: () => setSelected(row) },
+            ]}
+          />
+        )}
         emptyMessage={t('audit.empty')}
       />
 

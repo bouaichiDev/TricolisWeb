@@ -7,7 +7,7 @@ import { KpiWidget } from './widgets/KpiWidget'
 import { LinesWidget } from './widgets/LinesWidget'
 import { ListWidget } from './widgets/ListWidget'
 import { QuickActionWidget } from './widgets/QuickActionWidget'
-import type { DashboardWidget } from '../types/dashboard'
+import type { DashboardPeriod, DashboardWidget } from '../types/dashboard'
 
 /**
  * Du type à son composant, et **rien d'autre**.
@@ -22,26 +22,32 @@ import type { DashboardWidget } from '../types/dashboard'
  * frontend en retard d'une version le verrait, et une carte manquante vaut
  * mieux qu'un écran blanc.
  */
-export function DashboardWidgetRenderer({ widget }: { widget: DashboardWidget }) {
+interface RendererProps {
+  widget: DashboardWidget
+  /** Période de l'écran, que seules les cartes qui forent utilisent. */
+  period: DashboardPeriod | null
+}
+
+export function DashboardWidgetRenderer({ widget, period }: RendererProps) {
   switch (widget.type) {
     case 'kpi':
-      return <KpiWidget widget={widget} />
+      return <KpiWidget widget={widget} period={period} />
     case 'alert':
-      return <AlertWidget widget={widget} />
+      return <AlertWidget widget={widget} period={period} />
     case 'chart':
-      return <ChartWidget widget={widget} />
+      return <ChartWidget widget={widget} period={period} />
     case 'donut':
-      return <DonutWidget widget={widget} />
+      return <DonutWidget widget={widget} period={period} />
     case 'gauge':
-      return <GaugeWidget widget={widget} />
+      return <GaugeWidget widget={widget} period={period} />
     case 'columns':
-      return <ColumnsWidget widget={widget} />
+      return <ColumnsWidget widget={widget} period={period} />
     case 'lines':
-      return <LinesWidget widget={widget} />
+      return <LinesWidget widget={widget} period={period} />
     case 'list':
-      return <ListWidget widget={widget} />
+      return <ListWidget widget={widget} period={period} />
     case 'quick_action':
-      return <QuickActionWidget widget={widget} />
+      return <QuickActionWidget widget={widget} period={period} />
     default:
       return null
   }

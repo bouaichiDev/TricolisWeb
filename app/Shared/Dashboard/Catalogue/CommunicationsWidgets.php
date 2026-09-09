@@ -33,6 +33,7 @@ final class CommunicationsWidgets
                 requiredPermission: 'order_communications.view',
                 defaultPosition: 500,
                 route: '/communications/history',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'communications_failed',
@@ -41,6 +42,7 @@ final class CommunicationsWidgets
                 requiredPermission: 'order_communications.view',
                 defaultPosition: 501,
                 route: '/communications/history',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'communications_sent_today',
@@ -49,6 +51,7 @@ final class CommunicationsWidgets
                 requiredPermission: 'order_communications.view',
                 defaultPosition: 502,
                 route: '/communications/history',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'recent_communications',
@@ -58,6 +61,7 @@ final class CommunicationsWidgets
                 defaultPosition: 503,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/communications/history',
+                periodAware: true,
             ),
             // Cinq canaux, pas un de plus : l'enumeration les fixe, et cinq
             // parts se lisent d'un coup d'oeil.
@@ -69,6 +73,7 @@ final class CommunicationsWidgets
                 defaultPosition: 504,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/communications/history',
+                periodAware: true,
             ),
 
             // Le volume quotidien, par canal. `created_at` et non `sent_at` :
@@ -82,6 +87,7 @@ final class CommunicationsWidgets
                 defaultPosition: 505,
                 size: DashboardWidgetSize::LARGE,
                 route: '/communications/history',
+                periodAware: true,
             ),
         ];
     }

@@ -21,6 +21,11 @@ use App\Shared\Dashboard\DashboardWidgetRegistry;
  *    lire la source n'est pas calculé ;
  * 3. **l'ordre** — plus petit rang configuré, la clé départageant les égalités.
  *
+ * La période, quand l'appelant en demande une, ne change rien à ces trois-là :
+ * elle ne retire ni n'ajoute de widget, elle déplace la fenêtre de ceux qui
+ * l'ont déclarée. Un widget qu'on n'a pas le droit de voir reste absent, filtre
+ * ou pas.
+ *
  * Le deuxième est le cœur de la sécurité de cet écran, et il ne se contente pas
  * de masquer : **le widget refusé n'est pas calculé, et sa donnée ne figure pas
  * dans la réponse**. Un widget masqué côté frontend dont la valeur voyagerait
@@ -39,7 +44,7 @@ final readonly class DashboardComposer
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function compose(User $user, string $organizationId): array
+    public function compose(User $user, string $organizationId, ?DashboardPeriod $period = null): array
     {
         $selection = UserDashboardWidgets::for($user->id, $organizationId);
         $granted = EffectivePermissions::for($user->id, $organizationId);
@@ -54,16 +59,24 @@ final readonly class DashboardComposer
             }
         }
 
-        $data = $this->sources->resolve($widgets, DashboardContext::forOrganization($organizationId));
+        $data = $this->sources->resolve($widgets, DashboardContext::forOrganization($organizationId, $period));
 
         return array_map(
             static fn (DashboardWidget $widget): array => [
                 'key' => $widget->key,
                 'type' => $widget->type->value,
                 'labelKey' => $widget->labelKey(),
+                // Servi seulement à qui suit la période : ailleurs, il n'aurait
+                // aucune occasion d'être lu.
+                'periodLabelKey' => $widget->periodAware ? $widget->periodLabelKey() : null,
                 'size' => $widget->size->value,
                 'position' => $selection->positionOf($widget->key),
                 'route' => $widget->route,
+                // Deux champs que l'écran ne devine pas : lesquelles de ces
+                // cartes le filtre de période touche, et sous quels noms la
+                // liste de destination attend la part qu'on vient de cliquer.
+                'periodAware' => $widget->periodAware,
+                'drilldown' => $widget->drilldown?->toArray(),
                 'data' => $data[$widget->key] ?? null,
             ],
             $widgets,

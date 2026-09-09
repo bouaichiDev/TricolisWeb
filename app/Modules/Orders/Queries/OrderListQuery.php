@@ -71,14 +71,27 @@ final readonly class OrderListQuery
         }
     }
 
+    /**
+     * Les deux bornes sont **inclusives**, et la seconde couvre sa journée.
+     *
+     * `order_date` est un `dateTime`, pas une date : comparé tel quel, un
+     * `createdTo=2026-09-03` valait « jusqu'au 3 septembre à minuit » et
+     * écartait tout ce qui avait été commandé dans la journée. Le filtre rendait
+     * donc une liste vide sur le jour même où la carte « Commandes par jour »
+     * en comptait trente — et c'est précisément ce jour-là qu'on vient chercher
+     * en cliquant sa colonne.
+     *
+     * `endOfDay()` sur la borne haute, jamais un `whereDate()` : la fonction
+     * s'applique à la colonne et écarte l'index `(customer_id, order_date)`.
+     */
     private function applyDateFilters(mixed $query, ListOrderRequest $request): void
     {
         if ($request->filled('createdFrom')) {
-            $query->where('order_date', '>=', $request->date('createdFrom'));
+            $query->where('order_date', '>=', $request->date('createdFrom')->startOfDay());
         }
 
         if ($request->filled('createdTo')) {
-            $query->where('order_date', '<=', $request->date('createdTo'));
+            $query->where('order_date', '<=', $request->date('createdTo')->endOfDay());
         }
 
         // Date demandée : elle vit sur le service, pas sur la commande.

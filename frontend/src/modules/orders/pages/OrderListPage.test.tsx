@@ -138,4 +138,44 @@ describe('OrderListPage', () => {
 
     expect(await screen.findByRole('link', { name: /Nouvelle commande/i })).toBeInTheDocument()
   })
+
+  /**
+   * La ligne n'ouvre plus la fiche : elle rendait son texte insélectionnable, et
+   * copier un numéro de commande ouvrait l'écran au lieu de copier quoi que ce
+   * soit. Ce que la ligne faisait, la colonne d'actions le dit maintenant.
+   */
+  it('ouvre la fiche par la colonne d’actions, pas par la ligne', async () => {
+    captureQueries()
+    renderWithProviders(<OrderListPage />, { membership: withPermissions(['orders.view']) })
+
+    expect(await screen.findByText('CMD-2026-000001')).toBeInTheDocument()
+
+    expect(screen.getByRole('link', { name: 'Consulter' })).toHaveAttribute(
+      'href',
+      '/orders/01JQZ00000000000000ORD01',
+    )
+  })
+
+  it('ne propose la modification qu’avec la permission correspondante', async () => {
+    captureQueries()
+    renderWithProviders(<OrderListPage />, { membership: withPermissions(['orders.view']) })
+
+    expect(await screen.findByText('CMD-2026-000001')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Modifier' })).not.toBeInTheDocument()
+  })
+
+  it('transmet la taille de page choisie et revient en première page', async () => {
+    const queries = captureQueries()
+    renderWithProviders(<OrderListPage />, { membership: withPermissions(['orders.view']) })
+
+    expect(await screen.findByText('CMD-2026-000001')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByLabelText('Lignes par page'))
+    await userEvent.click(await screen.findByRole('option', { name: '50' }))
+
+    await waitFor(() => {
+      expect(queries.at(-1)?.get('perPage')).toBe('50')
+      expect(queries.at(-1)?.get('page')).toBe('1')
+    })
+  })
 })

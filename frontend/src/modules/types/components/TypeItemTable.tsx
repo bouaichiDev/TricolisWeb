@@ -1,10 +1,9 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
-import { Button } from '@/shared/components/ui/button'
 
 import type { TypeItem } from '../types/type'
 import type { PaginationMeta } from '@/shared/api/types'
@@ -15,6 +14,7 @@ interface TypeItemTableProps {
   isLoading: boolean
   error: Error | null
   onPageChange: (page: number) => void
+  onPerPageChange: (perPage: number) => void
   onRetry: () => void
   onEdit: (item: TypeItem) => void
   onDelete: (item: TypeItem) => void
@@ -27,6 +27,7 @@ export function TypeItemTable({
   isLoading,
   error,
   onPageChange,
+  onPerPageChange,
   onRetry,
   onEdit,
   onDelete,
@@ -41,38 +42,6 @@ export function TypeItemTable({
       header: t('types.fields.status'),
       cell: (row) => <StatusBadge status={row.status} />,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-24',
-      cell: (row) => (
-        <span className="flex justify-end gap-1">
-          <PermissionGuard permission="types.update">
-            <Button
-              variant="ghost"
-              size="icon"
-              title={t('common.edit')}
-              aria-label={`${t('common.edit')} ${row.name}`}
-              onClick={() => onEdit(row)}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-
-          <PermissionGuard permission="types.delete">
-            <Button
-              variant="ghost"
-              size="icon"
-              title={t('common.delete')}
-              aria-label={`${t('common.delete')} ${row.name}`}
-              onClick={() => onDelete(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        </span>
-      ),
-    },
   ]
 
   return (
@@ -84,6 +53,31 @@ export function TypeItemTable({
       isLoading={isLoading}
       error={error}
       onPageChange={onPageChange}
+      onPerPageChange={onPerPageChange}
+      actions={(row) => (
+        <RowActions
+          actions={[
+            {
+              key: 'edit',
+              icon: Pencil,
+              // Le nom est repris dans le libellé : dans une table de dix lignes,
+              // « Modifier » seul ne dit pas quoi, et un lecteur d'écran entend dix
+              // fois la même chose.
+              label: `${t('common.edit')} ${row.name}`,
+              permission: 'types.update',
+              onClick: () => onEdit(row),
+            },
+            {
+              key: 'delete',
+              icon: Trash2,
+              label: `${t('common.delete')} ${row.name}`,
+              tone: 'danger',
+              permission: 'types.delete',
+              onClick: () => onDelete(row),
+            },
+          ]}
+        />
+      )}
       onRetry={onRetry}
       emptyMessage={t('types.noItem')}
     />

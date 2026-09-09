@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { WidgetCard } from '../WidgetCard'
-import type { DashboardWidget } from '../../types/dashboard'
+import type { DashboardWidgetProps } from '../../types/dashboard'
 
 /**
  * Un raccourci vers ce qu'un métier fait dix fois par jour.
@@ -16,7 +16,7 @@ import type { DashboardWidget } from '../../types/dashboard'
  * commandes ne se voit donc pas proposer d'en créer une — le filtre a eu lieu
  * côté serveur, et cette carte n'existe déjà plus quand il manque le droit.
  */
-export function QuickActionWidget({ widget }: { widget: DashboardWidget }) {
+export function QuickActionWidget({ widget }: DashboardWidgetProps) {
   const { t } = useTranslation()
 
   return (

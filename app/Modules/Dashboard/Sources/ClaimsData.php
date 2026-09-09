@@ -46,10 +46,10 @@ final readonly class ClaimsData implements DashboardDataSource
     {
         return match ($key) {
             'open_claims' => DashboardPayload::alert(
-                $this->claims($context)->whereNull('closed_at')->count()
+                $context->restrict($this->claims($context), 'created_at')->whereNull('closed_at')->count()
             ),
             'claims_created_today' => DashboardPayload::kpi(
-                $this->claims($context)->whereBetween('created_at', $context->dayBounds())->count()
+                $this->claims($context)->whereBetween('created_at', $context->bounds())->count()
             ),
             'recent_claims' => DashboardPayload::list($this->recentClaims($context)),
 
@@ -58,7 +58,7 @@ final readonly class ClaimsData implements DashboardDataSource
             'pod_created_today' => DashboardPayload::kpi(
                 ProofOfDelivery::query()
                     ->inOrganization($context->organizationId)
-                    ->whereBetween('delivered_at', $context->dayBounds())
+                    ->whereBetween('delivered_at', $context->bounds())
                     ->count()
             ),
 
@@ -91,7 +91,7 @@ final readonly class ClaimsData implements DashboardDataSource
      */
     private function servicesWithoutProof(DashboardContext $context): int
     {
-        return OrderService::query()
+        return $context->restrict(OrderService::query(), 'requested_date')
             ->where('status', OrderServiceStatus::COMPLETED->value)
             ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
             ->whereNotExists(fn (QueryBuilder $proof) => $proof
@@ -113,7 +113,7 @@ final readonly class ClaimsData implements DashboardDataSource
      */
     private function proofCoverage(DashboardContext $context): array
     {
-        $completed = OrderService::query()
+        $completed = $context->restrict(OrderService::query(), 'requested_date')
             ->where('status', OrderServiceStatus::COMPLETED->value)
             ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
             ->count();
@@ -126,7 +126,7 @@ final readonly class ClaimsData implements DashboardDataSource
      */
     private function recentClaims(DashboardContext $context): array
     {
-        return $this->claims($context)
+        return $context->restrict($this->claims($context), 'created_at')
             ->with('customer:id,name')
             ->orderByDesc('created_at')
             ->limit(6)

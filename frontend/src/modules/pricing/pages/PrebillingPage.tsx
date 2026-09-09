@@ -35,11 +35,13 @@ export function PrebillingPage() {
   const [periodTo, setPeriodTo] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
   const customers = useCustomerList({ page: 1, perPage: 100 })
 
   const { data, isPending, error, refetch } = usePrebilling({
     page,
+    perPage,
     search: search || undefined,
     customerId: customerId === ALL_CUSTOMERS ? undefined : customerId,
     periodFrom: periodFrom || undefined,
@@ -204,6 +206,10 @@ export function PrebillingPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
         emptyMessage={t('pricing.prebilling.empty')}
       />

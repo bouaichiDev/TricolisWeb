@@ -37,13 +37,16 @@ sélection d'un rôle, dans `role_dashboard_configurations`.
 | `app/Shared/Dashboard/DashboardWidgetType.php` | les neuf formes : `kpi`, `chart`, `donut`, `gauge`, `columns`, `lines`, `list`, `alert`, `quick_action` |
 | `app/Shared/Dashboard/DashboardWidgetSize.php` | `small`, `medium`, `large`, `full` |
 | `app/Shared/Dashboard/DashboardWidgetCategory.php` | le regroupement de l'écran de réglage |
+| `app/Shared/Dashboard/DashboardDrilldown.php` | les filtres qu'une part cliquée emporte |
 | `app/Shared/Dashboard/DashboardWidgetRegistry.php` | le catalogue, source unique |
 | `app/Shared/Dashboard/Catalogue/*.php` | une définition par catégorie |
 | `app/Modules/Dashboard/Sources/*.php` | le calcul, une source par catégorie |
 | `app/Modules/Dashboard/Services/DashboardComposer.php` | les trois filtres |
 | `app/Modules/Dashboard/Services/DashboardDataSources.php` | l'aiguillage catégorie → source |
 | `app/Modules/Dashboard/Services/DashboardPayload.php` | les quatre formes de donnée |
-| `app/Modules/Dashboard/Services/DashboardContext.php` | organisation, jour figé, fenêtres de N jours |
+| `app/Modules/Dashboard/Services/DashboardContext.php` | organisation, jour figé, période, fenêtres de N jours |
+| `app/Modules/Dashboard/Services/DashboardPeriod.php` | la période demandée, et sa borne de 92 jours |
+| `app/Http/Requests/Api/V1/Dashboard/ShowDashboardRequest.php` | `from`/`to` : ensemble, ou pas du tout |
 | `app/Modules/Dashboard/Services/DailySeries.php` | les jours creux, remis à zéro |
 | `app/Modules/Identity/Models/RoleDashboardConfiguration.php` | la sélection d'un rôle |
 | `app/Modules/Identity/Services/RoleDashboardWidgets.php` | absente ≠ vide |
@@ -282,7 +285,131 @@ créent dans une boîte de dialogue posée sur leur liste ; inventer
 
 ---
 
-## 6. Les formes de donnée
+## 6. La période, et les vingt cartes qu'elle ne peut pas suivre
+
+`GET /dashboard?from=2026-09-01&to=2026-09-30` restreint les cartes **datées**.
+
+**Quarante-neuf des soixante-neuf la suivent** : les répartitions, les volumes
+par jour, les dernières lignes, mais aussi tous les compteurs d'état et les
+taux — chacun sur la date qui a un sens pour lui.
+
+| Ce qu'on compte | Date retenue | Pourquoi celle-là |
+| --- | --- | --- |
+| commandes | `order_date` | la date que porte la commande |
+| services | `requested_date` | la date **attendue** de la prestation, pas celle de la saisie |
+| tournées | `tour_date` | le jour de la tournée |
+| factures | `invoice_date` | la date du document, celle que le client verra |
+| réclamations, communications | `created_at` | rien d'autre ne les date |
+| preuves de livraison | `delivered_at` | le moment de la remise |
+| envois de fichiers | `generated_at` / `sent_at` | selon qu'on compte ce qui est produit ou parti |
+
+**Vingt ne le peuvent pas**, et aucune date ne les sauvera :
+
+```
+stock (5)           stock_balances porte l'état courant. Il n'existe pas de
+                    solde « au 12 août » : la table n'a pas d'histoire.
+dénombrements (9)   « Clients », « Agences », « Configurations actives »
+                    comptent ce qui existe, pas ce qui s'est passé.
+actions rapides (6) des boutons. Aucun chiffre à filtrer.
+```
+
+**Sur une période, l'écran retire ces cartes** au lieu de les reléguer plus bas.
+Une carte qui reste sous un filtre qu'elle ignore affiche un chiffre juste sous
+un contexte qui dit autre chose, et rien ne le contredit — le pire des cas,
+puisqu'un chiffre juste ne se vérifie pas. Les actions rapides restent : un
+bouton ne peut pas mentir sur une période. Le nombre de cartes retirées est
+écrit sous la grille, faute de quoi un tableau de bord qui maigrit d'un tiers
+ressemble à une panne.
+
+### Les neuf cartes qui nommaient le jour
+
+« Commandes du jour », « Factures closes aujourd'hui » : filtrées sur un mois,
+elles comptaient juste et **annonçaient faux**. `periodLabelKey` porte leur
+titre de rechange, employé seulement quand une période est réglée.
+
+La traduction est **facultative** — l'interface retombe sur `label` — et c'est ce
+qui rend la règle tenable : les quarante autres cartes qui suivent la période ne
+nomment aucun instant et gardent leur titre.
+
+### La garantie structurelle
+
+`DashboardDataSources` sépare les clés en deux paquets et appelle chaque source
+deux fois : une avec le contexte complet, une avec `withoutPeriod()`. Une source
+**ne peut pas** voir la période d'un widget qui ne l'a pas déclarée — la valeur
+n'est pas là. Une convention ou un commentaire auraient demandé qu'on y pense à
+chaque nouveau widget.
+
+Dans les sources, deux gestes seulement :
+
+```php
+$context->restrict($query, 'order_date')  // borne, ou ne fait rien
+$context->bounds()                        // la période, sinon la journée
+```
+
+### Ce que la validation refuse
+
+- **une borne sans l'autre** — compléter la manquante aurait filtré sur un
+  intervalle que personne n'a saisi ;
+- **une fin antérieure au début** ;
+- **plus de `DashboardPeriod::MAX_DAYS` jours** (92) — les graphes temporels
+  tracent une colonne par jour, et une année en demanderait trois cent
+  soixante-cinq. Refusé avec son motif, jamais rogné en silence.
+
+La réponse rappelle la période dans `data.period`, et chaque widget porte
+`periodAware` et `periodLabelKey`.
+
+Tests : `tests/Feature/Api/V1/Dashboard/DashboardPeriodTest.php`.
+
+---
+
+## 7. Le forage : ce qu'une part cliquée emporte
+
+`route` disait où mener. Cela suffisait tant que la **carte entière** était le
+lien — on cliquait « Commandes par jour », on arrivait sur les commandes. Mais
+viser la colonne du 3 septembre et retomber sur la liste de tous les temps est
+une promesse trahie : la colonne désigne un jour, la barre désigne un statut, et
+la liste sait filtrer sur les deux.
+
+`DashboardDrilldown` dit **sous quels noms** la liste attend ces valeurs :
+
+```php
+drilldown: new DashboardDrilldown(
+    seriesParam: 'status',        // la part cliquée
+    fromParam: 'createdFrom',     // le jour cliqué, ou la période de l'écran
+    toParam: 'createdTo',
+),
+```
+
+Ce que le frontend en fait (`utils/drilldown.ts`) :
+
+```
+jour cliqué          → ?createdFrom=2026-09-03&createdTo=2026-09-03
+part cliquée         → ?status=confirmed
+part + période active→ ?status=confirmed&createdFrom=…&createdTo=…
+part « Autres »      → aucun lien : elle recouvre plusieurs codes
+pas de descripteur   → aucun lien : mieux vaut une part qui ne bouge pas
+```
+
+Le jour visé l'emporte sur la période, qui est plus large.
+
+**Le mode de panne est silencieux**, d'où le test : une liste **ignore** un
+paramètre qu'elle ne connaît pas. Écrire `createdFrom` là où la liste des
+tournées attend `tourDateFrom` n'aurait produit ni erreur ni 422 — seulement la
+liste entière, c'est-à-dire le défaut qu'on corrige.
+`DashboardCatalogueConsistencyTest` confronte donc chaque nom aux règles de
+validation réelles de la liste visée.
+
+Côté frontend, la conséquence est visible : une carte qui porte un forage n'est
+**plus** un lien dans son ensemble — le titre le devient, et le corps porte ses
+propres liens. Un `<a>` dans un `<a>` est du HTML invalide, et le clic sur la
+part serait parti vers la destination de la carte.
+
+Les listes de destination lisent ces filtres à l'ouverture : `OrderListPage`,
+`InvoiceListPage`, `TourListPage`.
+
+---
+
+## 8. Les formes de donnée
 
 `DashboardPayload` les produit, `DashboardWidgetData` les relit côté frontend.
 
@@ -357,7 +484,7 @@ traduction livrée qui l'ignorerait.
 
 ---
 
-## 7. Performance
+## 9. Performance
 
 Un seul appel HTTP — `GET /dashboard` — qui agrège les widgets retenus. Le
 tableau de bord précédent demandait une page d'un élément à quatre listes

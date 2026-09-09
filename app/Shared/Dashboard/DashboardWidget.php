@@ -50,6 +50,26 @@ final readonly class DashboardWidget
         public bool $defaultEnabled = false,
         /** Écran que la carte ouvre, s'il en existe un. */
         public ?string $route = null,
+        /**
+         * Le widget suit la période choisie sur le tableau de bord.
+         *
+         * Faux par défaut, et il le faut : la plupart des cartes disent un
+         * **état** — des commandes à planifier, un stock disponible — et un
+         * état n'a pas d'intervalle. Filtrer « à planifier » sur le mois d'août
+         * rendrait un chiffre qui ne veut rien dire. Ne le déclarent que les
+         * cartes qui portent déjà une date : une répartition, un volume par
+         * jour, les dernières lignes d'une table.
+         *
+         * Les compteurs dont le **titre** nomme un instant — « du jour » — ne
+         * le déclarent pas non plus : le filtre les contredirait à l'écran.
+         *
+         * `DashboardDataSources` s'appuie dessus pour n'exposer la période
+         * qu'aux sources qui l'ont demandée ; le frontend, pour ranger les
+         * cartes en deux sections et dire lesquelles le filtre touche.
+         */
+        public bool $periodAware = false,
+        /** Filtres que la liste de destination attend, quand on clique une part. */
+        public ?DashboardDrilldown $drilldown = null,
     ) {}
 
     /**
@@ -68,6 +88,24 @@ final readonly class DashboardWidget
     public function descriptionKey(): string
     {
         return "dashboardWidgets.{$this->key}.description";
+    }
+
+    /**
+     * Libellé de remplacement quand une période est réglée.
+     *
+     * Neuf cartes nomment un instant dans leur titre — « Commandes du jour »,
+     * « Factures closes aujourd'hui ». Filtrées sur un mois, elles comptaient
+     * juste et **annonçaient faux** : le pire des cas, puisque rien ne le
+     * contredit à l'écran. Cette clé porte leur titre au pluriel de la période.
+     *
+     * Servie pour tout widget qui suit la période, et **facultative en i18n** :
+     * l'interface retombe sur `label` quand la traduction n'existe pas. Les
+     * quarante autres cartes gardent donc leur titre, qui ne nommait aucun
+     * instant.
+     */
+    public function periodLabelKey(): string
+    {
+        return "dashboardWidgets.{$this->key}.periodLabel";
     }
 
     /**
@@ -97,6 +135,7 @@ final readonly class DashboardWidget
             'position' => $position,
             'isEnabled' => $isEnabled,
             'availableForRole' => $availableForRole,
+            'periodAware' => $this->periodAware,
         ];
     }
 }

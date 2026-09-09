@@ -66,8 +66,8 @@ export function claimColumns({ t, onOpen, onEdit, onDelete }: Handlers, withCust
     },
     {
       key: 'actions',
-      header: '',
-      className: 'w-32',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => (
         <span className="flex justify-end gap-1">
           {/* Le titre ouvre deja la fiche, mais rien ne le laisse deviner : sans

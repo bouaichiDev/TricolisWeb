@@ -23,12 +23,14 @@ export function PricingCustomerPage() {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [creating, setCreating] = useState(false)
   const [toDelete, setToDelete] = useState<PriceList | null>(null)
   const [toEdit, setToEdit] = useState<PriceList | null>(null)
 
   const { data, isPending, error, refetch } = usePriceLists({
     page,
+    perPage,
     scope: 'customer',
     search: search || undefined,
   })
@@ -64,6 +66,10 @@ export function PricingCustomerPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size: number) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
         onDelete={setToDelete}
         onEdit={setToEdit}

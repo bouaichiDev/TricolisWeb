@@ -1,6 +1,6 @@
 import { api } from '@/shared/api/client'
 import type { ApiResource } from '@/shared/api/types'
-import type { DashboardResponse } from '../types/dashboard'
+import type { DashboardPeriod, DashboardResponse } from '../types/dashboard'
 
 /**
  * Le tableau de bord, en **un seul appel**.
@@ -13,8 +13,16 @@ import type { DashboardResponse } from '../types/dashboard'
  *
  * Ce qui revient est déjà filtré par les permissions : rien à retirer ici, et
  * surtout rien à décider.
+ *
+ * La période part **entière ou pas du tout**. Une seule borne serait refusée en
+ * 422 par le serveur, qui ne complète pas une période à moitié saisie : la
+ * borne manquante aurait filtré sur un intervalle que personne n'a choisi.
  */
 export const dashboardApi = {
-  current: () =>
-    api.get<ApiResource<DashboardResponse>>('/dashboard').then((response) => response.data),
+  current: (period: DashboardPeriod | null) =>
+    api
+      .get<ApiResource<DashboardResponse>>('/dashboard', {
+        query: period === null ? undefined : { from: period.from, to: period.to },
+      })
+      .then((response) => response.data),
 }

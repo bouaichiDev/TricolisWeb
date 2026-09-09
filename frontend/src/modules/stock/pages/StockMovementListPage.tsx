@@ -1,10 +1,11 @@
-import { ArrowDownToLine, ArrowUpFromLine, MoveRight, Plus } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, Eye, MoveRight, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
@@ -34,7 +35,6 @@ const ICONS = {
  */
 export function StockMovementListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [filters, setFilters] = useState<StockMovementFilters>({
     page: 1,
@@ -139,8 +139,11 @@ export function StockMovementListPage() {
           }))
         }
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/stock/movements/${row.id}`)}
+        actions={(row) => (
+          <RowActions actions={[{ key: 'view', icon: Eye, label: t('common.view'), to: `/stock/movements/${row.id}` }]} />
+        )}
         emptyMessage={t('stock.noMovement')}
       />
     </div>

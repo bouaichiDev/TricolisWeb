@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import type { Invoice } from '../types/invoice'
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
-import { Button } from '@/shared/components/ui/button'
 import type { PaginationMeta } from '@/shared/api/types'
 import { formatDate, formatMoney } from '@/shared/utils/format'
 
@@ -16,6 +15,7 @@ interface InvoiceTableProps {
   isLoading: boolean
   error: Error | null
   onPageChange: (page: number) => void
+  onPerPageChange: (perPage: number) => void
   onRetry: () => void
   onDelete: (invoice: Invoice) => void
   onEdit: (invoice: Invoice) => void
@@ -38,6 +38,7 @@ export function InvoiceTable({
   isLoading,
   error,
   onPageChange,
+  onPerPageChange,
   onRetry,
   onDelete,
   onEdit,
@@ -85,46 +86,6 @@ export function InvoiceTable({
       header: t('billing.invoices.fields.status'),
       cell: (row) => <StatusBadge status={row.status} />,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-32',
-      cell: (row) => (
-        <span className="flex gap-1">
-          <Button variant="ghost" size="icon" asChild aria-label={t('common.view')}>
-            <Link to={`/billing/invoices/${row.id}`}>
-              <Eye className="size-4" aria-hidden />
-            </Link>
-          </Button>
-
-          {row.status === 'draft' ? (
-            <PermissionGuard permission="invoices.update">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t('common.edit')}
-                onClick={() => onEdit(row)}
-              >
-                <Pencil className="size-4" aria-hidden />
-              </Button>
-            </PermissionGuard>
-          ) : null}
-
-          {row.status === 'draft' ? (
-            <PermissionGuard permission="invoices.delete">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t('common.delete')}
-                onClick={() => onDelete(row)}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </PermissionGuard>
-          ) : null}
-        </span>
-      ),
-    },
   ]
 
   return (
@@ -136,7 +97,37 @@ export function InvoiceTable({
       isLoading={isLoading}
       error={error}
       onPageChange={onPageChange}
+      onPerPageChange={onPerPageChange}
       onRetry={onRetry}
+      actions={(row) => (
+        <RowActions
+          actions={[
+            { key: 'view', icon: Eye, label: t('common.view'), to: `/billing/invoices/${row.id}` },
+            // Une facture close est figée (§22) : modifier et supprimer ne sont
+            // proposés que sur un brouillon. Un bouton que le serveur refusera use la
+            // confiance qu'on met dans l'écran.
+            ...(row.status === 'draft'
+              ? [
+                  {
+                    key: 'edit',
+                    icon: Pencil,
+                    label: t('common.edit'),
+                    permission: 'invoices.update',
+                    onClick: () => onEdit(row),
+                  },
+                  {
+                    key: 'delete',
+                    icon: Trash2,
+                    label: t('common.delete'),
+                    tone: 'danger' as const,
+                    permission: 'invoices.delete',
+                    onClick: () => onDelete(row),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      )}
       emptyMessage={t('billing.invoices.empty')}
     />
   )

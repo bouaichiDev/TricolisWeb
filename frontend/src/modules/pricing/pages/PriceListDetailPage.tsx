@@ -92,8 +92,8 @@ export function PriceListDetailPage() {
     },
     {
       key: 'actions',
-      header: '',
-      className: 'w-24',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => (
         <PermissionGuard permission="price_lists.update">
           <span className="flex gap-1">
@@ -145,8 +145,8 @@ export function PriceListDetailPage() {
     },
     {
       key: 'actions',
-      header: '',
-      className: 'w-24',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => (
         <PermissionGuard permission="price_lists.update">
           <span className="flex gap-1">

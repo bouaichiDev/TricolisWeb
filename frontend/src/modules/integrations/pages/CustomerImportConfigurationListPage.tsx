@@ -1,11 +1,12 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { CustomerFilterSelect } from '@/modules/customers/components/CustomerFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Badge } from '@/shared/components/ui/badge'
@@ -30,7 +31,6 @@ import type {
  */
 export function CustomerImportConfigurationListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [filters, setFilters] = useState<CustomerImportConfigurationFilters>({
     page: 1,
@@ -134,8 +134,22 @@ export function CustomerImportConfigurationListPage() {
           }))
         }
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/integrations/imports/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/integrations/imports/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/integrations/imports/${row.id}/edit`,
+                permission: 'customer_import_configurations.update',
+              },
+            ]}
+          />
+        )}
         emptyMessage={t('integrations.imports.empty')}
       />
     </div>

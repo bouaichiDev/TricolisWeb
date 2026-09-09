@@ -33,6 +33,24 @@ export interface Column<T> {
   hideOnMobile?: boolean
 }
 
+/**
+ * La colonne d'actions, définie **une fois**.
+ *
+ * `DataTable` la construit lui-même quand on lui passe `actions` ; ce
+ * constructeur sert aux tables dont les colonnes sont fabriquées ailleurs — un
+ * fichier `xxxColumns.tsx` partagé entre une liste et un onglet. Sans lui, ces
+ * tables-là gardaient leur propre en-tête vide et leur propre largeur, et la
+ * dernière colonne n'était pas tout à fait la même d'un écran à l'autre.
+ *
+ * `w-px` avec `whitespace-nowrap` : la colonne prend la largeur de ses boutons
+ * et pas un pixel de plus, ce qui laisse toute la place aux données. Une largeur
+ * fixe — `w-24`, `w-32`, `w-40` selon les fichiers — réservait du vide quand il
+ * y avait deux boutons, et en manquait quand il y en avait quatre.
+ */
+export function actionsColumn<T>(header: string, cell: (row: T) => ReactNode): Column<T> {
+  return { key: '__actions', header, className: 'w-px whitespace-nowrap text-right', cell }
+}
+
 interface DataTableProps<T> {
   columns: Column<T>[]
   rows: T[]
@@ -44,8 +62,27 @@ interface DataTableProps<T> {
   direction?: 'asc' | 'desc'
   onSortChange?: (sortKey: string) => void
   onPageChange?: (page: number) => void
+  onPerPageChange?: (perPage: number) => void
   onRetry?: () => void
+  /**
+   * Clic sur la ligne entière.
+   *
+   * **À réserver aux tables qui ouvrent un panneau**, jamais pour naviguer vers
+   * une fiche : une ligne cliquable rend son texte insélectionnable — tenter de
+   * copier un numéro ouvrait l'écran — et n'annonce rien à un lecteur d'écran.
+   * Pour aller à une fiche, c'est `actions` qui sert, ou le lien porté par la
+   * colonne d'identité.
+   */
   onRowClick?: (row: T) => void
+  /**
+   * Les actions d'une ligne, rendues dans une dernière colonne.
+   *
+   * La colonne est ajoutée **ici** et non déclarée par chaque écran : sa
+   * position, sa largeur, son en-tête et son alignement sont les mêmes partout,
+   * et trente écrans qui la déclaraient à la main donnaient trente colonnes
+   * légèrement différentes — parfois avant le statut, parfois sans en-tête.
+   */
+  actions?: (row: T) => ReactNode
   emptyMessage?: string
 }
 
@@ -62,6 +99,12 @@ interface DataTableProps<T> {
  * Une colonne peut aussi porter un `filter` : il s'affiche sur une seconde
  * ligne d'en-tête, et l'écran qui le fournit reste responsable de transmettre
  * sa valeur au serveur — pour la même raison que le tri.
+ *
+ * **Les actions passent par `actions`, pas par une colonne déclarée.** C'est ce
+ * qui rend la dernière colonne identique d'un écran à l'autre : même position,
+ * même largeur, même en-tête, même alignement. Et c'est elle qui remplace le
+ * clic sur la ligne entière — lequel rendait le texte insélectionnable, au
+ * point qu'on ne pouvait pas copier un numéro sans ouvrir la fiche.
  */
 export function DataTable<T>({
   columns,
@@ -74,11 +117,18 @@ export function DataTable<T>({
   direction = 'asc',
   onSortChange,
   onPageChange,
+  onPerPageChange,
   onRetry,
   onRowClick,
+  actions,
   emptyMessage,
 }: DataTableProps<T>) {
   const { t } = useTranslation()
+
+  // La colonne d'actions est toujours la **dernière**, et n'est jamais triable :
+  // c'est la seule dont le contenu n'est pas une donnée de la ligne.
+  const shown: Column<T>[] =
+    actions === undefined ? columns : [...columns, actionsColumn(t('common.actions'), actions)]
 
   if (error !== null) return <TableErrorState error={error} onRetry={onRetry} />
 
@@ -88,7 +138,7 @@ export function DataTable<T>({
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              {columns.map((column) => (
+              {shown.map((column) => (
                 <TableHead
                   key={column.key}
                   className={cn(column.className, column.hideOnMobile && 'hidden md:table-cell')}
@@ -114,9 +164,9 @@ export function DataTable<T>({
               ))}
             </TableRow>
 
-            {columns.some((column) => column.filter !== undefined) ? (
+            {shown.some((column) => column.filter !== undefined) ? (
               <TableRow className="hover:bg-transparent">
-                {columns.map((column) => (
+                {shown.map((column) => (
                   <TableHead
                     key={`${column.key}-filter`}
                     className={cn(
@@ -134,9 +184,9 @@ export function DataTable<T>({
 
           <TableBody>
             {isLoading ? (
-              <LoadingRows columns={columns} />
+              <LoadingRows columns={shown} />
             ) : rows.length === 0 ? (
-              <EmptyRow colSpan={columns.length} message={emptyMessage} />
+              <EmptyRow colSpan={shown.length} message={emptyMessage} />
             ) : (
               rows.map((row) => (
                 <TableRow
@@ -144,7 +194,7 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={cn(onRowClick && 'cursor-pointer')}
                 >
-                  {columns.map((column) => (
+                  {shown.map((column) => (
                     <TableCell
                       key={column.key}
                       className={cn(column.className, column.hideOnMobile && 'hidden md:table-cell')}
@@ -160,7 +210,11 @@ export function DataTable<T>({
       </div>
 
       {meta && meta.total > 0 ? (
-        <DataTablePagination meta={meta} onPageChange={onPageChange} />
+        <DataTablePagination
+          meta={meta}
+          onPageChange={onPageChange}
+          onPerPageChange={onPerPageChange}
+        />
       ) : null}
     </div>
   )

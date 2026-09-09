@@ -1,12 +1,21 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import { ChartLegend } from '../charts/ChartLegend'
 import { DonutChart } from '../charts/DonutChart'
-import { OTHER_KEY, orderByLifecycle, toSlices, totalOf } from '../charts/chartPalette'
+import {
+  OTHER_KEY,
+  orderByLifecycle,
+  toSlices,
+  totalOf,
+  type ChartSlice,
+} from '../charts/chartPalette'
 import { useSeriesLabel } from '../charts/useSeriesLabel'
 import { WidgetCard } from '../WidgetCard'
-import type { ChartData, ChartSeries, DashboardWidget } from '../../types/dashboard'
+import { drilldownTo } from '../../utils/drilldown'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { ChartData, ChartSeries, DashboardWidgetProps } from '../../types/dashboard'
 
 const NO_SERIES: ChartSeries[] = []
 
@@ -24,8 +33,9 @@ const NO_SERIES: ChartSeries[] = []
  * comparer deux parts proches — c'est son défaut connu, et la liste chiffrée à
  * côté est la réponse, pas un ornement.
  */
-export function DonutWidget({ widget }: { widget: DashboardWidget }) {
+export function DonutWidget({ widget, period }: DashboardWidgetProps) {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const [hovered, setHovered] = useState<string | null>(null)
 
   const data = widget.data as ChartData | null
@@ -44,16 +54,31 @@ export function DonutWidget({ widget }: { widget: DashboardWidget }) {
     [i18n.language],
   )
 
+  const labelOf = (slice: ChartSlice) =>
+    slice.code === OTHER_KEY ? t('dashboard.otherSeries') : labelOfCode(slice.code)
+
+  const linkOf = (slice: ChartSlice) => drilldownTo(widget, { code: slice.code, period })
+
+  const open = (slice: ChartSlice) => {
+    const to = linkOf(slice)
+
+    if (to !== null) void navigate(to)
+  }
+
   if (series.length === 0) {
     return (
-      <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+      <WidgetCard title={widgetTitle(widget, period, t)} to={widget.route}>
         <p className="text-sm text-muted-foreground">{t('dashboard.widgetEmpty')}</p>
       </WidgetCard>
     )
   }
 
   return (
-    <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+    <WidgetCard
+      title={widgetTitle(widget, period, t)}
+      to={widget.route}
+      interactive={widget.drilldown !== null}
+    >
       {/* L'anneau et sa légende côte à côte au-delà du téléphone, l'un sous
           l'autre en dessous : une colonne de 300 px ne tient pas les deux sans
           que les libellés se coupent. */}
@@ -63,9 +88,8 @@ export function DonutWidget({ widget }: { widget: DashboardWidget }) {
           total={totalOf(series)}
           hovered={hovered}
           onHover={setHovered}
-          labelOf={(slice) =>
-            slice.code === OTHER_KEY ? t('dashboard.otherSeries') : labelOfCode(slice.code)
-          }
+          labelOf={labelOf}
+          onSelect={widget.drilldown === null ? undefined : open}
         />
 
         <div className="w-full min-w-0 flex-1">
@@ -73,10 +97,9 @@ export function DonutWidget({ widget }: { widget: DashboardWidget }) {
             slices={slices}
             hovered={hovered}
             onHover={setHovered}
-            labelOf={(slice) =>
-              slice.code === OTHER_KEY ? t('dashboard.otherSeries') : labelOfCode(slice.code)
-            }
+            labelOf={labelOf}
             shareFormatter={shareFormatter}
+            linkOf={linkOf}
           />
         </div>
       </div>

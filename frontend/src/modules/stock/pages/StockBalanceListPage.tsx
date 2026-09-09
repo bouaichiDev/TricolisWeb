@@ -123,6 +123,7 @@ export function StockBalanceListPage() {
           }))
         }
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
         emptyMessage={t('stock.noBalance')}
       />

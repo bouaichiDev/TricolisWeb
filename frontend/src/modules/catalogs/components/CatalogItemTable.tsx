@@ -93,8 +93,8 @@ export function CatalogItemTable({
     },
     {
       key: 'actions',
-      header: '',
-      className: 'w-24',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => (
         <CatalogItemActions
           onStock={() => setStockOf(row)}

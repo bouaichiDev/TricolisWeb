@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 import type { ChartSlice } from './chartPalette'
 import { cn } from '@/shared/utils/cn'
 
@@ -7,6 +9,15 @@ interface ChartLegendProps {
   onHover: (code: string | null) => void
   labelOf: (slice: ChartSlice) => string
   shareFormatter: Intl.NumberFormat
+  /**
+   * Adresse de la liste filtrée sur cette part, quand elle existe.
+   *
+   * C'est ici que le forage devient **accessible** : un arc de camembert ou un
+   * segment de barre se vise à la souris et nulle part ailleurs, tandis que ces
+   * lignes-là sont de vrais liens — atteignables au clavier, ouvrables dans un
+   * onglet, annoncés par un lecteur d'écran avec le nom de la part.
+   */
+  linkOf?: (slice: ChartSlice) => string | null
 }
 
 /**
@@ -33,30 +44,45 @@ export function ChartLegend({
   onHover,
   labelOf,
   shareFormatter,
+  linkOf,
 }: ChartLegendProps) {
   return (
     <ul className="flex flex-col" onMouseLeave={() => onHover(null)}>
-      {slices.map((slice) => (
-        <li
-          key={slice.code}
-          onMouseEnter={() => onHover(slice.code)}
-          className={cn(
-            'flex items-center gap-2.5 rounded-md px-1.5 py-1 transition-colors',
-            hovered === slice.code && 'bg-accent/60',
-          )}
-        >
-          <span
-            aria-hidden
-            className="size-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: slice.color }}
-          />
-          <span className="min-w-0 flex-1 truncate text-sm">{labelOf(slice)}</span>
-          <span className="text-sm font-medium tabular-nums">{slice.value}</span>
-          <span className="w-11 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-            {shareFormatter.format(slice.share)}
-          </span>
-        </li>
-      ))}
+      {slices.map((slice) => {
+        const row = (
+          <>
+            <span
+              aria-hidden
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: slice.color }}
+            />
+            <span className="min-w-0 flex-1 truncate text-sm">{labelOf(slice)}</span>
+            <span className="text-sm font-medium tabular-nums">{slice.value}</span>
+            <span className="w-11 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+              {shareFormatter.format(slice.share)}
+            </span>
+          </>
+        )
+
+        const to = linkOf?.(slice) ?? null
+
+        const className = cn(
+          'flex items-center gap-2.5 rounded-md px-1.5 py-1 transition-colors',
+          hovered === slice.code && 'bg-accent/60',
+        )
+
+        return (
+          <li key={slice.code} onMouseEnter={() => onHover(slice.code)}>
+            {to === null ? (
+              <div className={className}>{row}</div>
+            ) : (
+              <Link to={to} className={className}>
+                {row}
+              </Link>
+            )}
+          </li>
+        )
+      })}
     </ul>
   )
 }

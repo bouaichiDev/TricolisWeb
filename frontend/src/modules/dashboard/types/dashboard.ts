@@ -183,14 +183,75 @@ export interface DashboardWidget {
   key: string
   type: DashboardWidgetType
   labelKey: string
+  /**
+   * Titre de remplacement quand une période est réglée.
+   *
+   * Neuf cartes nomment un instant — « Commandes du jour », « Factures closes
+   * aujourd'hui ». Filtrées sur un mois, elles comptaient juste et
+   * **annonçaient faux**, ce que rien à l'écran ne venait contredire. Servi
+   * pour toute carte qui suit la période ; la traduction, elle, est
+   * facultative, et l'interface retombe sur `labelKey`.
+   */
+  periodLabelKey: string | null
   size: DashboardWidgetSize
   position: number
   route: string | null
+  /**
+   * La carte suit la période choisie en tête d'écran.
+   *
+   * C'est ce qui range les cartes en deux sections plutôt que de laisser
+   * deviner : un compteur « à planifier » dit un état, et un état n'a pas
+   * d'intervalle. Le serveur le déclare parce que c'est lui qui décide de ce
+   * qu'il filtre — l'annoncer ici sur une liste recopiée aurait fini par
+   * promettre un filtre qui n'a pas lieu.
+   */
+  periodAware: boolean
+  /** Noms des filtres que `route` attend, quand une part est cliquable. */
+  drilldown: WidgetDrilldown | null
   data: DashboardWidgetData
+}
+
+/**
+ * Sous quels noms la liste de destination attend ce qu'on vient de cliquer.
+ *
+ * Les noms viennent du serveur, avec la route : lui seul sait que la liste des
+ * commandes filtre par `createdFrom`/`createdTo` et celle des factures par
+ * `invoiceDateFrom`. Les écrire dans le composant aurait donné deux vérités sur
+ * le même contrat, et la seconde n'aurait rien signalé en dérivant — un
+ * paramètre inconnu est ignoré par la liste, qui s'ouvre alors sans filtre.
+ *
+ * Tout est facultatif : une répartition par statut n'a pas de jour à
+ * transmettre, une courbe de tendance n'a pas de série qui soit un filtre.
+ */
+export interface WidgetDrilldown {
+  seriesParam: string | null
+  fromParam: string | null
+  toParam: string | null
+}
+
+/** Bornes incluses, au format ISO court. */
+export interface DashboardPeriod {
+  from: string
+  to: string
+}
+
+/**
+ * Ce que reçoit chaque composant de carte.
+ *
+ * La période y figure pour deux usages, et deux seulement : choisir le titre —
+ * celui du jour ou celui de la période — et **emporter les bornes** dans les
+ * liens de forage, pour qu'une part cliquée ouvre la même fenêtre que celle
+ * qu'on regarde.
+ */
+export interface DashboardWidgetProps {
+  widget: DashboardWidget
+  period: DashboardPeriod | null
 }
 
 export interface DashboardResponse {
   organization: { id: string; name: string } | null
+  /** Période sur laquelle ces chiffres ont été calculés, s'il y en a une. */
+  period: DashboardPeriod | null
   widgets: DashboardWidget[]
 }
 
@@ -214,6 +275,7 @@ export interface RoleDashboardWidget {
   position: number
   isEnabled: boolean
   availableForRole: boolean
+  periodAware: boolean
 }
 
 /** Ce qu'on envoie pour enregistrer : une clé, un rang. Rien d'autre. */

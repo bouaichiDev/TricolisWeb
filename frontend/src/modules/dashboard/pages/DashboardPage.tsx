@@ -1,10 +1,13 @@
 import { LayoutDashboard } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
-import { DashboardGrid } from '../components/DashboardGrid'
+import { DashboardPeriodBar } from '../components/DashboardPeriodBar'
+import { DashboardBoard } from '../components/DashboardBoard'
 import { DashboardSkeleton } from '../components/DashboardSkeleton'
 import { useDashboard } from '../hooks/useDashboard'
+import { periodFrom } from '../utils/period'
+import type { DashboardPeriod } from '../types/dashboard'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -32,12 +35,30 @@ import { usePermissions } from '@/shared/hooks/usePermission'
  * posé sur chaque carte serait au mieux redondant, au pire trompeur — il
  * laisserait croire que la protection est ici, alors qu'un widget interdit
  * n'est jamais arrivé.
+ *
+ * La période, elle, vit dans **l'URL** et non dans un état de composant. Trois
+ * conséquences, toutes voulues : le rafraîchissement garde le filtre au lieu de
+ * ramener le tableau de bord par défaut, le retour arrière depuis une liste
+ * ouverte par une carte retrouve l'écran tel qu'on l'avait réglé, et un lien
+ * recopié montre à un collègue exactement les chiffres dont on lui parle. C'est
+ * la même règle que pour le forage : ce que le lien porte, l'écran le rejoue.
  */
 export function DashboardPage() {
   const { t } = useTranslation()
   const { membership, user } = useAuth()
   const { has } = usePermissions()
-  const { data, isPending, error, refetch } = useDashboard()
+  const [params, setParams] = useSearchParams()
+
+  const period = periodFrom(params.get('from'), params.get('to'))
+
+  const { data, isPending, error, refetch } = useDashboard(period)
+
+  const changePeriod = (next: DashboardPeriod | null) => {
+    // `replace` : régler une période n'est pas une navigation. Empilée, chaque
+    // date saisie aurait demandé un retour arrière de plus pour sortir de
+    // l'écran.
+    setParams(next === null ? {} : { from: next.from, to: next.to }, { replace: true })
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,6 +66,8 @@ export function DashboardPage() {
         title={t('dashboard.welcome', { name: user?.fullName ?? '' })}
         description={data?.organization?.name ?? membership?.name ?? t('dashboard.subtitle')}
       />
+
+      <DashboardPeriodBar period={period} onChange={changePeriod} />
 
       {/* Un squelette, et non les anciennes cartes en attendant : les afficher
           une seconde aurait montré à chacun un tableau de bord qui n'est pas le
@@ -56,7 +79,9 @@ export function DashboardPage() {
           erreur se dit, elle ne se comble pas. */}
       {error ? <ErrorState error={error} onRetry={() => void refetch()} /> : null}
 
-      {data && data.widgets.length > 0 ? <DashboardGrid widgets={data.widgets} /> : null}
+      {data && data.widgets.length > 0 ? (
+        <DashboardBoard widgets={data.widgets} period={data.period} />
+      ) : null}
 
       {data && data.widgets.length === 0 ? (
         <EmptyState

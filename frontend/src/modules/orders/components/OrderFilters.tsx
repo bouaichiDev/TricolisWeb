@@ -24,11 +24,16 @@ interface OrderFiltersProps {
 /**
  * Filtres de la liste des commandes.
  *
- * Strictement ceux qu'accepte `ListOrderRequest`. Ni `priority` ni plage de
- * dates : ils n'existent pas côté serveur, et les proposer donnerait
- * l'illusion d'un filtrage qui n'a pas lieu.
+ * Strictement ceux qu'accepte `ListOrderRequest`. Pas de `priority` : le champ
+ * n'existe pas côté serveur, et le proposer donnerait l'illusion d'un filtrage
+ * qui n'a pas lieu.
  *
- * `requestedDate` est une date **unique**, pas un intervalle.
+ * **Deux dates, et elles ne parlent pas de la même chose.** `createdFrom` et
+ * `createdTo` bornent la date de la commande — celle que le tableau de bord
+ * transmet quand on clique une colonne, et qu'il faut donc pouvoir lire et
+ * retirer ici. `requestedDate` est la date demandée d'un service, une date
+ * **unique** portée par une autre table : les confondre aurait rendu un filtre
+ * qui répond à côté.
  */
 export function OrderFilterBar({ filters, onChange, onReset }: OrderFiltersProps) {
   const { t } = useTranslation()
@@ -38,6 +43,8 @@ export function OrderFilterBar({ filters, onChange, onReset }: OrderFiltersProps
     Boolean(filters.status) ||
     Boolean(filters.source) ||
     Boolean(filters.requestedDate) ||
+    Boolean(filters.createdFrom) ||
+    Boolean(filters.createdTo) ||
     Boolean(filters.city) ||
     filters.withoutDepot === true
 
@@ -99,6 +106,24 @@ export function OrderFilterBar({ filters, onChange, onReset }: OrderFiltersProps
             type="date"
             value={filters.requestedDate ?? ''}
             onChange={(event) => onChange({ requestedDate: event.target.value || undefined })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>{t('orders.filters.orderDateFrom')}</Label>
+          <Input
+            type="date"
+            value={filters.createdFrom ?? ''}
+            onChange={(event) => onChange({ createdFrom: event.target.value || undefined })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>{t('orders.filters.orderDateTo')}</Label>
+          <Input
+            type="date"
+            value={filters.createdTo ?? ''}
+            onChange={(event) => onChange({ createdTo: event.target.value || undefined })}
           />
         </div>
       </div>

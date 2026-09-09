@@ -1,8 +1,10 @@
+import { Eye } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Badge } from '@/shared/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -139,8 +141,15 @@ export function CommunicationHistoryPage() {
         meta={query.data?.meta}
         isLoading={query.isPending}
         error={query.error}
-        onRowClick={(row) => setOpened(row)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), onClick: () => setOpened(row) },
+            ]}
+          />
+        )}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void query.refetch()}
         emptyMessage={t('communications.empty')}
       />

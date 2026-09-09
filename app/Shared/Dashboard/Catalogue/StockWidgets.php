@@ -69,6 +69,7 @@ final class StockWidgets
                 requiredPermission: 'stock_reservations.view',
                 defaultPosition: 404,
                 route: '/stock/reservations',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'recent_stock_movements',
@@ -78,6 +79,7 @@ final class StockWidgets
                 defaultPosition: 405,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/stock/movements',
+                periodAware: true,
             ),
             // La part reservee sur le total : c'est un rapport contre une
             // limite, ce que trois compteurs cote a cote obligeaient a calculer

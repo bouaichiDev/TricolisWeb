@@ -45,6 +45,7 @@ export function TypeListPage() {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<TypeSource | null>(null)
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [editing, setEditing] = useState<Editing>(null)
   const [deletingSource, setDeletingSource] = useState<TypeSource | null>(null)
   const [deletingItem, setDeletingItem] = useState<TypeItem | null>(null)
@@ -59,7 +60,7 @@ export function TypeListPage() {
   }, [rows, selected])
 
   const items = useTypeItems(
-    { page, perPage: 25, typeId: selected?.id },
+    { page, perPage, typeId: selected?.id },
     selected !== null,
   )
 
@@ -135,6 +136,10 @@ export function TypeListPage() {
               isLoading={items.isPending}
               error={items.error}
               onPageChange={setPage}
+              onPerPageChange={(size: number) => {
+                setPerPage(size)
+                setPage(1)
+              }}
               onRetry={() => void items.refetch()}
               onEdit={(item) => setEditing({ kind: 'item', item })}
               onDelete={setDeletingItem}

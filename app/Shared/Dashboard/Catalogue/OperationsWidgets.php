@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Dashboard\Catalogue;
 
+use App\Shared\Dashboard\DashboardDrilldown;
 use App\Shared\Dashboard\DashboardWidget;
 use App\Shared\Dashboard\DashboardWidgetCategory;
 use App\Shared\Dashboard\DashboardWidgetSize;
@@ -33,6 +34,7 @@ final class OperationsWidgets
                 requiredPermission: 'orders.view',
                 defaultPosition: 0,
                 route: '/orders',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'orders_to_plan',
@@ -41,6 +43,7 @@ final class OperationsWidgets
                 requiredPermission: 'orders.view',
                 defaultPosition: 1,
                 route: '/orders',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'orders_in_progress',
@@ -49,6 +52,7 @@ final class OperationsWidgets
                 requiredPermission: 'orders.view',
                 defaultPosition: 2,
                 route: '/orders',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'orders_completed_today',
@@ -57,6 +61,7 @@ final class OperationsWidgets
                 requiredPermission: 'orders.view',
                 defaultPosition: 3,
                 route: '/orders',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'services_ready_to_plan',
@@ -64,6 +69,7 @@ final class OperationsWidgets
                 category: DashboardWidgetCategory::OPERATIONS,
                 requiredPermission: 'order_services.view',
                 defaultPosition: 4,
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'services_in_progress',
@@ -71,6 +77,7 @@ final class OperationsWidgets
                 category: DashboardWidgetCategory::OPERATIONS,
                 requiredPermission: 'order_services.view',
                 defaultPosition: 5,
+                periodAware: true,
             ),
 
             // Un service échoué n'est pas un chiffre parmi d'autres : il
@@ -82,6 +89,7 @@ final class OperationsWidgets
                 category: DashboardWidgetCategory::OPERATIONS,
                 requiredPermission: 'order_services.view',
                 defaultPosition: 6,
+                periodAware: true,
             ),
 
             new DashboardWidget(
@@ -92,6 +100,7 @@ final class OperationsWidgets
                 defaultPosition: 7,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/orders',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'orders_by_status',
@@ -101,6 +110,21 @@ final class OperationsWidgets
                 defaultPosition: 8,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/orders',
+                periodAware: true,
+                // Cliquer une part ouvre les commandes **de ce statut**. Sans
+                // ce nom de paramètre, la carte menait à la liste entière :
+                // celui qui vise « Confirmée » sait ce qu'il veut voir, et la
+                // refaire au filtre à la main était le geste que la carte
+                // promettait d'épargner.
+                drilldown: new DashboardDrilldown(
+                    seriesParam: 'status',
+                    // Les bornes servent ici a **reporter la periode** de
+                    // l'ecran. Une repartition lue sur aout qui ouvrirait les
+                    // commandes de tous les temps montrerait autre chose que la
+                    // part qu'on vient de cliquer.
+                    fromParam: 'createdFrom',
+                    toParam: 'createdTo',
+                ),
             ),
             // Camembert : la provenance se lit en proportion, et un organisme
             // n'en emploie que deux ou trois sur les neuf possibles. Les
@@ -114,6 +138,12 @@ final class OperationsWidgets
                 defaultPosition: 9,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/orders',
+                periodAware: true,
+                drilldown: new DashboardDrilldown(
+                    seriesParam: 'source',
+                    fromParam: 'createdFrom',
+                    toParam: 'createdTo',
+                ),
             ),
 
             // Le temps, que rien d'autre ici ne montre : les autres widgets
@@ -127,6 +157,16 @@ final class OperationsWidgets
                 defaultPosition: 10,
                 size: DashboardWidgetSize::LARGE,
                 route: '/orders',
+                periodAware: true,
+                // Une colonne désigne **un jour**, et la liste sait le filtrer
+                // par les deux bornes de sa fenêtre : le même jour des deux
+                // côtés. Sa légende désigne en plus un statut, et les deux se
+                // combinent — c'est exactement ce que la colonne montre.
+                drilldown: new DashboardDrilldown(
+                    seriesParam: 'status',
+                    fromParam: 'createdFrom',
+                    toParam: 'createdTo',
+                ),
             ),
 
             // Une tendance, pas un volume : l'oeil suit une pente bien mieux
@@ -140,6 +180,15 @@ final class OperationsWidgets
                 defaultPosition: 11,
                 size: DashboardWidgetSize::LARGE,
                 route: '/orders',
+                periodAware: true,
+                // Pas de `seriesParam` ici, et c'est voulu : « créées » et
+                // « achevées » ne sont pas des valeurs de colonne, ce sont deux
+                // façons de compter. Les envoyer comme statut aurait donné une
+                // liste vide sur la première, et fausse sur la seconde.
+                drilldown: new DashboardDrilldown(
+                    fromParam: 'createdFrom',
+                    toParam: 'createdTo',
+                ),
             ),
         ];
     }

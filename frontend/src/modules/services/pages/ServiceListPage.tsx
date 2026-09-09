@@ -1,12 +1,13 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { useServiceList } from '../hooks/useServices'
 import type { Service, ServiceFilters } from '../types/service'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -18,7 +19,6 @@ const SORTABLE = ['code', 'name']
 
 export function ServiceListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [filters, setFilters] = useState<ServiceFilters>({ page: 1, perPage: 25 })
 
@@ -125,8 +125,22 @@ export function ServiceListPage() {
           }))
         }
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/services/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/services/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/services/${row.id}/edit`,
+                permission: 'services.update',
+              },
+            ]}
+          />
+        )}
       />
     </div>
   )

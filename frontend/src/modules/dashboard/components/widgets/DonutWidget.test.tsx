@@ -21,9 +21,12 @@ function donut(series: ChartSeries[], labels: string | null = null): DashboardWi
     key: 'tours_by_status',
     type: 'donut',
     labelKey: 'dashboardWidgets.tours_by_status.label',
+    periodLabelKey: null,
     size: 'medium',
     position: 1,
     route: null,
+    periodAware: true,
+    drilldown: null,
     data: { mode: 'share', source: null, labels, series },
   }
 }
@@ -33,9 +36,12 @@ function gauge(value: number, total: number): DashboardWidget {
     key: 'planning_coverage_rate',
     type: 'gauge',
     labelKey: 'dashboardWidgets.planning_coverage_rate.label',
+    periodLabelKey: null,
     size: 'small',
     position: 1,
     route: null,
+    periodAware: false,
+    drilldown: null,
     data: { value, total },
   }
 }
@@ -44,8 +50,8 @@ function render(widget: DashboardWidget) {
   server.use(http.get(`${API}/statuses`, () => HttpResponse.json({ data: [], meta: {} })))
 
   return widget.type === 'gauge'
-    ? renderWithProviders(<GaugeWidget widget={widget} />)
-    : renderWithProviders(<DonutWidget widget={widget} />)
+    ? renderWithProviders(<GaugeWidget widget={widget} period={null} />)
+    : renderWithProviders(<DonutWidget widget={widget} period={null} />)
 }
 
 describe('camembert', () => {

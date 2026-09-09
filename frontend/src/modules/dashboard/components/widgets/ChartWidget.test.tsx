@@ -20,9 +20,12 @@ function chartWidget(series: ChartSeries[], mode: 'share' | 'amounts' = 'share')
     key: 'orders_by_status',
     type: 'chart',
     labelKey: 'dashboardWidgets.orders_by_status.label',
+    periodLabelKey: null,
     size: 'medium',
     position: 1,
     route: null,
+    periodAware: true,
+    drilldown: null,
     data: { mode, source: null, labels: null, series },
   }
 }
@@ -48,7 +51,7 @@ function renderChart(widget: DashboardWidget, referential: Array<{ code: string;
     ),
   )
 
-  return renderWithProviders(<ChartWidget widget={widget} />)
+  return renderWithProviders(<ChartWidget widget={widget} period={null} />)
 }
 
 describe('graphe de répartition', () => {

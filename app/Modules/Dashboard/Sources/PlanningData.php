@@ -44,31 +44,33 @@ final readonly class PlanningData implements DashboardDataSource
     private function resolveOne(string $key, DashboardContext $context): mixed
     {
         return match ($key) {
-            'tours_today' => DashboardPayload::kpi(
-                $this->tours($context)->where('tour_date', $context->today->toDateString())->count()
-            ),
+            // La journée par défaut, la période dès qu'on en demande une. Le
+            // libellé suit par `periodLabelKey` : « Tournées du jour » qui
+            // compterait un mois serait faux à l'écran, pas dans la requête.
+            'tours_today' => DashboardPayload::kpi($this->onDates($context)->count()),
             'draft_tours' => DashboardPayload::kpi(
-                $this->tours($context)->where('status', TourStatus::DRAFT->value)->count()
+                $context->restrict($this->tours($context), 'tour_date')
+                    ->where('status', TourStatus::DRAFT->value)
+                    ->count()
             ),
 
             // « Planifiée » et « confirmée » sont deux états d'une même
             // attente : la tournée existe, elle n'est pas partie. Les séparer
             // aurait donné deux tuiles qu'on additionne de tête.
             'planned_tours' => DashboardPayload::kpi(
-                $this->tours($context)->whereIn('status', [
+                $context->restrict($this->tours($context), 'tour_date')->whereIn('status', [
                     TourStatus::PLANNED->value,
                     TourStatus::CONFIRMED->value,
                 ])->count()
             ),
 
             'tours_in_progress' => DashboardPayload::kpi(
-                $this->tours($context)->where('status', TourStatus::IN_PROGRESS->value)->count()
+                $context->restrict($this->tours($context), 'tour_date')
+                    ->where('status', TourStatus::IN_PROGRESS->value)
+                    ->count()
             ),
             'completed_tours_today' => DashboardPayload::kpi(
-                $this->tours($context)
-                    ->where('status', TourStatus::COMPLETED->value)
-                    ->where('tour_date', $context->today->toDateString())
-                    ->count()
+                $this->onDates($context)->where('status', TourStatus::COMPLETED->value)->count()
             ),
 
             'unplanned_services' => DashboardPayload::kpi($this->plannable($context)->count()),
@@ -92,6 +94,22 @@ final readonly class PlanningData implements DashboardDataSource
     }
 
     /**
+     * Les tournées de la journée, ou celles de la période demandée.
+     *
+     * `tour_date` est une **date** et non un horodatage : la comparer à des
+     * bornes de journée fonctionne, et l'égalité stricte du jour courant reste
+     * ce qu'elle était quand personne ne demande rien.
+     *
+     * @return Builder<Tour>
+     */
+    private function onDates(DashboardContext $context): Builder
+    {
+        return $context->period === null
+            ? $this->tours($context)->where('tour_date', $context->today->toDateString())
+            : $this->tours($context)->whereBetween('tour_date', $context->period->bounds());
+    }
+
+    /**
      * Les services qui attendent une tournée.
      *
      * Deux conditions, celles de la planification : un statut qui l'autorise, et
@@ -102,7 +120,7 @@ final readonly class PlanningData implements DashboardDataSource
      */
     private function plannable(DashboardContext $context): Builder
     {
-        return OrderService::query()
+        return $context->restrict(OrderService::query(), 'requested_date')
             ->whereIn('status', PlanningEligibility::PLANNABLE_STATUSES)
             ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
             ->whereDoesntHave('tourStopServices', fn ($assignments) => $assignments->where('is_active_assignment', true));
@@ -134,7 +152,7 @@ final readonly class PlanningData implements DashboardDataSource
      */
     private function recentTours(DashboardContext $context): array
     {
-        return $this->tours($context)
+        return $context->restrict($this->tours($context), 'tour_date')
             ->orderByDesc('tour_date')
             ->limit(6)
             ->get(['id', 'tour_number', 'tour_date', 'status', 'total_customers'])
@@ -165,7 +183,7 @@ final readonly class PlanningData implements DashboardDataSource
     {
         $waiting = $this->plannable($context)->count();
 
-        $placed = OrderService::query()
+        $placed = $context->restrict(OrderService::query(), 'requested_date')
             ->where('status', OrderServiceStatus::PLANNED->value)
             ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
             ->count();
@@ -178,7 +196,7 @@ final readonly class PlanningData implements DashboardDataSource
      */
     private function toursByStatus(DashboardContext $context): array
     {
-        return $this->tours($context)
+        return $context->restrict($this->tours($context), 'tour_date')
             ->toBase()
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')

@@ -5,7 +5,9 @@ import { ColumnStack } from '../charts/ColumnStack'
 import { TimeseriesLegend } from '../charts/TimeseriesLegend'
 import { useTimeseries } from '../charts/useTimeseries'
 import { WidgetCard } from '../WidgetCard'
-import type { DashboardWidget, TimeseriesData } from '../../types/dashboard'
+import { drilldownTo } from '../../utils/drilldown'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { DashboardWidgetProps, TimeseriesData } from '../../types/dashboard'
 
 /**
  * Un volume quotidien, et sa composition.
@@ -20,13 +22,22 @@ import type { DashboardWidget, TimeseriesData } from '../../types/dashboard'
  * bord : les deux ne peuvent pas partager la même règle sans qu'une des deux
  * visées tombe à côté de sa donnée.
  */
-export function ColumnsWidget({ widget }: { widget: DashboardWidget }) {
+export function ColumnsWidget({ widget, period }: DashboardWidgetProps) {
   const { t } = useTranslation()
   const chart = useTimeseries(widget.data as TimeseriesData | null, true)
 
+  // Deux forages, et deux questions différentes : la colonne ouvre **le jour**
+  // qu'on vient de viser, la légende ouvre **la série** — toutes dates
+  // confondues. C'est le défaut que cette carte avait : elle menait à la liste
+  // entière quel que soit l'endroit cliqué, et le jour visé n'y était pour
+  // rien.
+  const dayLink = (index: number) => drilldownTo(widget, { day: chart.data.buckets[index] })
+
+  const seriesLink = (code: string) => drilldownTo(widget, { code, period })
+
   if (chart.isEmpty) {
     return (
-      <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+      <WidgetCard title={widgetTitle(widget, period, t)} to={widget.route}>
         <p className="text-sm text-muted-foreground">{t('dashboard.widgetEmpty')}</p>
       </WidgetCard>
     )
@@ -35,7 +46,11 @@ export function ColumnsWidget({ widget }: { widget: DashboardWidget }) {
   const bandWidth = 100 / chart.data.buckets.length
 
   return (
-    <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+    <WidgetCard
+      title={widgetTitle(widget, period, t)}
+      to={widget.route}
+      interactive={widget.drilldown !== null}
+    >
       {/* Le jour survolé est écrit ici, au-dessus du graphe : posé en infobulle
           flottante, il aurait recouvert la colonne qu'on vient de viser. */}
       <span className="h-4 text-sm font-medium">{chart.hoveredDay ?? ''}</span>
@@ -48,6 +63,7 @@ export function ColumnsWidget({ widget }: { widget: DashboardWidget }) {
         hovered={chart.hovered}
         onHover={chart.setHovered}
         xOf={(index) => (index + 0.5) * bandWidth}
+        linkOf={dayLink}
       >
         <ColumnStack
           slices={chart.slices}
@@ -64,6 +80,7 @@ export function ColumnsWidget({ widget }: { widget: DashboardWidget }) {
         slices={chart.slices}
         values={chart.hoveredValues}
         labelOf={chart.labelOf}
+        linkOf={(slice) => seriesLink(slice.code)}
       />
     </WidgetCard>
   )

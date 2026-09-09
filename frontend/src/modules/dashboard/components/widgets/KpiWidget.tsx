@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 
 import { WidgetCard } from '../WidgetCard'
-import type { DashboardWidget, KpiData } from '../../types/dashboard'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { DashboardWidgetProps, KpiData } from '../../types/dashboard'
 
 /**
  * Un chiffre, et de quoi savoir ce qu'il compte.
@@ -15,12 +16,12 @@ import type { DashboardWidget, KpiData } from '../../types/dashboard'
  * Une valeur absente affiche un tiret, jamais un zéro : « aucun client » et
  * « le chiffre n'a pas pu être lu » ne sont pas la même information.
  */
-export function KpiWidget({ widget }: { widget: DashboardWidget }) {
+export function KpiWidget({ widget, period }: DashboardWidgetProps) {
   const { t } = useTranslation()
   const data = widget.data as KpiData | null
 
   return (
-    <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+    <WidgetCard title={widgetTitle(widget, period, t)} to={widget.route}>
       <span className="text-3xl font-semibold tabular-nums">
         {data?.value ?? '—'}
         {data?.unit ? <span className="ml-1 text-base font-normal text-muted-foreground">{data.unit}</span> : null}

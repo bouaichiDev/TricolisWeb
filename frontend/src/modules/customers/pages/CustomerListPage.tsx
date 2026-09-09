@@ -1,13 +1,14 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { CustomerCapabilities } from '../components/CustomerCapabilities'
 import { useCustomerList } from '../hooks/useCustomers'
 import type { Customer, CustomerFilters } from '../types/customer'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -31,7 +32,6 @@ const STATUSES = ['active', 'inactive', 'blocked'] as const
  */
 export function CustomerListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [filters, setFilters] = useState<CustomerFilters>({
     page: 1,
@@ -151,8 +151,22 @@ export function CustomerListPage() {
         direction={filters.direction}
         onSortChange={toggleSort}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/customers/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/customers/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/customers/${row.id}/edit`,
+                permission: 'customers.update',
+              },
+            ]}
+          />
+        )}
       />
     </div>
   )

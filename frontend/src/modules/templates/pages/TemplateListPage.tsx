@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -100,38 +101,6 @@ export function TemplateListPage() {
         header: t('templates.fields.isActive'),
         cell: (row) => <StatusBadge status={row.isActive ? 'active' : 'inactive'} />,
       },
-      {
-        key: 'actions',
-        header: '',
-        className: 'w-24',
-        cell: (row) => (
-          <span className="flex justify-end gap-1">
-            <PermissionGuard permission="templates.update">
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t('common.edit')}
-                aria-label={t('common.edit')}
-                onClick={() => setEditing(row)}
-              >
-                <Pencil className="size-4" aria-hidden />
-              </Button>
-            </PermissionGuard>
-
-            <PermissionGuard permission="templates.delete">
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t('common.delete')}
-                aria-label={t('common.delete')}
-                onClick={() => setDeleting(row)}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </PermissionGuard>
-          </span>
-        ),
-      },
     ],
     [t],
   )
@@ -164,7 +133,29 @@ export function TemplateListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                permission: 'templates.update',
+                onClick: () => setEditing(row),
+              },
+              {
+                key: 'delete',
+                icon: Trash2,
+                label: t('common.delete'),
+                tone: 'danger',
+                permission: 'templates.delete',
+                onClick: () => setDeleting(row),
+              },
+            ]}
+          />
+        )}
         emptyMessage={t('templates.empty')}
       />
 

@@ -6,6 +6,8 @@ interface DonutChartProps {
   hovered: string | null
   onHover: (code: string | null) => void
   labelOf: (slice: ChartSlice) => string
+  /** Ouvre la part visée, quand elle désigne un filtre de la liste. */
+  onSelect?: (slice: ChartSlice) => void
 }
 
 /** Rayon et épaisseur, dans un carré de 100 unités de côté. */
@@ -33,7 +35,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
  * `-90°` de rotation pour partir à midi. Sans elle, la première part commence à
  * trois heures, là où personne ne commence à lire un cadran.
  */
-export function DonutChart({ slices, total, hovered, onHover, labelOf }: DonutChartProps) {
+export function DonutChart({ slices, total, hovered, onHover, labelOf, onSelect }: DonutChartProps) {
   let consumed = 0
 
   return (
@@ -70,6 +72,8 @@ export function DonutChart({ slices, total, hovered, onHover, labelOf }: DonutCh
               className="transition-opacity"
               onMouseEnter={() => onHover(slice.code)}
               onMouseLeave={() => onHover(null)}
+              onClick={onSelect === undefined ? undefined : () => onSelect(slice)}
+              cursor={onSelect === undefined ? undefined : 'pointer'}
             >
               <title>{`${labelOf(slice)} — ${slice.value}`}</title>
             </circle>

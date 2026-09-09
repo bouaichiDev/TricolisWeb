@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Dashboard\Catalogue;
 
+use App\Shared\Dashboard\DashboardDrilldown;
 use App\Shared\Dashboard\DashboardWidget;
 use App\Shared\Dashboard\DashboardWidgetCategory;
 use App\Shared\Dashboard\DashboardWidgetSize;
@@ -38,6 +39,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 100,
                 route: '/tours',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'draft_tours',
@@ -46,6 +48,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 101,
                 route: '/tours',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'planned_tours',
@@ -54,6 +57,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 102,
                 route: '/tours',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'tours_in_progress',
@@ -62,6 +66,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 103,
                 route: '/tours',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'completed_tours_today',
@@ -70,6 +75,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 104,
                 route: '/tours',
+                periodAware: true,
             ),
 
             // Le planning est l'écran où l'on répare les deux suivants : c'est
@@ -82,6 +88,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 105,
                 route: '/planning',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'services_without_gps',
@@ -90,6 +97,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 106,
                 route: '/planning',
+                periodAware: true,
             ),
 
             new DashboardWidget(
@@ -100,6 +108,7 @@ final class PlanningWidgets
                 defaultPosition: 107,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/tours',
+                periodAware: true,
             ),
             // Camembert et non barre de composition : une tournee a six statuts,
             // pas dix. C'est la borne au-dela de laquelle deux secteurs voisins
@@ -113,6 +122,12 @@ final class PlanningWidgets
                 defaultPosition: 108,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/tours',
+                periodAware: true,
+                drilldown: new DashboardDrilldown(
+                    seriesParam: 'status',
+                    fromParam: 'tourDateFrom',
+                    toParam: 'tourDateTo',
+                ),
             ),
 
             // Un seul rapport : ce qui est place, sur ce qui reste a placer.
@@ -126,6 +141,7 @@ final class PlanningWidgets
                 requiredPermission: 'tours.view',
                 defaultPosition: 109,
                 route: '/planning',
+                periodAware: true,
             ),
         ];
     }

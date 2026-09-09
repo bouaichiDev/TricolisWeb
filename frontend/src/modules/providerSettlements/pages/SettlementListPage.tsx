@@ -8,6 +8,7 @@ import type { ProviderSettlement } from '../types/settlement'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
@@ -26,10 +27,12 @@ export function SettlementListPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | undefined>(undefined)
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [toDelete, setToDelete] = useState<ProviderSettlement | null>(null)
 
   const { data, isPending, error, refetch } = useSettlementList({
     page,
+    perPage,
     search: search || undefined,
     status,
   })
@@ -71,24 +74,6 @@ export function SettlementListPage() {
       key: 'status',
       header: t('settlements.fields.status'),
       cell: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-12',
-      cell: (row) =>
-        row.status === 'draft' ? (
-          <PermissionGuard permission="provider_settlements.delete">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.delete')}
-              onClick={() => setToDelete(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        ) : null,
     },
   ]
 
@@ -135,6 +120,30 @@ export function SettlementListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size) => {
+          setPerPage(size)
+          setPage(1)
+        }}
+        actions={(row) => (
+          <RowActions
+            actions={
+              // Un décompte clos est figé : proposer la suppression aurait mené à un
+              // refus du serveur, ce qui use la confiance qu'on met dans l'écran.
+              row.status === 'draft'
+                ? [
+                    {
+                      key: 'delete',
+                      icon: Trash2,
+                      label: t('common.delete'),
+                      tone: 'danger' as const,
+                      permission: 'provider_settlements.delete',
+                      onClick: () => setToDelete(row),
+                    },
+                  ]
+                : []
+            }
+          />
+        )}
         onRetry={() => void refetch()}
         emptyMessage={t('settlements.empty')}
       />

@@ -81,8 +81,8 @@ export function OrderCommunicationsTab({ orderId, active }: OrderCommunicationsT
     },
     {
       key: 'actions',
-      header: '',
-      className: 'w-40',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => <CommunicationRowActions communication={row} />,
     },
   ]

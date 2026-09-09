@@ -192,7 +192,22 @@
     "otherSeries": "Autres",
     "total": "Total",
     "gaugeOutOf": "sur {{total}}",
-    "gaugeEmpty": "Rien à mesurer pour l’instant."
+    "gaugeEmpty": "Rien à mesurer pour l’instant.",
+    "period": {
+      "label": "Période",
+      "from": "Du",
+      "to": "Au",
+      "hint": "Sur une période, le tableau de bord ne montre que les cartes qui savent la suivre. Les quantités de stock et les dénombrements ne portent aucune date : ils ne sont pas affichés.",
+      "hiddenCount": "{{count}} carte sans date n’est pas affichée sur une période.",
+      "hiddenCount_other": "{{count}} cartes sans date ne sont pas affichées sur une période.",
+      "noneApply": "Aucune des cartes de ce tableau de bord ne porte de date : la période ne s’y applique pas.",
+      "presets": {
+        "today": "Aujourd’hui",
+        "last7": "7 derniers jours",
+        "last30": "30 derniers jours",
+        "thisMonth": "Ce mois-ci"
+      }
+    }
   },
   "table": {
     "empty": "Aucun résultat",
@@ -1565,6 +1580,8 @@
       "changes": "Modifications"
     },
     "filters": {
+      "orderDateFrom": "Commandes du",
+      "orderDateTo": "Commandes au",
       "withoutDepot": "Sans dépôt affecté",
       "withoutDepotHint": "Les commandes importées arrivent avec une agence mais sans dépôt : combinez avec l’origine pour ne voir qu’elles."
     }
@@ -2896,6 +2913,7 @@
     "catalogue": "Widgets disponibles",
     "noneActive": "Aucun widget activé : ce rôle verra un tableau de bord vide.",
     "previewEmpty": "Rien à prévisualiser tant qu'aucun widget n'est activé.",
+    "withoutPeriod": "Masqué sur une période",
     "permissionRequired": "Permission requise : {{permission}}",
     "moveUp": "Monter",
     "moveDown": "Descendre",
@@ -2931,6 +2949,7 @@
   "dashboardWidgets": {
     "orders_today": {
       "label": "Commandes du jour",
+      "periodLabel": "Commandes de la période",
       "description": "Commandes dont la date est aujourd'hui"
     },
     "orders_to_plan": {
@@ -2943,6 +2962,7 @@
     },
     "orders_completed_today": {
       "label": "Commandes achevées aujourd'hui",
+      "periodLabel": "Commandes achevées sur la période",
       "description": "Commandes passées à l'état achevé dans la journée"
     },
     "services_ready_to_plan": {
@@ -2967,6 +2987,7 @@
     },
     "tours_today": {
       "label": "Tournées du jour",
+      "periodLabel": "Tournées de la période",
       "description": "Tournées datées d'aujourd'hui"
     },
     "draft_tours": {
@@ -2983,6 +3004,7 @@
     },
     "completed_tours_today": {
       "label": "Tournées achevées aujourd'hui",
+      "periodLabel": "Tournées achevées sur la période",
       "description": "Tournées du jour arrivées à leur terme"
     },
     "unplanned_services": {
@@ -3007,6 +3029,7 @@
     },
     "claims_created_today": {
       "label": "Réclamations du jour",
+      "periodLabel": "Réclamations de la période",
       "description": "Réclamations enregistrées aujourd'hui"
     },
     "recent_claims": {
@@ -3015,6 +3038,7 @@
     },
     "pod_created_today": {
       "label": "Preuves de livraison du jour",
+      "periodLabel": "Preuves de livraison de la période",
       "description": "Preuves dont la remise est datée d'aujourd'hui"
     },
     "services_without_pod": {
@@ -3031,10 +3055,12 @@
     },
     "closed_invoices_today": {
       "label": "Factures closes aujourd'hui",
+      "periodLabel": "Factures closes sur la période",
       "description": "Factures arrêtées dans la journée"
     },
     "closed_invoices_period_total": {
       "label": "Facturé ce mois-ci",
+      "periodLabel": "Facturé sur la période",
       "description": "Total des factures closes du mois, une barre par devise"
     },
     "invoices_by_status": {
@@ -3087,6 +3113,7 @@
     },
     "communications_sent_today": {
       "label": "Communications envoyées aujourd'hui",
+      "periodLabel": "Communications envoyées sur la période",
       "description": "Envois partis dans la journée"
     },
     "recent_communications": {
@@ -3103,6 +3130,7 @@
     },
     "exports_sent_today": {
       "label": "Exports envoyés aujourd'hui",
+      "periodLabel": "Exports envoyés sur la période",
       "description": "Fichiers partis dans la journée"
     },
     "recent_export_jobs": {

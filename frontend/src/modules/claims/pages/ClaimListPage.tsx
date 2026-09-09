@@ -79,6 +79,7 @@ export function ClaimListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
         emptyMessage={t('claims.empty')}
       />

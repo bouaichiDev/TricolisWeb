@@ -7,6 +7,7 @@ import { useDeletePricingVariable, usePricingVariables } from '../hooks/usePrici
 import type { PricingVariable } from '../types/pricing'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -79,33 +80,6 @@ export function PricingVariablesPage() {
         </Badge>
       ),
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-24',
-      cell: (row) => (
-        <PermissionGuard permission="pricing_variables.manage">
-          <span className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.edit')}
-              onClick={() => setEditing(row)}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.delete')}
-              onClick={() => setToDelete(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </span>
-        </PermissionGuard>
-      ),
-    },
   ]
 
   return (
@@ -128,6 +102,27 @@ export function PricingVariablesPage() {
         rows={data ?? []}
         rowKey={(row) => row.id}
         isLoading={isPending}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                permission: 'pricing_variables.manage',
+                onClick: () => setEditing(row),
+              },
+              {
+                key: 'delete',
+                icon: Trash2,
+                label: t('common.delete'),
+                tone: 'danger',
+                permission: 'pricing_variables.manage',
+                onClick: () => setToDelete(row),
+              },
+            ]}
+          />
+        )}
         emptyMessage={t('pricing.variables.empty')}
       />
 

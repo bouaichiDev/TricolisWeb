@@ -1,12 +1,13 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { useAgencyOptions, useDepotOptions } from '@/modules/orders/hooks/useOrderScope'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
@@ -35,7 +36,6 @@ import { STOCK_LOCATION_SOURCE } from '../utils/stockSources'
  */
 export function StockLocationListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [agencyId, setAgencyId] = useState('')
   const [filters, setFilters] = useState<StockLocationFilters>({
@@ -180,8 +180,22 @@ export function StockLocationListPage() {
               }))
             }
             onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+            onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
             onRetry={() => void refetch()}
-            onRowClick={(row) => void navigate(`/stock/locations/${row.id}`)}
+            actions={(row) => (
+              <RowActions
+                actions={[
+                  { key: 'view', icon: Eye, label: t('common.view'), to: `/stock/locations/${row.id}` },
+                  {
+                    key: 'edit',
+                    icon: Pencil,
+                    label: t('common.edit'),
+                    to: `/stock/locations/${row.id}/edit`,
+                    permission: 'stock_locations.update',
+                  },
+                ]}
+              />
+            )}
             emptyMessage={t('stock.noLocation')}
           />
         </TabsContent>

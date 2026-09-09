@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { WidgetCard } from '../WidgetCard'
-import type { DashboardWidget, ListData, ListItem } from '../../types/dashboard'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { DashboardWidgetProps, ListData, ListItem } from '../../types/dashboard'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 
 /**
@@ -19,12 +20,12 @@ import { StatusBadge } from '@/shared/components/data/StatusBadge'
  * démêle à sa façon. Le lien vers la liste entière est donc en pied de carte —
  * ce qui est aussi ce qu'on y cherche du regard.
  */
-export function ListWidget({ widget }: { widget: DashboardWidget }) {
+export function ListWidget({ widget, period }: DashboardWidgetProps) {
   const { t } = useTranslation()
   const items = (widget.data as ListData | null)?.items ?? []
 
   return (
-    <WidgetCard title={t(widget.labelKey)}>
+    <WidgetCard title={widgetTitle(widget, period, t)}>
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('dashboard.widgetEmpty')}</p>
       ) : (

@@ -7,6 +7,7 @@ return [
 
     'allowed_origins' => [
         'https://tricolis.bouaichibadr.com',
+        'http://localhost:5173',
 
     ],
 

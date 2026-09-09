@@ -14,9 +14,10 @@ import { Button } from '@/shared/components/ui/button'
 export function AgencyDepotsPanel({ agencyId }: { agencyId: string }) {
   const { t } = useTranslation()
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [toDelete, setToDelete] = useState<Depot | null>(null)
 
-  const { data, isPending, error, refetch } = useDepotList(agencyId, { page })
+  const { data, isPending, error, refetch } = useDepotList(agencyId, { page, perPage })
   const remove = useDeleteDepot(agencyId)
 
   return (
@@ -39,6 +40,10 @@ export function AgencyDepotsPanel({ agencyId }: { agencyId: string }) {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size: number) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
         onDelete={setToDelete}
       />

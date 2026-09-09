@@ -50,15 +50,19 @@ final readonly class IntegrationsData implements DashboardDataSource
     {
         return match ($key) {
             'export_jobs_failed' => DashboardPayload::alert(
-                $this->jobs($context)->where('status', self::FAILED)->count()
+                $context->restrict($this->jobs($context), 'generated_at')
+                    ->where('status', self::FAILED)
+                    ->count()
             ),
             'export_jobs_pending' => DashboardPayload::kpi(
-                $this->jobs($context)->where('status', self::PENDING)->count()
+                $context->restrict($this->jobs($context), 'generated_at')
+                    ->where('status', self::PENDING)
+                    ->count()
             ),
             'exports_sent_today' => DashboardPayload::kpi(
                 $this->jobs($context)
                     ->where('status', self::SENT)
-                    ->whereBetween('sent_at', $context->dayBounds())
+                    ->whereBetween('sent_at', $context->bounds())
                     ->count()
             ),
             'recent_export_jobs' => DashboardPayload::list($this->recentJobs($context)),
@@ -107,12 +111,12 @@ final readonly class IntegrationsData implements DashboardDataSource
     {
         $sent = $this->jobs($context)
             ->where('status', self::SENT)
-            ->whereBetween('sent_at', $context->dayBounds())
+            ->whereBetween('sent_at', $context->bounds())
             ->count();
 
         $failed = $this->jobs($context)
             ->where('status', self::FAILED)
-            ->whereBetween('generated_at', $context->dayBounds())
+            ->whereBetween('generated_at', $context->bounds())
             ->count();
 
         return DashboardPayload::gauge($sent, $sent + $failed);
@@ -123,7 +127,7 @@ final readonly class IntegrationsData implements DashboardDataSource
      */
     private function recentJobs(DashboardContext $context): array
     {
-        return $this->jobs($context)
+        return $context->restrict($this->jobs($context), 'generated_at')
             ->orderByDesc('generated_at')
             ->limit(6)
             ->get(['id', 'file_name', 'entity_type', 'status', 'generated_at'])

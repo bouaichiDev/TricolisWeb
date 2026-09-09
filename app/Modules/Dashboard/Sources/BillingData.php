@@ -57,12 +57,14 @@ final readonly class BillingData implements DashboardDataSource
             'prebilling_services' => DashboardPayload::kpi($this->billableServices($context)),
 
             'draft_invoices' => DashboardPayload::kpi(
-                $this->invoices($context)->where('status', self::DRAFT)->count()
+                $context->restrict($this->invoices($context), 'invoice_date')
+                    ->where('status', self::DRAFT)
+                    ->count()
             ),
             'closed_invoices_today' => DashboardPayload::kpi(
                 $this->invoices($context)
                     ->where('status', self::CLOSED)
-                    ->whereBetween('created_at', $context->dayBounds())
+                    ->whereBetween('created_at', $context->bounds())
                     ->count()
             ),
             // `amounts`, et non `chart` : une devise par ligne, sans barre
@@ -74,8 +76,10 @@ final readonly class BillingData implements DashboardDataSource
             'recent_invoices' => DashboardPayload::list($this->lists->invoices($context)),
 
             'draft_provider_settlements' => DashboardPayload::kpi(
-                ProviderSettlement::query()
-                    ->where('organization_id', $context->organizationId)
+                $context->restrict(
+                    ProviderSettlement::query()->where('organization_id', $context->organizationId),
+                    'period_to',
+                )
                     ->where('status', self::DRAFT)
                     ->count()
             ),
@@ -103,7 +107,7 @@ final readonly class BillingData implements DashboardDataSource
      */
     private function billableServices(DashboardContext $context): int
     {
-        return OrderService::query()
+        return $context->restrict(OrderService::query(), 'requested_date')
             ->where('status', OrderServiceStatus::COMPLETED->value)
             ->whereHas('order', fn (Builder $order) => $order->where('organization_id', $context->organizationId))
             ->whereNotExists(fn (QueryBuilder $line) => $line
@@ -114,12 +118,16 @@ final readonly class BillingData implements DashboardDataSource
     }
 
     /**
-     * Total des factures closes du mois, **par devise**.
+     * Total des factures closes de la période, **par devise**.
      *
-     * Le mois plutôt qu'une période réglable : la période serait un paramètre
-     * de plus à porter dans la configuration, et le tableau de bord répond à
-     * « où en est-on », pas à « combien exactement entre telle et telle date »
-     * — c'est le rôle de la liste des factures, qui sait filtrer.
+     * Le mois en cours tant que personne n'a rien demandé, et c'est la lecture
+     * par défaut d'un facturier : « où en est le mois ». Depuis que le tableau
+     * de bord porte un filtre de dates, la carte le suit — c'était la seule
+     * façon de répondre à « combien exactement entre telle et telle date » sans
+     * ouvrir la liste des factures et y refaire le filtre à la main.
+     *
+     * Les bornes se lisent sur `invoice_date`, jamais sur la date de clôture :
+     * c'est la date que porte le document, et celle que le client verra.
      *
      * @return array<int, array{code: string, value: float}>
      */
@@ -128,7 +136,7 @@ final readonly class BillingData implements DashboardDataSource
         return $this->invoices($context)
             ->toBase()
             ->where('status', self::CLOSED)
-            ->whereBetween('invoice_date', [
+            ->whereBetween('invoice_date', $context->period?->bounds() ?? [
                 $context->today->startOfMonth()->toDateString(),
                 $context->today->endOfMonth()->toDateString(),
             ])
@@ -148,7 +156,7 @@ final readonly class BillingData implements DashboardDataSource
      */
     private function invoicesByStatus(DashboardContext $context): array
     {
-        return $this->invoices($context)
+        return $context->restrict($this->invoices($context), 'invoice_date')
             ->toBase()
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')

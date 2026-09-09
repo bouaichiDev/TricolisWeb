@@ -58,22 +58,28 @@ final readonly class OperationsData implements DashboardDataSource
     private function resolveOne(string $key, DashboardContext $context): mixed
     {
         return match ($key) {
+            // `bounds()` et non `dayBounds()` : sans période choisie, c'est la
+            // journée — le compteur d'origine ; avec, c'est l'intervalle
+            // demandé. Le libellé suit par `periodLabelKey`, faute de quoi la
+            // carte annoncerait le jour en comptant le mois.
             'orders_today' => DashboardPayload::kpi(
-                $this->orders($context)->whereBetween('order_date', $context->dayBounds())->count()
+                $this->orders($context)->whereBetween('order_date', $context->bounds())->count()
             ),
 
             // « À planifier » couvre deux statuts, et il le faut : une commande
             // partiellement planifiée a encore des services en attente, et la
             // ranger avec les commandes closes reviendrait à l'oublier.
             'orders_to_plan' => DashboardPayload::kpi(
-                $this->orders($context)->whereIn('status', [
+                $context->restrict($this->orders($context), 'order_date')->whereIn('status', [
                     OrderStatus::READY->value,
                     OrderStatus::PARTIALLY_PLANNED->value,
                 ])->count()
             ),
 
             'orders_in_progress' => DashboardPayload::kpi(
-                $this->orders($context)->where('status', OrderStatus::IN_PROGRESS->value)->count()
+                $context->restrict($this->orders($context), 'order_date')
+                    ->where('status', OrderStatus::IN_PROGRESS->value)
+                    ->count()
             ),
 
             // La date de clôture n'existe pas sur une commande : `updated_at`
@@ -84,10 +90,14 @@ final readonly class OperationsData implements DashboardDataSource
             'orders_completed_today' => DashboardPayload::kpi(
                 $this->orders($context)
                     ->where('status', OrderStatus::COMPLETED->value)
-                    ->whereBetween('updated_at', $context->dayBounds())
+                    ->whereBetween('updated_at', $context->bounds())
                     ->count()
             ),
 
+            // Les services se bornent sur `requested_date` — la date à
+            // laquelle la prestation est attendue, celle que porte le service
+            // lui-même. `created_at` aurait compté la saisie, ce qui n'est pas
+            // ce qu'un exploitant vient chercher en filtrant une semaine.
             'services_ready_to_plan' => DashboardPayload::kpi(
                 $this->services($context)->where('status', OrderServiceStatus::READY_TO_PLAN->value)->count()
             ),
@@ -140,7 +150,12 @@ final readonly class OperationsData implements DashboardDataSource
             ->groupBy(DB::raw('DATE(order_date)'), 'status')
             ->get();
 
-        $built = DailySeries::build($rows, $context->windowStart(self::COLUMN_DAYS), self::COLUMN_DAYS);
+        // La periode choisie l'emporte sur les quatorze jours par defaut : une
+        // semaine demandee et quatorze colonnes rendues laisserait sept jours
+        // vides qu'on lirait comme sept jours sans commande.
+        $days = $context->windowDays(self::COLUMN_DAYS);
+
+        $built = DailySeries::build($rows, $context->windowStart(self::COLUMN_DAYS), $days);
 
         return DashboardPayload::timeseries($built['buckets'], $built['series'], MorphMap::ORDER);
     }
@@ -163,6 +178,7 @@ final readonly class OperationsData implements DashboardDataSource
     private function ordersTrend(DashboardContext $context): array
     {
         $start = $context->windowStart(self::LINE_DAYS);
+        $days = $context->windowDays(self::LINE_DAYS);
 
         $created = $this->perDay($context, 'order_date', self::LINE_DAYS);
 
@@ -176,11 +192,11 @@ final readonly class OperationsData implements DashboardDataSource
         return DashboardPayload::timeseries(
             array_map(
                 static fn (int $offset): string => $start->addDays($offset)->toDateString(),
-                range(0, self::LINE_DAYS - 1),
+                range(0, $days - 1),
             ),
             [
-                ['code' => 'created', 'values' => DailySeries::values($created, $start, self::LINE_DAYS)],
-                ['code' => 'completed', 'values' => DailySeries::values($completed, $start, self::LINE_DAYS)],
+                ['code' => 'created', 'values' => DailySeries::values($created, $start, $days)],
+                ['code' => 'completed', 'values' => DailySeries::values($completed, $start, $days)],
             ],
             labels: 'orderTrend',
         );
@@ -225,9 +241,12 @@ final readonly class OperationsData implements DashboardDataSource
      */
     private function services(DashboardContext $context): Builder
     {
-        return OrderService::query()->whereHas(
-            'order',
-            fn (Builder $order) => $order->where('organization_id', $context->organizationId)
+        return $context->restrict(
+            OrderService::query()->whereHas(
+                'order',
+                fn (Builder $order) => $order->where('organization_id', $context->organizationId)
+            ),
+            'requested_date',
         );
     }
 
@@ -242,7 +261,7 @@ final readonly class OperationsData implements DashboardDataSource
      */
     private function recentOrders(DashboardContext $context): array
     {
-        return $this->orders($context)
+        return $context->restrict($this->orders($context), 'order_date')
             ->with('customer:id,name')
             ->orderByDesc('order_date')
             ->limit(6)
@@ -272,11 +291,16 @@ final readonly class OperationsData implements DashboardDataSource
      * deux seuls appels qui existent. Une colonne choisie à l'extérieur serait
      * une injection — `selectRaw` ne prend pas de liaison pour un identifiant.
      *
+     * La periode, quand il y en a une, se lit sur `order_date` : c'est la date
+     * que porte la commande, et la seule que celui qui filtre a en tete. La
+     * repartition rendue est alors celle des commandes **passees** dans
+     * l'intervalle, avec le statut qu'elles portent aujourd'hui.
+     *
      * @return array<int, array{code: string, value: int}>
      */
     private function groupBy(DashboardContext $context, string $column): array
     {
-        return $this->orders($context)
+        return $context->restrict($this->orders($context), 'order_date')
             ->toBase()
             ->selectRaw("{$column}, COUNT(*) as total")
             ->groupBy($column)

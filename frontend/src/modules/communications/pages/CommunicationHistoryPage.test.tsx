@@ -101,7 +101,10 @@ describe('historique des communications', () => {
       ),
     )
 
-    await userEvent.click(await screen.findByText('CMD-2026-0042'))
+    // Le détail s'ouvre par la colonne d'actions, et non en cliquant la ligne :
+    // une ligne cliquable rendait son texte insélectionnable, au point qu'on ne
+    // pouvait pas copier un numéro sans ouvrir le tiroir.
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Consulter' }))[0])
 
     expect(await screen.findByText('Bonjour Marie.')).toBeInTheDocument()
   })

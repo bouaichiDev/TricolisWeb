@@ -1,7 +1,6 @@
-import { Plus, RotateCw } from 'lucide-react'
+import { Eye, Plus, RotateCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
 
 import { GenerateExportDialog } from '../components/GenerateExportDialog'
 import { useExportJobs, useRetryExportJob } from '../hooks/useExports'
@@ -10,6 +9,7 @@ import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { useCustomerList } from '@/modules/customers/hooks/useCustomers'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
@@ -38,18 +38,19 @@ const ALL_CUSTOMERS = 'all'
  */
 export function ExportJobListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [generating, setGenerating] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | undefined>(undefined)
   const [customerId, setCustomerId] = useState(ALL_CUSTOMERS)
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
 
   const customers = useCustomerList({ page: 1, perPage: 100 })
   const retry = useRetryExportJob()
 
   const { data, isPending, error, refetch } = useExportJobs({
     page,
+    perPage,
     search: search || undefined,
     status,
     customerId: customerId === ALL_CUSTOMERS ? undefined : customerId,
@@ -106,29 +107,6 @@ export function ExportJobListPage() {
       cell: (row) =>
         row.errorMessage ? (
           <span className="text-sm text-destructive">{row.errorMessage}</span>
-        ) : null,
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-12',
-      cell: (row) =>
-        isRetryable(row) ? (
-          <PermissionGuard permission="export_jobs.retry">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('exports.jobs.retry')}
-              disabled={retry.isPending}
-              onClick={(event) => {
-                // Sans cela, le clic ouvrirait aussi la fiche de l'envoi.
-                event.stopPropagation()
-                retry.mutate(row.id)
-              }}
-            >
-              <RotateCw className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
         ) : null,
     },
   ]
@@ -195,8 +173,37 @@ export function ExportJobListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/integrations/export-jobs/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              {
+                key: 'view',
+                icon: Eye,
+                label: t('common.view'),
+                to: `/integrations/export-jobs/${row.id}`,
+              },
+              // La relance n'a de sens que sur un envoi qui a échoué : proposée
+              // partout, elle aurait invité à rejouer ce qui est déjà parti.
+              ...(isRetryable(row)
+                ? [
+                    {
+                      key: 'retry',
+                      icon: RotateCw,
+                      label: t('exports.jobs.retry'),
+                      permission: 'export_jobs.retry',
+                      disabled: retry.isPending,
+                      onClick: () => retry.mutate(row.id),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        )}
         emptyMessage={t('exports.jobs.empty')}
       />
 

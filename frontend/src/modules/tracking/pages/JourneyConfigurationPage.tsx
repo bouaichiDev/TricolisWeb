@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -77,38 +78,6 @@ export function JourneyConfigurationPage() {
       header: t('journey.fields.active'),
       cell: (row) => <StatusBadge status={row.active ? 'active' : 'inactive'} />,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-24',
-      cell: (row) => (
-        <span className="flex justify-end gap-1">
-          <PermissionGuard permission="tracking_event_definitions.update">
-            <Button
-              variant="ghost"
-              size="icon"
-              title={t('common.edit')}
-              aria-label={t('common.edit')}
-              onClick={() => setEditing(row)}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-
-          <PermissionGuard permission="tracking_event_definitions.delete">
-            <Button
-              variant="ghost"
-              size="icon"
-              title={t('common.delete')}
-              aria-label={t('common.delete')}
-              onClick={() => setDeleting(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        </span>
-      ),
-    },
   ]
 
   return (
@@ -133,6 +102,27 @@ export function JourneyConfigurationPage() {
         meta={data?.meta}
         isLoading={isPending}
         error={error}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                permission: 'tracking_event_definitions.update',
+                onClick: () => setEditing(row),
+              },
+              {
+                key: 'delete',
+                icon: Trash2,
+                label: t('common.delete'),
+                tone: 'danger',
+                permission: 'tracking_event_definitions.delete',
+                onClick: () => setDeleting(row),
+              },
+            ]}
+          />
+        )}
         onRetry={() => void refetch()}
         emptyMessage={t('journey.empty')}
       />

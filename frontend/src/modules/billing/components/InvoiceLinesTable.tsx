@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import type { InvoiceLine } from '../types/invoice'
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
-import { Button } from '@/shared/components/ui/button'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { formatMoney } from '@/shared/utils/format'
 
 interface InvoiceLinesTableProps {
@@ -89,24 +88,6 @@ export function InvoiceLinesTable({
           </Link>
         ) : null,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-12',
-      cell: (row) =>
-        editable ? (
-          <PermissionGuard permission="invoices.update">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.delete')}
-              onClick={() => onRemove(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        ) : null,
-    },
   ]
 
   return (
@@ -114,6 +95,24 @@ export function InvoiceLinesTable({
       columns={columns}
       rows={lines}
       rowKey={(row) => row.id}
+      actions={
+        editable
+          ? (row) => (
+              <RowActions
+                actions={[
+                  {
+                    key: 'delete',
+                    icon: Trash2,
+                    label: t('common.delete'),
+                    tone: 'danger',
+                    permission: 'invoices.update',
+                    onClick: () => onRemove(row),
+                  },
+                ]}
+              />
+            )
+          : undefined
+      }
       emptyMessage={t('billing.invoices.lines.empty')}
     />
   )

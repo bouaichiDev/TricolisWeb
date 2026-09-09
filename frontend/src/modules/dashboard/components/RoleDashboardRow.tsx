@@ -37,6 +37,16 @@ export function RoleDashboardRow({ widget, isEnabled, disabled, onToggle }: Role
           <Badge variant="secondary" className="font-normal">
             {t(`dashboardWidgetTypes.${widget.type}`)}
           </Badge>
+          {/* Marqué à l'envers, parce que c'est la minorité : presque toutes
+              les cartes suivent le filtre de dates. Celles qui ne portent
+              aucune date — soldes de stock, dénombrements — disparaissent de
+              l'écran dès qu'une période est réglée, et celui qui compose un
+              tableau de bord doit le savoir en le composant. */}
+          {widget.periodAware ? null : (
+            <Badge variant="outline" className="font-normal">
+              {t('dashboardSettings.withoutPeriod')}
+            </Badge>
+          )}
         </div>
 
         <p className="text-sm text-muted-foreground">{t(widget.descriptionKey)}</p>

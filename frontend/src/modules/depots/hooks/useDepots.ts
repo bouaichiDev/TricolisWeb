@@ -11,7 +11,10 @@ export const depotKeys = {
     [...depotKeys.all, 'detail', agencyId, depotId] as const,
 }
 
-export function useDepotList(agencyId: string, params: { page?: number; search?: string } = {}) {
+export function useDepotList(
+  agencyId: string,
+  params: { page?: number; perPage?: number; search?: string } = {},
+) {
   return useQuery({
     queryKey: [...depotKeys.lists(agencyId), params],
     queryFn: () => depotsApi.list(agencyId, { perPage: 25, ...params }),

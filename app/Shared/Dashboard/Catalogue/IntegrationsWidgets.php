@@ -34,6 +34,7 @@ final class IntegrationsWidgets
                 requiredPermission: 'export_jobs.view',
                 defaultPosition: 600,
                 route: '/integrations/export-jobs',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'export_jobs_pending',
@@ -42,6 +43,7 @@ final class IntegrationsWidgets
                 requiredPermission: 'export_jobs.view',
                 defaultPosition: 601,
                 route: '/integrations/export-jobs',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'exports_sent_today',
@@ -50,6 +52,7 @@ final class IntegrationsWidgets
                 requiredPermission: 'export_jobs.view',
                 defaultPosition: 602,
                 route: '/integrations/export-jobs',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'recent_export_jobs',
@@ -59,6 +62,7 @@ final class IntegrationsWidgets
                 defaultPosition: 603,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/integrations/export-jobs',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'active_api_configurations',
@@ -87,6 +91,7 @@ final class IntegrationsWidgets
                 requiredPermission: 'export_jobs.view',
                 defaultPosition: 606,
                 route: '/integrations/export-jobs',
+                periodAware: true,
             ),
         ];
     }

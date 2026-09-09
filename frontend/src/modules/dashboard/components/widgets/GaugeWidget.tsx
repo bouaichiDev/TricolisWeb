@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { WidgetCard } from '../WidgetCard'
-import type { DashboardWidget, GaugeData } from '../../types/dashboard'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { DashboardWidgetProps, GaugeData } from '../../types/dashboard'
 
 const RADIUS = 42
 const THICKNESS = 12
@@ -28,7 +29,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
  * Un tout à zéro n'affiche pas 0 % — qui se lirait comme un échec — mais dit
  * qu'il n'y a rien à mesurer.
  */
-export function GaugeWidget({ widget }: { widget: DashboardWidget }) {
+export function GaugeWidget({ widget, period }: DashboardWidgetProps) {
   const { t, i18n } = useTranslation()
   const data = widget.data as GaugeData | null
 
@@ -42,7 +43,7 @@ export function GaugeWidget({ widget }: { widget: DashboardWidget }) {
   )
 
   return (
-    <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+    <WidgetCard title={widgetTitle(widget, period, t)} to={widget.route}>
       <div className="relative mx-auto aspect-square w-full max-w-[140px]">
         <svg viewBox="0 0 100 100" className="size-full -rotate-90" role="presentation">
           {/* La piste dit ce qui reste. Sans elle, un taux faible ressemblerait

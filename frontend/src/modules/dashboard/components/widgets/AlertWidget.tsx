@@ -2,7 +2,8 @@ import { AlertTriangle, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { WidgetCard } from '../WidgetCard'
-import type { AlertData, DashboardWidget } from '../../types/dashboard'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { AlertData, DashboardWidgetProps } from '../../types/dashboard'
 
 /**
  * Un compte qui appelle une action.
@@ -18,13 +19,13 @@ import type { AlertData, DashboardWidget } from '../../types/dashboard'
  * réclamations ouvertes — que le tableau de bord compte au moment où on le
  * regarde.
  */
-export function AlertWidget({ widget }: { widget: DashboardWidget }) {
+export function AlertWidget({ widget, period }: DashboardWidgetProps) {
   const { t } = useTranslation()
   const count = (widget.data as AlertData | null)?.value ?? 0
   const raised = count > 0
 
   return (
-    <WidgetCard title={t(widget.labelKey)} to={widget.route} tone={raised ? 'attention' : 'default'}>
+    <WidgetCard title={widgetTitle(widget, period, t)} to={widget.route} tone={raised ? 'attention' : 'default'}>
       <span className="flex items-center gap-2">
         {raised ? (
           <AlertTriangle className="size-5 text-warning" aria-hidden />

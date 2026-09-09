@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import type { Depot } from '../types/depot'
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
-import { Button } from '@/shared/components/ui/button'
 import type { PaginationMeta } from '@/shared/api/types'
 
 interface DepotTableProps {
@@ -16,6 +15,7 @@ interface DepotTableProps {
   isLoading: boolean
   error: Error | null
   onPageChange: (page: number) => void
+  onPerPageChange: (perPage: number) => void
   onRetry: () => void
   onDelete: (depot: Depot) => void
 }
@@ -28,6 +28,7 @@ export function DepotTable({
   isLoading,
   error,
   onPageChange,
+  onPerPageChange,
   onRetry,
   onDelete,
 }: DepotTableProps) {
@@ -52,23 +53,6 @@ export function DepotTable({
       header: t('depots.fields.status'),
       cell: (row) => <StatusBadge status={row.status} />,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-12',
-      cell: (row) => (
-        <PermissionGuard permission="depots.delete">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t('common.delete')}
-            onClick={() => onDelete(row)}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-        </PermissionGuard>
-      ),
-    },
   ]
 
   return (
@@ -80,6 +64,21 @@ export function DepotTable({
       isLoading={isLoading}
       error={error}
       onPageChange={onPageChange}
+      onPerPageChange={onPerPageChange}
+      actions={(row) => (
+        <RowActions
+          actions={[
+            {
+              key: 'delete',
+              icon: Trash2,
+              label: t('common.delete'),
+              tone: 'danger',
+              permission: 'depots.delete',
+              onClick: () => onDelete(row),
+            },
+          ]}
+        />
+      )}
       onRetry={onRetry}
       emptyMessage={t('depots.empty')}
     />

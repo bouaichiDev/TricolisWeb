@@ -36,6 +36,7 @@ final class ClaimsWidgets
                 requiredPermission: 'claims.view',
                 defaultPosition: 200,
                 route: '/claims',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'claims_created_today',
@@ -44,6 +45,7 @@ final class ClaimsWidgets
                 requiredPermission: 'claims.view',
                 defaultPosition: 201,
                 route: '/claims',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'recent_claims',
@@ -53,6 +55,7 @@ final class ClaimsWidgets
                 defaultPosition: 202,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/claims',
+                periodAware: true,
             ),
 
             // Les preuves de livraison n'ont pas d'écran de liste : elles se
@@ -64,6 +67,7 @@ final class ClaimsWidgets
                 category: DashboardWidgetCategory::CLAIMS,
                 requiredPermission: 'proofs_of_delivery.view',
                 defaultPosition: 203,
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'services_without_pod',
@@ -71,6 +75,7 @@ final class ClaimsWidgets
                 category: DashboardWidgetCategory::CLAIMS,
                 requiredPermission: 'proofs_of_delivery.view',
                 defaultPosition: 204,
+                periodAware: true,
             ),
             // Le meme constat que `services_without_pod`, dans l'autre sens :
             // celui-la compte ce qui manque, celui-ci dit ou l'on en est. Les
@@ -82,6 +87,7 @@ final class ClaimsWidgets
                 category: DashboardWidgetCategory::CLAIMS,
                 requiredPermission: 'proofs_of_delivery.view',
                 defaultPosition: 205,
+                periodAware: true,
             ),
         ];
     }

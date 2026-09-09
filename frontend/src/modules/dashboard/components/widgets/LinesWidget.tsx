@@ -5,7 +5,9 @@ import { LinePlot } from '../charts/LinePlot'
 import { TimeseriesLegend } from '../charts/TimeseriesLegend'
 import { useTimeseries } from '../charts/useTimeseries'
 import { WidgetCard } from '../WidgetCard'
-import type { DashboardWidget, TimeseriesData } from '../../types/dashboard'
+import { drilldownTo } from '../../utils/drilldown'
+import { widgetTitle } from '../../utils/widgetTitle'
+import type { DashboardWidgetProps, TimeseriesData } from '../../types/dashboard'
 
 /**
  * Une tendance, pas un volume.
@@ -25,13 +27,17 @@ import type { DashboardWidget, TimeseriesData } from '../../types/dashboard'
  * Les points se posent **sur le bord** du cadre, le premier à 0 %, le dernier à
  * 100 % : une courbe relie des instants, elle n'occupe pas des intervalles.
  */
-export function LinesWidget({ widget }: { widget: DashboardWidget }) {
+export function LinesWidget({ widget, period }: DashboardWidgetProps) {
   const { t } = useTranslation()
   const chart = useTimeseries(widget.data as TimeseriesData | null, false)
 
+  const dayLink = (index: number) => drilldownTo(widget, { day: chart.data.buckets[index] })
+
+  const seriesLink = (code: string) => drilldownTo(widget, { code, period })
+
   if (chart.isEmpty) {
     return (
-      <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+      <WidgetCard title={widgetTitle(widget, period, t)} to={widget.route}>
         <p className="text-sm text-muted-foreground">{t('dashboard.widgetEmpty')}</p>
       </WidgetCard>
     )
@@ -40,7 +46,11 @@ export function LinesWidget({ widget }: { widget: DashboardWidget }) {
   const count = chart.data.buckets.length
 
   return (
-    <WidgetCard title={t(widget.labelKey)} to={widget.route}>
+    <WidgetCard
+      title={widgetTitle(widget, period, t)}
+      to={widget.route}
+      interactive={widget.drilldown !== null}
+    >
       <span className="h-4 text-sm font-medium">{chart.hoveredDay ?? ''}</span>
 
       <ChartFrame
@@ -51,6 +61,7 @@ export function LinesWidget({ widget }: { widget: DashboardWidget }) {
         hovered={chart.hovered}
         onHover={chart.setHovered}
         xOf={(index) => (count <= 1 ? 50 : (index / (count - 1)) * 100)}
+        linkOf={dayLink}
       >
         <LinePlot
           slices={chart.slices}
@@ -60,10 +71,15 @@ export function LinesWidget({ widget }: { widget: DashboardWidget }) {
         />
       </ChartFrame>
 
+      {/* Pas de lien sur ces séries-là : « créées » et « achevées » sont deux
+          façons de compter, pas deux valeurs de colonne. Le catalogue ne
+          déclare donc pas de paramètre de série, et `drilldownTo` rend `null`
+          — la légende reste une légende. */}
       <TimeseriesLegend
         slices={chart.slices}
         values={chart.hoveredValues}
         labelOf={chart.labelOf}
+        linkOf={(slice) => seriesLink(slice.code)}
       />
     </WidgetCard>
   )

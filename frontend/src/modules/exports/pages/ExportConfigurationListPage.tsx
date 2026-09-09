@@ -13,6 +13,7 @@ import type { ExportConfiguration } from '../types/export'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { useCustomerList } from '@/modules/customers/hooks/useCustomers'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
@@ -86,35 +87,6 @@ export function ExportConfigurationListPage({
         </Badge>
       ),
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-24',
-      cell: (row) => (
-        <span className="flex gap-1">
-          <PermissionGuard permission="customer_export_configurations.update">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.edit')}
-              onClick={() => setEditing(row)}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-          <PermissionGuard permission="customer_export_configurations.delete">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.delete')}
-              onClick={() => setToDelete(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        </span>
-      ),
-    },
   ]
 
   return (
@@ -173,6 +145,27 @@ export function ExportConfigurationListPage({
           rowKey={(row) => row.id}
           isLoading={isPending}
           error={error}
+          actions={(row) => (
+            <RowActions
+              actions={[
+                {
+                  key: 'edit',
+                  icon: Pencil,
+                  label: t('common.edit'),
+                  permission: 'customer_export_configurations.update',
+                  onClick: () => setEditing(row),
+                },
+                {
+                  key: 'delete',
+                  icon: Trash2,
+                  label: t('common.delete'),
+                  tone: 'danger',
+                  permission: 'customer_export_configurations.delete',
+                  onClick: () => setToDelete(row),
+                },
+              ]}
+            />
+          )}
           onRetry={() => void refetch()}
           emptyMessage={t('exports.configurations.empty')}
         />

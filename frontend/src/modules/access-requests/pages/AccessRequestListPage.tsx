@@ -35,12 +35,13 @@ export function AccessRequestListPage() {
 
   const [status, setStatus] = useState<AccessRequestStatus>('pending')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [decision, setDecision] = useState<{
     request: AccessRequest
     kind: 'approve' | 'reject'
   } | null>(null)
 
-  const { data, isPending, error, refetch } = useAccessRequestList({ page, perPage: 25, status })
+  const { data, isPending, error, refetch } = useAccessRequestList({ page, perPage, status })
   const approve = useApproveAccessRequest()
   const reject = useRejectAccessRequest()
 
@@ -72,7 +73,8 @@ export function AccessRequestListPage() {
     { key: 'status', header: t('accessRequests.fields.status'), cell: (row) => <StatusBadge status={row.status} /> },
     {
       key: 'actions',
-      header: '',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) =>
         row.status === 'pending' ? (
           <div className="flex justify-end gap-2">
@@ -123,6 +125,10 @@ export function AccessRequestListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        onPerPageChange={(size) => {
+          setPerPage(size)
+          setPage(1)
+        }}
         onRetry={() => void refetch()}
         emptyMessage={t('accessRequests.empty')}
       />

@@ -57,9 +57,15 @@ final readonly class StockData implements DashboardDataSource
             'stock_reserved_quantity' => DashboardPayload::kpi($this->sum('reserved_quantity', $organizationId)),
             'stock_available_quantity' => DashboardPayload::kpi($this->sum('available_quantity', $organizationId)),
 
+            // Les quantites n'ont aucune date : `stock_balances` porte l'etat
+            // courant, et il n'existe pas de solde « au 12 aout ». Elles ne
+            // suivent donc pas la periode, et l'ecran ne les montre pas quand
+            // on en regle une. La reservation, elle, porte `reserved_at`.
             'active_stock_reservations' => DashboardPayload::kpi(
-                StockReservation::query()
-                    ->inOrganization($organizationId)
+                $context->restrict(
+                    StockReservation::query()->inOrganization($organizationId),
+                    'reserved_at',
+                )
                     ->whereNull('released_at')
                     ->count()
             ),
@@ -94,8 +100,10 @@ final readonly class StockData implements DashboardDataSource
      */
     private function recentMovements(DashboardContext $context): array
     {
-        return StockMovement::query()
-            ->inOrganization($context->organizationId)
+        return $context->restrict(
+            StockMovement::query()->inOrganization($context->organizationId),
+            'created_at',
+        )
             ->with('stockItem:id,article_code,description')
             ->orderByDesc('created_at')
             ->limit(6)

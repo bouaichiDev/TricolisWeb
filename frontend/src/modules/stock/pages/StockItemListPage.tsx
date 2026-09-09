@@ -1,11 +1,12 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { StatusFilterSelect } from '@/modules/statuses/components/StatusFilterSelect'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -29,7 +30,6 @@ import { STOCK_ITEM_SOURCE } from '../utils/stockSources'
  */
 export function StockItemListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [filters, setFilters] = useState<StockItemFilters>({
     page: 1,
     perPage: 25,
@@ -145,8 +145,22 @@ export function StockItemListPage() {
           }))
         }
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/stock/items/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/stock/items/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/stock/items/${row.id}/edit`,
+                permission: 'stock_items.update',
+              },
+            ]}
+          />
+        )}
         emptyMessage={t('stock.noItem')}
       />
     </div>

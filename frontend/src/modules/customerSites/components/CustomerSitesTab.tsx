@@ -7,6 +7,7 @@ import { useCustomerSiteList, useDeleteCustomerSite } from '../hooks/useCustomer
 import type { CustomerSite } from '../types/customerSite'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { Badge } from '@/shared/components/ui/badge'
@@ -68,23 +69,6 @@ export function CustomerSitesTab({ customerId }: { customerId: string }) {
       header: t('customerSites.fields.status'),
       cell: (row) => <StatusBadge status={row.status} />,
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-12',
-      cell: (row) => (
-        <PermissionGuard permission="customer_sites.delete">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={t('common.delete')}
-            onClick={() => setToDelete(row)}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
-        </PermissionGuard>
-      ),
-    },
   ]
 
   return (
@@ -108,6 +92,20 @@ export function CustomerSitesTab({ customerId }: { customerId: string }) {
         isLoading={isPending}
         error={error}
         onPageChange={setPage}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              {
+                key: 'delete',
+                icon: Trash2,
+                label: t('common.delete'),
+                tone: 'danger',
+                permission: 'customer_sites.delete',
+                onClick: () => setToDelete(row),
+              },
+            ]}
+          />
+        )}
         onRetry={() => void refetch()}
         emptyMessage={t('customerSites.empty')}
       />

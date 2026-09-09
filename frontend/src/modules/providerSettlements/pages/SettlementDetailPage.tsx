@@ -65,8 +65,8 @@ export function SettlementDetailPage() {
     },
     {
       key: 'actions',
-      header: '',
-      className: 'w-12',
+      header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) =>
         editable ? (
           <PermissionGuard permission="provider_settlements.update">

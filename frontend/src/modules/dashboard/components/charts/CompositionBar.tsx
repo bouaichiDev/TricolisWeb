@@ -6,6 +6,8 @@ interface CompositionBarProps {
   hovered: string | null
   onHover: (code: string | null) => void
   labelOf: (slice: ChartSlice) => string
+  /** Ouvre la part visée, quand elle désigne un filtre de la liste. */
+  onSelect?: (slice: ChartSlice) => void
 }
 
 /**
@@ -31,7 +33,13 @@ interface CompositionBarProps {
  * La couleur ne porte jamais seule l'identité : chaque segment est repris dans
  * la légende, avec son nom et sa valeur.
  */
-export function CompositionBar({ slices, hovered, onHover, labelOf }: CompositionBarProps) {
+export function CompositionBar({
+  slices,
+  hovered,
+  onHover,
+  labelOf,
+  onSelect,
+}: CompositionBarProps) {
   return (
     <div
       className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full"
@@ -44,6 +52,7 @@ export function CompositionBar({ slices, hovered, onHover, labelOf }: Compositio
           // valeur : elle figure aussi dans la légende, en toutes lettres.
           title={`${labelOf(slice)} — ${slice.value}`}
           onMouseEnter={() => onHover(slice.code)}
+          onClick={onSelect === undefined ? undefined : () => onSelect(slice)}
           style={{
             backgroundColor: slice.color,
             // `flexGrow` plutôt qu'une largeur en pourcentage : les 2 px de
@@ -53,7 +62,11 @@ export function CompositionBar({ slices, hovered, onHover, labelOf }: Compositio
             flexBasis: 0,
             opacity: hovered === null || hovered === slice.code ? 1 : 0.35,
           }}
-          className="min-w-[3px] transition-opacity"
+          className={
+            onSelect === undefined
+              ? 'min-w-[3px] transition-opacity'
+              : 'min-w-[3px] cursor-pointer transition-opacity'
+          }
         />
       ))}
     </div>

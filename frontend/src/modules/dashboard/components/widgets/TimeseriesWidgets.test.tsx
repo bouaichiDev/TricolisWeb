@@ -28,9 +28,12 @@ function timeseries(type: 'columns' | 'lines', series: TimeseriesSerie[]): Dashb
     key: type === 'columns' ? 'orders_per_day' : 'orders_trend',
     type,
     labelKey: `dashboardWidgets.${type === 'columns' ? 'orders_per_day' : 'orders_trend'}.label`,
+    periodLabelKey: null,
     size: 'large',
     position: 1,
     route: null,
+    periodAware: true,
+    drilldown: null,
     data: {
       // Dix jours, et non trois : l'axe n'écrit au plus que cinq dates, et
       // avec trois buckets il les écrirait toutes — le jour survolé, affiché
@@ -43,12 +46,26 @@ function timeseries(type: 'columns' | 'lines', series: TimeseriesSerie[]): Dashb
   }
 }
 
+/**
+ * Le même graphe, mais **cliquable** — comme le catalogue le déclare.
+ *
+ * C'est le défaut que ces cartes avaient : la carte entière était un lien, et
+ * viser la colonne du 3 septembre ouvrait les commandes de tous les temps.
+ */
+function drilling(widget: DashboardWidget): DashboardWidget {
+  return {
+    ...widget,
+    route: '/orders',
+    drilldown: { seriesParam: 'status', fromParam: 'createdFrom', toParam: 'createdTo' },
+  }
+}
+
 function render(widget: DashboardWidget) {
   server.use(http.get(`${API}/statuses`, () => HttpResponse.json({ data: [], meta: {} })))
 
   return widget.type === 'columns'
-    ? renderWithProviders(<ColumnsWidget widget={widget} />)
-    : renderWithProviders(<LinesWidget widget={widget} />)
+    ? renderWithProviders(<ColumnsWidget widget={widget} period={null} />)
+    : renderWithProviders(<LinesWidget widget={widget} period={null} />)
 }
 
 describe('échelle verticale', () => {
@@ -156,5 +173,42 @@ describe('courbes', () => {
     render(timeseries('lines', []))
 
     expect(await screen.findByText(/Rien à afficher/)).toBeInTheDocument()
+  })
+})
+
+describe('forage vers la liste', () => {
+  it('ouvre le jour visé, et non la liste entière', async () => {
+    render(drilling(timeseries('columns', [{ code: 'confirmed', values: values([5, 3]) }])))
+
+    // Une bande par jour, nommée par sa date : c'est la cible du survol, et
+    // donc celle du clic — on ouvre ce qu'on vient de lire.
+    expect(await screen.findByRole('link', { name: '2026-09-03' })).toHaveAttribute(
+      'href',
+      '/orders?createdFrom=2026-09-03&createdTo=2026-09-03',
+    )
+  })
+
+  /**
+   * La légende est le chemin du clavier : un arc ou une bande se visent à la
+   * souris et nulle part ailleurs.
+   */
+  it('donne à chaque série un lien vers sa liste', async () => {
+    render(drilling(timeseries('columns', [{ code: 'confirmed', values: values([5]) }])))
+
+    expect(await screen.findByRole('link', { name: /confirmed/ })).toHaveAttribute(
+      'href',
+      '/orders?status=confirmed',
+    )
+  })
+
+  /**
+   * Sans descripteur, aucune part n'est un lien : mieux vaut une colonne qui ne
+   * bouge pas qu'une colonne qui mène ailleurs que là où elle promet.
+   */
+  it('ne rend rien cliquable quand le catalogue ne déclare pas de forage', async () => {
+    render(timeseries('columns', [{ code: 'confirmed', values: values([5]) }]))
+
+    expect(await screen.findByText('confirmed')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '2026-09-03' })).not.toBeInTheDocument()
   })
 })

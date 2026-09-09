@@ -1,12 +1,13 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { useCatalogList, useDeleteCatalog } from '../hooks/useCatalogs'
 import type { Catalog, CatalogFilters } from '../types/catalog'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
@@ -28,7 +29,6 @@ interface CustomerCatalogsTabProps {
  */
 export function CustomerCatalogsTab({ customerId, catalogEnabled }: CustomerCatalogsTabProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [filters, setFilters] = useState<CatalogFilters>({ page: 1, perPage: 25 })
   const [deleting, setDeleting] = useState<Catalog | null>(null)
@@ -101,7 +101,25 @@ export function CustomerCatalogsTab({ customerId, catalogEnabled }: CustomerCata
         error={error}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/customers/${customerId}/catalogs/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              {
+                key: 'view',
+                icon: Eye,
+                label: t('common.view'),
+                to: `/customers/${customerId}/catalogs/${row.id}`,
+              },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/customers/${customerId}/catalogs/${row.id}/edit`,
+                permission: 'catalogs.update',
+              },
+            ]}
+          />
+        )}
         emptyMessage={t('catalogs.empty')}
       />
 

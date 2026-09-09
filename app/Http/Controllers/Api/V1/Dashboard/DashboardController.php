@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Dashboard\ShowDashboardRequest;
 use App\Modules\Dashboard\Services\DashboardComposer;
 use App\Modules\Identity\Models\RoleDashboardConfiguration;
 use App\Modules\Identity\Models\User;
 use App\Modules\Organizations\Models\Organization;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * Le tableau de bord de l'appelant.
@@ -27,6 +27,13 @@ use Illuminate\Http\Request;
  * `null` : absent, et son chiffre n'a même pas été calculé. C'est la seule
  * façon d'empêcher qu'un onglet réseau ouvert donne ce que l'écran refuse.
  *
+ * `from` et `to` restreignent les cartes qui portent une date — et **elles
+ * seules**. Le tableau de bord répond d'abord à « où en est-on », ce qui n'a pas
+ * d'intervalle : filtrer « commandes à planifier » sur le mois d'août rendrait
+ * un chiffre sans signification. Le catalogue dit widget par widget qui suit la
+ * période, la réponse le répète dans `periodAware`, et l'écran range les cartes
+ * en deux sections plutôt que de laisser deviner ce que le filtre a touché.
+ *
  * Permission : `dashboard.view`. Elle ouvre l'écran, elle ne décide de rien de
  * ce qu'on y trouve — cela dépend des rôles de l'appelant et de leurs propres
  * permissions.
@@ -35,7 +42,7 @@ class DashboardController extends Controller
 {
     public function __construct(private readonly DashboardComposer $composer) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(ShowDashboardRequest $request): JsonResponse
     {
         $organizationId = $this->requireOrganizationId();
         $this->authorize('viewAny', [RoleDashboardConfiguration::class, $organizationId]);
@@ -50,12 +57,19 @@ class DashboardController extends Controller
         // sans savoir à qui les rattacher.
         $organization = Organization::query()->find($organizationId, ['id', 'name']);
 
+        $period = $request->period();
+
         return ApiResponse::ok([
             'organization' => $organization === null ? null : [
                 'id' => $organization->getKey(),
                 'name' => $organization->getAttribute('name'),
             ],
-            'widgets' => $this->composer->compose($user, $organizationId),
+            // La période est rappelée dans la réponse, comme l'organisation :
+            // elle dit **sur quoi** ces chiffres ont été calculés. Sans elle,
+            // un écran rouvert sur des données mises en cache afficherait des
+            // totaux de période sous un filtre vide, et rien ne l'indiquerait.
+            'period' => $period?->toArray(),
+            'widgets' => $this->composer->compose($user, $organizationId, $period),
         ]);
     }
 }

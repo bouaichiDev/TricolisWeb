@@ -50,13 +50,15 @@ final readonly class CommunicationsData implements DashboardDataSource
     {
         return match ($key) {
             'communications_scheduled' => DashboardPayload::kpi(
-                $this->communications($context)->whereIn('status', [
+                $context->restrict($this->communications($context), 'created_at')->whereIn('status', [
                     CommunicationStatus::SCHEDULED->value,
                     CommunicationStatus::QUEUED->value,
                 ])->count()
             ),
             'communications_failed' => DashboardPayload::alert(
-                $this->communications($context)->where('status', CommunicationStatus::FAILED->value)->count()
+                $context->restrict($this->communications($context), 'created_at')
+                    ->where('status', CommunicationStatus::FAILED->value)
+                    ->count()
             ),
 
             // « Envoyée » couvre les trois états qui suivent le départ :
@@ -70,7 +72,7 @@ final readonly class CommunicationsData implements DashboardDataSource
                         CommunicationStatus::DELIVERED->value,
                         CommunicationStatus::READ->value,
                     ])
-                    ->whereBetween('sent_at', $context->dayBounds())
+                    ->whereBetween('sent_at', $context->bounds())
                     ->count()
             ),
 
@@ -117,7 +119,9 @@ final readonly class CommunicationsData implements DashboardDataSource
             ->groupBy(DB::raw('DATE(created_at)'), 'channel')
             ->get();
 
-        $built = DailySeries::build($rows, $context->windowStart(self::COLUMN_DAYS), self::COLUMN_DAYS);
+        $days = $context->windowDays(self::COLUMN_DAYS);
+
+        $built = DailySeries::build($rows, $context->windowStart(self::COLUMN_DAYS), $days);
 
         return DashboardPayload::timeseries(
             $built['buckets'],
@@ -138,7 +142,7 @@ final readonly class CommunicationsData implements DashboardDataSource
      */
     private function byChannel(DashboardContext $context): array
     {
-        return $this->communications($context)
+        return $context->restrict($this->communications($context), 'created_at')
             ->toBase()
             ->selectRaw('channel, COUNT(*) as total')
             ->groupBy('channel')
@@ -162,7 +166,7 @@ final readonly class CommunicationsData implements DashboardDataSource
      */
     private function recent(DashboardContext $context): array
     {
-        return $this->communications($context)
+        return $context->restrict($this->communications($context), 'created_at')
             ->orderByDesc('created_at')
             ->limit(6)
             ->get(['id', 'recipient_name', 'channel', 'status', 'created_at'])

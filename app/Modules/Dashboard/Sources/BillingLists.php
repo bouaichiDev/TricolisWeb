@@ -26,8 +26,10 @@ final readonly class BillingLists
      */
     public function invoices(DashboardContext $context): array
     {
-        return Invoice::query()
-            ->where('organization_id', $context->organizationId)
+        return $context->restrict(
+            Invoice::query()->where('organization_id', $context->organizationId),
+            'invoice_date',
+        )
             ->with('customer:id,name')
             ->orderByDesc('created_at')
             ->limit(6)
@@ -54,8 +56,10 @@ final readonly class BillingLists
      */
     public function settlements(DashboardContext $context): array
     {
-        return ProviderSettlement::query()
-            ->where('organization_id', $context->organizationId)
+        return $context->restrict(
+            ProviderSettlement::query()->where('organization_id', $context->organizationId),
+            'period_to',
+        )
             ->with('provider:id,name')
             ->orderByDesc('period_to')
             ->limit(6)

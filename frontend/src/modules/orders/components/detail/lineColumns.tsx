@@ -85,6 +85,7 @@ export function lineColumns(
     {
       key: 'actions',
       header: t('common.actions'),
+      className: 'w-px whitespace-nowrap text-right',
       cell: (row) => (
         <RowActions
           actions={[

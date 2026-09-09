@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Dashboard\Catalogue;
 
+use App\Shared\Dashboard\DashboardDrilldown;
 use App\Shared\Dashboard\DashboardWidget;
 use App\Shared\Dashboard\DashboardWidgetCategory;
 use App\Shared\Dashboard\DashboardWidgetSize;
@@ -39,6 +40,7 @@ final class BillingWidgets
                 requiredPermission: 'price_lists.view',
                 defaultPosition: 300,
                 route: '/billing/prebilling',
+                periodAware: true,
             ),
 
             new DashboardWidget(
@@ -48,6 +50,7 @@ final class BillingWidgets
                 requiredPermission: 'invoices.view',
                 defaultPosition: 301,
                 route: '/billing/invoices',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'closed_invoices_today',
@@ -56,6 +59,7 @@ final class BillingWidgets
                 requiredPermission: 'invoices.view',
                 defaultPosition: 302,
                 route: '/billing/invoices',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'closed_invoices_period_total',
@@ -65,6 +69,7 @@ final class BillingWidgets
                 defaultPosition: 303,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/billing/invoices',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'invoices_by_status',
@@ -74,6 +79,12 @@ final class BillingWidgets
                 defaultPosition: 304,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/billing/invoices',
+                periodAware: true,
+                drilldown: new DashboardDrilldown(
+                    seriesParam: 'status',
+                    fromParam: 'invoiceDateFrom',
+                    toParam: 'invoiceDateTo',
+                ),
             ),
             new DashboardWidget(
                 key: 'recent_invoices',
@@ -83,6 +94,7 @@ final class BillingWidgets
                 defaultPosition: 305,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/billing/invoices',
+                periodAware: true,
             ),
 
             new DashboardWidget(
@@ -92,6 +104,7 @@ final class BillingWidgets
                 requiredPermission: 'provider_settlements.view',
                 defaultPosition: 306,
                 route: '/billing/settlements',
+                periodAware: true,
             ),
             new DashboardWidget(
                 key: 'recent_provider_settlements',
@@ -101,6 +114,7 @@ final class BillingWidgets
                 defaultPosition: 307,
                 size: DashboardWidgetSize::MEDIUM,
                 route: '/billing/settlements',
+                periodAware: true,
             ),
         ];
     }

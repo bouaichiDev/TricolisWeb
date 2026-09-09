@@ -10,6 +10,16 @@ interface WidgetCardProps {
   to?: string | null
   /** Teinte d'alerte, réservée aux compteurs qui appellent une action. */
   tone?: 'default' | 'attention'
+  /**
+   * Le corps porte ses **propres** liens — une colonne, une part, une ligne.
+   *
+   * La carte cesse alors d'être un lien, et le titre en devient un. Ce n'est
+   * pas une préférence de rendu : un `<a>` dans un `<a>` est du HTML invalide,
+   * que le navigateur défait comme il peut, et le clic sur la part serait parti
+   * vers la destination de la carte — la liste entière, c'est-à-dire
+   * exactement ce que le forage corrige.
+   */
+  interactive?: boolean
   children: ReactNode
 }
 
@@ -25,31 +35,58 @@ interface WidgetCardProps {
  * commande. Inventer une destination aurait donné une carte qui promet plus
  * qu'elle ne tient. Sans `to`, la carte reste un `div` : pas de curseur en
  * main, pas de survol, rien qui suggère un clic.
+ *
+ * **Les graphes, eux, ne sont jamais cliquables en entier.** Sur une carte où
+ * chaque part mène à sa propre liste, un lien posé sur le tout dirait qu'on
+ * peut cliquer n'importe où pour le même résultat — et l'endroit visé serait le
+ * seul à ne pas compter. Le titre reste le chemin vers la liste entière, ce qui
+ * laisse les deux gestes disponibles sans les confondre.
  */
-export function WidgetCard({ title, to, tone = 'default', children }: WidgetCardProps) {
-  const body = (
-    <>
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium text-muted-foreground">{title}</span>
-        {to ? <ArrowUpRight className="size-4 shrink-0 text-muted-foreground/60" aria-hidden /> : null}
-      </div>
-      {children}
-    </>
+export function WidgetCard({
+  title,
+  to,
+  tone = 'default',
+  interactive = false,
+  children,
+}: WidgetCardProps) {
+  const linked = Boolean(to)
+  const cardIsLink = linked && ! interactive
+
+  const heading = (
+    <div className="flex items-start justify-between gap-2">
+      <span className="text-sm font-medium text-muted-foreground">{title}</span>
+      {linked ? <ArrowUpRight className="size-4 shrink-0 text-muted-foreground/60" aria-hidden /> : null}
+    </div>
   )
 
   const className = cn(
     'flex h-full flex-col gap-3 rounded-lg border bg-card p-5',
     tone === 'attention' && 'border-warning/40 bg-warning/5',
-    to && 'transition-colors hover:border-primary/40 hover:bg-accent/40',
+    cardIsLink && 'transition-colors hover:border-primary/40 hover:bg-accent/40',
   )
 
-  if (!to) {
-    return <div className={className}>{body}</div>
+  if (cardIsLink) {
+    return (
+      <Link to={to as string} className={className}>
+        {heading}
+        {children}
+      </Link>
+    )
   }
 
   return (
-    <Link to={to} className={className}>
-      {body}
-    </Link>
+    <div className={className}>
+      {linked ? (
+        <Link
+          to={to as string}
+          className="rounded-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {heading}
+        </Link>
+      ) : (
+        heading
+      )}
+      {children}
+    </div>
   )
 }

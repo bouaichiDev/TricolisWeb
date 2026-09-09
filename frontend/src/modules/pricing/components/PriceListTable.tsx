@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import type { PriceList } from '../types/pricing'
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { Badge } from '@/shared/components/ui/badge'
-import { Button } from '@/shared/components/ui/button'
 import type { PaginationMeta } from '@/shared/api/types'
 import { formatDate } from '@/shared/utils/format'
 
@@ -16,6 +15,7 @@ interface PriceListTableProps {
   isLoading: boolean
   error: Error | null
   onPageChange: (page: number) => void
+  onPerPageChange: (perPage: number) => void
   onRetry: () => void
   onDelete: (list: PriceList) => void
   onEdit: (list: PriceList) => void
@@ -36,6 +36,7 @@ export function PriceListTable({
   isLoading,
   error,
   onPageChange,
+  onPerPageChange,
   onRetry,
   onDelete,
   onEdit,
@@ -103,36 +104,6 @@ export function PriceListTable({
         </Badge>
       ),
     },
-    {
-      key: 'actions',
-      header: '',
-      className: 'w-24',
-      cell: (row) => (
-        <span className="flex gap-1">
-          <PermissionGuard permission="price_lists.update">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.edit')}
-              onClick={() => onEdit(row)}
-            >
-              <Pencil className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-
-          <PermissionGuard permission="price_lists.delete">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('common.delete')}
-              onClick={() => onDelete(row)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          </PermissionGuard>
-        </span>
-      ),
-    },
   ]
 
   return (
@@ -144,6 +115,28 @@ export function PriceListTable({
       isLoading={isLoading}
       error={error}
       onPageChange={onPageChange}
+      onPerPageChange={onPerPageChange}
+      actions={(row) => (
+        <RowActions
+          actions={[
+            {
+              key: 'edit',
+              icon: Pencil,
+              label: t('common.edit'),
+              permission: 'price_lists.update',
+              onClick: () => onEdit(row),
+            },
+            {
+              key: 'delete',
+              icon: Trash2,
+              label: t('common.delete'),
+              tone: 'danger',
+              permission: 'price_lists.delete',
+              onClick: () => onDelete(row),
+            },
+          ]}
+        />
+      )}
       onRetry={onRetry}
       emptyMessage={t('pricing.lists.empty')}
     />

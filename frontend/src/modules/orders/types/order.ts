@@ -86,8 +86,14 @@ export interface OrderListItem {
 /**
  * Filtres acceptés par `ListOrderRequest`.
  *
- * Ni `priority` ni plage de dates : le §10 du prompt corrigé les écarte
- * explicitement, faute de support serveur.
+ * Pas de `priority` : le champ n'existe pas côté serveur, et le proposer
+ * donnerait l'illusion d'un filtrage qui n'a pas lieu.
+ *
+ * La **plage de dates**, elle, existe : `ListRequest` accepte `createdFrom` et
+ * `createdTo`, et `OrderListQuery` les applique à `order_date`. Elle est
+ * arrivée dans cet écran par le tableau de bord — cliquer une colonne de
+ * « Commandes par jour » ouvre le jour visé, et il faut bien que la liste sache
+ * le recevoir, l'afficher et le retirer.
  */
 export interface OrderFilters {
   page: number
@@ -95,6 +101,9 @@ export interface OrderFilters {
   search?: string
   status?: string
   source?: string
+  /** Bornes sur `order_date`, incluses toutes les deux. */
+  createdFrom?: string
+  createdTo?: string
   customerId?: string
   agencyId?: string
   depotId?: string

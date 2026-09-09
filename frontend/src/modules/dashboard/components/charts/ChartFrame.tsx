@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 import { formatDay, tickIndexes } from './timeScale'
 
@@ -21,6 +22,19 @@ interface ChartFrameProps {
    * demi-case, ce qui se voit surtout là où on regarde.
    */
   xOf: (index: number) => number
+  /**
+   * Adresse de la liste filtrée sur ce jour, quand elle existe.
+   *
+   * `null` — ou la fonction absente — laisse la bande au survol seul : c'est le
+   * cas d'un graphe dont l'écran d'arrivée ne sait pas filtrer les dates. Une
+   * bande cliquable qui mènerait à la liste entière aurait promis un détail
+   * qu'elle ne tient pas.
+   *
+   * Un **lien**, et non un gestionnaire de clic : le jour s'ouvre alors dans un
+   * onglet au clic du milieu, se copie par le menu contextuel, et s'annonce
+   * comme un lien. `navigate()` n'aurait offert que le clic gauche.
+   */
+  linkOf?: (index: number) => string | null
   children: ReactNode
 }
 
@@ -42,6 +56,11 @@ interface ChartFrameProps {
  * l'intervalle et haute de tout le graphe. Viser une colonne de six pixels ou
  * un point de courbe demanderait une précision que personne n'a ; la bande, elle,
  * fait quarante pixels de large.
+ *
+ * C'est aussi elle qui **ouvre le jour** : cliquer une colonne mène aux lignes
+ * de ce jour-là, pas à la liste entière. La cible du clic est donc la même que
+ * celle du survol — on ouvre ce qu'on vient de lire, et non ce qui se trouvait
+ * à deux pixels du curseur.
  */
 export function ChartFrame({
   buckets,
@@ -51,6 +70,7 @@ export function ChartFrame({
   hovered,
   onHover,
   xOf,
+  linkOf,
   children,
 }: ChartFrameProps) {
   const dayTicks = tickIndexes(buckets.length)
@@ -100,16 +120,32 @@ export function ChartFrame({
           ) : null}
 
           <div className="absolute inset-0 flex">
-            {buckets.map((bucket, index) => (
-              <button
-                key={bucket}
-                type="button"
-                tabIndex={-1}
-                aria-label={bucket}
-                className="h-full flex-1 cursor-default"
-                onMouseEnter={() => onHover(index)}
-              />
-            ))}
+            {buckets.map((bucket, index) => {
+              const to = linkOf?.(index) ?? null
+
+              if (to === null) {
+                return (
+                  <button
+                    key={bucket}
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={bucket}
+                    className="h-full flex-1 cursor-default"
+                    onMouseEnter={() => onHover(index)}
+                  />
+                )
+              }
+
+              return (
+                <Link
+                  key={bucket}
+                  to={to}
+                  aria-label={bucket}
+                  className="h-full flex-1"
+                  onMouseEnter={() => onHover(index)}
+                />
+              )
+            })}
           </div>
         </div>
 

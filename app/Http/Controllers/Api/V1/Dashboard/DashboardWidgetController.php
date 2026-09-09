@@ -47,6 +47,11 @@ class DashboardWidgetController extends Controller
                 'requiredPermission' => $widget->requiredPermission,
                 'defaultPosition' => $widget->defaultPosition,
                 'defaultEnabled' => $widget->defaultEnabled,
+                // Dit si le filtre de dates du tableau de bord touche cette
+                // carte. Le catalogue est le seul endroit qui le sache, et
+                // l'écran de réglage a besoin de le dire à celui qui compose un
+                // tableau de bord — sans quoi il ne peut que le deviner.
+                'periodAware' => $widget->periodAware,
             ],
             DashboardWidgetRegistry::all(),
         ));

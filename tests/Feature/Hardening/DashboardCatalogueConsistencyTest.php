@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Requests\Api\V1\Billing\ListInvoiceRequest;
+use App\Http\Requests\Api\V1\Orders\ListOrderRequest;
+use App\Http\Requests\Api\V1\Tours\ListTourRequest;
 use App\Modules\Dashboard\Services\DashboardContext;
 use App\Modules\Dashboard\Services\DashboardDataSources;
 use App\Modules\Identity\Models\Permission;
@@ -164,4 +167,72 @@ it('computes a value for every widget that carries one', function (): void {
     ));
 
     expect($unresolved)->toBe([]);
+});
+
+/**
+ * Le forage nomme des filtres, et un filtre inconnu ne dit rien.
+ *
+ * C'est le mode de panne propre à cette fonctionnalité : une liste **ignore**
+ * un paramètre qu'elle ne connaît pas. Écrire `createdFrom` là où la liste
+ * attend `tourDateFrom` n'aurait produit ni erreur ni 422 — la carte aurait
+ * mené à la liste entière, c'est-à-dire exactement au défaut que le forage
+ * corrige, et personne ne l'aurait vu avant de compter les lignes.
+ *
+ * La correspondance route → requête est déclarée **ici** et non dans le
+ * catalogue : le backend n'a pas à connaître le routeur React, et une carte
+ * incomplète fait échouer ce test plutôt que de laisser passer un forage muet.
+ */
+it('names only filters that the destination list accepts', function (): void {
+    $requests = [
+        '/orders' => ListOrderRequest::class,
+        '/tours' => ListTourRequest::class,
+        '/billing/invoices' => ListInvoiceRequest::class,
+    ];
+
+    $unmapped = [];
+    $rejected = [];
+
+    foreach (DashboardWidgetRegistry::all() as $widget) {
+        if ($widget->drilldown === null) {
+            continue;
+        }
+
+        $request = $requests[$widget->route] ?? null;
+
+        if ($request === null) {
+            $unmapped[] = $widget->key;
+
+            continue;
+        }
+
+        $accepted = array_keys((new $request)->rules());
+
+        $named = array_filter([
+            $widget->drilldown->seriesParam,
+            $widget->drilldown->fromParam,
+            $widget->drilldown->toParam,
+        ]);
+
+        foreach ($named as $parameter) {
+            if (! in_array($parameter, $accepted, true)) {
+                $rejected[] = "{$widget->key} → {$parameter}";
+            }
+        }
+    }
+
+    expect($unmapped)->toBe([])
+        ->and($rejected)->toBe([]);
+});
+
+/** Un descripteur sans destination ne mène nulle part : autant ne pas en porter. */
+it('gives every drilldown a route to open', function (): void {
+    $orphans = array_values(array_map(
+        static fn (DashboardWidget $widget): string => $widget->key,
+        array_filter(
+            DashboardWidgetRegistry::all(),
+            static fn (DashboardWidget $widget): bool => $widget->drilldown !== null && $widget->route === null,
+        ),
+    ));
+
+    expect($orphans)->toBe([]);
 });

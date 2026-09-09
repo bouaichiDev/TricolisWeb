@@ -25,11 +25,13 @@ export function DepotListPage() {
   const { t } = useTranslation()
   const [agencyId, setAgencyId] = useState('')
   const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
   const [search, setSearch] = useState('')
   const [toDelete, setToDelete] = useState<Depot | null>(null)
 
   const { data, isPending, error, refetch } = useDepotList(agencyId, {
     page,
+    perPage,
     search: search || undefined,
   })
   const remove = useDeleteDepot(agencyId)
@@ -83,6 +85,10 @@ export function DepotListPage() {
           isLoading={isPending}
           error={error}
           onPageChange={setPage}
+          onPerPageChange={(size: number) => {
+            setPerPage(size)
+            setPage(1)
+          }}
           onRetry={() => void refetch()}
           onDelete={setToDelete}
         />

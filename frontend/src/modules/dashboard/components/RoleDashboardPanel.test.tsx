@@ -23,6 +23,7 @@ function widget(overrides: Partial<RoleDashboardWidget> = {}): RoleDashboardWidg
     position: 0,
     isEnabled: false,
     availableForRole: true,
+    periodAware: false,
     ...overrides,
   }
 }

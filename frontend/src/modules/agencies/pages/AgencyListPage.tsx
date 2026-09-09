@@ -1,12 +1,13 @@
-import { Plus } from 'lucide-react'
+import { Eye, Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { useAgencyList } from '../hooks/useAgencies'
 import type { Agency, AgencyFilters } from '../types/agency'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { RowActions } from '@/shared/components/data/RowActions'
 import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
@@ -14,7 +15,6 @@ import { Button } from '@/shared/components/ui/button'
 
 export function AgencyListPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   const [filters, setFilters] = useState<AgencyFilters>({
     page: 1,
@@ -94,8 +94,22 @@ export function AgencyListPage() {
         direction={filters.direction}
         onSortChange={toggleSort}
         onPageChange={(page) => setFilters((c) => ({ ...c, page }))}
+        onPerPageChange={(perPage) => setFilters((c) => ({ ...c, perPage, page: 1 }))}
         onRetry={() => void refetch()}
-        onRowClick={(row) => void navigate(`/agencies/${row.id}`)}
+        actions={(row) => (
+          <RowActions
+            actions={[
+              { key: 'view', icon: Eye, label: t('common.view'), to: `/agencies/${row.id}` },
+              {
+                key: 'edit',
+                icon: Pencil,
+                label: t('common.edit'),
+                to: `/agencies/${row.id}/edit`,
+                permission: 'agencies.update',
+              },
+            ]}
+          />
+        )}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { LayoutGrid, List, Plus } from 'lucide-react'
 
@@ -31,14 +31,32 @@ export function TourListPage() {
   // que par la seconde, qui seule les montre.
   const [view, setView] = useState<'list' | 'board'>('board')
 
+  const [params] = useSearchParams()
+
   // La date est obligatoire : une tournee se lit par jour, et une liste sans
   // date melangerait un mois de preparation. Le jour courant au depart.
-  const [filters, setFilters] = useState<TourFilters>({
-    page: 1,
-    perPage: 25,
-    sort: 'tour_date',
-    direction: 'desc',
-    tourDate: todayIso(),
+  //
+  // **Sauf en arrivant du tableau de bord.** Une part de « Tournees par
+  // statut » compte les tournees de son statut sur la periode regardee, pas
+  // celles d'aujourd'hui : garder le jour courant aurait ouvert une liste bien
+  // plus courte que la part cliquee, sans que rien ne l'explique. Les bornes
+  // viennent alors du lien, et remplacent la date unique.
+  const [filters, setFilters] = useState<TourFilters>(() => {
+    const status = params.get('status') ?? undefined
+    const from = params.get('tourDateFrom') ?? undefined
+    const to = params.get('tourDateTo') ?? undefined
+    const fromDashboard = status !== undefined || from !== undefined || to !== undefined
+
+    return {
+      page: 1,
+      perPage: 25,
+      sort: 'tour_date',
+      direction: 'desc',
+      tourDate: fromDashboard ? undefined : todayIso(),
+      tourDateFrom: from,
+      tourDateTo: to,
+      status,
+    }
   })
 
   // Le client ne filtre que le pool : une tournee en dessert plusieurs, et le
@@ -164,6 +182,7 @@ export function TourListPage() {
         isLoading={isPending}
         error={error}
         onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
         onRetry={() => void refetch()}
         emptyMessage={t('tours.empty')}
       />

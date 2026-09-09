@@ -6,8 +6,8 @@ Ce dépôt contient deux applications déployées ensemble :
 - Laravel (racine du dépôt) vers `https://tricolisba.bouaichibadr.com`.
 
 Le workflow `.github/workflows/deploy-production.yml` construit le frontend,
-synchronise les deux applications puis exécute les migrations et les données
-de référence de production. Le fichier `.env` et le dossier `storage` du
+synchronise les deux applications puis exécute uniquement les migrations qui
+n'ont pas encore été appliquées. Le fichier `.env` et le dossier `storage` du
 backend restent sur le VPS et ne sont jamais écrasés par GitHub Actions.
 
 ## 1. Préparer MySQL
@@ -208,6 +208,30 @@ sur le VPS avant de l'ajouter au secret.
 
 Une fusion dans `main` déclenche ensuite le déploiement. Il est aussi possible
 de le lancer manuellement dans l'onglet `Actions`.
+
+### Seeders en production
+
+Les seeders ne sont pas exécutés automatiquement pendant un déploiement. Laravel
+mémorise les migrations appliquées dans sa table `migrations`, mais ne possède
+pas de mécanisme équivalent pour mémoriser les seeders déjà exécutés.
+
+Lors de la création initiale d'une base vide, exécuter une seule fois :
+
+```bash
+cd /var/www/tricolisba
+php artisan db:seed --class=ProductionSeeder --force
+```
+
+Pour de nouvelles données obligatoires en production, préférer une migration de
+données : elle ne sera exécutée qu'une fois. Si un nouveau seeder indépendant
+est créé, l'exécuter explicitement une seule fois :
+
+```bash
+php artisan db:seed --class=NomDuNouveauSeeder --force
+```
+
+Ne jamais relancer `ProductionSeeder` sur une base déjà initialisée sans avoir
+vérifié que tous ses seeders sont idempotents.
 
 ## 5. Installer le worker et le scheduler
 

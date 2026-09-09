@@ -121,7 +121,6 @@ jobs:
             --optimize-autoloader
 
           php artisan migrate --force --no-interaction
-          php artisan db:seed --class=ProductionSeeder --force
           php artisan storage:link || true
           php artisan config:cache
           php artisan event:cache

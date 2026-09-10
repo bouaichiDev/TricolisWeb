@@ -1,4 +1,4 @@
-import { ArrowRightLeft, History, Pencil, Trash2 } from 'lucide-react'
+import { ArrowRightLeft, FileText, History, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -29,6 +29,8 @@ interface OrderServicePanelProps {
   onDelete: () => void
   onChangeStatus: () => void
   onHistory: () => void
+  /** Ouvre la génération du bon de livraison de ce service. */
+  onDeliveryNote: () => void
 }
 
 /**
@@ -48,6 +50,7 @@ export function OrderServicePanel({
   onDelete,
   onChangeStatus,
   onHistory,
+  onDeliveryNote,
 }: OrderServicePanelProps) {
   const { t } = useTranslation()
 
@@ -130,6 +133,15 @@ export function OrderServicePanel({
                 <Button type="button" variant="outline" onClick={onChangeStatus}>
                   <ArrowRightLeft className="size-4" aria-hidden />
                   {t('orders.services.changeStatus')}
+                </Button>
+              </PermissionGuard>
+
+              {/* Nomme en toutes lettres ici, en icone sur la vignette : c'est
+                  dans le panneau qu'on apprend ce que fait le bouton. */}
+              <PermissionGuard permission="delivery_notes.view">
+                <Button type="button" variant="outline" onClick={onDeliveryNote}>
+                  <FileText className="size-4" aria-hidden />
+                  {t('orders.deliveryNote.action')}
                 </Button>
               </PermissionGuard>
 

@@ -1,120 +1,86 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Copy, Pencil, Plus, Power, PowerOff, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
-import { DataTable, type Column } from '@/shared/components/data/DataTable'
+import { DataTable } from '@/shared/components/data/DataTable'
 import { RowActions } from '@/shared/components/data/RowActions'
-import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
-import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 
 import { TemplateDialog } from '../components/TemplateDialog'
 import { TemplateFilterBar } from '../components/TemplateFilterBar'
+import { templateColumns } from '../components/templateColumns'
 import { GLOBAL_SCOPE, type TemplateFilters } from '../api/templates.api'
-import { useDeleteTemplate, useTemplateList } from '../hooks/useTemplates'
-import type { Template } from '../types/template'
+import { useDeleteTemplate, useTemplateList, useUpdateTemplate } from '../hooks/useTemplates'
+import {
+  categoryFromParams,
+  soleTypeOf,
+  type Template,
+  type TemplateCategory,
+} from '../types/template'
 
 /**
  * Modèles de l'organisation — messages **et** documents.
  *
  * Un seul écran, une seule table, une seule API. Le menu y mène par deux
- * portes — « Communication › Templates » et « Facturation › Templates de
- * facture » — parce qu'un exploitant et un comptable n'y cherchent pas la même
- * chose ; ils arrivent au même endroit, avec un filtre différent.
+ * portes — « Communication › Modèles » et « Facturation › Modèles de facture » —
+ * parce qu'un exploitant et un comptable n'y cherchent pas la même chose ; ils
+ * arrivent au même endroit, avec un filtre différent.
  *
- * Le filtre d'arrivée vient de l'URL. Ouvrir la page depuis la facturation ne
- * doit pas obliger à re-sélectionner « facture » pour voir ce qu'on venait
+ * Les modèles de BL n'ont pas de troisième porte : « Modèles » est déjà dans le
+ * menu, et une seconde entrée vers le même écran se lit comme un second écran.
+ * Leur rayon s'atteint par le filtre, ou par le lien que propose l'écran de
+ * génération quand aucun modèle ne s'applique.
+ *
+ * La catégorie d'arrivée vient de l'URL. Ouvrir la page depuis la facturation
+ * ne doit pas obliger à re-sélectionner « facture » pour voir ce qu'on venait
  * voir.
+ *
+ * `templateType=invoice` reste accepté en plus de `category` : c'est l'ancienne
+ * adresse du menu de facturation, et un signet posé dessus ne doit pas ouvrir
+ * une page qui ne montre plus rien.
  */
 export function TemplateListPage() {
   const { t } = useTranslation()
   const [params] = useSearchParams()
 
-  const initialType = params.get('templateType') ?? undefined
+  const arrival = categoryFromParams(params.get('category'), params.get('templateType'))
 
   const [filters, setFilters] = useState<TemplateFilters>(() => ({
     page: 1,
     perPage: 25,
-    templateType: initialType,
+    category: arrival,
   }))
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<Template | null>(null)
+  const [duplicating, setDuplicating] = useState<Template | null>(null)
   const [deleting, setDeleting] = useState<Template | null>(null)
 
   const { data, isPending, error, refetch } = useTemplateList(filters)
   const remove = useDeleteTemplate()
+  const update = useUpdateTemplate()
 
-  const invoiceMode = filters.templateType === 'invoice'
+  const category = filters.category as TemplateCategory | undefined
+  // Le rayon qui ne contient qu'une nature l'impose a la creation : demander
+  // « quel type ? » a qui vient de cliquer « Nouveau modèle de BL » serait une
+  // question dont l'ecran connait la reponse.
+  const soleType = soleTypeOf(category)
 
-  const columns: Column<Template>[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        header: t('templates.fields.name'),
-        cell: (row) => <span className="font-medium">{row.name}</span>,
-      },
-      {
-        key: 'code',
-        header: t('templates.fields.code'),
-        cell: (row) => <span className="font-mono text-sm">{row.code}</span>,
-      },
-      {
-        key: 'templateType',
-        header: t('templates.fields.templateType'),
-        cell: (row) => t(`templateTypes.${row.templateType}`),
-      },
-      {
-        key: 'scope',
-        header: t('templates.fields.customer'),
-        cell: (row) =>
-          row.customerId === null ? (
-            <Badge variant="outline">{t('templates.globalScope')}</Badge>
-          ) : (
-            (row.customerName ?? row.customerId)
-          ),
-      },
-      {
-        key: 'channel',
-        header: t('templates.fields.channel'),
-        hideOnMobile: true,
-        // Un document n'a pas de canal : afficher un tiret plutot qu'un vide
-        // dit que c'est voulu, pas que la donnee manque.
-        cell: (row) =>
-          row.channel === null ? (
-            <span className="text-muted-foreground">{t('templates.noChannel')}</span>
-          ) : (
-            t(`communicationChannels.${row.channel}`)
-          ),
-      },
-      {
-        key: 'language',
-        header: t('templates.fields.language'),
-        hideOnMobile: true,
-        cell: (row) => row.language.toUpperCase(),
-      },
-      {
-        key: 'isActive',
-        header: t('templates.fields.isActive'),
-        cell: (row) => <StatusBadge status={row.isActive ? 'active' : 'inactive'} />,
-      },
-    ],
-    [t],
-  )
+  const columns = useMemo(() => templateColumns(t), [t])
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={invoiceMode ? t('templates.invoiceTitle') : t('templates.title')}
-        description={invoiceMode ? t('templates.invoiceDescription') : t('templates.description')}
+        title={t(`templates.titles.${category ?? 'all'}`)}
+        description={t(`templates.descriptions.${category ?? 'all'}`)}
         actions={
           <PermissionGuard permission="templates.create">
             <Button size="sm" onClick={() => setCreating(true)}>
               <Plus className="size-4" aria-hidden />
-              {invoiceMode ? t('templates.createInvoice') : t('templates.create')}
+              {t(`templates.creates.${category ?? 'all'}`)}
             </Button>
           </PermissionGuard>
         }
@@ -146,6 +112,24 @@ export function TemplateListPage() {
                 onClick: () => setEditing(row),
               },
               {
+                key: 'duplicate',
+                icon: Copy,
+                label: t('templates.duplicate'),
+                // Dupliquer, c'est creer : c'est ce droit-la qu'il faut, pas
+                // celui de modifier le modele qu'on recopie.
+                permission: 'templates.create',
+                onClick: () => setDuplicating(row),
+              },
+              {
+                key: 'toggle',
+                icon: row.isActive ? PowerOff : Power,
+                label: row.isActive ? t('templates.deactivate') : t('templates.activate'),
+                permission: 'templates.update',
+                disabled: update.isPending,
+                onClick: () =>
+                  update.mutate({ id: row.id, isActive: !row.isActive }),
+              },
+              {
                 key: 'delete',
                 icon: Trash2,
                 label: t('common.delete'),
@@ -159,14 +143,15 @@ export function TemplateListPage() {
         emptyMessage={t('templates.empty')}
       />
 
-      {creating || editing !== null ? (
+      {creating || editing !== null || duplicating !== null ? (
         <TemplateDialog
-          key={editing?.id ?? 'new'}
+          key={editing?.id ?? duplicating?.id ?? 'new'}
           template={editing}
+          duplicateOf={duplicating}
           initial={
-            editing === null && invoiceMode
+            editing === null && duplicating === null && soleType !== undefined
               ? {
-                  templateType: 'invoice',
+                  templateType: soleType,
                   // `global` est une sentinelle de filtre, pas un client :
                   // l'envoyer comme `customerId` ferait echouer la regle `ulid`.
                   customerId:
@@ -181,6 +166,7 @@ export function TemplateListPage() {
             if (open) return
             setCreating(false)
             setEditing(null)
+            setDuplicating(null)
           }}
         />
       ) : null}

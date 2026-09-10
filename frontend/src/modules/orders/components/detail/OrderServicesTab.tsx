@@ -10,6 +10,7 @@ import { Button } from '@/shared/components/ui/button'
 import { useDeleteOrderService } from '../../hooks/useOrderContent'
 import type { OrderPackage, OrderService } from '../../types/orderDetail'
 import { ChangeServiceStatusDialog } from './ChangeServiceStatusDialog'
+import { DeliveryNoteDialog } from './DeliveryNoteDialog'
 import { OrderServiceCardView } from './OrderServiceCardView'
 import { OrderServiceDialog } from './OrderServiceDialog'
 import { OrderServicePanel } from './OrderServicePanel'
@@ -49,6 +50,7 @@ export function OrderServicesTab({
   const [deleting, setDeleting] = useState<OrderService | null>(null)
   const [changingStatus, setChangingStatus] = useState<OrderService | null>(null)
   const [history, setHistory] = useState<OrderService | null>(null)
+  const [deliveryNote, setDeliveryNote] = useState<OrderService | null>(null)
 
   const ordered = [...services].sort((a, b) => a.sequence - b.sequence)
   const open = ordered.find((service) => service.id === openId) ?? null
@@ -85,6 +87,7 @@ export function OrderServicesTab({
               onEdit={() => setEditing(service)}
               onHistory={() => setHistory(service)}
               onChangeStatus={() => setChangingStatus(service)}
+              onDeliveryNote={() => setDeliveryNote(service)}
             />
           ))}
         </div>
@@ -112,6 +115,17 @@ export function OrderServicesTab({
           setHistory(open)
           setOpenId(null)
         }}
+        onDeliveryNote={() => {
+          setDeliveryNote(open)
+          setOpenId(null)
+        }}
+      />
+
+      <DeliveryNoteDialog
+        key={deliveryNote?.id ?? 'none'}
+        orderId={orderId}
+        service={deliveryNote}
+        onClose={() => setDeliveryNote(null)}
       />
 
       {editing !== null || creating ? (

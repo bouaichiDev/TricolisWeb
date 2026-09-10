@@ -18,8 +18,8 @@ use Illuminate\Validation\Validator;
  *
  * Trois refus :
  *
- * - une facture **avec** un canal ;
- * - une facture **avec** un objet — un document n'a pas de ligne de sujet ;
+ * - un document — facture ou bon de livraison — **avec** un canal ;
+ * - un document **avec** un objet : il n'a pas de ligne de sujet ;
  * - un message **sans** canal — il ne saurait pas par où partir.
  *
  * L'objet reste exigé pour l'e-mail seul : le §19 interdit de l'imposer à SMS
@@ -44,11 +44,11 @@ final readonly class TemplateNature
 
         if ($type->isDocument()) {
             if ($channel !== null && $channel !== '') {
-                $validator->errors()->add('channel', 'Un modèle de facture est un document : il n’a pas de canal d’envoi.');
+                $validator->errors()->add('channel', 'Ce modèle est un document : il n’a pas de canal d’envoi.');
             }
 
             if ($subjectTemplate !== null && $subjectTemplate !== '') {
-                $validator->errors()->add('subjectTemplate', 'Un modèle de facture est un document : il n’a pas d’objet.');
+                $validator->errors()->add('subjectTemplate', 'Ce modèle est un document : il n’a pas d’objet.');
             }
 
             return;

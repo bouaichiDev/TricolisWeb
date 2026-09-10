@@ -29,8 +29,9 @@ function usedPaths(body: string | undefined): string[] {
  * de modèle n'existe : substituer les variables ici inventerait un moteur que
  * le serveur ne connaît pas, et l'aperçu ne ressemblerait pas au résultat.
  *
- * Une facture a, elle, un aperçu réel — depuis la facture, où les données
- * existent. Ici, il n'y a pas de facture à rendre.
+ * Les documents ont, eux, un aperçu réel — depuis la facture ou depuis le
+ * service d'une commande, là où les données existent. Ici, il n'y a ni facture
+ * ni livraison à rendre.
  *
  * Les chemins non déclarés sont signalés : le serveur **refuse le rendu** quand
  * il en rencontre un, et le découvrir à la clôture d'une facture serait tard.

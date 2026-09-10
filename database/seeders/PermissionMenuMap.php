@@ -55,6 +55,7 @@ final class PermissionMenuMap
         'tour_period_assignments' => MenuSection::OPERATIONS,
         'tracking_events' => MenuSection::OPERATIONS,
         'proofs_of_delivery' => MenuSection::OPERATIONS,
+        'delivery_notes' => MenuSection::OPERATIONS,
         'claims' => MenuSection::OPERATIONS,
 
         'tracking_event_definitions' => MenuSection::OPERATIONS,

@@ -29,6 +29,18 @@ enum TemplateType: string
     case POD_AVAILABLE = 'pod_available';
     case ORDER_CANCELLED = 'order_cancelled';
     case INVOICE = 'invoice';
+
+    /**
+     * Le bon de livraison remis avec la marchandise.
+     *
+     * Un document, comme la facture, et pour la meme raison : il ne part
+     * par aucun canal, il se rend et se remet. Ce qui le distingue est sa
+     * portee — une facture couvre une commande entiere, un BL ne couvre
+     * qu'un service, avec les seuls colis et articles que ce service
+     * transporte.
+     */
+    case DELIVERY_NOTE = 'delivery_note';
+
     /**
      * Le courriel qui porte un lien de reinitialisation de mot de passe.
      *
@@ -56,6 +68,7 @@ enum TemplateType: string
             self::POD_AVAILABLE => 'Preuve de livraison disponible',
             self::ORDER_CANCELLED => 'Commande annulée',
             self::INVOICE => 'Facture',
+            self::DELIVERY_NOTE => 'Bon de livraison (BL)',
             self::PASSWORD_RESET => 'Réinitialisation de mot de passe',
             self::CUSTOM => 'Personnalisé',
         };
@@ -66,10 +79,27 @@ enum TemplateType: string
      *
      * Une facture n'a ni canal, ni destinataire, ni objet : elle se rend et se
      * classe. C'est ce qui justifie que `channel` soit facultatif sur la table.
+     *
+     * Le bon de livraison suit exactement la même règle. Lui inventer un canal
+     * `email` le ferait apparaître dans le sélecteur des messages, et une règle
+     * de communication pourrait l'envoyer comme un texte.
      */
     public function isDocument(): bool
     {
-        return $this === self::INVOICE;
+        return in_array($this, self::documents(), true);
+    }
+
+    /**
+     * Les natures qui décrivent une mise en page, non un message.
+     *
+     * Une seule liste, lue par l'enum et par les écrans : sans elle, ajouter un
+     * troisième document obligeait à retrouver chaque `=== INVOICE` disséminé.
+     *
+     * @return list<self>
+     */
+    public static function documents(): array
+    {
+        return [self::INVOICE, self::DELIVERY_NOTE];
     }
 
     /**

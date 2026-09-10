@@ -88,9 +88,18 @@
         "body": "Mesure normée GLEC et reporting automatisé."
       },
       "metrics": {
-        "punctuality": { "value": "99,8 %", "label": "Ponctualité garantie" },
-        "fleets": { "value": "+500", "label": "Flottes connectées" },
-        "emissions": { "value": "-18 %", "label": "Émissions de CO2" }
+        "punctuality": {
+          "value": "99,8 %",
+          "label": "Ponctualité garantie"
+        },
+        "fleets": {
+          "value": "+500",
+          "label": "Flottes connectées"
+        },
+        "emissions": {
+          "value": "-18 %",
+          "label": "Émissions de CO2"
+        }
       }
     },
     "submitting": "Connexion…",
@@ -656,7 +665,6 @@
       "confirm": "Refuser"
     }
   },
-
   "validation": {
     "required": "Ce champ est obligatoire.",
     "email": "Adresse e-mail invalide.",
@@ -1584,6 +1592,23 @@
       "orderDateTo": "Commandes au",
       "withoutDepot": "Sans dépôt affecté",
       "withoutDepotHint": "Les commandes importées arrivent avec une agence mais sans dépôt : combinez avec l’origine pour ne voir qu’elles."
+    },
+    "deliveryNote": {
+      "action": "Générer le BL",
+      "title": "Bon de livraison",
+      "hint": "Rendu par le serveur, avec le modèle applicable à « {{service}} ». Seuls les colis et articles de ce service y figurent.",
+      "template": "Modèle",
+      "templateHint": "Le modèle du client l’emporte sur celui du transporteur. Sa mise en page se règle dans « Modèles ».",
+      "generate": "Générer et télécharger",
+      "print": "Imprimer",
+      "generated": "Bon de livraison enregistré dans les documents de la commande.",
+      "failed": "Le bon de livraison n’a pas pu être rendu.",
+      "noTemplate": "Aucun modèle de bon de livraison ne s’applique à ce service.",
+      "openTemplates": "Ouvrir « Modèles »",
+      "scopes": {
+        "customer": "Modèle du client",
+        "global": "Modèle du transporteur"
+      }
     }
   },
   "orderStatuses": {
@@ -2648,8 +2673,6 @@
     }
   },
   "templates": {
-    "title": "Modèles",
-    "description": "Le texte des messages et la mise en page des documents. Une seule table pour toute la plateforme.",
     "empty": "Aucun modèle",
     "create": "Nouveau modèle",
     "edit": "Modifier le modèle",
@@ -2678,14 +2701,11 @@
       "isDefault": "Par défaut",
       "bodyFormat": "Format du message",
       "customer": "Client",
-      "service": "Prestation"
+      "service": "Prestation",
+      "category": "Catégorie"
     },
     "bodyFormatHint": "HTML pour une mise en forme, texte brut sinon. Le SMS ne connaît que le texte.",
-    "invoiceTitle": "Modèles de facture",
-    "invoiceDescription": "La mise en page des factures. Sans modèle propre à un client, celui du transporteur sert.",
-    "createInvoice": "Nouveau modèle de facture",
     "suggestionsHint": "Variables que le serveur fournira. Cliquer pour la déclarer ; le nom entre accolades s’écrit ensuite dans le message.",
-    "invoiceBodyHint": "HTML du document. {{ chemin }} insère une valeur ; {{#invoice.lines}} … {{/invoice.lines}} répète un bloc pour chaque ligne.",
     "globalScope": "Transporteur",
     "customerHint": "Aucun client : le modèle vaut pour toute l’organisation. Un client : il ne vaut que pour lui.",
     "serviceHint": "Aucun service : le modèle vaut pour toutes les prestations.",
@@ -2698,6 +2718,34 @@
     "noChannel": "Document",
     "errors": {
       "documentChannel": "Un modèle de facture est un document : il n’a pas de canal d’envoi."
+    },
+    "duplicate": "Dupliquer le modèle",
+    "duplicateHint": "Tout est repris sauf le code, qui identifie le modèle et doit rester unique.",
+    "activate": "Activer le modèle",
+    "deactivate": "Désactiver le modèle",
+    "isDefault": "Par défaut",
+    "allCategories": "Toutes les catégories",
+    "titles": {
+      "all": "Modèles",
+      "communication": "Modèles",
+      "invoice": "Modèles de facture",
+      "delivery_note": "Modèles de bon de livraison"
+    },
+    "descriptions": {
+      "all": "Le texte des messages et la mise en page des documents. Une seule table pour toute la plateforme.",
+      "communication": "Le texte des messages envoyés aux clients, par canal et par nature.",
+      "invoice": "La mise en page des factures. Sans modèle propre à un client, celui du transporteur sert.",
+      "delivery_note": "La mise en page des bons de livraison. Sans modèle propre à un client, celui du transporteur sert ; le BL se génère ensuite depuis le service d’une commande."
+    },
+    "creates": {
+      "all": "Nouveau modèle",
+      "communication": "Nouveau modèle",
+      "invoice": "Nouveau modèle de facture",
+      "delivery_note": "Nouveau modèle de BL"
+    },
+    "bodyHints": {
+      "invoice": "HTML du document. {{ chemin }} insère une valeur ; {{#invoice.lines}} … {{/invoice.lines}} répète un bloc pour chaque ligne.",
+      "delivery_note": "HTML du document. {{ chemin }} insère une valeur ; {{#packages}} … {{/packages}} et {{#articles}} … {{/articles}} répètent un bloc pour chaque colis et chaque article."
     }
   },
   "templateTypes": {
@@ -2714,7 +2762,8 @@
     "order_cancelled": "Commande annulée",
     "password_reset": "Réinitialisation de mot de passe",
     "custom": "Personnalisé",
-    "invoice": "Facture"
+    "invoice": "Facture",
+    "delivery_note": "Bon de livraison (BL)"
   },
   "communicationEvents": {
     "order_created": "Commande créée",
@@ -2863,7 +2912,117 @@
       "code": "Code du transporteur",
       "name": "Nom du transporteur",
       "email": "E-mail du transporteur",
-      "phone": "Téléphone du transporteur"
+      "phone": "Téléphone du transporteur",
+      "legalName": "Raison sociale du transporteur",
+      "registrationNumber": "RC du transporteur",
+      "taxNumber": "ICE du transporteur",
+      "logo": "Logo du transporteur"
+    },
+    "deliveryNote": {
+      "number": "N° du bon",
+      "issuedAt": "Date d’édition",
+      "issuedAtTime": "Heure d’édition"
+    },
+    "orderer": {
+      "code": "Code du donneur d’ordre",
+      "name": "Donneur d’ordre",
+      "legalName": "Raison sociale du donneur d’ordre",
+      "email": "E-mail du donneur d’ordre",
+      "phone": "Téléphone du donneur d’ordre"
+    },
+    "order": {
+      "orderNumber": "N° commande",
+      "orderDate": "Date de commande",
+      "orderType": "Type de commande",
+      "externalReference": "Référence externe",
+      "customerReference": "Référence client",
+      "groupCode": "Code de groupe",
+      "currencyCode": "Devise",
+      "remark": "Consigne d’exécution"
+    },
+    "service": {
+      "serviceNumber": "N° de prestation",
+      "code": "Code prestation",
+      "name": "Prestation",
+      "sequence": "Ordre de passage",
+      "quantity": "Quantité",
+      "unit": "Unité",
+      "requestedDate": "Date demandée",
+      "requestedFrom": "Créneau — début",
+      "requestedTo": "Créneau — fin",
+      "weight": "Poids de la prestation",
+      "volume": "Volume de la prestation",
+      "packageCount": "Nombre de colis",
+      "instructions": "Consignes",
+      "status": "Statut"
+    },
+    "loading": {
+      "agencyCode": "Code agence",
+      "agencyName": "Agence de chargement",
+      "point": "Point de chargement",
+      "depotCode": "Code dépôt",
+      "depotName": "Dépôt",
+      "email": "E-mail de l’agence",
+      "phone": "Téléphone de l’agence",
+      "addressCode": "Code adresse de chargement",
+      "name": "Nom du lieu de chargement",
+      "addressLine1": "Adresse de chargement",
+      "addressLine2": "Complément d’adresse",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "country": "Pays",
+      "instructions": "Consignes d’accès"
+    },
+    "delivery": {
+      "contactName": "Contact sur place",
+      "contactPhone": "Téléphone du contact",
+      "contactEmail": "E-mail du contact",
+      "addressCode": "Code adresse de livraison",
+      "name": "Nom du lieu de livraison",
+      "addressLine1": "Adresse de livraison",
+      "addressLine2": "Complément d’adresse",
+      "postalCode": "Code postal",
+      "city": "Ville",
+      "country": "Pays",
+      "instructions": "Consignes d’accès"
+    },
+    "packages": {
+      "_self": "Colis du service (section)",
+      "reference": "Référence du colis",
+      "barcode": "Code-barres",
+      "description": "Description",
+      "packageType": "Type de colis",
+      "groupingType": "Type de groupage",
+      "quantity": "Quantité prise en charge",
+      "weight": "Poids",
+      "volume": "Volume",
+      "length": "Longueur",
+      "width": "Largeur",
+      "height": "Hauteur",
+      "handlingInstructions": "Consignes de manutention",
+      "status": "Statut du colis"
+    },
+    "articles": {
+      "_self": "Articles du service (section)",
+      "articleCode": "Code article",
+      "barcode": "Code-barres",
+      "name": "Désignation",
+      "description": "Description",
+      "externalReference": "Référence externe",
+      "quantity": "Quantité dans le colis",
+      "orderedQuantity": "Quantité commandée",
+      "weight": "Poids unitaire",
+      "volume": "Volume unitaire",
+      "packageReference": "Colis",
+      "packageBarcode": "Code-barres du colis"
+    },
+    "totals": {
+      "packageCount": "Nombre de colis",
+      "articleCount": "Nombre de lignes d’articles",
+      "packageQuantity": "Quantité totale de colis",
+      "articleQuantity": "Quantité totale d’articles",
+      "weight": "Poids total",
+      "volume": "Volume total"
     }
   },
   "mailConfiguration": {
@@ -3255,5 +3414,10 @@
     "emptyExternal": "Aucun envoi en échec.",
     "seeHistory": "Voir l'historique des communications",
     "untitled": "Sans objet"
+  },
+  "templateCategories": {
+    "communication": "Communication",
+    "invoice": "Facturation",
+    "delivery_note": "Bon de livraison"
   }
 }

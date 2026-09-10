@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Templates\Queries;
 
 use App\Http\Requests\Api\V1\Templates\ListTemplateRequest;
+use App\Modules\Templates\Enums\TemplateCategory;
 use App\Modules\Templates\Models\Template;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,12 +63,37 @@ final readonly class TemplateListQuery
             }
         }
 
+        $this->filterCategory($query, $request);
         $this->filterCustomer($query, $request);
 
         $sort = $request->getSort('code', self::SORTABLE);
         $direction = $request->validated('direction') ?? 'asc';
 
         return $query->orderBy($sort, $direction)->paginate($request->getPerPage());
+    }
+
+    /**
+     * Le rayon demandé — messages, factures, ou bons de livraison.
+     *
+     * Traduit en `whereIn` sur les natures : c'est la seule façon d'exprimer
+     * « tout sauf les documents », qu'un filtre `templateType` à valeur unique
+     * ne sait pas dire.
+     *
+     * @param  Builder<Template>  $query
+     */
+    private function filterCategory(Builder $query, ListTemplateRequest $request): void
+    {
+        if (! $request->has('category')) {
+            return;
+        }
+
+        $category = TemplateCategory::tryFrom((string) $request->validated('category'));
+
+        if ($category === null) {
+            return;
+        }
+
+        $query->whereIn('template_type', $category->typeValues());
     }
 
     /**

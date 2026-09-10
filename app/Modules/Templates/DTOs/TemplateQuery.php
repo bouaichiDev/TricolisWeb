@@ -37,4 +37,25 @@ final readonly class TemplateQuery
             customerId: $customerId,
         );
     }
+
+    /**
+     * La requête d'un bon de livraison : par client **et** par prestation.
+     *
+     * Le service compte ici, là où il ne compte pas pour une facture : un BL
+     * décrit une prestation précise, et un transporteur qui met en page son
+     * enlèvement autrement que sa livraison doit pouvoir le dire. Un modèle
+     * sans service reste servi quand aucun ne vise celui-ci.
+     */
+    public static function forDeliveryNote(
+        string $organizationId,
+        ?string $customerId,
+        ?string $serviceId = null,
+    ): self {
+        return new self(
+            organizationId: $organizationId,
+            templateType: TemplateType::DELIVERY_NOTE,
+            customerId: $customerId,
+            serviceId: $serviceId,
+        );
+    }
 }

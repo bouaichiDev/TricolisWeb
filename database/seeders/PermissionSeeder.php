@@ -310,6 +310,13 @@ class PermissionSeeder extends Seeder
         ['code' => 'templates.update', 'name' => 'Modifier un modèle', 'module' => 'templates', 'action' => 'update'],
         ['code' => 'templates.delete', 'name' => 'Supprimer un modèle', 'module' => 'templates', 'action' => 'delete'],
 
+        // Le bon de livraison n'herite pas de `order_services.view` : consulter
+        // la fiche d'un service et editer le document qui accompagne la
+        // marchandise ne sont pas le meme pouvoir. La configuration de sa mise
+        // en page reste, elle, sous `templates.*`.
+        ['code' => 'delivery_notes.view', 'name' => 'Prévisualiser un bon de livraison', 'module' => 'delivery_notes', 'action' => 'view'],
+        ['code' => 'delivery_notes.generate', 'name' => 'Générer un bon de livraison', 'module' => 'delivery_notes', 'action' => 'generate'],
+
         ['code' => 'communication_rules.view', 'name' => 'Voir les règles de communication', 'module' => 'communication_rules', 'action' => 'view'],
         ['code' => 'communication_rules.create', 'name' => 'Créer une règle de communication', 'module' => 'communication_rules', 'action' => 'create'],
         ['code' => 'communication_rules.update', 'name' => 'Modifier une règle de communication', 'module' => 'communication_rules', 'action' => 'update'],

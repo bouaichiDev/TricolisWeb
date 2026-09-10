@@ -151,3 +151,154 @@ export async function rewriteTemplate(
 
   await context.dispose()
 }
+
+/**
+ * Ce qu'un bon de livraison suppose : une commande, un service, un colis, et
+ * un article rangé dedans.
+ *
+ * Le service du **référentiel** est créé pour l'occasion, et sert ensuite à
+ * viser le modèle. C'est ce qui rend le scénario déterministe sur une base
+ * partagée : un modèle qui désigne une prestation l'emporte sur un modèle
+ * générique, quel que soit ce qu'un autre scénario a laissé derrière lui.
+ */
+export interface PreparedDeliveryNote {
+  token: string
+  organizationId: string
+  customerId: string
+  serviceCode: string
+  serviceName: string
+  orderId: string
+  orderNumber: string
+  packageReference: string
+  articleName: string
+}
+
+export async function prepareDeliveryNote(): Promise<PreparedDeliveryNote> {
+  const context = await playwrightRequest.newContext()
+
+  const login = await context.post(`${API}/auth/login`, {
+    data: { email: ADMIN.email, password: ADMIN.password, deviceName: 'e2e' },
+  })
+  expect(login.ok(), 'connexion API').toBeTruthy()
+
+  const token = (await login.json()).data.token as string
+  const authed = { Authorization: `Bearer ${token}` }
+
+  const me = await context.get(`${API}/auth/me`, { headers: authed })
+  const organizations = (await me.json()).data.user.organizations as Array<{ id: string }>
+  expect(organizations?.length, 'le compte de test appartient à une organisation').toBeGreaterThan(0)
+  const organizationId = organizations[0].id
+
+  const headers = { ...authed, 'X-Organization-Id': organizationId }
+  const stamp = Date.now()
+
+  // L'agence est semée en `testing` ; la créer ici en ferait une deuxième à
+  // chaque exécution, et le formulaire de commande finirait par en proposer
+  // cinquante identiques.
+  const agencies = await context.get(`${API}/agencies?perPage=1&status=active`, { headers })
+  const agency = (await agencies.json()).data as Array<{ id: string }>
+  expect(agency?.length, 'une agence est semée en base de test').toBeGreaterThan(0)
+
+  const customer = await context.post(`${API}/customers`, {
+    headers,
+    data: { code: `BL${stamp}`, name: `Client BL ${stamp}`, status: 'active' },
+  })
+  expect(customer.ok(), `création client : ${await customer.text()}`).toBeTruthy()
+  const customerId = (await customer.json()).data.id as string
+
+  const address = await context.post(`${API}/addresses`, {
+    headers,
+    data: {
+      name: `Entrepôt BL ${stamp}`,
+      addressLine1: '12 route des Acacias',
+      postalCode: '1227',
+      city: 'Carouge',
+      country: 'CH',
+      status: 'active',
+      entityType: 'customer',
+      entityId: customerId,
+    },
+  })
+  expect(address.ok(), `création adresse : ${await address.text()}`).toBeTruthy()
+  const addressId = (await address.json()).data.id as string
+
+  const serviceCode = `BLSRV${stamp}`
+  const serviceName = `Livraison BL ${stamp}`
+  const service = await context.post(`${API}/services`, {
+    headers,
+    data: {
+      code: serviceCode,
+      name: serviceName,
+      unit: 'delivery',
+      defaultDurationMinutes: 30,
+      billableToCustomer: true,
+      payableToProvider: true,
+      requiresAddress: true,
+      requiresContact: false,
+      status: 'active',
+    },
+  })
+  expect(service.ok(), `création prestation : ${await service.text()}`).toBeTruthy()
+  const serviceId = (await service.json()).data.id as string
+
+  const packageReference = `PLT-${stamp}`
+  const articleName = `Chaise ${stamp}`
+
+  const order = await context.post(`${API}/orders`, {
+    headers,
+    data: {
+      customerId,
+      agencyId: agency[0].id,
+      orderDate: new Date().toISOString(),
+      customerReference: `BC-${stamp}`,
+      lines: [{ name: articleName, articleCode: `ART-${stamp}`, quantity: 10, weight: 6 }],
+      packages: [
+        {
+          key: 'palette-1',
+          barcode: `PLT${stamp}`,
+          reference: packageReference,
+          weight: 60,
+          lines: [{ lineKey: '0', quantity: 4 }],
+        },
+      ],
+      services: [
+        {
+          serviceId,
+          addressId,
+          serviceNumber: 'SRV-1',
+          sequence: 1,
+          requestedDate: new Date().toISOString().slice(0, 10),
+          quantity: 1,
+          unit: 'delivery',
+          requiredTimeMinutes: 30,
+          remainingTimeMinutes: 30,
+          weight: 60,
+          volume: 1,
+          packageCount: 1,
+          customerUnitPrice: 0,
+          customerTotalPrice: 0,
+          providerUnitCost: 0,
+          providerTotalCost: 0,
+          status: 'draft',
+          packages: [{ packageKey: 'palette-1', quantity: 1 }],
+        },
+      ],
+    },
+  })
+  expect(order.ok(), `création commande : ${await order.text()}`).toBeTruthy()
+  const created = (await order.json()).data
+
+  await context.dispose()
+
+  return {
+    token,
+    organizationId,
+    customerId,
+    serviceCode,
+    serviceName,
+    orderId: created.id as string,
+    orderNumber: created.orderNumber as string,
+    packageReference,
+    articleName,
+  }
+}

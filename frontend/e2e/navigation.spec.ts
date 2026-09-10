@@ -43,11 +43,19 @@ test.describe('navigation', () => {
   })
 
   /**
-   * Les deux portes du menu mènent au même écran, avec un filtre différent.
-   * Le §0.15 de la Phase 9 interdit d'en faire deux CRUD ; ce test le vérifie
-   * là où c'est visible — dans le navigateur.
+   * Les accès aux modèles mènent tous au même écran, avec un filtre différent.
+   * Le §0.15 de la Phase 9 interdit d'en faire plusieurs CRUD ; ce test le
+   * vérifie là où c'est visible — dans le navigateur.
+   *
+   * Les deux premiers sont des portes du menu. Le troisième n'en est pas une :
+   * le rayon des BL s'atteint par son URL, et c'est le lien que l'écran de
+   * génération propose quand aucun modèle ne s'applique. Il doit donc ouvrir
+   * cet écran-là, pas la liste complète.
+   *
+   * `templateType=invoice` est l'ancienne adresse de la porte comptable :
+   * un signet posé dessus doit continuer d'ouvrir les modèles de facture.
    */
-  test('les deux accès aux modèles mènent au même écran', async ({ page }) => {
+  test('les accès aux modèles mènent au même écran', async ({ page }) => {
     await signIn(page)
 
     await visit(page, '/templates?category=communication')
@@ -55,5 +63,8 @@ test.describe('navigation', () => {
 
     await visit(page, '/templates?templateType=invoice')
     await expect(heading(page, /Modèles de facture/)).toBeVisible()
+
+    await visit(page, '/templates?category=delivery_note')
+    await expect(heading(page, /Modèles de bon de livraison/)).toBeVisible()
   })
 })

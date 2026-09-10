@@ -87,6 +87,29 @@ class TemplateFactory extends Factory
         ]);
     }
 
+    /**
+     * Modele de bon de livraison : un document, comme la facture.
+     *
+     * Le corps emploie les deux syntaxes du moteur — remplacement et section —
+     * pour qu'un test qui l'utilise couvre les deux d'un coup.
+     */
+    public function deliveryNote(): static
+    {
+        return $this->state(fn (): array => [
+            'channel' => null,
+            'template_type' => TemplateType::DELIVERY_NOTE,
+            'subject_template' => null,
+            'body_template' => '<h1>BL {{ deliveryNote.number }}</h1>'
+                .'{{#packages}}<p>{{ packages.reference }} x {{ packages.quantity }}</p>{{/packages}}'
+                .'{{#articles}}<p>{{ articles.name }} x {{ articles.quantity }}</p>{{/articles}}',
+            'available_variables' => [
+                'deliveryNote.number',
+                'packages', 'packages.reference', 'packages.quantity',
+                'articles', 'articles.name', 'articles.quantity',
+            ],
+        ]);
+    }
+
     public function forCustomer(Customer $customer): static
     {
         return $this->state(fn (): array => [

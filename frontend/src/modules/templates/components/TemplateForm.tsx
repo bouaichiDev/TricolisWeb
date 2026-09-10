@@ -11,6 +11,11 @@ import { TemplateVariablePicker } from './TemplateVariablePicker'
 import type { TemplateFormValues } from '../schemas/templateSchema'
 import { BODY_FORMATS, TEMPLATE_TYPES, isDocumentType } from '../types/template'
 import {
+  DELIVERY_NOTE_STARTER_BODY,
+  DELIVERY_NOTE_STARTER_VARIABLES,
+} from '../utils/deliveryNoteStarter'
+import { DELIVERY_NOTE_PATHS } from '../utils/deliveryNoteVariables'
+import {
   INVOICE_PATHS,
   INVOICE_STARTER_BODY,
   INVOICE_STARTER_VARIABLES,
@@ -51,10 +56,19 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
   const subjectRequired = !document && hasSubject(values.channel)
 
   /**
-   * Passer en facture repart d'une mise en page utilisable.
+   * Passer en document repart d'une mise en page utilisable.
    *
    * Une page blanche obligerait à écrire un document complet en devinant les
-   * chemins — le meilleur moyen d'obtenir un rendu en échec à la clôture.
+   * chemins — le meilleur moyen d'obtenir un rendu en échec au moment où il
+   * faut remettre le papier.
+   *
+   * La mise en page de départ **n'écrase jamais** une saisie en cours : elle ne
+   * comble qu'un corps vide. Changer de type par erreur ne doit pas effacer un
+   * document qu'on venait d'écrire.
+   *
+   * Le service, lui, ne survit pas au passage en facture : le serveur le force
+   * à nul pour elle. Un BL le garde — il décrit une prestation précise, et un
+   * enlèvement peut se mettre en page autrement qu'une livraison.
    */
   const changeType = (templateType: string) => {
     if (!isDocumentType(templateType)) {
@@ -63,17 +77,17 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
       return
     }
 
+    const starter = starterFor(templateType)
+
     onChange({
       templateType,
       channel: '',
-      serviceId: '',
+      serviceId: templateType === 'invoice' ? '' : values.serviceId,
       subjectTemplate: '',
       bodyFormat: 'html',
-      bodyTemplate: values.bodyTemplate.trim() === '' ? INVOICE_STARTER_BODY : values.bodyTemplate,
+      bodyTemplate: values.bodyTemplate.trim() === '' ? starter.body : values.bodyTemplate,
       availableVariables:
-        values.availableVariables.length === 0
-          ? INVOICE_STARTER_VARIABLES
-          : values.availableVariables,
+        values.availableVariables.length === 0 ? starter.variables : values.availableVariables,
     })
   }
 
@@ -163,7 +177,7 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
         onChange={(bodyTemplate) => onChange({ bodyTemplate })}
         required
         multiline
-        description={document ? t('templates.invoiceBodyHint') : undefined}
+        description={document ? t(`templates.bodyHints.${values.templateType}`) : undefined}
       />
 
       {/* Les variables dependent du sujet : un modele de reinitialisation ne
@@ -207,7 +221,23 @@ export function TemplateForm({ values, onChange, codeEditable }: TemplateFormPro
  */
 function suggestionsFor(templateType: string): string[] {
   if (templateType === 'invoice') return [...INVOICE_PATHS]
+  if (templateType === 'delivery_note') return [...DELIVERY_NOTE_PATHS]
   if (templateType === 'password_reset') return [...PASSWORD_RESET_VARIABLES]
 
   return [...ORDER_VARIABLES]
+}
+
+/**
+ * La mise en page de départ d'un document, et les chemins qu'elle emploie.
+ *
+ * Les deux vont ensemble : une mise en page dont les variables ne sont pas
+ * déclarées échoue au rendu, et c'est précisément ce que la proposer devait
+ * éviter.
+ */
+function starterFor(templateType: string): { body: string; variables: string[] } {
+  if (templateType === 'delivery_note') {
+    return { body: DELIVERY_NOTE_STARTER_BODY, variables: DELIVERY_NOTE_STARTER_VARIABLES }
+  }
+
+  return { body: INVOICE_STARTER_BODY, variables: INVOICE_STARTER_VARIABLES }
 }

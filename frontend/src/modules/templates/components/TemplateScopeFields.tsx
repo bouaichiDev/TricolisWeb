@@ -5,7 +5,6 @@ import { useActiveServices } from '@/modules/services/hooks/useServices'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 
 import type { TemplateFormValues } from '../schemas/templateSchema'
-import { isDocumentType } from '../types/template'
 
 interface TemplateScopeFieldsProps {
   values: TemplateFormValues
@@ -23,16 +22,19 @@ const NONE = '__none__'
  * l'emporte, sinon le global sert. Un client n'hérite jamais du modèle d'un
  * autre.
  *
- * Le **service** ne concerne que les messages. Une facture n'est pas rattachée
- * à une prestation : elle en facture plusieurs, et le serveur force `serviceId`
- * à nul pour un document.
+ * Le **service** disparaît pour la seule facture : elle en facture plusieurs à
+ * la fois, et le serveur force `serviceId` à nul pour elle. Un message le garde,
+ * et un bon de livraison aussi — un BL décrit une prestation précise, et un
+ * transporteur qui met en page son enlèvement autrement que sa livraison doit
+ * pouvoir le dire.
  */
 export function TemplateScopeFields({ values, onChange }: TemplateScopeFieldsProps) {
   const { t } = useTranslation()
   const customers = useCustomerOptions('')
   const services = useActiveServices()
 
-  const document = isDocumentType(values.templateType)
+  // La facture, et elle seule : le serveur refuse `serviceId` pour elle.
+  const invoice = values.templateType === 'invoice'
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -48,7 +50,7 @@ export function TemplateScopeFields({ values, onChange }: TemplateScopeFieldsPro
         description={t('templates.customerHint')}
       />
 
-      {document ? null : (
+      {invoice ? null : (
         <AsyncSelect
           label={t('templates.fields.service')}
           value={values.serviceId === '' ? NONE : values.serviceId}

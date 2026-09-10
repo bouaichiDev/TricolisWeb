@@ -18,9 +18,9 @@ import { TemplateForm } from './TemplateForm'
 import { TemplatePreview } from './TemplatePreview'
 import { useCreateTemplate, useTemplate, useUpdateTemplate } from '../hooks/useTemplates'
 import {
-  INVOICE_FORM_DEFAULTS,
-  TEMPLATE_FORM_DEFAULTS,
+  defaultsFor,
   isTemplateComplete,
+  toDuplicateFormValues,
   toTemplateFormValues,
   toTemplatePayload,
   type TemplateFormValues,
@@ -30,6 +30,13 @@ import type { Template } from '../types/template'
 interface TemplateDialogProps {
   /** `null` pour une création. */
   template: Template | null
+  /**
+   * Le modèle **recopié**, quand le dialogue sert à dupliquer.
+   *
+   * Distinct de `template` : la duplication crée, elle ne modifie pas. Les
+   * confondre aurait écrasé le modèle d'origine à l'enregistrement.
+   */
+  duplicateOf?: Template | null
   open: boolean
   onOpenChange: (open: boolean) => void
   /**
@@ -50,27 +57,46 @@ interface TemplateDialogProps {
  * ouvrirait donc un formulaire au corps vide, et l'enregistrer effacerait le
  * contenu du modèle sans que personne l'ait demandé.
  */
-export function TemplateDialog({ template, open, onOpenChange, initial }: TemplateDialogProps) {
+export function TemplateDialog({
+  template,
+  duplicateOf = null,
+  open,
+  onOpenChange,
+  initial,
+}: TemplateDialogProps) {
   const { t } = useTranslation()
-  const detail = useTemplate(template?.id)
 
-  // En création, il n'y a rien à charger. En modification, le formulaire attend
-  // le modèle complet plutôt que de s'ouvrir sur des champs vides.
-  const loading = template !== null && detail.data === undefined
+  // Une duplication charge elle aussi le modele complet : la liste ne transporte
+  // ni corps ni variables, et recopier une ligne de liste donnerait un duplicata
+  // vide — la copie la plus inutile qui soit.
+  const source = template ?? duplicateOf
+  const detail = useTemplate(source?.id)
+
+  const loading = source !== null && detail.data === undefined
+
+  const title =
+    template !== null
+      ? t('templates.edit')
+      : duplicateOf !== null
+        ? t('templates.duplicate')
+        : t('templates.create')
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{template === null ? t('templates.create') : t('templates.edit')}</DialogTitle>
-          <DialogDescription>{t('templates.formHint')}</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {duplicateOf === null ? t('templates.formHint') : t('templates.duplicateHint')}
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <Skeleton className="h-72 w-full" />
         ) : (
           <TemplateDialogBody
-            template={detail.data ?? null}
+            template={template === null ? null : (detail.data ?? null)}
+            duplicate={duplicateOf === null ? null : (detail.data ?? null)}
             initial={initial}
             onDone={() => onOpenChange(false)}
           />
@@ -82,6 +108,7 @@ export function TemplateDialog({ template, open, onOpenChange, initial }: Templa
 
 interface TemplateDialogBodyProps {
   template: Template | null
+  duplicate: Template | null
   initial?: Partial<TemplateFormValues>
   onDone: () => void
 }
@@ -98,17 +125,15 @@ interface TemplateDialogBodyProps {
  * lui qu'on le retrouve — et le renommer romprait cette référence sans
  * prévenir.
  */
-function TemplateDialogBody({ template, initial, onDone }: TemplateDialogBodyProps) {
+function TemplateDialogBody({ template, duplicate, initial, onDone }: TemplateDialogBodyProps) {
   const { t } = useTranslation()
   const isEdit = template !== null
 
   const [values, setValues] = useState<TemplateFormValues>(() => {
     if (template !== null) return toTemplateFormValues(template)
+    if (duplicate !== null) return toDuplicateFormValues(duplicate)
 
-    const base =
-      initial?.templateType === 'invoice' ? INVOICE_FORM_DEFAULTS : TEMPLATE_FORM_DEFAULTS
-
-    return { ...base, ...initial }
+    return { ...defaultsFor(initial?.templateType), ...initial }
   })
   const [error, setError] = useState<string | null>(null)
 

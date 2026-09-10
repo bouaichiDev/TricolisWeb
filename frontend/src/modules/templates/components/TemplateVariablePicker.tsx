@@ -7,6 +7,10 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 
+import {
+  DELIVERY_NOTE_ARTICLES_PATH,
+  DELIVERY_NOTE_PACKAGES_PATH,
+} from '../utils/deliveryNoteVariables'
 import { INVOICE_LINES_PATH } from '../utils/invoiceVariables'
 import { hasVariableLabel, variableLabel } from '../utils/variableLabel'
 
@@ -28,9 +32,9 @@ interface TemplateVariablePickerProps {
  * Le nom est stocké nu (`orderNumber`, `invoice.total`) ; les accolades
  * appartiennent au corps.
  *
- * Un chemin de **liste** — `invoice.lines` — se signale à part : il ne se
- * remplace pas, il se parcourt par une section. L'écrire entre accolades
- * simples donnerait un rendu en échec, et le badge le dit avant.
+ * Un chemin de **liste** — `invoice.lines`, `packages`, `articles` — se signale
+ * à part : il ne se remplace pas, il se parcourt par une section. L'écrire entre
+ * accolades simples donnerait un rendu en échec, et le badge le dit avant.
  *
  * Chaque nom proposé porte son **libellé** : `order_number` ne dit rien à qui
  * remplit le formulaire, « N° commande » si. Le nom technique reste visible —
@@ -68,7 +72,7 @@ export function TemplateVariablePicker({
             <li key={name}>
               <Badge variant="secondary" className="gap-1.5" title={variableLabel(t, name)}>
                 <span className="font-mono">
-                  {name === INVOICE_LINES_PATH ? `{{#${name}}}` : `{{${name}}}`}
+                  {isSection(name) ? `{{#${name}}}` : `{{${name}}}`}
                 </span>
                 {hasVariableLabel(t, name) ? (
                   <span className="text-muted-foreground">{variableLabel(t, name)}</span>
@@ -135,5 +139,20 @@ export function TemplateVariablePicker({
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Ce chemin est-il une liste ?
+ *
+ * Les trois listes du domaine, nommées une fois. Le badge d'un chemin de liste
+ * montre `{{#chemin}}` et non `{{chemin}}` : la seconde forme fait échouer le
+ * rendu, et le découvrir devant le client serait tard.
+ */
+function isSection(name: string): boolean {
+  return (
+    name === INVOICE_LINES_PATH ||
+    name === DELIVERY_NOTE_PACKAGES_PATH ||
+    name === DELIVERY_NOTE_ARTICLES_PATH
   )
 }

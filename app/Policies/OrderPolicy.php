@@ -66,4 +66,16 @@ class OrderPolicy extends BaseOrganizationPolicy
     {
         return $this->hasPermission($user, $order->organization_id, "order_services.$action");
     }
+
+    /**
+     * Le bon de livraison d'un service, prévisualisé ou généré.
+     *
+     * Un droit à part, et non `order_services.view` : voir la fiche d'un
+     * service et éditer le document qui accompagne la marchandise ne sont pas
+     * le même pouvoir. Un préparateur consulte ; qui signe le BL l'engage.
+     */
+    public function deliveryNote(User $user, Order $order, string $action): bool
+    {
+        return $this->hasPermission($user, $order->organization_id, "delivery_notes.$action");
+    }
 }

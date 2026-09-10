@@ -30,6 +30,15 @@ export interface TemplateFilters {
   page: number
   perPage: number
   search?: string
+  /**
+   * Le rayon : `communication`, `invoice` ou `delivery_note`.
+   *
+   * Filtré par le serveur et non ici : « communication » se définit par la
+   * négative — tout ce qui n'est pas un document — et l'écrire côté client
+   * aurait demandé d'énumérer onze natures dans l'URL, dont une manquerait au
+   * premier ajout.
+   */
+  category?: string
   customerId?: string
   serviceId?: string
   channel?: string

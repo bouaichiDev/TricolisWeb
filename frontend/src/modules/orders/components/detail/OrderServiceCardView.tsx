@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowRightLeft, History, MapPin, Pencil } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft, FileText, History, MapPin, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -21,6 +21,8 @@ interface OrderServiceCardViewProps {
   onEdit: () => void
   onHistory: () => void
   onChangeStatus: () => void
+  /** Ouvre la génération du bon de livraison de ce service. */
+  onDeliveryNote: () => void
 }
 
 /**
@@ -45,6 +47,7 @@ export function OrderServiceCardView({
   onEdit,
   onHistory,
   onChangeStatus,
+  onDeliveryNote,
 }: OrderServiceCardViewProps) {
   const { t } = useTranslation()
 
@@ -152,6 +155,22 @@ export function OrderServiceCardView({
               </Button>
             </PermissionGuard>
           ) : null}
+
+          {/* Le BL se genere par service, jamais par commande : deux services
+              d'une meme commande ne livrent ni les memes colis ni au meme
+              endroit. */}
+          <PermissionGuard permission="delivery_notes.view">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onDeliveryNote}
+              title={t('orders.deliveryNote.action')}
+              aria-label={t('orders.deliveryNote.action')}
+            >
+              <FileText className="size-4" aria-hidden />
+            </Button>
+          </PermissionGuard>
 
           <Button
             type="button"

@@ -58,6 +58,7 @@ use App\Http\Controllers\Api\V1\Orders\OrderHistoryController;
 use App\Http\Controllers\Api\V1\Orders\OrderLineController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceContactController;
 use App\Http\Controllers\Api\V1\Orders\OrderServiceController;
+use App\Http\Controllers\Api\V1\Orders\OrderServiceDeliveryNoteController;
 use App\Http\Controllers\Api\V1\Orders\OrderServicePackageController;
 use App\Http\Controllers\Api\V1\Orders\OrderStockPlanController;
 use App\Http\Controllers\Api\V1\Orders\ServiceController;
@@ -308,6 +309,12 @@ Route::middleware('auth:sanctum')->group(static function (): void {
             ->parameters(['type-items' => 'typeItem'])
             ->except(['create', 'edit']);
         Route::patch('orders/{order}/services/{orderService}/status', [OrderServiceController::class, 'updateStatus'])->name('orders.services.status');
+        // Le bon de livraison d'un service : ses modeles applicables, son
+        // apercu, puis son PDF. Elles precedent l'apiResource des services
+        // pour qu'aucune ne soit captee comme un identifiant.
+        Route::get('orders/{order}/services/{orderService}/delivery-note/templates', [OrderServiceDeliveryNoteController::class, 'templates'])->name('orders.services.delivery-note.templates');
+        Route::get('orders/{order}/services/{orderService}/delivery-note', [OrderServiceDeliveryNoteController::class, 'show'])->name('orders.services.delivery-note.show');
+        Route::post('orders/{order}/services/{orderService}/delivery-note', [OrderServiceDeliveryNoteController::class, 'store'])->name('orders.services.delivery-note.store');
         Route::get('orders/{order}/services/{orderService}/contacts', [OrderServiceContactController::class, 'index'])->name('orders.services.contacts.index');
         Route::post('orders/{order}/services/{orderService}/contacts', [OrderServiceContactController::class, 'store'])->name('orders.services.contacts.store');
         Route::patch('orders/{order}/services/{orderService}/contacts/{contact}', [OrderServiceContactController::class, 'update'])->name('orders.services.contacts.update');

@@ -7,6 +7,7 @@ namespace App\Modules\Templates\Actions;
 use App\Modules\Templates\DTOs\TemplateQuery;
 use App\Modules\Templates\Models\Template;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Choisit le modèle à employer — une seule logique pour toute la plateforme.
@@ -32,6 +33,20 @@ final readonly class ResolveTemplateAction
 {
     public function execute(TemplateQuery $query): ?Template
     {
+        return $this->candidates($query)->first();
+    }
+
+    /**
+     * Tous les modèles employables, du plus précis au plus général.
+     *
+     * Le premier est celui qu'`execute()` sert : c'est **la même requête**, et
+     * c'est ce qui permet à un écran de proposer les autres sans risquer de
+     * présélectionner un modèle que le rendu n'aurait pas choisi.
+     *
+     * @return Collection<int, Template>
+     */
+    public function candidates(TemplateQuery $query): Collection
+    {
         $builder = Template::query()
             ->where('organization_id', $query->organizationId)
             ->where('template_type', $query->templateType->value)
@@ -55,7 +70,7 @@ final readonly class ResolveTemplateAction
             ->orderByRaw('CASE WHEN service_id IS NULL THEN 1 ELSE 0 END')
             ->orderByDesc('is_default')
             ->orderBy('code')
-            ->first();
+            ->get();
     }
 
     /**

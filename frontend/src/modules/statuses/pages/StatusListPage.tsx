@@ -1,154 +1,52 @@
-import { Plus } from 'lucide-react'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { PermissionGuard } from '@/app/guards/PermissionGuard'
-import { DataTable } from '@/shared/components/data/DataTable'
-import { SearchInput } from '@/shared/components/data/SearchInput'
-import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog'
-import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
-import { Button } from '@/shared/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
-import { StatusDialog } from '../components/StatusDialog'
-import { StatusTransitionsDialog } from '../components/StatusTransitionsDialog'
-import { useDeleteStatus, useStatusList, useStatusSources } from '../hooks/useStatuses'
-import { statusColumns } from './statusColumns'
-import { STATUS_SORTABLE, type Status, type StatusFilters } from '../types/status'
-
-const INITIAL: StatusFilters = { page: 1, perPage: 25, sort: 'source', direction: 'asc' }
-
-/** Valeur désignant « toutes les entités » ; Radix refuse une option vide. */
-const ALL_SOURCES = 'all'
+import { StatusDefaultsPanel } from '../components/StatusDefaultsPanel'
+import { StatusPropagationsPanel } from '../components/StatusPropagationsPanel'
+import { StatusReferentialPanel } from '../components/StatusReferentialPanel'
 
 /**
- * Référentiel des statuts, écran de la plateforme.
+ * Les statuts, en trois onglets.
  *
- * Il donne à un code brut son libellé, son icône et son rang, pour toutes les
- * entités qui portent un statut. Tout membre le consulte ; seule la plateforme
- * l'écrit, et les boutons suivent les permissions.
+ * Le **référentiel** nomme les codes ; les deux autres règlent ce que ces
+ * statuts font : celui qu'une entité reçoit en naissant, et ce que chacun
+ * entraîne sur ses voisins.
+ *
+ * Ces réglages tenaient dans des fenêtres modales, et c'était trop petit : la
+ * liste des entités en compte près de quarante, et une règle de propagation se
+ * lit sur toute une ligne. Un onglet donne la largeur de la page, et laisse la
+ * place aux boutons de modification.
  */
 export function StatusListPage() {
   const { t } = useTranslation()
-  const [filters, setFilters] = useState<StatusFilters>(INITIAL)
-  const [editing, setEditing] = useState<Status | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [deleting, setDeleting] = useState<Status | null>(null)
-  const [transitioning, setTransitioning] = useState<Status | null>(null)
 
-  const { data, isPending, error, refetch } = useStatusList(filters)
-  const sources = useStatusSources()
-  const remove = useDeleteStatus()
-
-  const columns = statusColumns(t, {
-    onEdit: setEditing,
-    onDelete: setDeleting,
-    onTransitions: setTransitioning,
-  })
+  const tabs = [
+    { value: 'referential', label: t('statuses.tabs.referential'), panel: <StatusReferentialPanel /> },
+    { value: 'defaults', label: t('statuses.defaults.title'), panel: <StatusDefaultsPanel /> },
+    { value: 'propagations', label: t('statuses.propagations.title'), panel: <StatusPropagationsPanel /> },
+  ]
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title={t('statuses.title')}
-        description={t('statuses.subtitle')}
-        actions={
-          <PermissionGuard permission="statuses.create">
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="size-4" aria-hidden />
-              {t('statuses.create')}
-            </Button>
-          </PermissionGuard>
-        }
-      />
+      <PageHeader title={t('statuses.title')} description={t('statuses.subtitle')} />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <SearchInput
-          value={filters.search ?? ''}
-          onChange={(search) =>
-            setFilters((current) => ({ ...current, page: 1, search: search || undefined }))
-          }
-          placeholder={t('statuses.searchPlaceholder')}
-        />
+      <Tabs defaultValue="referential" className="flex flex-col gap-4">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-        <div className="w-full sm:max-w-xs">
-          <AsyncSelect
-            label={t('statuses.fields.source')}
-            value={filters.source ?? ALL_SOURCES}
-            onChange={(source) =>
-              setFilters((current) => ({
-                ...current,
-                page: 1,
-                source: source === ALL_SOURCES ? undefined : source,
-              }))
-            }
-            options={[
-              { value: ALL_SOURCES, label: t('common.all') },
-              ...(sources.data ?? []).map((source) => ({
-                value: source,
-                label: t(`entities.${source}`, { defaultValue: source }),
-                hint: source,
-              })),
-            ]}
-            isLoading={sources.isPending}
-          />
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        rows={data?.data ?? []}
-        rowKey={(row) => row.id}
-        meta={data?.meta}
-        isLoading={isPending}
-        error={error}
-        sort={filters.sort}
-        direction={filters.direction}
-        onSortChange={(sortKey) => {
-          if (!STATUS_SORTABLE.includes(sortKey as (typeof STATUS_SORTABLE)[number])) return
-
-          setFilters((current) => ({
-            ...current,
-            sort: sortKey,
-            direction: current.sort === sortKey && current.direction === 'asc' ? 'desc' : 'asc',
-          }))
-        }}
-        onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
-        onPerPageChange={(perPage) => setFilters((current) => ({ ...current, perPage, page: 1 }))}
-        onRetry={() => void refetch()}
-        emptyMessage={t('statuses.empty')}
-      />
-
-      <StatusDialog
-        key={editing?.id ?? 'new'}
-        status={editing}
-        open={editing !== null || creating}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditing(null)
-            setCreating(false)
-          }
-        }}
-      />
-
-      <StatusTransitionsDialog
-        key={transitioning?.id ?? 'none'}
-        status={transitioning}
-        open={transitioning !== null}
-        onOpenChange={(open) => !open && setTransitioning(null)}
-      />
-
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title={t('common.delete')}
-        description={t('statuses.deleteConfirm')}
-        confirmLabel={t('common.delete')}
-        isPending={remove.isPending}
-        onConfirm={() => {
-          if (deleting === null) return
-          remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })
-        }}
-      />
+        {tabs.map((tab) => (
+          <TabsContent key={tab.value} value={tab.value}>
+            {tab.panel}
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   )
 }

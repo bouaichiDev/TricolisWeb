@@ -64,6 +64,7 @@ export function statusColumns(
           <Badge variant={row.active ? 'secondary' : 'outline'}>
             {row.active ? t('common.enabled') : t('common.disabled')}
           </Badge>
+          {row.isDefault ? <Badge>{t('statuses.fields.isDefault')}</Badge> : null}
           {row.isToSend ? <Badge variant="outline">{t('statuses.fields.isToSend')}</Badge> : null}
           {row.allowsContentChanges ? (
             <Badge variant="outline">{t('statuses.fields.allowsContentChanges')}</Badge>

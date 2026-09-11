@@ -22,9 +22,26 @@ export interface Status {
   allowsContentChanges: boolean
   /** Atteindre ce statut exige-t-il un motif ? */
   requiresReason: boolean
+  /** Le statut qu'une entité reçoit à sa création. */
+  isDefault: boolean
   position: number | null
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * Statut par défaut d'une entité — `StatusDefaultController::index`.
+ *
+ * `systemDefault` est ce que la colonne prend faute de choix : c'est ce que
+ * l'écran annonce tant que rien n'est coché, et ce que les formulaires
+ * préremplissent.
+ */
+export interface StatusDefault {
+  source: string
+  statusId: string | null
+  code: string | null
+  systemDefault: string | null
+  options: { id: string; code: string; label: string; active: boolean }[]
 }
 
 /**
@@ -71,4 +88,37 @@ export interface StatusPayload {
   allowsContentChanges?: boolean
   requiresReason?: boolean
   position?: number | null
+}
+
+/**
+ * Une règle de propagation — `StatusPropagationResource`.
+ *
+ * « Tous les colis chargés → le service est chargé » : une paire de statuts,
+ * chacun portant son entité. Le sens — vers le contenant ou vers le contenu —
+ * se lit dans la hiérarchie, jamais dans la règle.
+ */
+export interface StatusPropagation {
+  id: string
+  fromStatusId: string
+  toStatusId: string
+  from: { source: string; code: string; label: string } | null
+  to: { source: string; code: string; label: string } | null
+  /** `all` : tous les enfants doivent y être. `any` : un seul suffit. */
+  mode: string
+  active: boolean
+}
+
+/** Qui contient qui : `{ order: ['order_service', 'package', 'order_line'], … }`. */
+export type StatusHierarchy = Record<string, string[]>
+
+export interface StatusPropagationList {
+  rules: StatusPropagation[]
+  hierarchy: StatusHierarchy
+}
+
+export interface StatusPropagationPayload {
+  fromStatusId: string
+  toStatusId: string
+  mode?: string
+  active?: boolean
 }

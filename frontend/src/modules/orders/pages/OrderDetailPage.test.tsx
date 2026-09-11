@@ -47,6 +47,18 @@ describe('OrderDetailPage', () => {
     }
   })
 
+  /** C'est par sa référence que le client désigne sa commande, dès l'en-tête. */
+  it('affiche la référence externe dans l’en-tête', async () => {
+    renderDetail(makeOrderDetail(), ['orders.view'])
+
+    const heading = await screen.findByRole('heading', { name: 'CMD-2026-000001' })
+    const header = heading.parentElement?.parentElement as HTMLElement
+
+    expect(within(header).getByText('EXT-42')).toBeInTheDocument()
+    // Une référence client vide n'affiche pas d'étiquette orpheline.
+    expect(within(header).queryByText('Référence client')).not.toBeInTheDocument()
+  })
+
   /** Le modèle ne comporte pas d'entité `OrderStop` : l'onglet ne doit pas exister. */
   it('n’affiche aucun onglet « Arrêts »', async () => {
     renderDetail(makeOrderDetail(), ['orders.view'])

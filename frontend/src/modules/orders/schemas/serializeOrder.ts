@@ -130,7 +130,8 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
         providerUnitCost: number(service.providerUnitCost),
         providerTotalCost: number(service.providerTotalCost),
         instructions: blank(service.instructions),
-        status: service.status,
+        // Vide, le serveur applique le statut par défaut du référentiel.
+        ...(service.status === '' ? {} : { status: service.status }),
         contacts: service.contacts.map((contact) => ({
           contactId: contact.contactId,
           contactRole: contact.contactRole,

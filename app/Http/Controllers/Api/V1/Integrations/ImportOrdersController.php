@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Integrations\ImportOrdersRequest;
 use App\Http\Resources\Api\V1\Orders\OrderListResource;
 use App\Modules\Integrations\Actions\ImportOrdersFromFile;
+use App\Modules\Integrations\Actions\LocateImportedAddresses;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Integrations\Services\ImportSourceReader;
 use App\Modules\Orders\Models\Order;
@@ -40,6 +41,7 @@ final class ImportOrdersController extends Controller
         CustomerImportConfiguration $configuration,
         ImportSourceReader $reader,
         ImportOrdersFromFile $import,
+        LocateImportedAddresses $locate,
     ): JsonResponse {
         $organizationId = $this->guardCustomerOwned($configuration);
         $this->authorize('view', $configuration);
@@ -93,6 +95,8 @@ final class ImportOrdersController extends Controller
         return ApiResponse::created([
             'rowCount' => count($rows),
             'orders' => OrderListResource::collection($orders)->resolve($request),
+            // Après la transaction : un fichier refusé n'aurait rien à situer.
+            'geocoding' => $locate->execute($orders, $organizationId),
         ]);
     }
 }

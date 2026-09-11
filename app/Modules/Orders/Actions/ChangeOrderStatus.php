@@ -55,6 +55,12 @@ final readonly class ChangeOrderStatus
         ?Request $request = null,
         /** @var array<string, string> orderLineId => stockLocationId */
         array $stockLocations = [],
+        /**
+         * Faux pour une transition qu'aucun clic ne pose : une règle de
+         * propagation, par exemple. La transition doit exister, mais elle n'a
+         * pas à être proposée à l'écran.
+         */
+        bool $manual = true,
     ): Order {
         $current = $order->status;
 
@@ -65,7 +71,7 @@ final readonly class ChangeOrderStatus
             ));
         }
 
-        if (! $this->machine->allowsManually(MorphMap::ORDER, $current?->value, $target->value)) {
+        if ($manual && ! $this->machine->allowsManually(MorphMap::ORDER, $current?->value, $target->value)) {
             throw InvalidOrderTransition::notManuallyAssignable($target);
         }
 

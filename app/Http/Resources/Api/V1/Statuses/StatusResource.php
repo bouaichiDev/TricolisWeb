@@ -30,6 +30,8 @@ class StatusResource extends JsonResource
             // statuts exigent un motif.
             'allowsContentChanges' => $this->allows_content_changes,
             'requiresReason' => $this->requires_reason,
+            // Le statut qu'une entite recoit a sa creation.
+            'isDefault' => $this->is_default,
             'position' => $this->position,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,

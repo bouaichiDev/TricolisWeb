@@ -44,7 +44,6 @@ final readonly class DuplicateOrderServices
         ]) + [
             'service_number' => $service->service_number,
             'remaining_time_minutes' => $service->required_time_minutes,
-            'status' => 'draft',
         ];
     }
 
@@ -72,7 +71,6 @@ final readonly class DuplicateOrderServices
                 'package_id' => $packageMap[$link->package_id],
                 'quantity' => $link->quantity,
                 'handling_instructions' => $link->handling_instructions,
-                'status' => 'pending',
             ]);
         }
     }

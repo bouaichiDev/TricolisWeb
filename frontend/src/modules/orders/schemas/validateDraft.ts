@@ -97,7 +97,6 @@ const SERVICE_REQUIRED = [
   'serviceNumber',
   'requestedDate',
   'unit',
-  'status',
   'requiredTimeMinutes',
   'remainingTimeMinutes',
   'weight',

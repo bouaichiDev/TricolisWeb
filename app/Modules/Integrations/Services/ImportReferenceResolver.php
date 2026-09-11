@@ -13,51 +13,39 @@ use Illuminate\Validation\ValidationException;
 /**
  * Traduit les références du fichier client en identifiants de notre base.
  *
- * C'est le chaînon qui manquait pour qu'un import aboutisse. Un fichier dit
- * `LIVRAISON` et `QUAI-NORD` ; `orders.services` exige `serviceId` et
- * `addressId`, deux ULID qu'aucun client ne connaît. Sans traduction, toute
- * commande importée serait refusée sur ces deux champs.
+ * Un fichier dit `LIVRAISON` et `QUAI-NORD` ; `orders.services` exige
+ * `serviceId` et `addressId`, deux ULID qu'aucun client ne connaît. Ce service
+ * les remplace avant validation.
  *
- * La correspondance porte donc `serviceCode` et `addressCode` — des codes
- * métier — et ce service les remplace par leurs identifiants avant validation.
- *
- * **La portée est une contrainte, pas un filtre.** Un service est cherché dans
- * l'organisation ; une adresse **désignée par un code** doit être rattachée au
- * client de la configuration, ou à l'un de ses sites. Chercher une adresse par
- * son seul code permettrait d'importer chez un client une adresse qui
- * appartient à un autre.
- *
- * Un code inconnu **arrête le fichier**. Le deviner — prendre la première
- * adresse venue, créer un service à la volée — produirait des commandes fausses
- * que personne ne relirait.
- *
- * ---
- *
- * ## L'adresse du destinataire final
- *
- * Le code ne convient qu'aux points **récurrents**, que le client a enregistrés
- * une fois. Une large part du transport ne fonctionne pas ainsi : chaque
- * commande va chez quelqu'un d'autre. La correspondance porte alors l'adresse
- * elle-même, sous `services[].address`, et `ImportedRecipientAddress` la crée —
- * son docblock dit à qui elle appartient, et pourquoi ce n'est pas au client.
- *
- * ## Lequel des deux s'applique
- *
- * Le code décide **quand il est renseigné**, l'adresse prend le relais sinon :
+ * ## Deux parties, deux façons de les nommer
  *
  * ```
- * addressCode renseigné  → recherche, et refus s'il est inconnu
- * sinon, address présent → création, pour cette prestation
- * sinon                  → refus : la prestation n'a pas de destination
+ * addressCode renseigné → un point du DONNEUR D'ORDRE, cherché par son code
+ * recipient renseigné   → le CLIENT FINAL, décrit en entier et créé
+ * les deux              → refus : on ne saurait pas où livrer
+ * aucun                 → refus à la validation : pas de destination
  * ```
  *
- * Une cellule vide vaut « absent » — `MappingInterpreter` l'a déjà écartée — si
- * bien qu'**une même correspondance sert les deux cas**, ligne par ligne : la
- * colonne de code renseignée pour les points connus, vide pour les autres.
+ * Le donneur d'ordre est connu : son code suffit, le reste se lit en base. Le
+ * client final ne l'est pas : le fichier porte son nom, son téléphone, son
+ * courriel et son adresse — `ImportRecipientRules` dit lesquels.
+ *
+ * **La portée est une contrainte, pas un filtre.** Un code d'adresse doit
+ * désigner une adresse du client de la configuration, ou de l'un de ses sites :
+ * chercher par le seul code permettrait d'importer l'adresse d'un autre client.
+ *
+ * Un code inconnu **arrête le fichier**. Le deviner produirait des commandes
+ * fausses que personne ne relirait.
  */
 final readonly class ImportReferenceResolver
 {
-    public function __construct(private ImportedRecipientAddress $recipients) {}
+    /** Partagé avec l'essai : les deux verdicts doivent dire la même chose. */
+    public const string NO_DESTINATION = 'Cette prestation n’a pas de destination : ni code d’un point du donneur d’ordre (addressCode), ni client final (recipient). Si vos colonnes du client final sont remplies, vérifiez que la correspondance porte bien le bloc « recipient ».';
+
+    public function __construct(
+        private ImportRecipientRules $rules,
+        private ImportedRecipient $recipients,
+    ) {}
 
     /**
      * Remplace les codes par des identifiants, dans les services d'une commande.
@@ -80,45 +68,52 @@ final readonly class ImportReferenceResolver
                 continue;
             }
 
+            $prefix = "orders.{$order}.services.{$index}";
+            $problems = $this->rules->errors($service, $prefix);
+            $errors = array_merge($errors, $problems);
+
             $serviceCode = $service['serviceCode'] ?? null;
             $addressCode = $service['addressCode'] ?? null;
+            $recipient = $service['recipient'] ?? null;
 
             // Les codes ne partent jamais au serveur : ils ont fait leur office.
-            unset($service['serviceCode'], $service['addressCode']);
+            unset($service['serviceCode'], $service['addressCode'], $service['recipient'], $service['address']);
 
             if (is_string($serviceCode)) {
                 $id = $this->serviceId($serviceCode, $organizationId);
 
                 if ($id === null) {
-                    $errors["orders.{$order}.services.{$index}.serviceCode"] =
-                        ["Aucune prestation ne porte le code « {$serviceCode} »."];
+                    $errors["{$prefix}.serviceCode"] = ["Aucune prestation ne porte le code « {$serviceCode} »."];
                 } else {
                     $service['serviceId'] = $id;
                 }
             }
 
-            $inline = $service['address'] ?? null;
-            unset($service['address']);
+            if ($problems !== []) {
+                $payload['services'][$index] = $service;
+
+                continue;
+            }
 
             if (is_string($addressCode)) {
                 $id = $this->addressId($addressCode, $customerId, $organizationId);
 
                 if ($id === null) {
-                    $errors["orders.{$order}.services.{$index}.addressCode"] =
-                        ["Aucune adresse de ce client ne porte le code « {$addressCode} »."];
+                    $errors["{$prefix}.addressCode"] =
+                        ["Aucune adresse du donneur d’ordre ne porte le code « {$addressCode} ». Pour un client final, décrivez-le sous « recipient »."];
                 } else {
                     $service['addressId'] = $id;
                 }
-            } elseif (is_array($inline)) {
-                // Le refus nomme la colonne manquante. Laisser la validation
-                // parler d'un `addressId` absent enverrait chercher un
-                // identifiant Tricolis que le fichier n'a jamais eu à porter.
-                if (! $this->recipients->isDeliverable($inline)) {
-                    $errors["orders.{$order}.services.{$index}.address.addressLine1"] =
-                        ['Une adresse reprise du fichier doit au moins porter une rue.'];
-                } else {
-                    $service['addressId'] = $this->recipients->create($inline, $organizationId);
-                }
+            } elseif (is_array($recipient)) {
+                $created = $this->recipients->create($recipient, $organizationId);
+                $service['addressId'] = $created['addressId'];
+                $service['contacts'] = [$created['contact'], ...($service['contacts'] ?? [])];
+            } elseif (! isset($service['addressId'])) {
+                // Sans ce refus, la validation parlerait d'un `addressId` que le
+                // fichier n'a jamais eu à porter. Le cas le plus fréquent : une
+                // correspondance sans bloc `recipient`, dont les colonnes du
+                // client final sont alors ignorées sans bruit.
+                $errors["{$prefix}.addressCode"] = [self::NO_DESTINATION];
             }
 
             $payload['services'][$index] = $service;

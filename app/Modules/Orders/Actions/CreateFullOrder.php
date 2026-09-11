@@ -9,7 +9,6 @@ use App\Modules\Customers\Models\Customer;
 use App\Modules\Identity\Models\User;
 use App\Modules\Orders\DTOs\CreateOrderData;
 use App\Modules\Orders\Enums\OrderSource;
-use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Services\OrderScopeGuard;
@@ -108,8 +107,9 @@ final readonly class CreateFullOrder
         $orderDate = $attributes['order_date'] ?? now();
 
         return array_merge([
+            // Pas de statut ici : `DefaultStatuses` donne a la commande celui
+            // que l'administrateur a choisi pour une commande qui nait.
             'source' => OrderSource::INTERNAL->value,
-            'status' => OrderStatus::DRAFT->value,
             'currency_code' => 'MAD',
         ], $attributes, [
             'organization_id' => $organizationId,

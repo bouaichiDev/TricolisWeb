@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { usePrefillDefaultStatus } from '@/modules/statuses/hooks/useStatusDefaults'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { ControlledField } from '@/shared/components/form/ControlledField'
 import { Button } from '@/shared/components/ui/button'
@@ -53,6 +54,14 @@ export function OrderServiceCard({
   // la quantité sans que l'on ait à y penser dans chaque champ.
   const onChange = (values: Partial<ServiceDraft>) =>
     onChangeRaw(withDerivedTotals(service, values))
+
+  // Un nouveau service part du statut que l'administrateur a choisi.
+  usePrefillDefaultStatus(
+    'order_service',
+    service.status,
+    (status) => onChange({ status }),
+    ORDER_SERVICE_STATUSES,
+  )
 
   const onServiceChange = (serviceId: string) => {
     const chosen = services.byId.get(serviceId)

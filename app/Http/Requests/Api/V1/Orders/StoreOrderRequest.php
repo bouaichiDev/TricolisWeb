@@ -129,7 +129,8 @@ class StoreOrderRequest extends FormRequest
             'services.*.providerUnitCost' => ['required', 'numeric', 'min:0'],
             'services.*.providerTotalCost' => ['required', 'numeric', 'min:0'],
             'services.*.instructions' => ['nullable', 'string'],
-            'services.*.status' => ['required', Rule::enum(OrderServiceStatus::class)],
+            // Facultatif : absent, le service recoit le statut par defaut du referentiel.
+            'services.*.status' => ['sometimes', Rule::enum(OrderServiceStatus::class)],
             'services.*.contacts' => ['sometimes', 'array'],
             'services.*.contacts.*.contactId' => ['nullable', 'ulid'],
             'services.*.contacts.*.contactRole' => ['sometimes', Rule::enum(ContactRole::class)],

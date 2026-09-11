@@ -10,7 +10,6 @@ use App\Http\Requests\Api\V1\Orders\StoreOrderServiceRequest;
 use App\Http\Requests\Api\V1\Orders\UpdateOrderServiceRequest;
 use App\Http\Requests\Api\V1\Orders\UpdateOrderServiceStatusRequest;
 use App\Http\Resources\Api\V1\Orders\OrderServiceResource;
-use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
 use App\Modules\Orders\Services\OrderScopeGuard;
@@ -92,7 +91,6 @@ class OrderServiceController extends Controller
         $attributes['service_id'] = $this->scope->service($data['serviceId'], $organizationId)->id;
         $attributes['address_id'] = $this->scope->address($data['addressId'], $organizationId)->id;
         $attributes['remaining_time_minutes'] ??= $data['requiredTimeMinutes'];
-        $attributes['status'] ??= OrderServiceStatus::DRAFT->value;
 
         $service = $order->orderServices()->create($attributes);
         $this->audit($request, $organizationId, 'created', $service, null, $service->toArray());

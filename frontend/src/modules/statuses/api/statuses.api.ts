@@ -3,6 +3,9 @@ import type { ApiCollection, ApiResource } from '@/shared/api/types'
 
 import type {
   Status,
+  StatusDefault,
+  StatusPropagationList,
+  StatusPropagationPayload,
   StatusFilters,
   StatusPayload,
   StatusTransition,
@@ -23,6 +26,32 @@ export const statusesApi = {
   /** Entités auxquelles un statut peut se rapporter, dérivées côté serveur. */
   sources: () =>
     api.get<ApiResource<string[]>>('/statuses/sources').then((response) => response.data),
+
+  /** Statut par défaut de chaque entité, et ceux qu'on peut lui choisir. */
+  defaults: () =>
+    api.get<ApiResource<StatusDefault[]>>('/statuses/defaults').then((response) => response.data),
+
+  /** `null` retire le choix : la colonne reprend sa propre valeur par défaut. */
+  setDefault: (source: string, statusId: string | null) =>
+    api
+      .put<ApiResource<StatusDefault[]>>(`/statuses/defaults/${source}`, { statusId })
+      .then((response) => response.data),
+
+  /** Règles de propagation, avec la hiérarchie qui dit qui contient qui. */
+  propagations: () =>
+    api
+      .get<ApiResource<StatusPropagationList>>('/status-propagations')
+      .then((response) => response.data),
+
+  createPropagation: (payload: StatusPropagationPayload) =>
+    api.post<ApiResource<unknown>>('/status-propagations', payload).then((response) => response.data),
+
+  updatePropagation: (id: string, payload: Partial<StatusPropagationPayload>) =>
+    api
+      .patch<ApiResource<unknown>>(`/status-propagations/${id}`, payload)
+      .then((response) => response.data),
+
+  removePropagation: (id: string) => api.delete<void>(`/status-propagations/${id}`),
 
   create: (payload: StatusPayload) =>
     api.post<ApiResource<Status>>('/statuses', payload).then((response) => response.data),

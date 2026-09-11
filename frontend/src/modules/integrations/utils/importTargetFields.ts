@@ -1,3 +1,5 @@
+import { IMPORT_RECIPIENT_GROUP } from './importRecipientFields'
+
 /**
  * Champs que Tricolis accepte à l'arrivée d'un document client.
  *
@@ -18,15 +20,14 @@
  * **Ce qui les remplace est documenté**, et c'est la section « Destination » :
  *
  * - `services[].serviceCode` — le code d'une prestation de l'organisation ;
- * - `services[].addressCode` — le code d'une adresse **du client**, pour un
- *   point récurrent qu'il a enregistré ;
- * - `services[].address.*` — l'adresse **elle-même**, quand le destinataire
- *   change à chaque commande. L'import la crée pour cette prestation, sans la
- *   verser au carnet d'adresses du donneur d'ordre : elle appartient à la
- *   commande qui y va.
+ * - `services[].addressCode` — le code d'un point **du donneur d'ordre**,
+ *   connu de Tricolis : le code suffit, le reste se lit en base ;
+ * - `services[].recipient.*` — le **client final**, décrit en entier : voir
+ *   `IMPORT_RECIPIENT_GROUP`.
  *
- * Le code décide quand il est renseigné, l'adresse prend le relais sinon — si
- * bien qu'une même correspondance sert les deux cas, ligne par ligne.
+ * Une prestation va chez l'un ou chez l'autre, jamais les deux ; une cellule
+ * vide vaut « absent », si bien qu'une même correspondance sert les deux cas,
+ * ligne par ligne.
  *
  * **Les rattachements, eux, sont documentés**, parce qu'ils se font par des
  * clés locales au fichier et non par des identifiants :
@@ -176,21 +177,11 @@ export const IMPORT_TARGETS: ImportTarget[] = [
           {
             path: 'services[].addressCode',
             ruleKey: 'conditional',
-            constraint: 'code d’une adresse du client ; sinon services[].address',
+            constraint: 'code d’un point du donneur d’ordre ; sinon services[].recipient',
           },
-          {
-            path: 'services[].address.addressLine1',
-            ruleKey: 'conditional',
-            constraint: 'obligatoire sans addressCode — l’adresse est créée',
-          },
-          { path: 'services[].address.name', ruleKey: 'optional', constraint: 'max 255' },
-          { path: 'services[].address.addressLine2', ruleKey: 'optional', constraint: 'max 255' },
-          { path: 'services[].address.postalCode', ruleKey: 'optional', constraint: 'max 64' },
-          { path: 'services[].address.city', ruleKey: 'optional', constraint: 'max 255' },
-          { path: 'services[].address.country', ruleKey: 'optional', constraint: '2 lettres' },
-          { path: 'services[].address.instructions', ruleKey: 'optional' },
         ],
       },
+      IMPORT_RECIPIENT_GROUP,
       {
         // Une commande sans service n'est pas transportable : `services` est
         // `required|min:1`, et presque tous ses champs le sont aussi. C'est la
@@ -213,8 +204,8 @@ export const IMPORT_TARGETS: ImportTarget[] = [
           { path: 'services[].providerTotalCost', ruleKey: 'required', constraint: '≥ 0' },
           {
             path: 'services[].status',
-            ruleKey: 'required',
-            constraint: 'draft, pending, ready_to_plan, planned, in_progress, completed, failed, cancelled, invoiced',
+            ruleKey: 'optional',
+            constraint: 'absent : statut par défaut du référentiel. draft, pending, ready_to_plan, planned…',
           },
           { path: 'services[].requestedFrom', ruleKey: 'optional', constraint: 'date' },
           { path: 'services[].requestedTo', ruleKey: 'optional', constraint: 'date ≥ requestedFrom' },

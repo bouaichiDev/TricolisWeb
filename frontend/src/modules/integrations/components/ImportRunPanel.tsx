@@ -13,6 +13,7 @@ import { Button } from '@/shared/components/ui/button'
 
 import { customerImportConfigurationsApi } from '../api/customer-import-configurations.api'
 import type { ImportResult } from '../types/customerIntegration'
+import { ImportGeocodingSummary } from './ImportGeocodingSummary'
 
 interface ImportRunPanelProps {
   configurationId: string
@@ -141,8 +142,13 @@ export function ImportRunPanel({ configurationId, hasMapping, isActive }: Import
             </ul>
           ) : null}
 
+          {/* Seul un refus de validation garantit que rien n'est écrit. Une
+              panne en cours de route peut survenir après l'écriture : affirmer
+              le contraire ferait réimporter, donc créer des doublons. */}
           <p className="text-xs text-muted-foreground">
-            {t('integrations.imports.run.nothingWritten')}
+            {run.error instanceof ApiError && run.error.status === 422
+              ? t('integrations.imports.run.nothingWritten')
+              : t('integrations.imports.run.checkBeforeRetry')}
           </p>
         </div>
       )}
@@ -169,6 +175,10 @@ export function ImportRunPanel({ configurationId, hasMapping, isActive }: Import
               </li>
             ))}
           </ul>
+
+          {result.geocoding === undefined ? null : (
+            <ImportGeocodingSummary geocoding={result.geocoding} />
+          )}
 
           <Link to="/orders?withoutDepot=1" className="text-xs underline">
             {t('integrations.imports.run.seeImported')}

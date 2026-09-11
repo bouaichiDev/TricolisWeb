@@ -53,6 +53,15 @@ export function OrderDetailHeader({
           <OrderSourceBadge source={order.source} />
         </div>
 
+        {/* Les références du client : c'est par elles qu'il désigne sa
+            commande, et qu'on la retrouve dans son fichier d'import. */}
+        <HeaderReferences
+          references={[
+            [t('orders.fields.externalReference'), order.externalReference],
+            [t('orders.fields.customerReference'), order.customerReference],
+          ]}
+        />
+
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Truck className="size-4 text-primary" aria-hidden />
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -116,6 +125,29 @@ export function OrderDetailHeader({
           </PermissionGuard>
         ) : null}
       </div>
+    </div>
+  )
+}
+
+/** Les références renseignées seulement : une étiquette vide ne dit rien. */
+function HeaderReferences({ references }: { references: [string, string | null][] }) {
+  const filled = references.filter((entry): entry is [string, string] => Boolean(entry[1]))
+
+  if (filled.length === 0) return null
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      {filled.map(([label, value]) => (
+        <span
+          key={label}
+          className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-0.5 text-sm"
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </span>
+          <span className="font-mono font-semibold">{value}</span>
+        </span>
+      ))}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { usePrefillDefaultStatus } from '@/modules/statuses/hooks/useStatusDefaults'
 import { useStatusList } from '@/modules/statuses/hooks/useStatuses'
 import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -42,6 +43,9 @@ export function StatusFromReferential({
     { page: 1, perPage: 100, source, active: true, sort: 'position', direction: 'asc' },
     enabled,
   )
+
+  // Un formulaire vide part du statut que l'administrateur a choisi.
+  usePrefillDefaultStatus(enabled ? source : '', value, onChange)
 
   const statuses = referential.data?.data ?? []
   const empty = !referential.isPending && statuses.length === 0

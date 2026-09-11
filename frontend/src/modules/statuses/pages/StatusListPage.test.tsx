@@ -57,6 +57,22 @@ describe('StatusListPage', () => {
     expect(screen.getByText('order')).toBeInTheDocument()
   })
 
+  /**
+   * Les deux réglages tenaient dans des fenêtres modales, trop petites : la
+   * liste des entités en compte près de quarante, et une règle se lit sur toute
+   * une ligne. Ce sont des onglets de la page.
+   */
+  it('donne un onglet à chaque réglage', async () => {
+    serve()
+    renderWithProviders(<StatusListPage />, { membership: withPermissions(['statuses.view']) })
+
+    await screen.findByText('draft')
+
+    for (const tab of ['Référentiel', 'Statuts par défaut', 'Propagation des statuts']) {
+      expect(screen.getByRole('tab', { name: tab })).toBeInTheDocument()
+    }
+  })
+
   it('filtre par entité côté serveur', async () => {
     const queries = serve()
     renderWithProviders(<StatusListPage />, { membership: withPermissions(['statuses.view']) })

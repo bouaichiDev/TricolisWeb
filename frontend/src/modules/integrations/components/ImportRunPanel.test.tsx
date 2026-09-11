@@ -118,6 +118,7 @@ describe('import réel d’un fichier', () => {
                 { id: 'o1', orderNumber: 'CMD-0001', externalReference: 'REF-1' },
                 { id: 'o2', orderNumber: 'CMD-0002', externalReference: 'REF-2' },
               ],
+              geocoding: { located: 1, unlocated: 1, pending: 2 },
             },
             meta: [],
           },
@@ -132,6 +133,31 @@ describe('import réel d’un fichier', () => {
 
     expect(await screen.findByText('2 commandes créées.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /CMD-0001/ })).toBeInTheDocument()
+    // Une adresse sans point manque à la carte : l'écran doit le dire.
+    expect(screen.getByText(/1 adresse géolocalisée/)).toBeInTheDocument()
+    expect(screen.getByText(/1 adresse sans position/)).toBeInTheDocument()
+    expect(screen.getByText(/2 adresses en attente/)).toBeInTheDocument()
+  })
+
+  /**
+   * Une panne serveur peut survenir **après** l'écriture des commandes : l'écran
+   * ne doit pas affirmer que rien n'a été créé, sans quoi on réimporte des
+   * doublons.
+   */
+  it('n’affirme pas l’absence de commandes après une erreur inattendue', async () => {
+    serveScope()
+    server.use(
+      http.post(`${API}/customer-import-configurations/${IMPORT_CONFIG_ID}/import`, () =>
+        HttpResponse.json({ message: 'Server Error' }, { status: 500 }),
+      ),
+    )
+
+    render()
+    await pickAgency()
+    await upload()
+
+    expect(await screen.findByText(/vérifiez la liste des commandes/)).toBeInTheDocument()
+    expect(screen.queryByText(/Aucune commande n’a été créée/)).not.toBeInTheDocument()
   })
 
   /**

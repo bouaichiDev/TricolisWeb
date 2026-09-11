@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Validator;
  */
 final readonly class ImportPreviewValidator
 {
+    public function __construct(private ImportRecipientRules $recipients) {}
+
     /**
      * Champs que le fichier ne peut pas fournir, et que le moteur devra
      * résoudre.
@@ -68,7 +70,7 @@ final readonly class ImportPreviewValidator
     /**
      * Ce qui dispense du code, parce que la prestation porte la chose entière.
      *
-     * Une adresse reprise du fichier n'a pas de code : l'import la crée pour
+     * Un client final décrit en entier n'a pas de code : l'import le crée pour
      * cette prestation seule. Réclamer `addressCode` dans ce cas annoncerait un
      * manque là où tout est là, et c'est le verdict le plus décourageant — il
      * envoie corriger ce qui est déjà juste.
@@ -76,7 +78,7 @@ final readonly class ImportPreviewValidator
      * @var array<string, string>
      */
     private const array SATISFIED_BY = [
-        'addressId' => 'address',
+        'addressId' => 'recipient',
     ];
 
     /**
@@ -111,18 +113,11 @@ final readonly class ImportPreviewValidator
     }
 
     /**
-     * Retire ce qui interrogerait la base.
-     *
-     * Une prévisualisation ne crée rien et ne doit rien chercher : `exists` ou
-     * `unique` la rendraient dépendante des données du moment, alors qu'elle ne
-     * juge que la forme de ce que la correspondance produit.
-     */
-    /**
      * Les codes qui manquent pour résoudre un identifiant obligatoire.
      *
      * Le service porte déjà l'identifiant ? Rien à dire — une correspondance
-     * peut très bien le fournir directement. Il porte l'adresse entière ?
-     * Rien non plus : l'import la créera. Sinon le code est requis, et
+     * peut très bien le fournir directement. Il porte le client final ?
+     * Rien non plus : l'import le créera. Sinon le code est requis, et
      * l'annoncer ici évite le « valide » suivi d'un refus à l'import.
      *
      * @param  array<string, mixed>  $payload
@@ -143,6 +138,9 @@ final readonly class ImportPreviewValidator
                 continue;
             }
 
+            // Le client final est jugé sur les mêmes règles qu'à l'import.
+            $errors = array_merge($errors, $this->recipients->errors($service, "services.{$index}"));
+
             foreach (self::RESOLVED_FROM_CODE as $identifier => $code) {
                 $inline = self::SATISFIED_BY[$identifier] ?? null;
 
@@ -154,8 +152,9 @@ final readonly class ImportPreviewValidator
                     continue;
                 }
 
-                $errors["services.{$index}.{$code}"] = [
-                    "Ce champ est requis pour retrouver « {$identifier} » : le fichier ne porte pas d’identifiant Tricolis.",
+                $errors["services.{$index}.{$code}"] = [$inline === null
+                    ? "Ce champ est requis pour retrouver « {$identifier} » : le fichier ne porte pas d’identifiant Tricolis."
+                    : ImportReferenceResolver::NO_DESTINATION,
                 ];
             }
         }
@@ -163,6 +162,13 @@ final readonly class ImportPreviewValidator
         return $errors;
     }
 
+    /**
+     * Retire ce qui interrogerait la base.
+     *
+     * Une prévisualisation ne crée rien et ne doit rien chercher : `exists` ou
+     * `unique` la rendraient dépendante des données du moment, alors qu'elle ne
+     * juge que la forme de ce que la correspondance produit.
+     */
     private function withoutForeignKeyChecks(mixed $rule): mixed
     {
         if (! is_array($rule)) {

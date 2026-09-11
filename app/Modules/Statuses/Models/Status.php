@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'is_to_send',
     'allows_content_changes',
     'requires_reason',
+    'is_default',
     'position',
 ])]
 class Status extends Model
@@ -55,8 +56,22 @@ class Status extends Model
             'is_to_send' => 'boolean',
             'allows_content_changes' => 'boolean',
             'requires_reason' => 'boolean',
+            'is_default' => 'boolean',
             'position' => 'integer',
         ];
+    }
+
+    /**
+     * Un statut désactivé ne peut plus être donné à une entité qui naît : il
+     * perd sa place de statut par défaut au moment où on le désactive.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $status): void {
+            if (! $status->active) {
+                $status->is_default = false;
+            }
+        });
     }
 
     /**

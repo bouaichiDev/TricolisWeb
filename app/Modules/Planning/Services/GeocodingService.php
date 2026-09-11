@@ -116,7 +116,7 @@ final readonly class GeocodingService
         return implode(', ', $kept);
     }
 
-    private function configurationFor(string $organizationId): ?OrganizationApiConfiguration
+    public function configurationFor(string $organizationId): ?OrganizationApiConfiguration
     {
         return OrganizationApiConfiguration::where('organization_id', $organizationId)
             ->where('code', self::CONFIGURATION_CODE)
@@ -125,17 +125,28 @@ final readonly class GeocodingService
     }
 
     /**
-     * @return array{0: float, 1: float}|null
+     * L'URL appelée et le nom du paramètre qui porte l'adresse.
+     *
+     * @return array{0: string, 1: string}
      */
-    private function ask(OrganizationApiConfiguration $configuration, string $query): ?array
+    public function endpoint(OrganizationApiConfiguration $configuration): array
     {
         $settings = $configuration->settings ?? [];
         $path = is_string($settings['path'] ?? null) ? $settings['path'] : '';
         $key = is_string($settings['queryKey'] ?? null) ? $settings['queryKey'] : self::DEFAULT_QUERY_KEY;
 
+        return [rtrim($configuration->base_url, '/').'/'.ltrim($path, '/'), $key];
+    }
+
+    /**
+     * @return array{0: float, 1: float}|null
+     */
+    private function ask(OrganizationApiConfiguration $configuration, string $query): ?array
+    {
+        [$url, $key] = $this->endpoint($configuration);
+
         try {
-            $response = Http::timeout($configuration->timeout_seconds)
-                ->get(rtrim($configuration->base_url, '/').'/'.ltrim($path, '/'), [$key => $query]);
+            $response = Http::timeout($configuration->timeout_seconds)->get($url, [$key => $query]);
         } catch (Throwable $exception) {
             Log::warning('Géocodage injoignable', ['message' => $exception->getMessage()]);
 

@@ -7,7 +7,6 @@ namespace App\Modules\Orders\Actions;
 use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Identity\Models\User;
-use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
@@ -93,7 +92,6 @@ final readonly class DuplicateOrder
             'internal_remark' => $source->internal_remark,
             'worker_remark' => $source->worker_remark,
             'currency_code' => $source->currency_code,
-            'status' => OrderStatus::DRAFT,
             'created_by' => $user->id,
         ];
     }
@@ -109,7 +107,7 @@ final readonly class DuplicateOrder
                 'quantity', 'weight', 'volume', 'length', 'width', 'height', 'purchase_price', 'selling_price',
             ]);
             // Les quantités d'exécution repartent à zéro.
-            $map[$line->id] = $copy->lines()->create($attributes + ['status' => 'active'])->id;
+            $map[$line->id] = $copy->lines()->create($attributes)->id;
         }
 
         return $map;
@@ -128,7 +126,7 @@ final readonly class DuplicateOrder
             $attributes = $package->only(['package_type_id', 'grouping_type_id', 'reference', 'description', 'quantity', 'weight', 'volume', 'length', 'width', 'height']);
             $attributes['parent_package_id'] = $package->parent_package_id === null ? null : ($map[$package->parent_package_id] ?? null);
             // Le code-barres identifie un colis physique : il n'est jamais copié.
-            $new = $copy->packages()->create($attributes + ['barcode' => null, 'status' => 'draft']);
+            $new = $copy->packages()->create($attributes + ['barcode' => null]);
             $map[$package->id] = $new->id;
 
             $this->copyPackageLines($package, $new->id, $lineMap);

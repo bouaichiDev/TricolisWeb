@@ -150,4 +150,6 @@ export interface ImportPreview {
 export interface ImportResult {
   rowCount: number
   orders: { id: string; orderNumber: string; externalReference: string | null }[]
+  /** Adresses situées par le service GPS juste après l'import, et les autres. */
+  geocoding?: { located: number; unlocated: number; pending: number }
 }

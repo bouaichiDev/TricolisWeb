@@ -83,6 +83,8 @@ use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\SettleableServiceController;
 use App\Http\Controllers\Api\V1\Statuses\StatusController;
+use App\Http\Controllers\Api\V1\Statuses\StatusDefaultController;
+use App\Http\Controllers\Api\V1\Statuses\StatusPropagationController;
 use App\Http\Controllers\Api\V1\Statuses\StatusTransitionController;
 use App\Http\Controllers\Api\V1\Stock\StockBalanceController;
 use App\Http\Controllers\Api\V1\Stock\StockItemController;
@@ -226,6 +228,13 @@ Route::middleware('auth:sanctum')->group(static function (): void {
     // `organization`. Tout membre le lit, seule la plateforme l'ecrit — c'est
     // `StatusPolicy` qui tranche, pas la presence de l'en-tete.
     Route::get('statuses/sources', [StatusController::class, 'sources'])->name('statuses.sources');
+    // Le statut que chaque entite recoit a sa creation.
+    Route::get('statuses/defaults', [StatusDefaultController::class, 'index'])->name('statuses.defaults.index');
+    Route::put('statuses/defaults/{source}', [StatusDefaultController::class, 'update'])->name('statuses.defaults.update');
+    // Ce qu'un statut entraine sur les entites voisines : colis, service, commande.
+    Route::apiResource('status-propagations', StatusPropagationController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['status-propagations' => 'statusPropagation']);
     // Le cycle de vie se dessine ici : les transitions sont remplacees d'un
     // bloc, jamais arete par arete.
     Route::get('statuses/{status}/transitions', [StatusTransitionController::class, 'index'])->name('statuses.transitions.index');

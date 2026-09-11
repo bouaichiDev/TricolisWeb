@@ -1670,7 +1670,39 @@
       "isToSend": "Envoi au client",
       "flags": "Réglages",
       "allowsContentChanges": "Contenu ouvert",
-      "requiresReason": "Motif exigé"
+      "requiresReason": "Motif exigé",
+      "isDefault": "Par défaut"
+    },
+    "defaults": {
+      "title": "Statuts par défaut",
+      "description": "Le statut que reçoit chaque entité à sa création, quand rien d’autre n’est indiqué. Toutes les entités qui portent un statut sont listées, y compris celles ajoutées plus tard.",
+      "searchPlaceholder": "Commande, service, colis…",
+      "atCreation": "Statut à la création",
+      "systemDefault": "Valeur de la base : {{code}}",
+      "noSystemDefault": "Aucun — le statut doit être saisi"
+    },
+    "tabs": {
+      "referential": "Référentiel"
+    },
+    "propagations": {
+      "title": "Propagation des statuts",
+      "edit": "Modifier la règle",
+      "editing": "Modifier la règle",
+      "deleteConfirm": "Supprimer cette règle ? Les statuts déjà propagés restent ce qu’ils sont.",
+      "description": "Ce qu’un statut entraîne sur les entités voisines : quand tous les colis d’un service sont chargés, le service l’est, et la commande avec lui. Une commande, ses services, ses colis et ses lignes avancent ensemble.",
+      "empty": "Aucune règle : chaque statut reste à poser à la main.",
+      "add": "Nouvelle règle",
+      "whenEntity": "Quand — entité",
+      "whenStatus": "Quand — statut",
+      "thenEntity": "Alors — entité",
+      "thenStatus": "Alors — statut",
+      "pickEntityFirst": "Choisissez d’abord l’entité.",
+      "mode": "Condition",
+      "modeAll": "Tous les enfants",
+      "modeAny": "Un seul suffit",
+      "modeHint": "La règle remonte vers le contenant : faut-il que tous ses enfants y soient, ou un seul suffit-il ?",
+      "enable": "Activer",
+      "disable": "Désactiver"
     },
     "allowsContentChangesHint": "Tant que la commande est dans ce statut, ses lignes, colis et services restent modifiables.",
     "requiresReasonHint": "Passer à ce statut exigera un motif.",
@@ -2569,7 +2601,8 @@
           "contacts": "Contacts d’un service",
           "claim": "Réclamation",
           "claimLinks": "Rattachements",
-          "destination": "Destination : prestation et adresse"
+          "destination": "Destination : prestation et point du donneur d’ordre",
+          "recipient": "Client final — décrit en entier, créé et géolocalisé"
         },
         "rules": {
           "required": "obligatoire",
@@ -2612,7 +2645,14 @@
         "created": "{{count}} commande créée.",
         "created_other": "{{count}} commandes créées.",
         "nothingWritten": "Aucune commande n’a été créée : le fichier est refusé en entier tant qu’une ligne est fautive.",
-        "seeImported": "Voir les commandes sans dépôt"
+        "checkBeforeRetry": "L’import a pu aboutir avant l’erreur : vérifiez la liste des commandes avant de réessayer, pour ne pas créer de doublons.",
+        "seeImported": "Voir les commandes sans dépôt",
+        "located": "{{count}} adresse géolocalisée par le service GPS.",
+        "located_other": "{{count}} adresses géolocalisées par le service GPS.",
+        "unlocated": "{{count}} adresse sans position : le service GPS ne l’a pas trouvée. Elle reste livrable, mais absente de la carte.",
+        "unlocated_other": "{{count}} adresses sans position : le service GPS ne les a pas trouvées. Elles restent livrables, mais absentes de la carte.",
+        "pending": "{{count}} adresse en attente : elle sera géolocalisée en arrière-plan.",
+        "pending_other": "{{count}} adresses en attente : elles seront géolocalisées en arrière-plan."
       }
     },
     "api": {

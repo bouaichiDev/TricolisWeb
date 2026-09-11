@@ -22,6 +22,7 @@ function makeStatus(overrides: Partial<Status>): Status {
     isToSend: false,
     allowsContentChanges: true,
     requiresReason: false,
+    isDefault: false,
     position: 10,
     createdAt: '2026-08-01T09:00:00.000000Z',
     updatedAt: '2026-08-01T09:00:00.000000Z',

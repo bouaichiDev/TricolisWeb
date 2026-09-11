@@ -21,7 +21,7 @@ final readonly class CreateClaimData
         public string $customerId,
         public string $title,
         public string $claimType,
-        public string $status,
+        public ?string $status = null,
         public ?string $orderId = null,
         public ?string $orderServiceId = null,
         public ?string $tourId = null,
@@ -39,7 +39,7 @@ final readonly class CreateClaimData
             customerId: $validated['customerId'],
             title: $validated['title'],
             claimType: $validated['claimType'],
-            status: $validated['status'],
+            status: $validated['status'] ?? null,
             orderId: $validated['orderId'] ?? null,
             orderServiceId: $validated['orderServiceId'] ?? null,
             tourId: $validated['tourId'] ?? null,
@@ -54,7 +54,8 @@ final readonly class CreateClaimData
      */
     public function toAttributes(string $organizationId, ?string $createdBy, string $createdAt): array
     {
-        return [
+        // Sans statut, `DefaultStatuses` applique celui du referentiel.
+        return array_filter([
             'organization_id' => $organizationId,
             'customer_id' => $this->customerId,
             'order_id' => $this->orderId,
@@ -68,6 +69,6 @@ final readonly class CreateClaimData
             'created_by' => $createdBy,
             'responsible_user_id' => $this->responsibleUserId,
             'created_at' => $createdAt,
-        ];
+        ], static fn ($value, string $key): bool => $key !== 'status' || $value !== null, ARRAY_FILTER_USE_BOTH);
     }
 }

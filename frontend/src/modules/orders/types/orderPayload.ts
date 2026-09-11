@@ -95,7 +95,8 @@ export interface OrderServicePayload {
   providerUnitCost: number
   providerTotalCost: number
   instructions?: string | null
-  status: string
+  /** Facultatif : absent, le service reçoit le statut par défaut du référentiel. */
+  status?: string
   contacts?: OrderServiceContactPayload[]
   packages?: { packageKey: string; quantity?: number; handlingInstructions?: string | null }[]
 }

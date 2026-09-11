@@ -6,6 +6,7 @@ namespace App\Modules\Packages\Models;
 
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderLine;
+use App\Modules\Orders\Models\OrderService;
 use App\Modules\Tracking\Models\Concerns\TracksStatusChanges;
 use App\Modules\Types\Models\TypeItem;
 use App\Shared\Database\Concerns\HasUlid;
@@ -129,5 +130,16 @@ class Package extends Model
     {
         return $this->belongsToMany(OrderLine::class, 'package_order_lines', 'package_id', 'order_line_id')
             ->withPivot(['id', 'quantity']);
+    }
+
+    /**
+     * Services qui traitent ce colis — plusieurs : livraison puis montage.
+     *
+     * @return BelongsToMany<OrderService, $this>
+     */
+    public function orderServices(): BelongsToMany
+    {
+        return $this->belongsToMany(OrderService::class, 'order_service_packages', 'package_id', 'order_service_id')
+            ->withPivot(['id', 'quantity', 'status']);
     }
 }

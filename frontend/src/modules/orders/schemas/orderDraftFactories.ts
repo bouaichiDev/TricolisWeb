@@ -91,7 +91,8 @@ export function emptyService(sequence: number): ServiceDraft {
     providerUnitCost: '',
     providerTotalCost: '',
     instructions: '',
-    status: 'draft',
+    // Vide : la carte le préremplit avec le statut par défaut du référentiel.
+    status: '',
     contacts: [],
     packages: [],
   }

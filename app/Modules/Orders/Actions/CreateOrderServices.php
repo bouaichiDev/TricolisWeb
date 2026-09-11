@@ -98,12 +98,13 @@ final readonly class CreateOrderServices
                 ]);
             }
 
-            $service->servicePackages()->create([
+            // Sans statut fourni, `DefaultStatuses` applique celui du referentiel.
+            $service->servicePackages()->create(array_filter([
                 'package_id' => $packages[$key]->id,
                 'quantity' => $link['quantity'],
                 'handling_instructions' => $link['handlingInstructions'],
-                'status' => $link['status'] ?? 'pending',
-            ]);
+                'status' => $link['status'],
+            ], static fn ($value): bool => $value !== null));
         }
     }
 }

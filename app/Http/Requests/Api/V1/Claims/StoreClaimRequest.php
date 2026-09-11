@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Claims;
 
+use App\Modules\Statuses\Services\DefaultStatuses;
+use App\Shared\Database\MorphMap;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Création d'une réclamation.
@@ -51,7 +54,14 @@ class StoreClaimRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'claimType' => ['required', 'string', 'max:64'],
             'cause' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'string', 'max:32'],
+            // Obligatoire seulement si rien ne le fournit : ni statut par defaut
+            // choisi dans le referentiel, ni valeur par defaut de la colonne.
+            'status' => [
+                Rule::requiredIf(static fn (): bool => app(DefaultStatuses::class)->chosen(MorphMap::CLAIM) === null
+                    && DefaultStatuses::columnDefault('claims') === null),
+                'string',
+                'max:32',
+            ],
             'responsibleUserId' => ['nullable', 'ulid'],
         ];
     }

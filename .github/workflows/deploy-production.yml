@@ -105,13 +105,21 @@ jobs:
             exit 1
           }
 
-          chmod -R ug+rwX storage bootstrap/cache
+          # Les fichiers compilés par l'application — vues, sessions, storage/app —
+          # appartiennent à www-data, qui les a écrits. Le compte de déploiement ne
+          # peut pas changer leurs droits, et n'a pas à le faire : `chmod -R` sur
+          # tout le dossier faisait donc échouer chaque déploiement sur un
+          # « Operation not permitted ». Seul ce qui nous appartient est ajusté.
+          find storage bootstrap/cache -user "$(id -un)" -exec chmod ug+rwX {} + || true
 
+          # Purges non bloquantes : elles portent sur des fichiers écrits par
+          # www-data, et un cache qu'on n'a pas pu effacer est réécrit quelques
+          # lignes plus bas. Échouer ici arrêterait le déploiement pour rien.
           if [ -f vendor/autoload.php ]; then
-            php artisan config:clear
-            php artisan event:clear
-            php artisan route:clear
-            php artisan view:clear
+            php artisan config:clear || true
+            php artisan event:clear || true
+            php artisan route:clear || true
+            php artisan view:clear || true
           fi
 
           composer install \

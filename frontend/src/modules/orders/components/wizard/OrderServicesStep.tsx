@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionCard } from '@/shared/components/layout/SectionCard'
@@ -7,6 +8,7 @@ import { Button } from '@/shared/components/ui/button'
 
 import type { OrderDraftController } from '../../hooks/useOrderDraft'
 import type { OrderErrorReport } from '../../schemas/orderErrors'
+import { packageMeasures, serviceContent } from '../../schemas/packageMeasures'
 import { OrderServiceCard } from './OrderServiceCard'
 
 interface OrderServicesStepProps {
@@ -24,6 +26,8 @@ interface OrderServicesStepProps {
 export function OrderServicesStep({ controller, report }: OrderServicesStepProps) {
   const { t } = useTranslation()
   const { draft, addService, patchService, removeService } = controller
+
+  const measures = useMemo(() => packageMeasures(draft), [draft])
 
   const collectionIssue = report.issues.find((issue) => issue.field === 'services')
 
@@ -55,6 +59,7 @@ export function OrderServicesStep({ controller, report }: OrderServicesStepProps
               position={index + 1}
               customerId={draft.customerId}
               packages={draft.packages}
+              content={serviceContent(service, draft, measures)}
               report={report}
               onChange={(values) => patchService(service.key, values)}
               onRemove={() => removeService(service.key)}

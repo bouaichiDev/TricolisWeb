@@ -41,6 +41,29 @@ it('creates a draft order with at least one line', function (): void {
     $this->assertDatabaseHas('order_services', ['service_number' => 'SRV-1', 'service_id' => $this->service->id]);
 });
 
+it('creates an order whose services carry no amounts yet', function (): void {
+    $service = array_diff_key($this->orderService, array_flip([
+        'customerUnitPrice', 'customerTotalPrice', 'providerUnitCost', 'providerTotalCost',
+    ]));
+
+    // Un service se planifie avant d'etre chiffre : les montants absents
+    // prennent le defaut des colonnes.
+    $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
+        ->postJson('/api/v1/orders', [
+            'customerId' => $this->customer->id,
+            'agencyId' => $this->agency->id,
+            'orderDate' => now()->toISOString(),
+            'lines' => [['name' => 'Canapé', 'quantity' => 1]],
+            'services' => [$service],
+        ])->assertCreated();
+
+    $this->assertDatabaseHas('order_services', [
+        'service_number' => 'SRV-1',
+        'customer_unit_price' => 0,
+        'provider_total_cost' => 0,
+    ]);
+});
+
 it('requires at least one order line', function (): void {
     $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
         ->postJson('/api/v1/orders', [

@@ -34,7 +34,6 @@ export function OrderPackageFields({ pkg, parentLabel }: OrderPackageFieldsProps
         {pkg.groupingType?.name}
       </DetailField>
 
-      <DetailField label={t('orders.fields.quantity')}>{show(pkg.quantity)}</DetailField>
       <DetailField label={t('orders.fields.weight')}>{show(pkg.weight)}</DetailField>
       <DetailField label={t('orders.fields.volume')}>{show(pkg.volume)}</DetailField>
       <DetailField label={t('orders.fields.status')}>{pkg.status}</DetailField>

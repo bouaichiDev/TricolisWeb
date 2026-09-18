@@ -1,3 +1,4 @@
+import type { OrderServiceInput } from '../../api/orderContent.api'
 import type { OrderService } from '../../types/orderDetail'
 
 export interface ServiceFieldSpec {
@@ -132,4 +133,34 @@ export function serviceFormValues(service: OrderService | null): Record<string, 
     providerTotalCost: show(service.providerCost.providerTotalCost),
     instructions: service.operational.instructions ?? '',
   }
+}
+
+/**
+ * Charge utile du formulaire, à plat.
+ *
+ * Un champ vide n'est pas envoyé — `sometimes` côté serveur — sauf s'il est
+ * `nullable` : il est alors effacé.
+ */
+export function servicePayload(
+  values: Record<string, string>,
+  serviceId: string,
+  addressId: string,
+): OrderServiceInput {
+  const payload: OrderServiceInput = { serviceId, addressId }
+
+  for (const spec of [...SERVICE_FIELDS, ...SERVICE_PRICE_FIELDS]) {
+    const raw = (values[spec.name] ?? '').trim()
+
+    if (raw === '') {
+      if (spec.nullable) Object.assign(payload, { [spec.name]: null })
+      continue
+    }
+
+    Object.assign(payload, { [spec.name]: spec.numeric ? Number(raw) : raw })
+  }
+
+  const instructions = (values.instructions ?? '').trim()
+  payload.instructions = instructions === '' ? null : instructions
+
+  return payload
 }

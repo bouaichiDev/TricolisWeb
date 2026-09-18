@@ -90,7 +90,12 @@ function packageIssues(draft: OrderDraft): OrderIssue[] {
   )
 }
 
-/** Champs de service `required` côté serveur, y compris les quatre montants. */
+/**
+ * Champs de service `required` côté serveur et saisis ici.
+ *
+ * Poids, volume et nombre de colis sont requis aussi, mais calculés depuis les
+ * colis : ils ne peuvent pas manquer. Les montants sont facultatifs.
+ */
 const SERVICE_REQUIRED = [
   'serviceId',
   'addressId',
@@ -99,13 +104,6 @@ const SERVICE_REQUIRED = [
   'unit',
   'requiredTimeMinutes',
   'remainingTimeMinutes',
-  'weight',
-  'volume',
-  'packageCount',
-  'customerUnitPrice',
-  'customerTotalPrice',
-  'providerUnitCost',
-  'providerTotalCost',
 ] as const
 
 function serviceIssues(draft: OrderDraft): OrderIssue[] {

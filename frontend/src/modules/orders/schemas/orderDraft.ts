@@ -34,6 +34,12 @@ export interface PackageLineDraft {
   quantity: string
 }
 
+/**
+ * Un colis du brouillon.
+ *
+ * Ni quantité — un colis est une unité, toujours 1 — ni poids ni volume : ils
+ * se déduisent de son contenu, voir `packageMeasures`.
+ */
 export interface PackageDraft {
   key: string
   parentKey: string | null
@@ -42,9 +48,6 @@ export interface PackageDraft {
   barcode: string
   reference: string
   description: string
-  quantity: string
-  weight: string
-  volume: string
   lines: PackageLineDraft[]
 }
 
@@ -69,8 +72,9 @@ export interface ServicePackageDraft {
 /**
  * Un service de commande : l'unité opérationnelle adressée.
  *
- * Les quatre montants sont saisis, jamais posés à zéro d'office — le §29
- * l'interdit, et un zéro implicite serait une donnée métier fabriquée.
+ * Poids, volume et nombre de colis n'y figurent pas : ils se déduisent des
+ * colis pris en charge, voir `serviceContent`. Les quatre montants sont
+ * facultatifs — laissés vides, ils ne sont pas envoyés.
  */
 export interface ServiceDraft {
   key: string
@@ -85,9 +89,6 @@ export interface ServiceDraft {
   unit: string
   requiredTimeMinutes: string
   remainingTimeMinutes: string
-  weight: string
-  volume: string
-  packageCount: string
   customerUnitPrice: string
   customerTotalPrice: string
   providerUnitCost: string

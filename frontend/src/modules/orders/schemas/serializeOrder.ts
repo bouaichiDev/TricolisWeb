@@ -1,4 +1,5 @@
 import type { OrderDraft } from './orderDraft'
+import { packageMeasures, serviceContent } from './packageMeasures'
 import { orderedPackages } from './packageOrder'
 import type {
   CreateOrderPayload,
@@ -53,6 +54,8 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
 
   const packages = orderedPackages(draft.packages)
   const packageKeys = new Set(packages.map((item) => item.key))
+  // Poids et volume ne se saisissent pas : ils se déduisent du contenu.
+  const measures = packageMeasures(draft)
 
   const payload: CreateOrderPayload = {
     customerId: draft.customerId,
@@ -97,9 +100,9 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
         barcode: blank(item.barcode),
         reference: blank(item.reference),
         description: blank(item.description),
-        quantity: optional(item.quantity),
-        weight: optional(item.weight),
-        volume: optional(item.volume),
+        // Pas de quantité : un colis vaut toujours 1, le défaut de la colonne.
+        weight: measures.get(item.key)?.weight ?? 0,
+        volume: measures.get(item.key)?.volume ?? 0,
         lines: item.lines
           .filter((link) => linePosition.has(link.lineKey))
           .map((link) => ({
@@ -109,8 +112,10 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
       }),
     ),
 
-    services: draft.services.map(
-      (service): OrderServicePayload => ({
+    services: draft.services.map((service): OrderServicePayload => {
+      const content = serviceContent(service, draft, measures)
+
+      return {
         serviceId: service.serviceId,
         addressId: service.addressId,
         serviceNumber: service.serviceNumber.trim(),
@@ -122,13 +127,14 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
         unit: service.unit.trim(),
         requiredTimeMinutes: number(service.requiredTimeMinutes),
         remainingTimeMinutes: number(service.remainingTimeMinutes),
-        weight: number(service.weight),
-        volume: number(service.volume),
-        packageCount: number(service.packageCount),
-        customerUnitPrice: number(service.customerUnitPrice),
-        customerTotalPrice: number(service.customerTotalPrice),
-        providerUnitCost: number(service.providerUnitCost),
-        providerTotalCost: number(service.providerTotalCost),
+        weight: content.weight,
+        volume: content.volume,
+        packageCount: content.packageCount,
+        // Facultatifs : un montant laissé vide n'est pas envoyé.
+        customerUnitPrice: optional(service.customerUnitPrice),
+        customerTotalPrice: optional(service.customerTotalPrice),
+        providerUnitCost: optional(service.providerUnitCost),
+        providerTotalCost: optional(service.providerTotalCost),
         instructions: blank(service.instructions),
         // Vide, le serveur applique le statut par défaut du référentiel.
         ...(service.status === '' ? {} : { status: service.status }),
@@ -149,8 +155,8 @@ export function serializeOrderWithKeys(draft: OrderDraft): SerializedOrder {
             quantity: optional(link.quantity),
             handlingInstructions: blank(link.handlingInstructions),
           })),
-      }),
-    ),
+      }
+    }),
   }
 
   return {

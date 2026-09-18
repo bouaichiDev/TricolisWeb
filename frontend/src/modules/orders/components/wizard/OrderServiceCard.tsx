@@ -10,6 +10,7 @@ import { useServiceOptions } from '../../hooks/useServiceScope'
 import type { PackageDraft, ServiceDraft } from '../../schemas/orderDraft'
 import { ORDER_SERVICE_STATUSES } from '../../types/order'
 import { fieldError, issuesOf, type OrderErrorReport } from '../../schemas/orderErrors'
+import type { ServiceContent } from '../../schemas/packageMeasures'
 import { withDerivedTotals } from '../../schemas/servicePricing'
 import { AddressPicker } from './AddressPicker'
 import { OrderServiceContactsEditor } from './OrderServiceContactsEditor'
@@ -21,6 +22,8 @@ interface OrderServiceCardProps {
   position: number
   customerId: string
   packages: PackageDraft[]
+  /** Contenu déduit des colis cochés : voir `serviceContent`. */
+  content: ServiceContent
   report: OrderErrorReport
   onChange: (values: Partial<ServiceDraft>) => void
   onRemove: () => void
@@ -40,6 +43,7 @@ export function OrderServiceCard({
   position,
   customerId,
   packages,
+  content,
   report,
   onChange: onChangeRaw,
   onRemove,
@@ -161,21 +165,12 @@ export function OrderServiceCard({
 
       <OrderServiceMeasures
         service={service}
+        content={content}
         issues={issues}
         onChange={onChange}
         billableToCustomer={picked?.billableToCustomer}
         payableToProvider={picked?.payableToProvider}
       />
-
-      <div className="mt-4 border-t pt-4">
-        <ControlledField
-          label={t('orders.fields.instructions')}
-          value={service.instructions}
-          onChange={(instructions) => onChange({ instructions })}
-          multiline
-          error={fieldError(issues, 'instructions')}
-        />
-      </div>
 
       <div className="mt-4 border-t pt-4">
         <OrderServiceContactsEditor

@@ -15,18 +15,20 @@ import {
   DialogTitle,
 } from '@/shared/components/ui/dialog'
 
-import type { OrderServiceInput } from '../../api/orderContent.api'
-import { useCreateOrderService, useUpdateOrderService } from '../../hooks/useOrderContent'
+import { ServiceContactsError, useSaveOrderService } from '../../hooks/useSaveOrderService'
 import { useServiceOptions } from '../../hooks/useServiceScope'
 import type { OrderService } from '../../types/orderDetail'
 import { fieldErrorsOf } from './formValues'
 import { AddressPicker } from '../wizard/AddressPicker'
+import { OrderServiceContactsEditor } from '../wizard/OrderServiceContactsEditor'
 import {
   SERVICE_FIELDS,
   SERVICE_PRICE_FIELDS,
   serviceFormValues,
+  servicePayload,
   type ServiceFieldSpec,
 } from './orderServiceFields'
+import { SERVICE_KEY, useServiceContactsForm } from './useServiceContactsForm'
 
 interface OrderServiceDialogProps {
   orderId: string
@@ -39,10 +41,14 @@ interface OrderServiceDialogProps {
 /**
  * Ajout ou correction d'un service d'une commande existante.
  *
- * C'est le service qui porte l'adresse, le créneau et les montants : le
- * modifier revient à modifier l'arrêt, puisqu'il n'existe pas d'entité
- * distincte. Les contacts et les colis pris en charge ont leurs propres routes
- * et ne sont pas repris ici.
+ * C'est le service qui porte l'adresse, le créneau, les montants et les
+ * contacts : le modifier revient à modifier l'arrêt, puisqu'il n'existe pas
+ * d'entité distincte. Les contacts ont leurs propres routes ; ils s'éditent
+ * pourtant ici, et partent à l'enregistrement, juste après le service. Les
+ * colis pris en charge, eux, se gèrent dans le panneau du service.
+ *
+ * Le parent monte le dialogue à l'ouverture et le démonte à la fermeture :
+ * son état repart donc de la ressource à chaque fois.
  */
 export function OrderServiceDialog({
   orderId,
@@ -52,13 +58,13 @@ export function OrderServiceDialog({
   onOpenChange,
 }: OrderServiceDialogProps) {
   const { t } = useTranslation()
-  const create = useCreateOrderService(orderId)
-  const update = useUpdateOrderService(orderId)
+  const save = useSaveOrderService(orderId)
   const services = useServiceOptions()
 
   const [values, setValues] = useState<Record<string, string> | null>(null)
   const [serviceId, setServiceId] = useState<string | null>(null)
   const [addressId, setAddressId] = useState<string | null>(null)
+  const contacts = useServiceContactsForm(service)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -69,16 +75,15 @@ export function OrderServiceDialog({
   const patch = (field: string, value: string) =>
     setValues({ ...current, [field]: value })
 
-  const close = () => {
-    setValues(null)
-    setServiceId(null)
-    setAddressId(null)
-    setErrors({})
-    setFormError(null)
-    onOpenChange(false)
-  }
+  const close = () => onOpenChange(false)
 
   const onError = (cause: unknown) => {
+    if (cause instanceof ServiceContactsError) {
+      const message = contacts.absorb(cause)
+      if (message !== null) setFormError(message === '' ? t('errors.unexpected') : message)
+      return
+    }
+
     if (cause instanceof ApiError && cause.isValidation) {
       setErrors(fieldErrorsOf(cause))
       return
@@ -91,23 +96,17 @@ export function OrderServiceDialog({
     setErrors({})
     setFormError(null)
 
-    const payload: OrderServiceInput = { serviceId: currentServiceId, addressId: currentAddressId }
+    if (!contacts.validate()) return
 
-    for (const spec of [...SERVICE_FIELDS, ...SERVICE_PRICE_FIELDS]) {
-      const raw = (current[spec.name] ?? '').trim()
-
-      if (raw === '') {
-        if (spec.nullable) Object.assign(payload, { [spec.name]: null })
-        continue
-      }
-
-      Object.assign(payload, { [spec.name]: spec.numeric ? Number(raw) : raw })
-    }
-
-    payload.instructions = current.instructions.trim() === '' ? null : current.instructions.trim()
-
-    if (service) update.mutate({ id: service.id, ...payload }, { onSuccess: close, onError })
-    else create.mutate(payload, { onSuccess: close, onError })
+    save.mutate(
+      {
+        serviceId: contacts.savedId,
+        payload: servicePayload(current, currentServiceId, currentAddressId),
+        saved: contacts.saved,
+        drafts: contacts.drafts,
+      },
+      { onSuccess: close, onError },
+    )
   }
 
   const field = (spec: ServiceFieldSpec) => (
@@ -177,11 +176,21 @@ export function OrderServiceDialog({
           error={errors.instructions}
         />
 
+        <div className="border-t pt-4">
+          <OrderServiceContactsEditor
+            serviceKey={SERVICE_KEY}
+            addressId={currentAddressId}
+            contacts={contacts.drafts}
+            report={contacts.report}
+            onChange={contacts.setDrafts}
+          />
+        </div>
+
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={close}>
             {t('common.cancel')}
           </Button>
-          <Button type="button" onClick={submit} disabled={create.isPending || update.isPending}>
+          <Button type="button" onClick={submit} disabled={save.isPending}>
             {t('common.save')}
           </Button>
         </DialogFooter>

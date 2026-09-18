@@ -71,18 +71,17 @@ describe('validateDraft', () => {
   })
 
   /**
-   * Les quatre montants sont `required` côté serveur, et le §29 interdit d'y
-   * poser `0` en douce : ils doivent être saisis, donc signalés s'ils manquent.
+   * Un service se planifie souvent avant d'être chiffré : les montants sont
+   * facultatifs, et un montant vide n'est simplement pas envoyé.
    */
-  it('exige les quatre montants d’un service', () => {
+  it('n’exige pas les montants d’un service', () => {
     const draft = complete()
     draft.services[0].customerUnitPrice = ''
+    draft.services[0].customerTotalPrice = ''
+    draft.services[0].providerUnitCost = ''
     draft.services[0].providerTotalCost = ''
 
-    const found = paths(draft)
-
-    expect(found).toContain('services.0.customerUnitPrice')
-    expect(found).toContain('services.0.providerTotalCost')
+    expect(validateDraft(draft).issues).toEqual([])
   })
 
   it('exige un libellé de ligne en l’absence d’article catalogue', () => {

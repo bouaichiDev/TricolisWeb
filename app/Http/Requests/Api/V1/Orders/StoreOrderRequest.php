@@ -124,10 +124,12 @@ class StoreOrderRequest extends FormRequest
             'services.*.weight' => ['required', 'numeric', 'min:0'],
             'services.*.volume' => ['required', 'numeric', 'min:0'],
             'services.*.packageCount' => ['required', 'integer', 'min:0'],
-            'services.*.customerUnitPrice' => ['required', 'numeric', 'min:0'],
-            'services.*.customerTotalPrice' => ['required', 'numeric', 'min:0'],
-            'services.*.providerUnitCost' => ['required', 'numeric', 'min:0'],
-            'services.*.providerTotalCost' => ['required', 'numeric', 'min:0'],
+            // Facultatifs : un service peut etre planifie avant d'etre chiffre.
+            // Absents, les colonnes gardent leur defaut, zero.
+            'services.*.customerUnitPrice' => ['sometimes', 'numeric', 'min:0'],
+            'services.*.customerTotalPrice' => ['sometimes', 'numeric', 'min:0'],
+            'services.*.providerUnitCost' => ['sometimes', 'numeric', 'min:0'],
+            'services.*.providerTotalCost' => ['sometimes', 'numeric', 'min:0'],
             'services.*.instructions' => ['nullable', 'string'],
             // Facultatif : absent, le service recoit le statut par defaut du referentiel.
             'services.*.status' => ['sometimes', Rule::enum(OrderServiceStatus::class)],

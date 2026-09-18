@@ -9,6 +9,7 @@ import { Button } from '@/shared/components/ui/button'
 import type { OrderDraftController } from '../../hooks/useOrderDraft'
 import { lineAllocations } from '../../schemas/allocations'
 import { issuesOf, type OrderErrorReport } from '../../schemas/orderErrors'
+import { packageMeasures } from '../../schemas/packageMeasures'
 import { packageTree } from '../../schemas/packageOrder'
 import { PackageCard } from './PackageCard'
 
@@ -30,6 +31,7 @@ export function OrderPackagesStep({ controller, report }: OrderPackagesStepProps
 
   const nodes = useMemo(() => packageTree(draft.packages), [draft.packages])
   const allocations = useMemo(() => lineAllocations(draft), [draft])
+  const measures = useMemo(() => packageMeasures(draft), [draft])
 
   return (
     <SectionCard
@@ -64,6 +66,7 @@ export function OrderPackagesStep({ controller, report }: OrderPackagesStepProps
                 position={index + 1}
                 lines={draft.lines}
                 allocations={allocations}
+                measures={measures.get(node.draft.key)}
                 issues={issuesOf(report, node.draft.key)}
                 onChange={(values) => patchPackage(node.draft.key, values)}
                 onRemove={() => removePackage(node.draft.key)}

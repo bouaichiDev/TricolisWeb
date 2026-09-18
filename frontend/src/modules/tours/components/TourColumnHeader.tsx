@@ -1,7 +1,10 @@
 import { Boxes, IdCard, Package, Route, Ruler, Truck, Users, Weight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { cn } from '@/shared/utils/cn'
+
 import type { Tour } from '../types/tour'
+import { capacityOverrun } from '../utils/vehicleCapacity'
 
 /**
  * Ce qu'une colonne dit d'une tournée avant qu'on l'ouvre.
@@ -17,9 +20,15 @@ import type { Tour } from '../types/tour'
  *
  * Une ressource non affectée s'écrit « à affecter » plutôt que de disparaître :
  * un blanc se lit comme un oubli d'affichage, pas comme un manque.
+ *
+ * Un poids ou un volume qui dépasse la capacité du véhicule est encadré de
+ * rouge : c'est la première chose à corriger avant de valider la tournée.
  */
 export function TourColumnHeader({ tour }: { tour: Tour }) {
   const { t } = useTranslation()
+  const overrun = capacityOverrun(tour)
+  const labelled = (label: string, capacity: number | null) =>
+    capacity === null ? label : `${label} — ${t('tours.overCapacity', { capacity })}`
 
   return (
     <div className="flex flex-col gap-2">
@@ -44,8 +53,18 @@ export function TourColumnHeader({ tour }: { tour: Tour }) {
         <Metric icon={Boxes} label={t('tours.fields.orders')} value={tour.orderCount ?? '—'} />
         <Metric icon={Users} label={t('tours.fields.customers')} value={tour.totalCustomers} />
         <Metric icon={Package} label={t('tours.fields.packages')} value={tour.totalPackages} />
-        <Metric icon={Weight} label={t('tours.fields.weightShort')} value={`${tour.totalWeight}`} />
-        <Metric icon={Ruler} label={t('tours.fields.volume')} value={`${tour.totalVolume}`} />
+        <Metric
+          icon={Weight}
+          label={labelled(t('tours.fields.weightShort'), overrun.weight)}
+          value={`${tour.totalWeight}`}
+          over={overrun.weight !== null}
+        />
+        <Metric
+          icon={Ruler}
+          label={labelled(t('tours.fields.volume'), overrun.volume)}
+          value={`${tour.totalVolume}`}
+          over={overrun.volume !== null}
+        />
         {/* Le tiret dit « pas de valeur » ; l'infobulle dit pourquoi. Sans elle,
             un zéro et un calcul jamais fait se ressembleraient. */}
         <Metric
@@ -133,14 +152,24 @@ function Metric({
   icon: Icon,
   label,
   value,
+  over = false,
 }: {
   icon: typeof Package
   label: string
   value: string | number
+  /** Dépasse la capacité du véhicule : encadré de rouge. */
+  over?: boolean
 }) {
   return (
-    <div className="min-w-0 rounded-md border px-1 py-1" title={label}>
-      <dt className="flex justify-center text-muted-foreground">
+    <div
+      className={cn(
+        'min-w-0 rounded-md border px-1 py-1',
+        over && 'border-2 border-destructive bg-destructive/10 text-destructive',
+      )}
+      title={label}
+      data-over={over || undefined}
+    >
+      <dt className={cn('flex justify-center', over ? 'text-destructive' : 'text-muted-foreground')}>
         <Icon className="size-3.5" aria-hidden />
         <span className="sr-only">{label}</span>
       </dt>

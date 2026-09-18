@@ -90,10 +90,10 @@ export interface OrderServicePayload {
   weight: number
   volume: number
   packageCount: number
-  customerUnitPrice: number
-  customerTotalPrice: number
-  providerUnitCost: number
-  providerTotalCost: number
+  customerUnitPrice?: number
+  customerTotalPrice?: number
+  providerUnitCost?: number
+  providerTotalCost?: number
   instructions?: string | null
   /** Facultatif : absent, le service reçoit le statut par défaut du référentiel. */
   status?: string

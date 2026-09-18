@@ -1446,7 +1446,8 @@
       "dimensions": "Dimensions",
       "dimensionsCreateHint": "Les dimensions ne sont pas acceptées à la création complète d’une commande ; elles se renseignent depuis la fiche, une fois la commande créée.",
       "number": "N° colis",
-      "changeStatus": "Changer le statut"
+      "changeStatus": "Changer le statut",
+      "measuresHint": "Calculé depuis les lignes affectées et les colis enfants."
     },
     "services": {
       "title": "Services",
@@ -1476,7 +1477,8 @@
       "noPackages": "Aucun colis déclaré à l’étape précédente.",
       "handlingInstructions": "Consignes de manutention",
       "pricing": "Montants",
-      "pricingHint": "Ce que la prestation est facturée au client, et ce qu’elle coûte au prestataire. Les totaux se calculent depuis le prix unitaire et la quantité ; vous pouvez les corriger.",
+      "pricingHint": "Facultatifs. Ce que la prestation est facturée au client, et ce qu’elle coûte au prestataire. Les totaux se calculent depuis le prix unitaire et la quantité ; vous pouvez les corriger.",
+      "contentHint": "Calculé depuis les colis pris en charge.",
       "timing": "Créneau demandé",
       "sequenceHint": "Ordre de passage. Deux services ne peuvent pas partager la même séquence.",
       "serviceNumberHint": "Identifiant du service dans la commande. Unique.",
@@ -2012,6 +2014,7 @@
     "subtitle": "Les tournées de votre organisation, de la préparation à leur achèvement",
     "empty": "Aucune tournée.",
     "notComputed": "Non calculé",
+    "overCapacity": "dépasse la capacité du véhicule ({{capacity}})",
     "loadSummary": "{{packages}} colis · {{customers}} clients",
     "minutes": "{{count}} min",
     "sections": {

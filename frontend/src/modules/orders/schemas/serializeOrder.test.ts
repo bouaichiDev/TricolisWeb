@@ -120,6 +120,29 @@ describe('serializeOrder', () => {
     expect(serialized.serviceKeys).toEqual([draft.services[0].key])
   })
 
+  it('n’envoie pas les montants laissés vides', () => {
+    const service = serializeOrder(draftWithLines(1)).services[0]
+
+    expect(service.customerUnitPrice).toBeUndefined()
+    expect(service.providerTotalCost).toBeUndefined()
+  })
+
+  it('calcule le poids du colis et le contenu du service au lieu de les saisir', () => {
+    const draft = draftWithLines(1)
+    draft.lines[0].weight = '2.5'
+    draft.lines[0].volume = '0.1'
+    const pkg = emptyPackage()
+    pkg.lines = [{ lineKey: draft.lines[0].key, quantity: '2' }]
+    draft.packages = [pkg]
+    draft.services[0].packages = [{ packageKey: pkg.key, quantity: '', handlingInstructions: '' }]
+
+    const payload = serializeOrder(draft)
+
+    expect(payload.packages?.[0]).toMatchObject({ weight: 5, volume: 0.2 })
+    expect(payload.packages?.[0].quantity).toBeUndefined()
+    expect(payload.services[0]).toMatchObject({ weight: 5, volume: 0.2, packageCount: 1 })
+  })
+
   it('écarte du service un colis retiré entre-temps', () => {
     const draft = draftWithLines(1)
     draft.services[0].packages = [

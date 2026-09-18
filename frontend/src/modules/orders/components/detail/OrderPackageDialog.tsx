@@ -34,6 +34,8 @@ interface OrderPackageDialogProps {
 /**
  * Ajout ou correction d'un colis d'une commande existante.
  *
+ * Pas de quantité : un colis est une unité, la colonne vaut 1 par défaut.
+ *
  * Un colis ne peut pas devenir son propre parent, ni celui d'un de ses
  * descendants : ces choix sont retirés de la liste plutôt que refusés après
  * envoi.
@@ -62,7 +64,6 @@ export function OrderPackageDialog({
     reference: text(pkg?.reference),
     barcode: text(pkg?.barcode),
     description: text(pkg?.description),
-    quantity: pkg ? num(pkg.quantity) : '1',
     weight: num(pkg?.weight),
     volume: num(pkg?.volume),
     length: num(pkg?.length),
@@ -102,7 +103,6 @@ export function OrderPackageDialog({
       reference: blank(current.reference),
       barcode: blank(current.barcode),
       description: blank(current.description),
-      quantity: optional(current.quantity),
       weight: optional(current.weight),
       volume: optional(current.volume),
       length: optional(current.length) ?? null,
@@ -169,7 +169,6 @@ export function OrderPackageDialog({
 
           {field('reference', t('orders.fields.reference'))}
           {field('barcode', t('orders.fields.barcode'))}
-          {field('quantity', t('orders.fields.quantity'), 'number')}
           {field('weight', t('orders.fields.weight'), 'number')}
           {field('volume', t('orders.fields.volume'), 'number')}
           {field('length', t('orders.fields.length'), 'number')}

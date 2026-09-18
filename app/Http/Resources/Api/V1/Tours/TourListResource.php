@@ -137,6 +137,13 @@ class TourListResource extends JsonResource
             // est affectee.
             'driverName' => $this->whenLoaded('driver', fn () => $this->driver?->name),
             'vehicleRegistration' => $this->whenLoaded('vehicle', fn () => $this->vehicle?->registration_number),
+            // Ce que le vehicule peut porter, pour signaler un depassement sans
+            // ouvrir sa fiche. Nul tant qu'aucun vehicule n'est affecte.
+            'vehicleCapacity' => $this->whenLoaded('vehicle', fn (): ?array => $this->vehicle === null ? null : [
+                'weight' => $this->vehicle->payload_capacity,
+                'volume' => $this->vehicle->volume_capacity,
+                'pallets' => $this->vehicle->pallet_capacity,
+            ]),
             // Nombre de commandes distinctes, calcule sur les arrets deja
             // charges : `tours` n'en porte pas le compte, et l'ajouter en base
             // donnerait un total de plus a tenir a jour a chaque mouvement.

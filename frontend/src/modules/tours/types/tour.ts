@@ -28,6 +28,12 @@ export interface Tour {
   /** Rendus par la liste : la colonne montre qui conduit, avec quoi. */
   driverName?: string | null
   vehicleRegistration?: string | null
+  /** Capacités du véhicule affecté, pour signaler un chargement qui les dépasse. */
+  vehicleCapacity?: {
+    weight: number | string
+    volume: number | string
+    pallets: number
+  } | null
   /** Commandes distinctes de la tournée ; rendu seulement avec les arrêts. */
   orderCount?: number
   /**

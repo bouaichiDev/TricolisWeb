@@ -36,7 +36,9 @@ final readonly class TourListQuery
                 // Charges d'emblee : la colonne les montre, et les demander
                 // tournee par tournee ferait une requete par colonne.
                 'driver:id,code,name',
-                'vehicle:id,code,registration_number',
+                // Les capacites avec : la colonne signale un chargement qui les
+                // depasse.
+                'vehicle:id,code,registration_number,payload_capacity,volume_capacity,pallet_capacity',
             ])
             ->withCount(['stops', 'periods']);
 

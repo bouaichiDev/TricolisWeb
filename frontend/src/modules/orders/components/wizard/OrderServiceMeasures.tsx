@@ -4,9 +4,12 @@ import { ControlledField } from '@/shared/components/form/ControlledField'
 
 import type { ServiceDraft } from '../../schemas/orderDraft'
 import { fieldError, type OrderIssue } from '../../schemas/orderErrors'
+import type { ServiceContent } from '../../schemas/packageMeasures'
 
 interface OrderServiceMeasuresProps {
   service: ServiceDraft
+  /** Poids, volume et colis déduits des colis cochés plus bas. */
+  content: ServiceContent
   issues: OrderIssue[]
   onChange: (values: Partial<ServiceDraft>) => void
   /** Drapeaux du service du référentiel, quand un service est choisi. */
@@ -15,15 +18,16 @@ interface OrderServiceMeasuresProps {
 }
 
 /**
- * Créneau, mesures et montants d'un service.
+ * Créneau, contenu, montants et consignes d'un service.
  *
- * **À quoi servent les montants** : ils portent la valeur commerciale de la
- * prestation — ce que le client paie d'un côté, ce que le prestataire coûte de
- * l'autre. Les quatre sont `required` côté serveur ; le §29 interdit d'y poser
- * `0` en douce, ils sont donc saisis.
+ * **Le contenu se calcule** : poids, volume et nombre de colis suivent les
+ * colis que le service prend en charge. Quantité et unité restent saisies —
+ * elles disent ce qui est facturé, et l'unité vient du référentiel.
  *
- * Les totaux se déduisent du prix unitaire et de la quantité, tout en restant
- * modifiables : une remise ou un forfait s'écrivent à la main.
+ * **Les montants sont facultatifs** : un service se planifie souvent avant
+ * d'être chiffré. Laissés vides, ils ne sont pas envoyés. Les totaux se
+ * déduisent du prix unitaire et de la quantité, tout en restant modifiables :
+ * une remise ou un forfait s'écrivent à la main.
  *
  * `billableToCustomer` et `payableToProvider` viennent du référentiel : quand
  * un service n'est pas facturable, l'écran le dit plutôt que de laisser saisir
@@ -31,6 +35,7 @@ interface OrderServiceMeasuresProps {
  */
 export function OrderServiceMeasures({
   service,
+  content,
   issues,
   onChange,
   billableToCustomer,
@@ -57,6 +62,19 @@ export function OrderServiceMeasures({
     />
   )
 
+  const computed = (key: keyof ServiceContent, label: string) => (
+    <ControlledField
+      key={key}
+      label={label}
+      type="number"
+      value={String(content[key])}
+      onChange={() => undefined}
+      disabled
+      description={t('orders.services.contentHint')}
+      error={fieldError(issues, key)}
+    />
+  )
+
   return (
     <>
       <fieldset className="mt-4 border-t pt-4">
@@ -75,9 +93,9 @@ export function OrderServiceMeasures({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {field('quantity', t('orders.fields.quantity'), 'number')}
           {field('unit', t('orders.fields.unit'), 'text')}
-          {field('weight', t('orders.fields.weight'), 'number')}
-          {field('volume', t('orders.fields.volume'), 'number')}
-          {field('packageCount', t('orders.fields.packageCount'), 'number')}
+          {computed('weight', t('orders.fields.weight'))}
+          {computed('volume', t('orders.fields.volume'))}
+          {computed('packageCount', t('orders.fields.packageCount'))}
         </div>
       </fieldset>
 
@@ -92,12 +110,22 @@ export function OrderServiceMeasures({
         ) : null}
         <div className="mb-3" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {field('customerUnitPrice', t('orders.fields.customerUnitPrice'), 'number')}
-          {field('customerTotalPrice', t('orders.fields.customerTotalPrice'), 'number')}
-          {field('providerUnitCost', t('orders.fields.providerUnitCost'), 'number')}
-          {field('providerTotalCost', t('orders.fields.providerTotalCost'), 'number')}
+          {field('customerUnitPrice', t('orders.fields.customerUnitPrice'), 'number', false)}
+          {field('customerTotalPrice', t('orders.fields.customerTotalPrice'), 'number', false)}
+          {field('providerUnitCost', t('orders.fields.providerUnitCost'), 'number', false)}
+          {field('providerTotalCost', t('orders.fields.providerTotalCost'), 'number', false)}
         </div>
       </fieldset>
+
+      <div className="mt-4 border-t pt-4">
+        <ControlledField
+          label={t('orders.fields.instructions')}
+          value={service.instructions}
+          onChange={(instructions) => onChange({ instructions })}
+          multiline
+          error={fieldError(issues, 'instructions')}
+        />
+      </div>
     </>
   )
 }

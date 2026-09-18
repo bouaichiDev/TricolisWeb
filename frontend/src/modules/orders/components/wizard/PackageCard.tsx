@@ -9,6 +9,7 @@ import { Button } from '@/shared/components/ui/button'
 import type { LineAllocation } from '../../schemas/allocations'
 import type { LineDraft, PackageDraft } from '../../schemas/orderDraft'
 import { fieldError, type OrderIssue } from '../../schemas/orderErrors'
+import type { Measures } from '../../schemas/packageMeasures'
 import { PackageLineAssignment } from './PackageLineAssignment'
 
 interface PackageCardProps {
@@ -17,6 +18,8 @@ interface PackageCardProps {
   position: number
   lines: LineDraft[]
   allocations: Map<string, LineAllocation>
+  /** Poids et volume déduits du contenu : affichés, jamais saisis. */
+  measures: Measures | undefined
   issues: OrderIssue[]
   onChange: (values: Partial<PackageDraft>) => void
   onRemove: () => void
@@ -31,6 +34,10 @@ interface PackageCardProps {
  * L'imbrication est rendue par un décalage : un colis peut en contenir
  * d'autres — palette contenant des cartons — et cette relation est envoyée au
  * serveur par la clé du parent.
+ *
+ * Pas de quantité : un colis est une unité. Son poids et son volume se lisent
+ * dans son contenu — lignes affectées et colis enfants — et suivent chaque
+ * affectation.
  */
 export function PackageCard({
   pkg,
@@ -38,6 +45,7 @@ export function PackageCard({
   position,
   lines,
   allocations,
+  measures,
   issues,
   onChange,
   onRemove,
@@ -109,32 +117,22 @@ export function PackageCard({
         />
 
         <ControlledField
-          label={t('orders.fields.quantity')}
-          type="number"
-          min="0"
-          step="0.001"
-          value={pkg.quantity}
-          onChange={(quantity) => onChange({ quantity })}
-          error={fieldError(issues, 'quantity')}
-        />
-
-        <ControlledField
           label={t('orders.fields.weight')}
           type="number"
-          min="0"
-          step="0.001"
-          value={pkg.weight}
-          onChange={(weight) => onChange({ weight })}
+          value={String(measures?.weight ?? 0)}
+          onChange={() => undefined}
+          disabled
+          description={t('orders.packages.measuresHint')}
           error={fieldError(issues, 'weight')}
         />
 
         <ControlledField
           label={t('orders.fields.volume')}
           type="number"
-          min="0"
-          step="0.001"
-          value={pkg.volume}
-          onChange={(volume) => onChange({ volume })}
+          value={String(measures?.volume ?? 0)}
+          onChange={() => undefined}
+          disabled
+          description={t('orders.packages.measuresHint')}
           error={fieldError(issues, 'volume')}
         />
 

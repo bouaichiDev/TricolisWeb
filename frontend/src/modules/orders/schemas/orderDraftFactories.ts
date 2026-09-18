@@ -48,9 +48,6 @@ export function emptyPackage(): PackageDraft {
     barcode: '',
     reference: '',
     description: '',
-    quantity: '1',
-    weight: '',
-    volume: '',
     lines: [],
   }
 }
@@ -83,9 +80,6 @@ export function emptyService(sequence: number): ServiceDraft {
     unit: '',
     requiredTimeMinutes: '0',
     remainingTimeMinutes: '0',
-    weight: '0',
-    volume: '0',
-    packageCount: '0',
     customerUnitPrice: '',
     customerTotalPrice: '',
     providerUnitCost: '',

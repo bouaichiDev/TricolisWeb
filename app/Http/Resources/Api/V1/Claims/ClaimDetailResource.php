@@ -46,6 +46,12 @@ class ClaimDetailResource extends JsonResource
             'closedAt' => $this->closed_at?->toIso8601String(),
             'customer' => new CustomerCompactResource($this->whenLoaded('customer')),
             'order' => new OrderCompactResource($this->whenLoaded('order')),
+            // Le numero suffit a reconnaitre le service vise : l'historique de la
+            // reclamation le nomme au lieu d'afficher son identifiant.
+            'orderService' => $this->whenLoaded('orderService', fn (): ?array => $this->orderService === null ? null : [
+                'id' => $this->orderService->id,
+                'serviceNumber' => $this->orderService->service_number,
+            ]),
             'tour' => new TourCompactResource($this->whenLoaded('tour')),
             'creator' => new UserCompactResource($this->whenLoaded('creator')),
             'responsibleUser' => new UserCompactResource($this->whenLoaded('responsibleUser')),

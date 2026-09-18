@@ -249,7 +249,8 @@
     "invited": "Invité",
     "approved": "Acceptée",
     "rejected": "Refusée",
-    "disabled": "Désactivé"
+    "disabled": "Désactivé",
+    "created": "Créé"
   },
   "confirm": {
     "deleteTitle": "Confirmer la suppression",
@@ -695,6 +696,7 @@
     "deleted": "Suppression",
     "status_changed": "Changement de statut",
     "restored": "Restauration",
+    "closed": "Clôture",
     "role_dashboard_updated": "Tableau de bord d'un rôle modifié",
     "role_dashboard_reset": "Tableau de bord d'un rôle réinitialisé"
   },
@@ -1214,6 +1216,8 @@
       "description": "Description",
       "cause": "Cause",
       "customer": "Client",
+      "order": "Commande",
+      "tour": "Tournée",
       "orderService": "Service",
       "responsible": "Responsable",
       "decision": "Décision",
@@ -1224,6 +1228,7 @@
       "closedAt": "Fermée le"
     },
     "history": "Historique",
+    "unknownReference": "élément non disponible",
     "attachments": "Pièces jointes",
     "attachmentsHint": "Photos, vocaux ou PDF. Le vocal décrit un dommage en trente secondes.",
     "noAttachment": "Aucune pièce jointe.",

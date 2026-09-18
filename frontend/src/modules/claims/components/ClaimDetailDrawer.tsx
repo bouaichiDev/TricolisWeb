@@ -13,6 +13,7 @@ import {
 import { formatDateTime } from '@/shared/utils/format'
 
 import { ClaimAttachments } from './ClaimAttachments'
+import { useClaimHistoryFormat } from './useClaimHistoryFormat'
 import { useClaim } from '../hooks/useClaims'
 import type { Claim } from '../types/claim'
 
@@ -41,6 +42,7 @@ export function ClaimDetailDrawer({ claim, onClose }: ClaimDetailDrawerProps) {
 
   const detail = useClaim(claim?.id ?? null)
   const shown = detail.data ?? claim
+  const historyFormat = useClaimHistoryFormat(shown)
 
   const history = useAuditLogs(
     { page: 1, perPage: 50, entityType: 'claim', entityId: claim?.id ?? '' },
@@ -64,7 +66,7 @@ export function ClaimDetailDrawer({ claim, onClose }: ClaimDetailDrawerProps) {
         {shown ? (
           <div className="flex flex-col gap-5 px-4 pb-6">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={shown.status} />
+              <StatusBadge status={shown.status} source="claim" />
               {shown.responsibleUser ? (
                 <span className="text-sm text-muted-foreground">
                   {t('claims.fields.responsible')} ·{' '}
@@ -113,7 +115,7 @@ export function ClaimDetailDrawer({ claim, onClose }: ClaimDetailDrawerProps) {
 
             <section className="flex flex-col gap-2 border-t pt-4">
               <p className="text-sm font-medium">{t('claims.history')}</p>
-              <AuditChangeList logs={history.data?.data ?? []} />
+              <AuditChangeList logs={history.data?.data ?? []} {...historyFormat} />
             </section>
           </div>
         ) : null}

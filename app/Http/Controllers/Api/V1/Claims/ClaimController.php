@@ -80,7 +80,7 @@ class ClaimController extends Controller
         $this->authorize('view', $claim);
 
         return ApiResponse::ok(new ClaimDetailResource(
-            $claim->load(['customer', 'order', 'tour', 'creator', 'responsibleUser']),
+            $claim->load(['customer', 'order', 'orderService', 'tour', 'creator', 'responsibleUser']),
         ));
     }
 

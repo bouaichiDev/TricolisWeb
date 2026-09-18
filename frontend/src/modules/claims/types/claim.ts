@@ -35,6 +35,11 @@ export interface Claim {
   customerName?: string | null
   creator?: CompactUser
   responsibleUser?: CompactUser
+  /** Rendus au détail seulement : l'historique les nomme au lieu d'un identifiant. */
+  customer?: { id: string; code: string; name: string } | null
+  order?: { id: string; orderNumber: string } | null
+  orderService?: { id: string; serviceNumber: string } | null
+  tour?: { id: string; tourNumber: string } | null
 }
 
 /** Filtres acceptés par `ListClaimRequest`. Aucun `severity` : il n'existe pas. */

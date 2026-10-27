@@ -5,6 +5,7 @@ use App\Modules\Organizations\Models\Organization;
 use App\Modules\Platform\Mail\AccessRequestSubmittedMail;
 use App\Modules\Platform\Models\AccessRequest;
 use App\Shared\Enums\AccessRequestStatus;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
@@ -141,7 +142,7 @@ describe('deciding', function (): void {
 
         Notification::assertSentTo(
             User::where('email', 'sara@atlas.example')->firstOrFail(),
-            Illuminate\Auth\Notifications\ResetPassword::class,
+            ResetPassword::class,
         );
     });
 

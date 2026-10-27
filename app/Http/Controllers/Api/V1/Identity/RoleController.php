@@ -49,7 +49,16 @@ class RoleController extends Controller
         $org = $this->requireOrganizationId();
         $this->authorize('viewAny', [Role::class, $org]);
 
+        // Les rôles du portail client ne se mêlent pas aux rôles internes : ils
+        // ne sortent que sur demande (`?scope=customer`), pour l'écran où le
+        // transporteur compose le tableau de bord de ses clients.
         $query = Role::with('permissions');
+
+        if ($request->query('scope') === RoleScope::CUSTOMER->value) {
+            $query->where('scope', RoleScope::CUSTOMER->value);
+        } else {
+            $query->where(fn ($builder) => $builder->whereNull('scope')->orWhere('scope', '!=', RoleScope::CUSTOMER->value));
+        }
 
         if ($this->platform->isPlatformAdmin($request->user())) {
             $query->where(fn ($builder) => $builder->where('organization_id', $org)->orWhereNull('organization_id'));

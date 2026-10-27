@@ -423,6 +423,36 @@ package "Stock client chez le transporteur" {
     +reservedAt: datetime
     +releasedAt: datetime
   }
+
+  ' Évolution de conception du 2026-09-30 (portail client, Phase 5) :
+  ' demande de correction de stock déposée par le client, tranchée par
+  ' le transporteur. Elle ne modifie jamais le stock ; son acceptation
+  ' crée un StockMovement référencé par stockMovementId.
+  class StockAdjustmentRequest {
+    +id: ULID
+    +organizationId: ULID
+    +customerId: ULID
+    +stockItemId: ULID
+    +stockLocationId: ULID
+    +displayedQuantity: decimal
+    +requestedQuantity: decimal
+    +reason: string
+    +comment: text
+    +status: StockAdjustmentRequestStatus
+    +requestedBy: ULID
+    +reviewedBy: ULID
+    +reviewedAt: datetime
+    +reviewComment: text
+    +stockMovementId: ULID
+    +createdAt: datetime
+    +updatedAt: datetime
+  }
+
+  enum StockAdjustmentRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
 }
 
 package "Fournisseurs et ressources" {
@@ -994,6 +1024,10 @@ StockItem "1" -- "0..*" StockMovement
 StockItem "1" -- "0..*" StockReservation
 StockLocation "1" -- "0..*" StockReservation
 OrderLine "1" -- "0..*" StockReservation
+Customer "1" -- "0..*" StockAdjustmentRequest
+StockItem "1" -- "0..*" StockAdjustmentRequest
+StockLocation "0..1" -- "0..*" StockAdjustmentRequest
+StockAdjustmentRequest "0..1" --> "0..1" StockMovement : correction appliquée
 
 Organization "1" -- "0..*" Provider
 Provider "0..*" --> "0..1" Address

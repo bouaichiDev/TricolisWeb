@@ -7,6 +7,7 @@ namespace App\Modules\Identity\Services;
 use App\Modules\Identity\Models\Role;
 use App\Shared\Dashboard\DashboardWidget;
 use App\Shared\Dashboard\DashboardWidgetRegistry;
+use App\Shared\Enums\RoleScope;
 
 /**
  * Le catalogue tel que l'écran de réglage d'un rôle l'affiche.
@@ -35,7 +36,8 @@ final readonly class RoleDashboardCatalogue
      */
     public function forRole(Role $role): array
     {
-        $chosen = RoleDashboardWidgets::for($role->id);
+        $scope = RoleScope::tryFromValue($role->scope);
+        $chosen = RoleDashboardWidgets::for($role->id, $scope);
         $granted = $this->permissionsOf($role);
 
         $items = array_map(
@@ -44,7 +46,7 @@ final readonly class RoleDashboardCatalogue
                 $chosen->positionOf($widget),
                 in_array($widget->requiredPermission, $granted, true),
             ),
-            DashboardWidgetRegistry::all(),
+            DashboardWidgetRegistry::forScope($scope),
         );
 
         // Trié comme le tableau de bord le sera : l'écran de réglage montre

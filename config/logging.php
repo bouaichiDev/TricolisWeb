@@ -1,5 +1,6 @@
 <?php
 
+use App\Shared\Logging\RedactSensitiveContext;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -63,6 +64,8 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+            // Phase 7 : aucun secret dans le contexte d'une ligne de journal.
+            'tap' => [RedactSensitiveContext::class],
         ],
 
         'daily' => [
@@ -71,6 +74,8 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+            // Phase 7 : aucun secret dans le contexte d'une ligne de journal.
+            'tap' => [RedactSensitiveContext::class],
         ],
 
         'slack' => [

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Dashboard;
 
+use App\Modules\Identity\Models\Role;
 use App\Shared\Dashboard\DashboardWidgetRegistry;
+use App\Shared\Enums\RoleScope;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -50,7 +52,11 @@ class UpdateRoleDashboardRequest extends FormRequest
             // `present` et non `required` : `required` refuse un tableau vide,
             // qui est précisément la façon de dire « ce rôle ne voit rien ».
             'widgets' => ['present', 'array', 'max:100'],
-            'widgets.*.key' => ['required', 'string', Rule::in(DashboardWidgetRegistry::keys())],
+            // Le catalogue du rôle : un rôle client n'accepte que les widgets du portail.
+            'widgets.*.key' => ['required', 'string', Rule::in(array_map(
+                static fn ($widget): string => $widget->key,
+                DashboardWidgetRegistry::forScope($this->roleScope()),
+            ))],
             'widgets.*.position' => ['required', 'integer', 'min:0', 'max:9999'],
         ];
     }
@@ -112,7 +118,7 @@ class UpdateRoleDashboardRequest extends FormRequest
 
         foreach ($widgets as $index => $widget) {
             $key = is_array($widget) ? ($widget['key'] ?? null) : null;
-            $definition = is_string($key) ? DashboardWidgetRegistry::find($key) : null;
+            $definition = is_string($key) ? DashboardWidgetRegistry::findIn($this->roleScope(), $key) : null;
 
             if ($definition === null || in_array($definition->requiredPermission, $granted, true)) {
                 continue;
@@ -123,5 +129,12 @@ class UpdateRoleDashboardRequest extends FormRequest
                 "Ce rôle n'a pas la permission requise : {$definition->requiredPermission}.",
             );
         }
+    }
+
+    private function roleScope(): ?RoleScope
+    {
+        $role = $this->route('role');
+
+        return $role instanceof Role ? RoleScope::tryFromValue($role->scope) : RoleScope::ORGANIZATION;
     }
 }

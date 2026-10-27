@@ -126,7 +126,10 @@ class RolePolicy extends BaseOrganizationPolicy
             return $this->notFound();
         }
 
-        if (RoleScope::tryFromValue($role->scope) !== RoleScope::ORGANIZATION) {
+        // Les rôles du portail client de l'organisation se règlent aussi d'ici :
+        // c'est le transporteur qui compose le tableau de bord de ses clients.
+        // Leur catalogue de widgets est distinct (`CustomerPortalWidgets`).
+        if (! in_array(RoleScope::tryFromValue($role->scope), [RoleScope::ORGANIZATION, RoleScope::CUSTOMER], true)) {
             return false;
         }
 

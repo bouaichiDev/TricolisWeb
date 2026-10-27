@@ -8,6 +8,7 @@ use App\Modules\Dashboard\Sources\AdministrationData;
 use App\Modules\Dashboard\Sources\BillingData;
 use App\Modules\Dashboard\Sources\ClaimsData;
 use App\Modules\Dashboard\Sources\CommunicationsData;
+use App\Modules\Dashboard\Sources\CustomerPortalData;
 use App\Modules\Dashboard\Sources\IntegrationsData;
 use App\Modules\Dashboard\Sources\OperationsData;
 use App\Modules\Dashboard\Sources\PlanningData;
@@ -49,6 +50,7 @@ final readonly class DashboardDataSources
         private CommunicationsData $communications,
         private IntegrationsData $integrations,
         private AdministrationData $administration,
+        private CustomerPortalData $customerPortal,
     ) {}
 
     /**
@@ -99,6 +101,7 @@ final readonly class DashboardDataSources
             DashboardWidgetCategory::INTEGRATIONS => $this->integrations,
             DashboardWidgetCategory::ADMINISTRATION => $this->administration,
             DashboardWidgetCategory::QUICK_ACTIONS => null,
+            DashboardWidgetCategory::CUSTOMER_PORTAL => $this->customerPortal,
         };
     }
 }

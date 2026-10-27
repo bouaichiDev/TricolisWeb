@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Modules\CustomerPortal\Support\PortalOrganizationGate;
+use App\Modules\Customers\Enums\CustomerStatus;
 use App\Modules\Integrations\Models\CustomerApiConfiguration;
 use App\Modules\Integrations\Services\ApiKeyGenerator;
 use App\Modules\Integrations\Services\CustomerApiContext;
 use App\Modules\Integrations\Services\IpAllowList;
 use App\Shared\Http\Responses\ApiResponse;
 use Closure;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,6 +48,7 @@ final readonly class AuthenticateCustomerApiKey
         private ApiKeyGenerator $keys,
         private IpAllowList $addresses,
         private CustomerApiContext $context,
+        private RateLimiter $failures,
     ) {}
 
     public function handle(Request $request, Closure $next, ?string $permission = null): Response
@@ -53,6 +57,15 @@ final readonly class AuthenticateCustomerApiKey
 
         if (! is_string($presented) || $presented === '') {
             return $this->refuse('La clé API est requise.', JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        // Essayer des clés à la chaîne se paie (Phase 7) : au-delà du plafond
+        // d'échecs par adresse, la requête est refusée avant toute recherche.
+        $failureKey = 'customer-api-failure|'.$request->ip();
+        $maxFailures = (int) config('customer_integrations.api.failed_attempts_per_minute', 10);
+
+        if ($this->failures->tooManyAttempts($failureKey, $maxFailures)) {
+            return $this->refuse('Trop de tentatives : réessayez plus tard.', JsonResponse::HTTP_TOO_MANY_REQUESTS);
         }
 
         // L'empreinte est déterministe : la recherche se fait dessus, jamais sur
@@ -66,11 +79,19 @@ final readonly class AuthenticateCustomerApiKey
         // distinguer les deux dirait à un appelant qu'il a trouvé une clé
         // valide, seulement fermée.
         if ($configuration === null || ! $configuration->is_active) {
+            $this->failures->hit($failureKey, 60);
+
             return $this->refuse('Clé API inconnue ou révoquée.', JsonResponse::HTTP_UNAUTHORIZED);
         }
 
         if ($configuration->customer === null) {
             return $this->refuse('Cet accès n’est plus rattaché à un client.', JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        // Un client inactif ou bloqué n'appelle plus l'API, même avec une clé
+        // encore active : fermer le client ferme tous ses accès.
+        if ($configuration->customer->status !== CustomerStatus::ACTIVE || ! PortalOrganizationGate::allows($configuration->customer)) {
+            return $this->refuse('Ce client n’est plus actif : ses accès API sont suspendus.', JsonResponse::HTTP_FORBIDDEN);
         }
 
         /** @var list<string>|null $allowed */

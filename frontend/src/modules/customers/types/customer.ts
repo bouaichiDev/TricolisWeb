@@ -7,6 +7,8 @@
 export interface Customer {
   id: string
   organizationId: string
+  /** Agence des commandes passées depuis le portail client. */
+  defaultAgencyId: string | null
   code: string
   name: string
   legalName: string | null

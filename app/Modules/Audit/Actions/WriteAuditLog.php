@@ -6,13 +6,18 @@ namespace App\Modules\Audit\Actions;
 
 use App\Modules\Audit\Models\AuditLog;
 use App\Modules\Identity\Models\User;
+use App\Shared\Security\SensitiveData;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
+/**
+ * Écrit une entrée d'audit — le seul chemin vers `audit_logs`.
+ *
+ * Les valeurs passent par `SensitiveData` avant écriture : un secret ne
+ * devient jamais une donnée d'audit, quel que soit l'appelant (Phase 7).
+ */
 final class WriteAuditLog
 {
-    private const array SENSITIVE_KEYS = ['password', 'password_hash', 'password_confirmation', 'token', 'api_key', 'secret'];
-
     /**
      * `$ipAddress` permet aux Actions métier de journaliser sans dépendre de
      * la couche HTTP : elles reçoivent une adresse, pas une Request.
@@ -34,17 +39,6 @@ final class WriteAuditLog
 
     private function sanitize(?array $values): ?array
     {
-        if ($values === null) {
-            return null;
-        }
-        foreach ($values as $key => $value) {
-            if (in_array(strtolower((string) $key), self::SENSITIVE_KEYS, true)) {
-                $values[$key] = '[REDACTED]';
-            } elseif (is_array($value)) {
-                $values[$key] = $this->sanitize($value);
-            }
-        }
-
-        return $values;
+        return $values === null ? null : SensitiveData::redact($values);
     }
 }

@@ -248,18 +248,24 @@ Configuration :
 ```ini
 [program:tricolis-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=/usr/bin/php /var/www/tricolisba/artisan queue:work --sleep=3 --tries=3 --timeout=120
+command=/usr/bin/php /var/www/tricolisba/artisan queue:work --sleep=3 --tries=3 --timeout=1800 --max-time=3600
 directory=/var/www/tricolisba
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
 user=badradmin
-numprocs=1
+numprocs=2
 redirect_stderr=true
 stdout_logfile=/var/www/tricolisba/storage/logs/worker.log
 stopwaitsecs=3600
 ```
+
+Deux processus : un import de fichier du portail (jusqu'à 30 min) ne bloque
+plus l'envoi des mails. `--timeout=1800` couvre l'import le plus long ;
+`retry_after` (1900 s par défaut dans `config/queue.php`) le dépasse, sinon un
+second worker reprendrait un job encore en cours ; `stopwaitsecs=3600` laisse
+finir un job à l'arrêt. Détail : `docs/deployment/customer-portal-queue.md`.
 
 Activer le worker :
 

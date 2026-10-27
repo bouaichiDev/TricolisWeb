@@ -6,6 +6,7 @@ export interface CustomerPayload {
   code: string
   name: string
   legalName?: string | null
+  defaultAgencyId?: string | null
   email?: string | null
   phone?: string | null
   paymentMode?: string | null

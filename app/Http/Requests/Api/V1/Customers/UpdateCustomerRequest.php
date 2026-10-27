@@ -25,6 +25,7 @@ class UpdateCustomerRequest extends FormRequest
             'code' => ['sometimes', 'string', 'max:64'],
             'name' => ['sometimes', 'string', 'max:255'],
             'legalName' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'defaultAgencyId' => ['sometimes', 'nullable', 'string', 'ulid'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:255'],
             'paymentMode' => ['sometimes', 'nullable', 'string', 'max:64'],

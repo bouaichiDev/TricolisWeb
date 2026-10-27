@@ -22,6 +22,9 @@ class ProductionSeeder extends Seeder
             StatusTransitionSeeder::class,
             PricingVariableSeeder::class,
             RoleSeeder::class,
+            // Apres RoleSeeder : les roles du portail client s'accrochent aux
+            // organisations, et restent hors du role `admin` interne.
+            CustomerPortalSeeder::class,
             PasswordResetTemplateSeeder::class,
         ]);
     }

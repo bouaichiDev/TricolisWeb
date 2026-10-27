@@ -19,6 +19,7 @@ interface RoleDashboardCatalogueProps {
  * liste vient en fin — elle s'affiche donc, même livrée avant qu'on y pense.
  */
 const ORDER: DashboardWidgetCategory[] = [
+  'customer_portal',
   'operations',
   'planning',
   'claims',

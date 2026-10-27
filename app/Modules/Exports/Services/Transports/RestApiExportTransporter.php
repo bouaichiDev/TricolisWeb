@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Exports\Services\Transports;
 
+use App\Modules\Exports\Exceptions\TransientExportFailure;
 use App\Modules\Exports\Models\CustomerExportConfiguration;
 use App\Modules\Exports\Services\RemoteTargetGuard;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -59,14 +61,24 @@ final readonly class RestApiExportTransporter implements ExportTransporter
             throw new RuntimeException(sprintf('Méthode « %s » non autorisée pour un export.', $method));
         }
 
+        $pinned = $this->guard->pinnedResolve($url);
+
         $request = Http::withoutRedirecting()
             ->timeout($this->timeout($settings))
+            ->connectTimeout(10)
             ->withBody($contents, $this->contentType($settings, $contentType))
-            ->withHeaders($this->headers($settings));
+            ->withHeaders($this->headers($settings))
+            ->withOptions($pinned === [] ? [] : ['curl' => [CURLOPT_RESOLVE => $pinned]]);
 
-        $response = $this->authentication
-            ->apply($request, $configuration, $settings)
-            ->send($method, $url);
+        try {
+            $response = $this->authentication
+                ->apply($request, $configuration, $settings)
+                ->send($method, $url);
+        } catch (ConnectionException) {
+            // Ni l'URL ni le message de cURL : ils peuvent porter un secret
+            // passé en paramètre ou décrire l'infrastructure.
+            throw new TransientExportFailure('Le système du client est injoignable (délai dépassé ou connexion refusée).');
+        }
 
         if ($response->successful()) {
             return;
@@ -74,7 +86,14 @@ final readonly class RestApiExportTransporter implements ExportTransporter
 
         // Le statut, pas le corps : une reponse d'erreur reprend souvent la
         // requete, en-tetes compris.
-        throw new RuntimeException(sprintf('Le système du client a répondu %d.', $response->status()));
+        $message = sprintf('Le système du client a répondu %d.', $response->status());
+
+        // 429 et 5xx sont passagers : une relance a une chance d'aboutir.
+        if ($response->status() === 429 || $response->serverError()) {
+            throw new TransientExportFailure($message);
+        }
+
+        throw new RuntimeException($message);
     }
 
     /** @param array<string, mixed> $settings */

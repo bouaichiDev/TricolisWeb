@@ -1,20 +1,37 @@
 <?php
 
+/*
+| Origines autorisées (Phase 8 portail client).
+|
+| `CORS_ALLOWED_ORIGINS` : liste séparée par des virgules — le back-office et le
+| portail client de production, chacun sur son domaine. Sans elle, seul le
+| back-office historique est autorisé : le portail déployé ailleurs verrait
+| chaque appel refusé par le navigateur.
+|
+| Les origines `localhost` (développement, parcours Playwright) ne sont
+| ajoutées **que hors production**.
+*/
+$origins = array_values(array_filter(array_map(
+    'trim',
+    explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'https://tricolis.bouaichibadr.com')),
+)));
+
+$localOrigins = [
+    'http://localhost:5173',
+    // Le port des parcours Playwright du back-office (5174), puis le portail
+    // client en développement (5180) et sous Playwright (5181, 5182).
+    'http://localhost:5174',
+    'http://localhost:5180',
+    'http://localhost:5181',
+    'http://localhost:5182',
+];
+
 return [
     'paths' => ['api/*'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'https://tricolis.bouaichibadr.com',
-        'http://localhost:5173',
-        // Le port des parcours Playwright. `playwright.config.ts` lance son
-        // serveur web sur 5174 pour ne pas entrer en conflit avec un serveur de
-        // developpement deja ouvert ; sans cette origine, le navigateur des
-        // scenarios se voit refuser chaque appel et l'ecran affiche « Le
-        // serveur est injoignable ».
-        'http://localhost:5174',
-    ],
+    'allowed_origins' => env('APP_ENV') === 'production' ? $origins : [...$origins, ...$localOrigins],
 
     'allowed_origins_patterns' => [],
 

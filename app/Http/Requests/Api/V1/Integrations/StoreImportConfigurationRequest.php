@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Integrations;
 
+use App\Shared\Http\Rules\ImportMappingRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -44,8 +45,8 @@ class StoreImportConfigurationRequest extends FormRequest
             ],
             'sourceType' => ['required', 'string', 'max:64'],
             'fileFormat' => ['required', 'string', 'max:32'],
-            'mapping' => ['nullable', 'array', 'max:500'],
-            'validationRules' => ['nullable', 'array', 'max:500'],
+            'mapping' => ['nullable', 'array', 'max:500', new ImportMappingRules(ImportMappingRules::MAPPING)],
+            'validationRules' => ['nullable', 'array', 'max:500', new ImportMappingRules(ImportMappingRules::VALIDATION)],
             'isActive' => ['sometimes', 'boolean'],
         ];
     }

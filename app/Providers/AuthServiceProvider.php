@@ -46,6 +46,7 @@ use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
 use App\Modules\Statuses\Models\Status;
+use App\Modules\Stock\Models\StockAdjustmentRequest;
 use App\Modules\Stock\Models\StockBalance;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
@@ -100,6 +101,7 @@ use App\Policies\ProviderSettlementPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\ServicePolicy;
 use App\Policies\StatusPolicy;
+use App\Policies\StockAdjustmentRequestPolicy;
 use App\Policies\StockBalancePolicy;
 use App\Policies\StockItemPolicy;
 use App\Policies\StockLocationPolicy;
@@ -171,6 +173,7 @@ class AuthServiceProvider extends ServiceProvider
         StockBalance::class => StockBalancePolicy::class,
         StockMovement::class => StockMovementPolicy::class,
         StockReservation::class => StockReservationPolicy::class,
+        StockAdjustmentRequest::class => StockAdjustmentRequestPolicy::class,
         CustomerImportConfiguration::class => CustomerImportConfigurationPolicy::class,
         CustomerApiConfiguration::class => CustomerApiConfigurationPolicy::class,
         CustomerExportConfiguration::class => CustomerExportConfigurationPolicy::class,

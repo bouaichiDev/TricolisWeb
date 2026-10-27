@@ -32,19 +32,31 @@ final readonly class ImportPayloadValidator
      */
     public function refuseIfInvalid(array $payloads): void
     {
-        $rules = (new StoreOrderRequest)->rules();
         $errors = [];
 
         foreach ($payloads as $index => $payload) {
-            $validator = Validator::make($payload, $rules);
-
-            foreach ($validator->errors()->toArray() as $field => $messages) {
-                $errors["orders.{$index}.{$field}"] = $messages;
-            }
+            $errors = [...$errors, ...$this->errors($payload, $index)];
         }
 
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
+    }
+
+    /**
+     * Les erreurs d'une seule commande, préfixées par son rang.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, list<string>>
+     */
+    public function errors(array $payload, int $index): array
+    {
+        $errors = [];
+
+        foreach (Validator::make($payload, (new StoreOrderRequest)->rules())->errors()->toArray() as $field => $messages) {
+            $errors["orders.{$index}.{$field}"] = $messages;
+        }
+
+        return $errors;
     }
 }

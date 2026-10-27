@@ -29,6 +29,12 @@ enum DashboardWidgetCategory: string
     case QUICK_ACTIONS = 'quick_actions';
 
     /**
+     * Widgets du portail client : leurs données sont toujours bornées au
+     * Customer courant (`DashboardContext::customerId`).
+     */
+    case CUSTOMER_PORTAL = 'customer_portal';
+
+    /**
      * Ordre d'affichage, du plus courant au plus rare.
      *
      * Les actions rapides ferment la marche : ce sont des raccourcis, et les
@@ -46,6 +52,7 @@ enum DashboardWidgetCategory: string
             self::INTEGRATIONS => 6,
             self::ADMINISTRATION => 7,
             self::QUICK_ACTIONS => 8,
+            self::CUSTOMER_PORTAL => 0,
         };
     }
 }

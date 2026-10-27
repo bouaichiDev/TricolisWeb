@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'code',
     'label',
     'icon',
+    'color',
     'active',
     'is_to_send',
     'allows_content_changes',

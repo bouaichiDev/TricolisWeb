@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Organizations\StoreOrganizationRequest;
 use App\Http\Requests\Api\V1\Organizations\UpdateOrganizationRequest;
 use App\Http\Resources\Api\V1\Organizations\OrganizationResource;
+use App\Modules\CustomerPortal\Actions\ProvisionCustomerPortalRoles;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Models\Organization;
@@ -125,6 +126,7 @@ class OrganizationController extends Controller
             // Sans ses sources structurelles, l'organisation ne pourrait ni
             // creer un vehicule ni classer un colis.
             app(SeedSystemTypes::class)->execute($organization->id);
+            app(ProvisionCustomerPortalRoles::class)->execute($organization->id);
 
             return $organization;
         });

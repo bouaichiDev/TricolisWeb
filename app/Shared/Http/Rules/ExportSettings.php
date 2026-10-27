@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Http\Rules;
 
 use App\Modules\Exports\Enums\ExportTransport;
+use App\Modules\Exports\Services\ExportRetryPolicy;
 use App\Modules\Exports\Services\Transports\RestAuthentication;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -40,6 +41,39 @@ final readonly class ExportSettings implements ValidationRule
         $this->authentication($value, $fail);
         $this->mail($value, $fail);
         $this->file($value, $fail);
+        $this->retry($value, $fail);
+    }
+
+    /**
+     * Relance automatique : `retry.maxAttempts` (1 à 5), `retry.backoffSeconds`
+     * (10 à 3600). Voir `ExportRetryPolicy`.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    private function retry(array $settings, Closure $fail): void
+    {
+        $retry = $settings['retry'] ?? null;
+
+        if ($retry === null) {
+            return;
+        }
+
+        if (! is_array($retry)) {
+            $fail('La relance automatique doit être un objet (maxAttempts, backoffSeconds).');
+
+            return;
+        }
+
+        $attempts = $retry['maxAttempts'] ?? null;
+        $backoff = $retry['backoffSeconds'] ?? null;
+
+        if ($attempts !== null && (! is_int($attempts) || $attempts < 1 || $attempts > ExportRetryPolicy::MAX_ATTEMPTS)) {
+            $fail('Le nombre de tentatives doit être compris entre 1 et 5.');
+        }
+
+        if ($backoff !== null && (! is_int($backoff) || $backoff < 10 || $backoff > 3600)) {
+            $fail('Le délai entre deux tentatives doit être compris entre 10 et 3600 secondes.');
+        }
     }
 
     /**

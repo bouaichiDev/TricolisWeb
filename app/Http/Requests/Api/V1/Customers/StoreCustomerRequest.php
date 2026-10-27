@@ -25,6 +25,8 @@ class StoreCustomerRequest extends FormRequest
             'code' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:255'],
             'legalName' => ['nullable', 'string', 'max:255'],
+            // L'appartenance de l'agence à l'organisation est vérifiée par le contrôleur.
+            'defaultAgencyId' => ['nullable', 'string', 'ulid'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'paymentMode' => ['nullable', 'string', 'max:64'],

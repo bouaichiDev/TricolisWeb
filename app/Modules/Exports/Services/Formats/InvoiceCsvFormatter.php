@@ -6,6 +6,7 @@ namespace App\Modules\Exports\Services\Formats;
 
 use App\Modules\Exports\DTOs\InvoiceExportData;
 use App\Modules\Exports\Services\ExportFieldMapping;
+use App\Shared\Security\SpreadsheetSafe;
 
 /**
  * La facture en CSV.
@@ -37,7 +38,8 @@ final readonly class InvoiceCsvFormatter implements InvoiceFormatter
         $lines = is_array($payload['lines'] ?? null) ? $payload['lines'] : [];
         unset($payload['lines']);
 
-        $header = array_map(static fn ($value): string => (string) $value, $payload);
+        // Phase 7 : aucune cellule ne s'exécute à l'ouverture dans un tableur.
+        $header = array_map(static fn ($value): string => SpreadsheetSafe::cell($value), $payload);
 
         // Les cles de la premiere ligne fixent les colonnes : le mapping du
         // client a pu les renommer, et l'en-tete doit suivre.
@@ -89,13 +91,13 @@ final readonly class InvoiceCsvFormatter implements InvoiceFormatter
         foreach ($line as $key => $value) {
             if (is_array($value)) {
                 foreach ($value as $nested => $inner) {
-                    $flat[$key.'.'.$nested] = (string) $inner;
+                    $flat[$key.'.'.$nested] = SpreadsheetSafe::cell($inner);
                 }
 
                 continue;
             }
 
-            $flat[(string) $key] = (string) $value;
+            $flat[(string) $key] = SpreadsheetSafe::cell($value);
         }
 
         return $flat;

@@ -1,6 +1,5 @@
 <?php
 
-use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\RoleDashboardConfiguration;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Models\Order;

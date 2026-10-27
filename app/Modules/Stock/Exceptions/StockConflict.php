@@ -41,6 +41,18 @@ final class StockConflict extends RuntimeException
         return new self('Impossible de supprimer un article qui porte du stock, un mouvement ou une réservation.');
     }
 
+    /** Une demande de correction attend déjà sur cet article, à cet emplacement. */
+    public static function adjustmentAlreadyPending(): self
+    {
+        return new self('Une demande de correction est déjà en attente pour cet article.');
+    }
+
+    /** Une demande tranchée ne se rejoue pas : ni double validation, ni revirement. */
+    public static function adjustmentAlreadyReviewed(): self
+    {
+        return new self('Cette demande de correction a déjà été traitée.');
+    }
+
     public static function locationInUse(): self
     {
         return new self('Impossible de supprimer un emplacement qui porte des enfants, du stock ou une réservation active.');

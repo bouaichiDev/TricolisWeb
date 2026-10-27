@@ -9,8 +9,10 @@ use App\Http\Requests\Api\V1\Integrations\ImportOrdersRequest;
 use App\Http\Resources\Api\V1\Orders\OrderListResource;
 use App\Modules\Integrations\Actions\ImportOrdersFromFile;
 use App\Modules\Integrations\Actions\LocateImportedAddresses;
+use App\Modules\Integrations\DTOs\ImportOutcome;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Integrations\Services\ImportSourceReader;
+use App\Modules\Integrations\Services\Mapping\MappingDirectives;
 use App\Modules\Orders\Models\Order;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -70,7 +72,7 @@ final class ImportOrdersController extends Controller
         }
 
         try {
-            $rows = $reader->read($contents, (string) $configuration->file_format);
+            $rows = $reader->read($contents, (string) $configuration->file_format, MappingDirectives::recordsPath($mapping));
         } catch (RuntimeException $exception) {
             return ApiResponse::error($exception->getMessage(), JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -82,7 +84,7 @@ final class ImportOrdersController extends Controller
         // Les erreurs de validation remontent en 422 depuis l'Action, préfixées
         // par le rang de la commande dans le fichier. Rien n'est créé dans ce
         // cas : l'Action valide tout avant d'ouvrir la transaction.
-        $orders = $import->execute(
+        $summary = $import->execute(
             $configuration,
             $rows,
             (string) $request->validated('agencyId'),
@@ -92,8 +94,13 @@ final class ImportOrdersController extends Controller
             $request,
         );
 
+        $orders = $summary->orders(ImportOutcome::CREATED, ImportOutcome::UPDATED);
+
         return ApiResponse::created([
             'rowCount' => count($rows),
+            // Une référence déjà importée n'est pas recréée : le rejeu d'un
+            // fichier ne double pas les commandes.
+            'skipped' => $summary->count(ImportOutcome::SKIPPED_DUPLICATE),
             'orders' => OrderListResource::collection($orders)->resolve($request),
             // Après la transaction : un fichier refusé n'aurait rien à situer.
             'geocoding' => $locate->execute($orders, $organizationId),

@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { contentOf, type ExportContent } from '../types/exportContents'
 import {
-  INVOICE_FORMATS,
-  INVOICE_TRANSPORTS,
   needsHost,
   type AuthMode,
   type ExportConfiguration,
@@ -18,7 +17,7 @@ import {
 import { ExportAuthFields } from './ExportAuthFields'
 import { ExportConnectionFields } from './ExportConnectionFields'
 import { ExportDeliveryFields } from './ExportDeliveryFields'
-import { AsyncSelect } from '@/shared/components/form/AsyncSelect'
+import { ExportTypeFields } from './ExportTypeFields'
 import { Button } from '@/shared/components/ui/button'
 import {
   Dialog,
@@ -65,6 +64,7 @@ export function ExportConfigurationDialog({
   const { t } = useTranslation()
 
   const [name, setName] = useState(configuration?.name ?? '')
+  const [content, setContent] = useState<ExportContent>(contentOf(configuration?.exportType))
   const [format, setFormat] = useState(configuration?.format ?? 'json')
   const [transport, setTransport] = useState(configuration?.transport ?? 'rest_api')
   const [fileNamePattern, setFileNamePattern] = useState(configuration?.fileNamePattern ?? '')
@@ -98,6 +98,7 @@ export function ExportConfigurationDialog({
         isActive,
         connection,
         settings,
+        content,
       }),
     )
 
@@ -122,21 +123,18 @@ export function ExportConfigurationDialog({
             />
           </div>
 
-          <AsyncSelect
-            label={t('exports.configurations.fields.transport')}
-            value={transport}
-            onChange={setTransport}
-            options={INVOICE_TRANSPORTS.map((value) => ({
-              value,
-              label: t(`exports.transports.${value}`),
-            }))}
-          />
-
-          <AsyncSelect
-            label={t('exports.configurations.fields.format')}
-            value={format}
-            onChange={setFormat}
-            options={INVOICE_FORMATS.map((value) => ({ value, label: value.toUpperCase() }))}
+          <ExportTypeFields
+            content={content}
+            transport={transport}
+            format={format}
+            settings={settings}
+            onContentChange={(next) => {
+              setContent(next)
+              if (next === 'order_status') setFormat('json')
+            }}
+            onTransportChange={setTransport}
+            onFormatChange={setFormat}
+            onSettingsChange={patch}
           />
 
           {transport === 'rest_api' ? (

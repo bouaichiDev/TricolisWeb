@@ -10,6 +10,8 @@ import { EntityHeader } from '@/shared/components/layout/EntityHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Badge } from '@/shared/components/ui/badge'
 
+import { ImportConnectionPanel } from '../components/ImportConnectionPanel'
+import { ImportRunsPanel } from '../components/ImportRunsPanel'
 import { ImportPreviewPanel } from '../components/ImportPreviewPanel'
 import { ImportRunPanel } from '../components/ImportRunPanel'
 import {
@@ -24,8 +26,9 @@ import {
  * JSON formaté. Les rendre sous forme de tableau supposerait une structure que
  * le backend ne fixe pas, et masquerait tout ce qui n'y entre pas.
  *
- * Aucune trace d'exécution n'est affichée : il n'existe ni table `Import`, ni
- * route pour en produire une. Le §5 interdit d'inventer cet écran.
+ * Aucune trace d'exécution ligne à ligne n'est affichée : il n'existe pas de
+ * table `Import` (BLOCKED_DESIGN_DECISION, Phase 6 portail). La connexion, son
+ * test et la passe manuelle ont en revanche leur section.
  *
  * L'essai, en revanche, y a sa place : éprouver la correspondance sur un
  * fichier ne crée rien et ne garde rien, mais c'est la seule façon de vérifier
@@ -93,6 +96,20 @@ export function CustomerImportConfigurationDetailPage() {
         description={t('integrations.imports.validationRulesHint')}
       >
         {block(configuration.validationRules)}
+      </SectionCard>
+
+      <SectionCard
+        title={t('integrations.imports.connection.title')}
+        description={t('integrations.imports.connection.subtitle')}
+      >
+        <ImportConnectionPanel configurationId={id} />
+      </SectionCard>
+
+      <SectionCard
+        title={t('integrations.imports.runs.title')}
+        description={t('integrations.imports.runs.subtitle')}
+      >
+        <ImportRunsPanel configurationId={id} />
       </SectionCard>
 
       <SectionCard

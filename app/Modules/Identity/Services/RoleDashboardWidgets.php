@@ -7,6 +7,7 @@ namespace App\Modules\Identity\Services;
 use App\Modules\Identity\Models\RoleDashboardConfiguration;
 use App\Shared\Dashboard\DashboardWidget;
 use App\Shared\Dashboard\DashboardWidgetRegistry;
+use App\Shared\Enums\RoleScope;
 
 /**
  * Ce qu'un rôle a choisi de montrer, confronté au catalogue.
@@ -34,22 +35,27 @@ final readonly class RoleDashboardWidgets
      */
     private function __construct(private array $positions) {}
 
-    public static function for(string $roleId): self
+    /**
+     * `$scope` choisit le catalogue : celui du portail pour un rôle client,
+     * l'interne sinon. Une clé qui n'appartient pas au catalogue du rôle est
+     * écartée comme une clé disparue.
+     */
+    public static function for(string $roleId, ?RoleScope $scope = RoleScope::ORGANIZATION): self
     {
         $configuration = RoleDashboardConfiguration::where('role_id', $roleId)->first();
 
         if ($configuration === null) {
-            return self::fromCatalogueDefaults();
+            return self::fromCatalogueDefaults($scope);
         }
 
-        return new self(self::readSelection($configuration->widgets ?? []));
+        return new self(self::readSelection($configuration->widgets ?? [], $scope));
     }
 
-    private static function fromCatalogueDefaults(): self
+    private static function fromCatalogueDefaults(?RoleScope $scope): self
     {
         $positions = [];
 
-        foreach (DashboardWidgetRegistry::defaults() as $widget) {
+        foreach (DashboardWidgetRegistry::defaultsFor($scope) as $widget) {
             $positions[$widget->key] = $widget->defaultPosition;
         }
 
@@ -68,7 +74,7 @@ final readonly class RoleDashboardWidgets
      * @param  array<int|string, mixed>  $raw
      * @return array<string, int>
      */
-    private static function readSelection(array $raw): array
+    private static function readSelection(array $raw, ?RoleScope $scope): array
     {
         $positions = [];
 
@@ -77,7 +83,7 @@ final readonly class RoleDashboardWidgets
                 continue;
             }
 
-            $widget = DashboardWidgetRegistry::find($entry['key']);
+            $widget = DashboardWidgetRegistry::findIn($scope, $entry['key']);
 
             if ($widget === null) {
                 continue;

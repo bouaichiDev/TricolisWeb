@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Integrations;
 
+use App\Shared\Http\Rules\ImportMappingRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,8 +31,8 @@ class UpdateImportConfigurationRequest extends FormRequest
             ],
             'sourceType' => ['sometimes', 'string', 'max:64'],
             'fileFormat' => ['sometimes', 'string', 'max:32'],
-            'mapping' => ['sometimes', 'nullable', 'array', 'max:500'],
-            'validationRules' => ['sometimes', 'nullable', 'array', 'max:500'],
+            'mapping' => ['sometimes', 'nullable', 'array', 'max:500', new ImportMappingRules(ImportMappingRules::MAPPING)],
+            'validationRules' => ['sometimes', 'nullable', 'array', 'max:500', new ImportMappingRules(ImportMappingRules::VALIDATION)],
             'isActive' => ['sometimes', 'boolean'],
         ];
     }

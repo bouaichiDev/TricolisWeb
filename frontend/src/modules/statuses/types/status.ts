@@ -15,6 +15,8 @@ export interface Status {
   code: string
   label: string
   icon: string | null
+  /** Couleur `#RRGGBB` du statut, montrée par le portail client ; `null` : teinte par défaut. */
+  color?: string | null
   active: boolean
   /** Ce statut déclenche-t-il un envoi au client ? */
   isToSend: boolean
@@ -83,6 +85,7 @@ export interface StatusPayload {
   code: string
   label: string
   icon?: string | null
+  color?: string | null
   active?: boolean
   isToSend?: boolean
   allowsContentChanges?: boolean

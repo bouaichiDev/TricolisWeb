@@ -6,13 +6,14 @@ import { withPermissions } from '@/test/fixtures'
 import { renderWithProviders } from '@/test/renderWithProviders'
 
 import { CustomerImportConfigurationForm } from './CustomerImportConfigurationForm'
-import { CUSTOMER_ID, serveCustomers } from '../testSupport'
+import { CUSTOMER_ID, serveCustomers, serveTargetFields } from '../testSupport'
 import type { CustomerImportConfigurationPayload } from '../types/customerIntegration'
 
 type Submit = (payload: CustomerImportConfigurationPayload) => Promise<void>
 
 function render(onSubmit: Submit) {
   serveCustomers()
+  serveTargetFields()
   renderWithProviders(
     <CustomerImportConfigurationForm
       onSubmit={onSubmit}
@@ -157,11 +158,11 @@ describe('référence des champs acceptés', () => {
    * endpoints. Les fondre laisserait croire qu'un même fichier porte des colis
    * et un type de réclamation.
    */
-  it('sépare les deux cibles d’import', async () => {
+  it('ne propose que la cible que le moteur importe : la commande', async () => {
     render(async () => {})
 
     expect(await screen.findByText('Import de commandes')).toBeInTheDocument()
-    expect(screen.getByText('Import de réclamations')).toBeInTheDocument()
+    expect(screen.queryByText('Import de réclamations')).not.toBeInTheDocument()
 
     // Les services sont la section la plus exigeante d'une commande : presque
     // tous leurs champs sont obligatoires.
@@ -169,18 +170,18 @@ describe('référence des champs acceptés', () => {
       screen.getByRole('button', { name: 'Ajouter services[].serviceNumber à la correspondance' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Ajouter claimType à la correspondance' }),
-    ).toBeInTheDocument()
+      screen.queryByRole('button', { name: 'Ajouter claimType à la correspondance' }),
+    ).not.toBeInTheDocument()
   })
 
   /**
-   * Le point le plus facile à manquer : rien ne lit encore ce mapping. Le taire
-   * laisserait croire qu'enregistrer déclenche quelque chose.
+   * Depuis la Phase 6 portail, la correspondance est exécutée : l'écran le
+   * dit, avec les directives et les conversions que le backend accepte.
    */
-  it('dit que la correspondance n’est pas exécutée', async () => {
+  it('dit que la correspondance est exécutée, et par quelles directives', async () => {
     render(async () => {})
 
-    expect(await screen.findByText(/pas exécutée/)).toBeInTheDocument()
+    expect(await screen.findByText(/exécutée par le moteur d’import.*decimal/)).toBeInTheDocument()
   })
 })
 
@@ -282,17 +283,5 @@ describe('liaisons entre lignes, colis et services', () => {
       packages: [{ key: '' }],
       services: [{ packages: [{ packageKey: '', handlingInstructions: '' }] }],
     })
-  })
-
-  /** Une réclamation se rattache à ce qu'elle conteste. */
-  it('documente les rattachements d’une réclamation', async () => {
-    render(async () => {})
-    expect(await screen.findByText('Rattachements')).toBeInTheDocument()
-
-    for (const field of ['orderId', 'orderServiceId', 'tourId']) {
-      expect(
-        screen.getByRole('button', { name: `Ajouter ${field} à la correspondance` }),
-      ).toBeInTheDocument()
-    }
   })
 })

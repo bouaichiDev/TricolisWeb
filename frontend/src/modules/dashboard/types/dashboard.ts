@@ -58,6 +58,8 @@ export type DashboardWidgetCategory =
   | 'integrations'
   | 'administration'
   | 'quick_actions'
+  /** Widgets des rôles du portail client, bornés au client qui les regarde. */
+  | 'customer_portal'
 
 /** Un chiffre. `null` dit « pas de valeur », ce qui n'est pas zéro. */
 export interface KpiData {

@@ -9,6 +9,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { formatDateTime } from '@/shared/utils/format'
 
+import { CustomerAdjustmentRequests } from './adjustments/CustomerAdjustmentRequests'
 import { StockKpiRow } from './StockKpiRow'
 import { useCustomerStockBalances } from '../hooks/useStockBalances'
 import { useCustomerStockItems } from '../hooks/useStockItems'
@@ -143,6 +144,8 @@ export function CustomerStockTab({ customerId }: { customerId: string }) {
           emptyMessage={t('stock.noBalance')}
         />
       </SectionCard>
+
+      <CustomerAdjustmentRequests customerId={customerId} />
 
       <SectionCard title={t('stock.elsewhere')} description={t('stock.elsewhereHint')}>
         <ul className="flex flex-wrap gap-2">

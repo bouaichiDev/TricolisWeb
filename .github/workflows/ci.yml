@@ -1,0 +1,95 @@
+name: CI
+
+# Phase 8 portail : les contrôles qui conditionnent tout déploiement.
+# Lancé seul sur chaque pull request, et appelé par `deploy-production.yml`
+# avant de déployer `main`.
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Adresse publique de l'API, compilée dans les deux applications React.
+  VITE_API_URL: https://tricolisba.bouaichibadr.com
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tricolisweb_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, mbstring, intl, zip, gd, ftp, bcmath, dom, xmlreader
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare testing environment
+        run: |
+          cp .env.testing.example .env.testing
+          sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=root/' .env.testing
+          php artisan key:generate --env=testing --force
+
+      - name: Code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Customer portal route security
+        run: php artisan customer-portal:route-matrix --check --env=testing
+
+      - name: Test suite
+        run: php artisan test --env=testing
+
+  frontend:
+    name: Frontend checks (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [frontend, customer-portal]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install, lint, typecheck, test, build
+        working-directory: ${{ matrix.app }}
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build

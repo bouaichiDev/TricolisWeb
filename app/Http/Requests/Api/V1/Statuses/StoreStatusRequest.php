@@ -46,6 +46,7 @@ class StoreStatusRequest extends FormRequest
             ],
             'label' => ['required', 'string', 'max:255'],
             'icon' => ['nullable', 'string', 'max:64'],
+            'color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'active' => ['sometimes', 'boolean'],
             'isToSend' => ['sometimes', 'boolean'],
             'allowsContentChanges' => ['sometimes', 'boolean'],

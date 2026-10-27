@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Actions;
 
+use App\Modules\CustomerPortal\Actions\ProvisionCustomerPortalRoles;
 use App\Modules\Identity\Models\Permission;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\RolePermission;
@@ -87,6 +88,10 @@ final readonly class ProvisionOrganization
             // creer un vehicule ni classer un colis.
             app(SeedSystemTypes::class)->execute($organization->id);
 
+            // Les rôles du portail client : sans eux, le premier client
+            // invité n'aurait aucun rôle à recevoir.
+            app(ProvisionCustomerPortalRoles::class)->execute($organization->id);
+
             return ['user' => $user, 'organization' => $organization];
         });
     }
@@ -106,7 +111,9 @@ final readonly class ProvisionOrganization
         // retrait, toute inscription au formulaire public produisait un compte
         // capable de créer et de supprimer des organisations : il suffisait de
         // s'inscrire pour administrer Tricolis.
-        $organizationalPermissions = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->pluck('id');
+        $organizationalPermissions = Permission::internal()
+            ->whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)
+            ->pluck('id');
 
         foreach ($organizationalPermissions as $permissionId) {
             RolePermission::create([

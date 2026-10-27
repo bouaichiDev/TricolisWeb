@@ -8,7 +8,7 @@ use App\Modules\Audit\Actions\WriteAuditLog;
 use App\Modules\Exports\Exceptions\ExportJobNotRetryable;
 use App\Modules\Exports\Jobs\ProcessExportJob;
 use App\Modules\Exports\Models\ExportJob;
-use App\Shared\Database\MorphMap;
+use App\Modules\Exports\Services\Content\ExportContentFactory;
 use App\Shared\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
 
@@ -34,9 +34,10 @@ use Illuminate\Support\Facades\DB;
  * **La relance renvoie réellement, depuis la Phase 6.** Tant qu'aucun export ne
  * partait, remettre les compteurs suffisait ; maintenant qu'une facture est
  * transmise, un bouton « Relancer » qui n'envoie rien mentirait à l'exploitant.
- * Seuls les envois de facture sont remis en file : c'est le seul contenu qu'on
- * sait produire, et rejouer un export dont personne ne génère le fichier le
- * ferait échouer aussitôt.
+ * Sont remis en file les envois dont on sait produire le contenu — facture
+ * clôturée, statut de commande (Phase 6 portail) ; rejouer un export dont
+ * personne ne génère le fichier le ferait échouer aussitôt. La configuration
+ * doit être active.
  *
  * Pour ceux-là, le compteur n'est **pas** incrémenté ici : le renvoi comptera sa
  * propre tentative, et l'avancer deux fois ferait mentir la seule mesure dont
@@ -44,7 +45,10 @@ use Illuminate\Support\Facades\DB;
  */
 final readonly class RetryExportJobAction
 {
-    public function __construct(private WriteAuditLog $audit) {}
+    public function __construct(
+        private WriteAuditLog $audit,
+        private ExportContentFactory $contents,
+    ) {}
 
     public function execute(ExportJob $job, string $status, AuditContext $context): ExportJob
     {
@@ -58,6 +62,12 @@ final readonly class RetryExportJobAction
 
             if ($locked->sent_at !== null) {
                 throw ExportJobNotRetryable::alreadySent();
+            }
+
+            // Relancer vers une destination retirée du service la ferait
+            // échouer aussitôt : la réactivation est une décision à part.
+            if ($locked->configuration === null || ! $locked->configuration->is_active) {
+                throw ExportJobNotRetryable::inactiveConfiguration();
             }
 
             $before = $locked->only(['status', 'attempt_count', 'error_message']);
@@ -93,6 +103,6 @@ final readonly class RetryExportJobAction
     /** Sait-on refaire cet envoi, ou seulement en remettre les compteurs ? */
     private function resends(ExportJob $job): bool
     {
-        return $job->entity_type === MorphMap::INVOICE && $job->entity_id !== null;
+        return $this->contents->supports($job->entity_type) && $job->entity_id !== null;
     }
 }

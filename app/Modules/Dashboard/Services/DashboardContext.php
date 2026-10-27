@@ -32,6 +32,11 @@ final readonly class DashboardContext
         public string $organizationId,
         public CarbonImmutable $today,
         public ?DashboardPeriod $period = null,
+        /**
+         * Client du portail, quand le tableau de bord est le sien. Une source
+         * `customer_portal` refuse de calculer sans lui.
+         */
+        public ?string $customerId = null,
     ) {}
 
     public static function forOrganization(string $organizationId, ?DashboardPeriod $period = null): self
@@ -39,10 +44,15 @@ final readonly class DashboardContext
         return new self($organizationId, CarbonImmutable::now()->startOfDay(), $period);
     }
 
+    public static function forCustomer(string $organizationId, string $customerId, ?DashboardPeriod $period = null): self
+    {
+        return new self($organizationId, CarbonImmutable::now()->startOfDay(), $period, $customerId);
+    }
+
     /** Le même contexte, pour un widget qui ne suit pas la période. */
     public function withoutPeriod(): self
     {
-        return $this->period === null ? $this : new self($this->organizationId, $this->today);
+        return $this->period === null ? $this : new self($this->organizationId, $this->today, null, $this->customerId);
     }
 
     /**

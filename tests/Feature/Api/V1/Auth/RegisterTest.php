@@ -2,7 +2,9 @@
 
 use App\Modules\Identity\Models\Permission;
 use App\Modules\Identity\Models\Role;
+use App\Modules\Identity\Models\RolePermission;
 use App\Modules\Identity\Services\PlatformAccess;
+use App\Shared\Enums\RoleScope;
 
 beforeEach(function (): void {
     $this->seed();
@@ -49,12 +51,16 @@ describe('transporter registration', function (): void {
         // Le rôle `admin` de l'organisation créée reçoit tout **sauf** les
         // permissions réservées à la plateforme : s'inscrire ne donne pas le
         // droit de créer d'autres organisations.
-        $organizational = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
+        // Les rôles du portail client (`CUSTOMER_*`) ont leurs propres
+        // permissions, comptées à part : elles n'entrent dans aucun rôle interne.
+        $organizational = Permission::internal()->whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
+        $customerRoles = RolePermission::whereIn('role_id', Role::where('scope', RoleScope::CUSTOMER->value)->pluck('id'))->count();
 
         $this->assertDatabaseCount(
             'role_permissions',
-            Permission::count()          // rôle plateforme semé
-            + $organizational * 2        // rôle admin de l'organisation semée et de la nouvelle
+            Permission::internal()->count() // rôle plateforme semé
+            + $organizational * 2           // rôle admin de l'organisation semée et de la nouvelle
+            + $customerRoles                // rôles du portail client des deux organisations
         );
 
         $registeredRole = Role::where('organization_id', $organizationId)->firstOrFail();

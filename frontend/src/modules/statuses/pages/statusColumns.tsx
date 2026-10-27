@@ -49,7 +49,14 @@ export function statusColumns(
       sortKey: 'code',
       cell: (row) => <span className="font-medium">{row.code}</span>,
     },
-    { key: 'label', header: t('statuses.fields.label'), sortKey: 'label', cell: (row) => row.label },
+    { key: 'label', header: t('statuses.fields.label'), sortKey: 'label', cell: (row) => (
+        <span className="flex items-center gap-2">
+          {/* La couleur que le portail client montre pour ce statut. */}
+          {row.color ? <span className="size-3 shrink-0 rounded-full border" style={{ backgroundColor: row.color }} aria-hidden /> : null}
+          {row.label}
+        </span>
+      ),
+    },
     {
       key: 'icon',
       header: t('statuses.fields.icon'),

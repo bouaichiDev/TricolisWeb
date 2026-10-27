@@ -20,6 +20,9 @@ use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Contacts\Models\AddressContact;
 use App\Modules\Contacts\Models\Contact;
 use App\Modules\Contacts\Models\EntityContact;
+use App\Modules\CustomerPortal\Models\CustomerUser;
+use App\Modules\CustomerPortal\Models\CustomerUserInvitation;
+use App\Modules\CustomerPortal\Models\PublicTrackingLink;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\Customers\Models\CustomerSite;
 use App\Modules\Documents\Models\Document;
@@ -48,6 +51,7 @@ use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
 use App\Modules\Statuses\Models\Status;
+use App\Modules\Stock\Models\StockAdjustmentRequest;
 use App\Modules\Stock\Models\StockBalance;
 use App\Modules\Stock\Models\StockItem;
 use App\Modules\Stock\Models\StockLocation;
@@ -189,6 +193,14 @@ final class MorphMap
 
     public const string COMMUNICATION_ATTACHMENT = 'communication_attachment';
 
+    public const string CUSTOMER_USER = 'customer_user';
+
+    public const string CUSTOMER_USER_INVITATION = 'customer_user_invitation';
+
+    public const string PUBLIC_TRACKING_LINK = 'public_tracking_link';
+
+    public const string STOCK_ADJUSTMENT_REQUEST = 'stock_adjustment_request';
+
     /**
      * Enregistre la morph map auprÃ¨s d'Eloquent.
      *
@@ -257,6 +269,10 @@ final class MorphMap
             self::COMMUNICATION_RULE => CommunicationRule::class,
             self::ORDER_COMMUNICATION => OrderCommunication::class,
             self::COMMUNICATION_ATTACHMENT => CommunicationAttachment::class,
+            self::CUSTOMER_USER => CustomerUser::class,
+            self::CUSTOMER_USER_INVITATION => CustomerUserInvitation::class,
+            self::PUBLIC_TRACKING_LINK => PublicTrackingLink::class,
+            self::STOCK_ADJUSTMENT_REQUEST => StockAdjustmentRequest::class,
         ]);
     }
 

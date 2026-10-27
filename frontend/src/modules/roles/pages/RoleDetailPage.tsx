@@ -58,7 +58,11 @@ export function RoleDetailPage() {
       <SectionCard title={t('roles.sections.general')}>
         <dl className="grid gap-x-8 sm:grid-cols-3">
           <DetailField label={t('roles.fields.scope')}>
-            {role.scope === 'platform' ? t('roles.platform') : t('roles.scopeOrganization')}
+            {role.scope === 'platform'
+              ? t('roles.platform')
+              : role.scope === 'customer'
+                ? t('roles.scopeCustomer')
+                : t('roles.scopeOrganization')}
           </DetailField>
           <DetailField label={t('roles.fields.isSystem')}>
             {role.isSystem ? t('common.yes') : t('common.no')}
@@ -82,7 +86,9 @@ export function RoleDetailPage() {
       <Tabs defaultValue="permissions">
         <TabsList>
           <TabsTrigger value="permissions">{t('roles.sections.permissions')}</TabsTrigger>
-          <TabsTrigger value="menu">{t('roles.sections.menu')}</TabsTrigger>
+          {role.scope === 'customer' ? null : (
+            <TabsTrigger value="menu">{t('roles.sections.menu')}</TabsTrigger>
+          )}
           <TabsTrigger value="dashboard">{t('roles.sections.dashboard')}</TabsTrigger>
         </TabsList>
 

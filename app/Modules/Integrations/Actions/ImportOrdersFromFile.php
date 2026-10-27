@@ -5,53 +5,42 @@ declare(strict_types=1);
 namespace App\Modules\Integrations\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Integrations\DTOs\ImportOutcome;
+use App\Modules\Integrations\DTOs\ImportRun;
+use App\Modules\Integrations\DTOs\ImportSummary;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
-use App\Modules\Integrations\Services\ImportPayloadValidator;
-use App\Modules\Integrations\Services\ImportReferenceResolver;
-use App\Modules\Integrations\Services\MappingInterpreter;
-use App\Modules\Orders\Actions\CreateFullOrder;
-use App\Modules\Orders\DTOs\CreateOrderData;
-use App\Modules\Orders\Enums\OrderSource;
-use App\Modules\Orders\Models\Order;
+use App\Modules\Integrations\Services\Import\CustomerImportHistory;
+use App\Modules\Integrations\Services\Import\ImportPipeline;
+use App\Modules\Integrations\Services\Sources\ImportSourceKind;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Crée les commandes décrites par un fichier client.
+ * Crée les commandes d'un fichier déposé **depuis le back-office**.
  *
- * Le fichier a déjà été lu et la correspondance existe : ce qui se joue ici est
- * ce que la prévisualisation ne fait pas — écrire.
+ * L'écriture passe par la chaîne commune (`ImportPipeline` →
+ * `ImportCustomerOrderAction`) ; ce qui reste propre à ce canal est sa
+ * convention historique : **tout ou rien**. Une seule commande refusée annule
+ * le fichier entier, erreurs préfixées par le rang (`orders.1.services.0.unit`),
+ * et l'utilisateur corrige puis redépose.
  *
- * **Tout ou rien.** Un fichier à moitié importé laisserait un état que personne
- * ne saurait reprendre, et le §4 interdit la table d'historique qui permettrait
- * de le rattraper. Refuser en bloc est la seule issue tenable sans elle.
+ * La transaction enveloppe tout, résolution comprise : l'adresse d'un client
+ * final créée pour une commande disparaît si le fichier est refusé.
  *
- * La transaction enveloppe **toute** la méthode, et non la seule création des
- * commandes : la résolution des références écrit elle aussi, depuis qu'une
- * prestation dont le fichier porte l'adresse du destinataire la fait naître.
- * N'ouvrir la transaction qu'après la validation laisserait ces adresses
- * derrière un fichier refusé, sans commande pour les porter ni écran pour les
- * retrouver. L'ordre, lui, ne change pas : rien n'est créé avant que tout soit
- * validé.
- *
- * **Ce que le fichier ne dit pas, l'écran le fournit.** Le client vient de la
- * configuration — elle lui appartient — et l'agence est choisie à l'import,
- * parce que `orders.agency_id` est `NOT NULL` : une commande sans agence
- * n'existe pas. Le dépôt reste facultatif, comme en base.
+ * **Ce que le fichier ne dit pas, l'écran le fournit** : le client vient de la
+ * configuration, l'agence est choisie à l'import (`orders.agency_id` est
+ * `NOT NULL`), le dépôt reste facultatif.
  */
 final readonly class ImportOrdersFromFile
 {
     public function __construct(
-        private MappingInterpreter $interpreter,
-        private ImportReferenceResolver $references,
-        private ImportPayloadValidator $validator,
-        private CreateFullOrder $orders,
+        private ImportPipeline $pipeline,
+        private CustomerImportHistory $history,
     ) {}
 
     /**
      * @param  list<array<string, mixed>>  $rows
-     * @return list<Order>
      *
      * @throws ValidationException
      */
@@ -63,123 +52,63 @@ final readonly class ImportOrdersFromFile
         string $organizationId,
         User $user,
         Request $request,
-    ): array {
-        /** @var array<string, mixed> $mapping */
-        $mapping = $configuration->mapping ?? [];
-
-        return DB::transaction(fn (): array => $this->build(
-            $mapping,
-            $rows,
+    ): ImportSummary {
+        $run = ImportRun::make(
             $configuration,
-            $agencyId,
-            $depotId,
             $organizationId,
             $user,
-            $request,
-        ));
-    }
-
-    /**
-     * Le travail lui-même, sous la transaction ouverte par `execute()`.
-     *
-     * @param  array<string, mixed>  $mapping
-     * @param  list<array<string, mixed>>  $rows
-     * @return list<Order>
-     *
-     * @throws ValidationException
-     */
-    private function build(
-        array $mapping,
-        array $rows,
-        CustomerImportConfiguration $configuration,
-        string $agencyId,
-        ?string $depotId,
-        string $organizationId,
-        User $user,
-        Request $request,
-    ): array {
-        $payloads = [];
-
-        foreach ($this->group($mapping, $rows) as $index => $group) {
-            $payload = $this->interpreter->apply($mapping, $group);
-
-            // Les codes metier deviennent des identifiants **avant** la
-            // validation : `serviceId` et `addressId` sont obligatoires, et un
-            // fichier client ne les porte pas.
-            $payload = $this->references->resolve(
-                $payload,
-                $configuration->customer_id,
-                $organizationId,
-                $index,
-            );
-
-            $payloads[] = array_merge($payload, [
-                'customerId' => $configuration->customer_id,
-                'agencyId' => $agencyId,
-                'depotId' => $depotId,
-                'source' => $this->sourceOf($configuration)->value,
-            ]);
-        }
-
-        $this->validator->refuseIfInvalid($payloads);
-
-        return array_map(
-            fn (array $payload): Order => $this->orders->execute(
-                CreateOrderData::fromArray($payload),
-                $organizationId,
-                $user,
-                $request,
-            ),
-            $payloads,
+            $agencyId,
+            $depotId,
+            ImportSourceKind::orderSource($configuration),
+            automated: false,
+            request: $request,
+            channel: ImportRun::INTERNAL,
         );
+
+        $startedAt = now();
+        $context = ['file' => $request->file('file')?->getClientOriginalName()];
+        $summary = null;
+
+        try {
+            DB::transaction(function () use ($run, $rows, &$summary): void {
+                $summary = $this->pipeline->run($run, $rows);
+                $errors = [];
+
+                foreach ($summary->outcomes as $outcome) {
+                    if (! $outcome->succeeded()) {
+                        $errors = [...$errors, ...$this->errorsOf($outcome)];
+                    }
+                }
+
+                if ($errors !== []) {
+                    throw ValidationException::withMessages($errors);
+                }
+            });
+        } catch (ValidationException $exception) {
+            // Hors transaction : l'historique d'un fichier refusé survit à l'annulation.
+            if ($summary instanceof ImportSummary) {
+                $this->history->record($run, $summary, $context, $startedAt, rolledBack: true);
+            }
+
+            throw $exception;
+        }
+
+        $this->history->record($run, $summary, $context, $startedAt);
+
+        return $summary;
     }
 
     /**
-     * Un fichier plat porte souvent **plusieurs** commandes.
-     *
-     * Elles se reconnaissent à leur référence : les lignes qui partagent la
-     * même valeur appartiennent à la même commande. Sans référence
-     * correspondante, tout le fichier en décrit une seule — ce qui est le cas
-     * d'un export ne contenant qu'un envoi.
-     *
-     * @param  array<string, mixed>  $mapping
-     * @param  list<array<string, mixed>>  $rows
-     * @return list<list<array<string, mixed>>>
+     * @return array<string, list<string>>
      */
-    private function group(array $mapping, array $rows): array
+    private function errorsOf(ImportOutcome $outcome): array
     {
-        $column = $mapping['externalReference'] ?? null;
+        $errors = [];
 
-        if (! is_string($column)) {
-            return [$rows];
+        foreach ($outcome->errors as $field => $messages) {
+            $errors[$field === '_' ? "orders.{$outcome->index}" : $field] = $messages;
         }
 
-        $groups = [];
-
-        foreach ($rows as $row) {
-            // Une ligne sans référence n'est pas rattachable : elle rejoint le
-            // groupe sans nom plutot que d'etre perdue en silence.
-            $key = is_scalar($row[$column] ?? null) ? (string) $row[$column] : '';
-            $groups[$key][] = $row;
-        }
-
-        return array_values($groups);
-    }
-
-    /**
-     * Le format du fichier, tel que la commande le portera.
-     *
-     * `source` dit d'où vient une commande, et c'est ce qui permettra de
-     * retrouver les commandes importées dans la liste.
-     */
-    private function sourceOf(CustomerImportConfiguration $configuration): OrderSource
-    {
-        $format = strtolower((string) $configuration->file_format);
-
-        return match (true) {
-            str_contains($format, 'json') => OrderSource::JSON_IMPORT,
-            str_contains($format, 'xml') => OrderSource::XML_IMPORT,
-            default => OrderSource::CSV_IMPORT,
-        };
+        return $errors;
     }
 }

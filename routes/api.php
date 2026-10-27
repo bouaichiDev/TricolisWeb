@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\Communications\OrderCommunicationStateController
 use App\Http\Controllers\Api\V1\Contacts\ContactController;
 use App\Http\Controllers\Api\V1\Contacts\ContactLinkController;
 use App\Http\Controllers\Api\V1\Customers\CustomerController;
+use App\Http\Controllers\Api\V1\Customers\CustomerPortalUserController;
 use App\Http\Controllers\Api\V1\Customers\CustomerSiteController;
 use App\Http\Controllers\Api\V1\Dashboard\DashboardController;
 use App\Http\Controllers\Api\V1\Dashboard\DashboardWidgetController;
@@ -48,8 +49,10 @@ use App\Http\Controllers\Api\V1\Identity\RoleMenuGroupController;
 use App\Http\Controllers\Api\V1\Identity\UserController;
 use App\Http\Controllers\Api\V1\Integrations\ApiConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\ImportConfigurationController;
+use App\Http\Controllers\Api\V1\Integrations\ImportConnectionController;
 use App\Http\Controllers\Api\V1\Integrations\ImportOrdersController;
 use App\Http\Controllers\Api\V1\Integrations\ImportPreviewController;
+use App\Http\Controllers\Api\V1\Integrations\ImportRunController;
 use App\Http\Controllers\Api\V1\Integrations\OrganizationApiConfigurationController;
 use App\Http\Controllers\Api\V1\Integrations\OrganizationMailConfigurationController;
 use App\Http\Controllers\Api\V1\Orders\OrderController;
@@ -86,6 +89,7 @@ use App\Http\Controllers\Api\V1\Statuses\StatusController;
 use App\Http\Controllers\Api\V1\Statuses\StatusDefaultController;
 use App\Http\Controllers\Api\V1\Statuses\StatusPropagationController;
 use App\Http\Controllers\Api\V1\Statuses\StatusTransitionController;
+use App\Http\Controllers\Api\V1\Stock\StockAdjustmentRequestController;
 use App\Http\Controllers\Api\V1\Stock\StockBalanceController;
 use App\Http\Controllers\Api\V1\Stock\StockItemController;
 use App\Http\Controllers\Api\V1\Stock\StockLocationController;
@@ -143,7 +147,7 @@ Route::prefix('auth')->name('auth.')->group(static function (): void {
         ->name('password.email');
     Route::post('reset-password', [PasswordResetController::class, 'reset'])->name('password.reset');
 
-    Route::middleware('auth:sanctum')->group(static function (): void {
+    Route::middleware(['auth:sanctum', 'internal.token'])->group(static function (): void {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
         Route::post('logout-all', [AuthController::class, 'logoutAll'])->name('logout-all');
         Route::get('me', [AuthController::class, 'me'])->name('me');
@@ -169,7 +173,7 @@ Route::prefix('auth')->name('auth.')->group(static function (): void {
 | une cle sans permission doit pouvoir constater qu'elle n'en a pas.
 |
 */
-Route::prefix('client')->name('client.')->group(static function (): void {
+Route::prefix('client')->name('client.')->middleware('throttle:customer-api')->group(static function (): void {
     Route::middleware('customer-api')->group(static function (): void {
         Route::get('me', ClientIdentityController::class)->name('me');
     });
@@ -180,7 +184,7 @@ Route::prefix('client')->name('client.')->group(static function (): void {
     });
 });
 
-Route::middleware('auth:sanctum')->group(static function (): void {
+Route::middleware(['auth:sanctum', 'internal.token'])->group(static function (): void {
     // Declarees avant la ressource : `{organization}` avalerait le segment.
     // Le logo se sert par ici et non sous /storage : un chemin devinable
     // donnerait celui d'un organisme a qui l'essaie.
@@ -249,6 +253,9 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('agencies', AgencyController::class)->except(['create', 'edit']);
         Route::apiResource('agencies.depots', DepotController::class)->except(['create', 'edit']);
         Route::patch('customers/{customer}/status', [CustomerController::class, 'updateStatus'])->name('customers.status');
+        // Le portail du client : le transporteur y invite le premier compte.
+        Route::get('customers/{customer}/portal-users', [CustomerPortalUserController::class, 'index'])->name('customers.portal-users.index');
+        Route::post('customers/{customer}/portal-users/invite', [CustomerPortalUserController::class, 'invite'])->name('customers.portal-users.invite');
         Route::apiResource('customers', CustomerController::class)->except(['create', 'edit']);
         Route::apiResource('customers.sites', CustomerSiteController::class)->except(['create', 'edit']);
         Route::apiResource('customers.catalogs', CustomerCatalogController::class)->except(['create', 'edit']);
@@ -532,6 +539,13 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         Route::apiResource('stock-reservations', StockReservationController::class)
             ->parameters(['stock-reservations' => 'stockReservation'])
             ->only(['index', 'store', 'show', 'update']);
+        // Demandes de correction du portail client : lues et tranchees ici,
+        // jamais creees ni modifiees — une demande nait chez le client.
+        Route::get('customers/{customer}/stock-adjustment-requests', [StockAdjustmentRequestController::class, 'byCustomer'])->name('customers.stock-adjustment-requests.index');
+        Route::get('stock-adjustment-requests', [StockAdjustmentRequestController::class, 'index'])->name('stock-adjustment-requests.index');
+        Route::get('stock-adjustment-requests/{stockAdjustmentRequest}', [StockAdjustmentRequestController::class, 'show'])->name('stock-adjustment-requests.show');
+        Route::post('stock-adjustment-requests/{stockAdjustmentRequest}/approve', [StockAdjustmentRequestController::class, 'approve'])->name('stock-adjustment-requests.approve');
+        Route::post('stock-adjustment-requests/{stockAdjustmentRequest}/reject', [StockAdjustmentRequestController::class, 'reject'])->name('stock-adjustment-requests.reject');
 
         // Integrations clients
         Route::get('customers/{customer}/import-configurations', [ImportConfigurationController::class, 'byCustomer'])->name('customers.import-configurations.index');
@@ -548,6 +562,16 @@ Route::middleware('auth:sanctum')->group(static function (): void {
         // Importer reellement : meme lecture, meme interpreteur, mais les
         // commandes sont ecrites. Tout ou rien, dans une transaction.
         Route::post('customer-import-configurations/{configuration}/import', ImportOrdersController::class)->name('customer-import-configurations.import');
+        // Phase 6 portail : champs cibles tenus par le backend, connexion
+        // (état, pull REST, test sans import), passe manuelle en file.
+        Route::get('customer-import-configurations/target-fields', [ImportConnectionController::class, 'targetFields'])->name('customer-import-configurations.target-fields');
+        Route::get('customer-import-configurations/{configuration}/connection', [ImportConnectionController::class, 'show'])->name('customer-import-configurations.connection.show');
+        Route::put('customer-import-configurations/{configuration}/connection', [ImportConnectionController::class, 'update'])->name('customer-import-configurations.connection.update');
+        Route::post('customer-import-configurations/{configuration}/connection/test', [ImportConnectionController::class, 'test'])->name('customer-import-configurations.connection.test');
+        Route::post('customer-import-configurations/{configuration}/run', [ImportConnectionController::class, 'run'])->name('customer-import-configurations.run');
+        // Historique des exécutions (décision Phase 6 levée le 2026-10-10).
+        Route::get('customer-import-configurations/{configuration}/runs', [ImportRunController::class, 'index'])->name('customer-import-configurations.runs.index');
+        Route::get('customer-import-configurations/{configuration}/runs/{run}', [ImportRunController::class, 'show'])->name('customer-import-configurations.runs.show');
         Route::apiResource('customer-import-configurations', ImportConfigurationController::class)
             ->parameters(['customer-import-configurations' => 'configuration'])
             ->except(['create', 'edit']);

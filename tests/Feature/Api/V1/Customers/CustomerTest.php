@@ -11,6 +11,9 @@ beforeEach(function (): void {
 
 describe('customers', function (): void {
     it('lists customers for the active organization', function (): void {
+        // Les semis de démonstration posent déjà des clients : le compte se
+        // fait à partir d'eux, pas d'un nombre écrit en dur.
+        $seeded = Customer::where('organization_id', $this->organization->id)->count();
         Customer::factory(2)->create(['organization_id' => $this->organization->id]);
         Customer::factory()->create();
 
@@ -19,7 +22,7 @@ describe('customers', function (): void {
             ->getJson('/api/v1/customers');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'data');
+            ->assertJsonCount($seeded + 2, 'data');
     });
 
     it('creates a customer', function (): void {

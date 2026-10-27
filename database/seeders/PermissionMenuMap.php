@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Modules\CustomerPortal\Support\CustomerPortalPermissions;
 use App\Shared\Enums\MenuSection;
 
 /**
@@ -18,7 +19,7 @@ use App\Shared\Enums\MenuSection;
 final class PermissionMenuMap
 {
     /**
-     * Section par module. Couvre les 48 modules du référentiel.
+     * Section par module. Couvre les 49 modules du référentiel.
      *
      * @var array<string, MenuSection>
      */
@@ -67,6 +68,7 @@ final class PermissionMenuMap
         'stock_locations' => MenuSection::STOCK,
         'stock_movements' => MenuSection::STOCK,
         'stock_reservations' => MenuSection::STOCK,
+        'stock_adjustment_requests' => MenuSection::STOCK,
 
         'price_lists' => MenuSection::BILLING,
         'pricing_variables' => MenuSection::PLATFORM,
@@ -116,6 +118,10 @@ final class PermissionMenuMap
 
     public static function sectionFor(string $code, string $module): MenuSection
     {
+        if (CustomerPortalPermissions::isCustomerPermission($code)) {
+            return MenuSection::CUSTOMER_PORTAL;
+        }
+
         return self::BY_CODE[$code] ?? self::BY_MODULE[$module] ?? MenuSection::ADMINISTRATION;
     }
 
@@ -127,6 +133,6 @@ final class PermissionMenuMap
      */
     public static function knownModules(): array
     {
-        return array_keys(self::BY_MODULE);
+        return [...array_keys(self::BY_MODULE), ...CustomerPortalPermissions::modules()];
     }
 }

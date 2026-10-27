@@ -7,6 +7,7 @@ namespace App\Modules\Integrations\Models;
 use App\Modules\Customers\Models\Customer;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * `mapping` et `validationRules` sont des structures librement configurables —
  * le diagramme n'en définit pas le schéma, et le §9 interdit de l'inventer. Ce
  * sont des données lues par un futur moteur d'import, jamais évaluées.
+ *
+ * `connection` et `encrypted_password` (relève FTP/SFTP) ne sont **pas**
+ * assignables en masse : seul `InboundFileConnections::save()` les écrit,
+ * après contrôle de l'hôte et du chemin. Le secret n'est jamais sérialisé.
  */
 #[Fillable([
     'customer_id',
@@ -31,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'validation_rules',
     'is_active',
 ])]
+#[Hidden(['encrypted_password'])]
 class CustomerImportConfiguration extends Model
 {
     use HasFactory;
@@ -52,6 +58,7 @@ class CustomerImportConfiguration extends Model
         return [
             'mapping' => 'array',
             'validation_rules' => 'array',
+            'connection' => 'array',
             'is_active' => 'boolean',
         ];
     }

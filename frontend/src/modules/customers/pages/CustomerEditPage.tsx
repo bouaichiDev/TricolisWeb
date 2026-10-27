@@ -32,6 +32,7 @@ export function CustomerEditPage() {
           code: customer.code,
           name: customer.name,
           legalName: customer.legalName ?? '',
+          defaultAgencyId: customer.defaultAgencyId ?? '',
           email: customer.email ?? '',
           phone: customer.phone ?? '',
           paymentMode: customer.paymentMode ?? '',

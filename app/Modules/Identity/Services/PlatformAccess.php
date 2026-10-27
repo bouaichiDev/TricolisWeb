@@ -99,7 +99,9 @@ class PlatformAccess
             return [];
         }
 
-        $all = Permission::pluck('code')->all();
+        // Les permissions du portail client ne se délèguent jamais à un rôle
+        // interne, pas même par un administrateur plateforme.
+        $all = Permission::internal()->pluck('code')->all();
 
         if ($this->isPlatformAdmin($user)) {
             return $all;

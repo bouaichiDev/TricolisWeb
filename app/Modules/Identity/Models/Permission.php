@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Models;
 
+use App\Modules\CustomerPortal\Support\CustomerPortalPermissions;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -29,6 +31,28 @@ class Permission extends Model
     protected $keyType = 'string';
 
     public $incrementing = false;
+
+    /**
+     * Permissions de l'administration interne : tout sauf `customer.*`.
+     *
+     * Celles du portail client partagent la table mais jamais un rôle interne ;
+     * les écarter ici évite qu'un rôle `admin` ou le plafond de délégation ne
+     * les ramasse avec un simple `Permission::pluck()`.
+     *
+     * @param  Builder<Permission>  $query
+     */
+    public function scopeInternal(Builder $query): void
+    {
+        $query->where('code', 'not like', CustomerPortalPermissions::PREFIX.'%');
+    }
+
+    /**
+     * @param  Builder<Permission>  $query
+     */
+    public function scopeCustomerPortal(Builder $query): void
+    {
+        $query->where('code', 'like', CustomerPortalPermissions::PREFIX.'%');
+    }
 
     /**
      * @return BelongsToMany<Role, $this>

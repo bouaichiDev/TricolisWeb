@@ -45,6 +45,7 @@ class UpdateStatusRequest extends FormRequest
             ],
             'label' => ['sometimes', 'string', 'max:255'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'color' => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'active' => ['sometimes', 'boolean'],
             'isToSend' => ['sometimes', 'boolean'],
             'allowsContentChanges' => ['sometimes', 'boolean'],

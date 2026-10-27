@@ -267,6 +267,12 @@ class PermissionSeeder extends Seeder
         ['code' => 'stock_reservations.update', 'name' => 'Modifier une réservation de stock', 'module' => 'stock_reservations', 'action' => 'update'],
         ['code' => 'stock_reservations.release', 'name' => 'Libérer une réservation de stock', 'module' => 'stock_reservations', 'action' => 'release'],
 
+        // Demandes de correction déposées au portail client (Phase 5b). Pas de
+        // `create` interne : une demande naît chez le client. `review` accepte
+        // ou refuse — accepter écrit un mouvement de stock.
+        ['code' => 'stock_adjustment_requests.view', 'name' => 'Voir les demandes de correction', 'module' => 'stock_adjustment_requests', 'action' => 'view'],
+        ['code' => 'stock_adjustment_requests.review', 'name' => 'Accepter ou refuser une demande', 'module' => 'stock_adjustment_requests', 'action' => 'review'],
+
         ['code' => 'customer_import_configurations.view', 'name' => 'Voir les configurations d\'import', 'module' => 'customer_import_configurations', 'action' => 'view'],
         ['code' => 'customer_import_configurations.create', 'name' => 'Créer une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'create'],
         ['code' => 'customer_import_configurations.update', 'name' => 'Modifier une configuration d\'import', 'module' => 'customer_import_configurations', 'action' => 'update'],

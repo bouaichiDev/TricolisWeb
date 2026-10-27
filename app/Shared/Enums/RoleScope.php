@@ -23,11 +23,19 @@ enum RoleScope: string
     case PLATFORM = 'platform';
     case ORGANIZATION = 'organization';
 
+    /**
+     * Rôle du portail client. Il appartient à l'organisation du transporteur,
+     * mais ne s'attribue qu'à un membre de portail (`customer_user_roles`) et
+     * ne porte que des permissions `customer.*`.
+     */
+    case CUSTOMER = 'customer';
+
     public function label(): string
     {
         return match ($this) {
             self::PLATFORM => 'Plateforme',
             self::ORGANIZATION => 'Organisation',
+            self::CUSTOMER => 'Portail client',
         };
     }
 

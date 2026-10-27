@@ -208,9 +208,10 @@ final class MenuCatalogue
 
             // Stock client chez le transporteur — Phase 7. Le stock est
             // physiquement celui du transporteur mais reste separe par client :
-            // les cinq entrees suivent les cinq entites du modele, et rien
-            // d'autre. Ni receptions, ni inventaires, ni ajustements, ni zones,
-            // ni entrepots, ni lots : ces tables n'existent pas.
+            // les entrees suivent les entites du modele, et rien d'autre — la
+            // sixieme, les demandes de correction du portail client, depuis la
+            // Phase 5b. Ni receptions, ni inventaires, ni zones, ni entrepots,
+            // ni lots : ces tables n'existent pas.
             new MenuEntry(
                 code: 'stock',
                 labelKey: 'nav.stock',
@@ -268,6 +269,18 @@ final class MenuCatalogue
                 position: 45,
                 route: '/stock/reservations',
                 permission: 'stock_reservations.view',
+                parent: 'stock',
+            ),
+            // Les demandes du portail client, en attente de décision. Pas de
+            // compteur : aucune entrée du menu n'en affiche.
+            new MenuEntry(
+                code: 'stock-adjustment-requests',
+                labelKey: 'nav.stockAdjustmentRequests',
+                icon: 'Inbox',
+                section: MenuSection::STOCK,
+                position: 46,
+                route: '/stock/adjustment-requests',
+                permission: 'stock_adjustment_requests.view',
                 parent: 'stock',
             ),
 

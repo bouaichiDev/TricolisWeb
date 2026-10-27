@@ -19,8 +19,13 @@ env:
   VITE_API_URL: https://tricolisba.bouaichibadr.com
 
 jobs:
+  # Phase 8 portail : aucun déploiement sans tests verts (`ci.yml`).
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   deploy:
     name: Build and deploy
+    needs: ci
     runs-on: ubuntu-latest
 
     steps:

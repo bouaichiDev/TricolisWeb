@@ -47,7 +47,7 @@ export interface Role {
   organizationId: string | null
   code: string
   name: string
-  scope: 'platform' | 'organization' | null
+  scope: 'platform' | 'organization' | 'customer' | null
   isSystem: boolean
   status: string
   /** Chargé par `index` et `show` ; absent des réponses qui n'ont pas fait le `with`. */
@@ -81,7 +81,9 @@ export function isEditableRole(role: Role): boolean {
  * ici pour ne pas proposer un bouton qui mènerait à un refus.
  */
 export function isMenuEditableRole(role: Role): boolean {
-  return role.scope !== 'platform'
+  // Un rôle du portail client n'a pas de menu interne : le portail compose
+  // le sien d'après les permissions `customer.*`.
+  return role.scope !== 'platform' && role.scope !== 'customer'
 }
 
 /**
@@ -103,6 +105,8 @@ export function isDashboardEditableRole(role: Role): boolean {
 export interface RoleFilters {
   page: number
   perPage: number
+  /** `customer` : les rôles du portail client, absents de la liste par défaut. */
+  scope?: 'customer'
 }
 
 /**

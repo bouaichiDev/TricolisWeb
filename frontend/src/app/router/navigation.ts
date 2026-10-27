@@ -113,6 +113,11 @@ export const organizationNavigation: NavEntry[] = [
         to: '/stock/reservations',
         permission: 'stock_reservations.view',
       },
+      {
+        labelKey: 'nav.stockAdjustmentRequests',
+        to: '/stock/adjustment-requests',
+        permission: 'stock_adjustment_requests.view',
+      },
     ],
   },
   {

@@ -1,9 +1,5 @@
-import {
-  INVOICE_EXPORT_TYPE,
-  ON_INVOICE_CLOSED,
-  type ExportConfigurationPayload,
-  type ExportSettings,
-} from '../types/export'
+import type { ExportConfigurationPayload, ExportSettings } from '../types/export'
+import { EXPORT_CONTENTS, type ExportContent } from '../types/exportContents'
 
 /** Les champs de connexion, tels que le formulaire les tient : en texte. */
 export interface ConnectionDraft {
@@ -26,9 +22,9 @@ export function hasConnection(transport: string): boolean {
  * le secret (§124) : le champ est donc vide à l'ouverture, et l'omettre est la
  * seule façon de dire « inchangé ». L'envoyer vide l'effacerait.
  *
- * Le type d'export et la fréquence ne se choisissent pas : la clôture ne
- * consulte que les destinations de facture déclenchées à la clôture, et une
- * destination configurée autrement ne partirait jamais.
+ * Le type d'export et la fréquence ne se saisissent pas : ils découlent du
+ * contenu choisi — facture à la clôture, ou statut de commande à chaque
+ * changement. Une destination configurée autrement ne partirait jamais.
  */
 export function buildExportPayload(
   customerId: string,
@@ -40,14 +36,16 @@ export function buildExportPayload(
     isActive: boolean
     connection: ConnectionDraft
     settings: ExportSettings
+    content?: ExportContent
   },
 ): ExportConfigurationPayload {
+  const content = EXPORT_CONTENTS[form.content ?? 'invoice']
   const { connection } = form
 
   return {
     customerId,
     name: form.name.trim(),
-    exportType: INVOICE_EXPORT_TYPE,
+    exportType: content.exportType,
     format: form.format,
     transport: form.transport,
     host: connection.host.trim() || null,
@@ -56,7 +54,7 @@ export function buildExportPayload(
     ...(connection.password === '' ? {} : { password: connection.password }),
     remoteDirectory: connection.remoteDirectory.trim() || null,
     fileNamePattern: form.fileNamePattern.trim() || null,
-    frequency: ON_INVOICE_CLOSED,
+    frequency: content.frequency,
     settings: form.settings,
     isActive: form.isActive,
   }

@@ -167,6 +167,34 @@ describe('StatusListPage', () => {
     expect(dialog.getByLabelText(/^Entité/)).toBeDisabled()
   })
 
+  /** La couleur que le portail client montre : réglée ici, retirée ici. */
+  it('règle puis retire la couleur d’un statut', async () => {
+    serve([{ ...status, color: '#9333ea' }])
+    const bodies: unknown[] = []
+
+    server.use(
+      http.patch(`${API}/statuses/${status.id}`, async ({ request }) => {
+        bodies.push(await request.json())
+        return HttpResponse.json({ data: status, meta: [] })
+      }),
+    )
+
+    renderWithProviders(<StatusListPage />, {
+      membership: platform(['statuses.view', 'statuses.update']),
+    })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier le statut' }))
+    const dialog = within(await screen.findByRole('dialog'))
+
+    expect(dialog.getByLabelText('Couleur')).toHaveValue('#9333ea')
+    await userEvent.click(dialog.getByRole('button', { name: 'Retirer la couleur' }))
+    expect(dialog.getByText('Aucune couleur')).toBeInTheDocument()
+    await userEvent.click(dialog.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0]).toMatchObject({ color: null })
+  })
+
   /** Le refus du serveur est rédigé pour être lu : il est affiché tel quel. */
   it('affiche le refus de suppression d’un statut encore utilisé', async () => {
     serve()

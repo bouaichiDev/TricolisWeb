@@ -37,6 +37,7 @@ class StatusController extends Controller
         'code' => 'code',
         'label' => 'label',
         'icon' => 'icon',
+        'color' => 'color',
         'active' => 'active',
         'is_to_send' => 'isToSend',
         // Les deux comportements que le referentiel a repris a l'enumeration :

@@ -3,6 +3,8 @@ import { HttpResponse, http } from 'msw'
 import { paginated } from '@/test/fixtures'
 import { API, server } from '@/test/server'
 
+import { IMPORT_TARGETS } from './utils/importTargetFields'
+
 /**
  * Jeux de données des intégrations client, à la forme réelle des ressources.
  *
@@ -168,6 +170,28 @@ export function servePermissions() {
           },
         ],
         meta: [],
+      }),
+    ),
+  )
+}
+
+/**
+ * Le catalogue de champs cibles tel que le backend le sert : mêmes chemins
+ * que le relevé local, à la forme de `ImportTargetFields::groups()`.
+ */
+export function serveTargetFields() {
+  server.use(
+    http.get(`${API}/customer-import-configurations/target-fields`, () =>
+      HttpResponse.json({
+        data: {
+          groups: IMPORT_TARGETS[0].groups.map((group) => ({
+            key: group.key,
+            fields: group.fields.map((field) => ({ path: field.path, requirement: field.ruleKey, constraint: field.constraint ?? null })),
+          })),
+          types: ['string', 'integer', 'decimal', 'boolean', 'date', 'datetime', 'time'],
+          validationRules: ['required', 'nullable', 'string', 'numeric', 'integer', 'boolean', 'date', 'email', 'min', 'max', 'size', 'in'],
+          duplicateStrategies: ['skip', 'reject', 'update'],
+        },
       }),
     ),
   )

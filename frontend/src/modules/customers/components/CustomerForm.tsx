@@ -23,6 +23,7 @@ import {
 } from '@/shared/components/ui/select'
 import { Switch } from '@/shared/components/ui/switch'
 import { useApiFormError } from '@/shared/hooks/useApiForm'
+import { DefaultAgencyField } from './DefaultAgencyField'
 
 const STATUSES = ['active', 'inactive', 'blocked'] as const
 
@@ -86,6 +87,7 @@ export function CustomerForm({
           <TextField form={form} name="legalName" label={t('customers.fields.legalName')} />
           <TextField form={form} name="email" label={t('customers.fields.email')} type="email" />
           <TextField form={form} name="phone" label={t('customers.fields.phone')} />
+          <DefaultAgencyField form={form} />
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="status">{t('customers.fields.status')}</Label>

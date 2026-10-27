@@ -57,12 +57,14 @@ class RoleSeeder extends Seeder
             ]
         );
 
-        $this->syncPermissions($role, Permission::pluck('id')->all());
+        $this->syncPermissions($role, Permission::internal()->pluck('id')->all());
+        $this->revokeCustomerPortalPermissions($role);
     }
 
     private function seedOrganizationRoles(): void
     {
-        $organizationalPermissionIds = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)
+        $organizationalPermissionIds = Permission::internal()
+            ->whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)
             ->pluck('id')
             ->all();
 
@@ -79,6 +81,7 @@ class RoleSeeder extends Seeder
 
             $this->syncPermissions($adminRole, $organizationalPermissionIds);
             $this->revokePlatformPermissions($adminRole);
+            $this->revokeCustomerPortalPermissions($adminRole);
             $this->attachToOwners($organization, $adminRole);
 
             // Role du chauffeur : il identifie qui peut etre rattache a un
@@ -119,6 +122,19 @@ class RoleSeeder extends Seeder
 
         RolePermission::where('role_id', $role->id)
             ->whereIn('permission_id', $platformIds)
+            ->delete();
+    }
+
+    /**
+     * Les permissions `customer.*` n'appartiennent qu'aux rôles du portail.
+     *
+     * Une base semée avant leur mise à l'écart peut les porter sur un rôle
+     * interne : ce retrait la remet d'aplomb.
+     */
+    private function revokeCustomerPortalPermissions(Role $role): void
+    {
+        RolePermission::where('role_id', $role->id)
+            ->whereIn('permission_id', Permission::customerPortal()->pluck('id'))
             ->delete();
     }
 

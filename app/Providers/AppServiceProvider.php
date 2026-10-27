@@ -3,7 +3,10 @@
 namespace App\Providers;
 
 use App\Modules\Communications\Listeners\CreateCommunicationsForOrderEvents;
+use App\Modules\CustomerPortal\Services\CurrentCustomerContext;
+use App\Modules\CustomerPortal\Services\CustomerStatusLabels;
 use App\Modules\Documents\Console\PurgeDeletedDocuments;
+use App\Modules\Exports\Services\OrderStatusExportTrigger;
 use App\Modules\Identity\Services\PasswordResetUrl;
 use App\Modules\Integrations\Services\CustomerApiContext;
 use App\Modules\Orders\Events\OrderCreated;
@@ -11,12 +14,16 @@ use App\Modules\Orders\Events\OrderStatusChanged;
 use App\Modules\Statuses\Services\DefaultStatuses;
 use App\Modules\Statuses\Services\StatusPropagator;
 use App\OpenApi\AddOrganizationHeader;
+use App\OpenApi\DocumentExternalPerimeter;
 use App\OpenApi\DocumentStandardErrors;
 use App\Shared\Database\MorphMap;
+use App\Shared\Health\CheckApplicationHealth;
+use App\Shared\Http\RateLimits\PortalRateLimits;
 use App\Shared\Organizations\CurrentOrganizationContext;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,6 +39,12 @@ class AppServiceProvider extends ServiceProvider
         // remplit dans le middleware, les controleurs le relisent. Sans liaison
         // par requete, chacun recevrait une instance vierge.
         $this->app->scoped(CustomerApiContext::class);
+        // Le Customer courant du portail client (utilisateurs humains) :
+        // resolu par `customer.portal`, relu par tout ce qui suit.
+        $this->app->scoped(CurrentCustomerContext::class);
+        // Libellés de statuts du portail : le référentiel est lu une fois par
+        // requête, pas une fois par commande de la liste.
+        $this->app->scoped(CustomerStatusLabels::class);
         // Les statuts par defaut choisis sont lus une fois par requete : une
         // memoire de processus survivrait au changement de reglage.
         $this->app->scoped(DefaultStatuses::class);
@@ -66,6 +79,11 @@ class AppServiceProvider extends ServiceProvider
         // sert.
         Event::listen(OrderCreated::class, [CreateCommunicationsForOrderEvents::class, 'handleCreated']);
         Event::listen(OrderStatusChanged::class, [CreateCommunicationsForOrderEvents::class, 'handleStatusChanged']);
+        // Phase 6 : le statut part aussi vers les systèmes clients abonnés
+        // (REST Push), par un ExportJob mis en file après commit.
+        Event::listen(OrderStatusChanged::class, [OrderStatusExportTrigger::class, 'handle']);
+        // Phase 8 : `/up` vérifie aussi la base, le disque privé et le cache.
+        Event::listen(DiagnosingHealth::class, [CheckApplicationHealth::class, 'handle']);
 
         // Toute entite qui nait sans statut recoit celui que l'administrateur a
         // choisi dans le referentiel. L'ecoute est generale : un module ajoute
@@ -83,9 +101,13 @@ class AppServiceProvider extends ServiceProvider
                 app(StatusPropagator::class)->handle($payload[0]);
             }
         });
+        // Périmètre externe (portail, lien public, API par clé) : Phase 7.
+        PortalRateLimits::register();
+
         Scramble::configure()->withOperationTransformers([
             AddOrganizationHeader::class,
             DocumentStandardErrors::class,
+            DocumentExternalPerimeter::class,
         ]);
 
         if ($this->app->runningInConsole()) {

@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\Orders\StoreOrderRequest;
 use App\Modules\Integrations\Models\CustomerImportConfiguration;
 use App\Modules\Integrations\Services\ImportPreviewValidator;
 use App\Modules\Integrations\Services\ImportSourceReader;
+use App\Modules\Integrations\Services\Mapping\MappingDirectives;
 use App\Modules\Integrations\Services\MappingInterpreter;
 use App\Shared\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -66,7 +67,7 @@ final class ImportPreviewController extends Controller
         }
 
         try {
-            $rows = $reader->read($contents, (string) $configuration->file_format);
+            $rows = $reader->read($contents, (string) $configuration->file_format, MappingDirectives::recordsPath($mapping));
         } catch (RuntimeException $exception) {
             // Le message dit ce qui cloche dans le fichier — séparateur,
             // en-tête, JSON malformé. Un « fichier illisible » sans raison

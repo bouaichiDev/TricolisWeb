@@ -19,7 +19,7 @@ describe('permissions', function (): void {
      * référentiel lui donnerait de quoi les proposer dans un formulaire de rôle.
      */
     it('lists the permissions the caller may delegate', function (): void {
-        $delegable = Permission::whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
+        $delegable = Permission::internal()->whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
 
         $this->actingAs($this->user, 'sanctum')->withHeaders($this->headers)
             ->getJson('/api/v1/permissions')

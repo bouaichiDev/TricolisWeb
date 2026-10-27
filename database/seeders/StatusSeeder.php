@@ -10,6 +10,7 @@ use App\Modules\Orders\Enums\OrderServiceStatus;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Organizations\Enums\SubscriptionStatus;
 use App\Modules\Statuses\Models\Status;
+use App\Modules\Stock\Enums\StockAdjustmentRequestStatus;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Enums\TourStopStatus;
 use App\Shared\Database\MorphMap;
@@ -47,6 +48,7 @@ class StatusSeeder extends Seeder
         MorphMap::SUBSCRIPTION => SubscriptionStatus::class,
         MorphMap::TOUR => TourStatus::class,
         MorphMap::TOUR_STOP => TourStopStatus::class,
+        MorphMap::STOCK_ADJUSTMENT_REQUEST => StockAdjustmentRequestStatus::class,
     ];
 
     /**

@@ -63,12 +63,14 @@ class CustomerController extends Controller
         $code = $validated['code'];
 
         $this->validateUniqueCode($organizationId, $code);
+        $this->validateAgency($organizationId, $validated['defaultAgencyId'] ?? null);
 
         $customer = Customer::create([
             'organization_id' => $organizationId,
             'code' => $code,
             'name' => $validated['name'],
             'legal_name' => $validated['legalName'] ?? null,
+            'default_agency_id' => $validated['defaultAgencyId'] ?? null,
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'payment_mode' => $validated['paymentMode'] ?? null,
@@ -115,12 +117,15 @@ class CustomerController extends Controller
             $this->validateUniqueCode($customer->organization_id, $validated['code'], $customer->id);
         }
 
+        $this->validateAgency($customer->organization_id, $validated['defaultAgencyId'] ?? null);
+
         $data = [];
 
         foreach ([
             'code' => 'code',
             'name' => 'name',
             'legal_name' => 'legalName',
+            'default_agency_id' => 'defaultAgencyId',
             'email' => 'email',
             'phone' => 'phone',
             'payment_mode' => 'paymentMode',
@@ -196,5 +201,22 @@ class CustomerController extends Controller
         }
 
         validator(['code' => $code], ['code' => ['required', 'string', $rule]])->validate();
+    }
+
+    /**
+     * L'agence par défaut doit appartenir à l'organisation du client : sans ce
+     * contrôle, les commandes du portail partiraient chez un autre transporteur.
+     */
+    private function validateAgency(string $organizationId, ?string $agencyId): void
+    {
+        if ($agencyId === null) {
+            return;
+        }
+
+        validator(
+            ['defaultAgencyId' => $agencyId],
+            ['defaultAgencyId' => [Rule::exists('agencies', 'id')->where('organization_id', $organizationId)]],
+            ['defaultAgencyId.exists' => 'Cette agence n’appartient pas à l’organisation active.'],
+        )->validate();
     }
 }

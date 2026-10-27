@@ -23,6 +23,7 @@ class StatusResource extends JsonResource
             'code' => $this->code,
             'label' => $this->label,
             'icon' => $this->icon,
+            'color' => $this->color,
             'active' => $this->active,
             'isToSend' => $this->is_to_send,
             // Les deux comportements que le referentiel a repris a

@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { OrganizationDetailPage } from './OrganizationDetailPage'
 import { AutoLoadingServicePanel } from '@/modules/planning/components/AutoLoadingServicePanel'
 import { LoadingServicesPanel } from '@/modules/planning/components/LoadingServicesPanel'
+import { StockAdjustmentSettingsPanel } from '@/modules/stock/components/adjustments/StockAdjustmentSettingsPanel'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
@@ -47,6 +48,14 @@ export function MyOrganizationPage() {
             <AutoLoadingServicePanel />
             <LoadingServicesPanel />
           </div>
+        </SectionCard>
+      </PermissionGuard>
+
+      {/* Le type du mouvement cree par l'acceptation d'une demande de
+          correction de stock : un reglage, jamais une constante du code. */}
+      <PermissionGuard permission="organizations.update">
+        <SectionCard title={t('stock.adjustments.settings.title')}>
+          <StockAdjustmentSettingsPanel />
         </SectionCard>
       </PermissionGuard>
     </div>

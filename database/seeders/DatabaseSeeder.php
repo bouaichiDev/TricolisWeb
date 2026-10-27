@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
             PricingVariableSeeder::class,
             DevelopmentOrganizationSeeder::class,
             RoleSeeder::class,
+            // Apres RoleSeeder : les roles du portail client s'accrochent aux
+            // organisations, et restent hors du role `admin` interne.
+            CustomerPortalSeeder::class,
             // Après RoleSeeder : le compte s'accroche au rôle plateforme que
             // celui-ci vient de créer.
             PlatformAdminSeeder::class,
@@ -42,5 +45,20 @@ class DatabaseSeeder extends Seeder
             // reutilise le depot et le carnet d'adresses.
             DeliveredOrderSeeder::class,
         ]);
+
+        // La demonstration du portail client, en developpement seulement : en
+        // test, elle fausserait les comptages de la suite existante. Les tests
+        // du portail la sement eux-memes (`CustomerPortalDemoSeeder`).
+        if (app()->environment('local')) {
+            $this->call(CustomerPortalDemoSeeder::class);
+            // Stock de démonstration du portail (Phase 5) : hors du semis de test,
+            // sa réservation figerait les lignes de la commande de démonstration.
+            $this->call(DemoCustomerPortalStockSeeder::class);
+            // Intégrations de démonstration (Phase 6) : un dépôt Excel, une
+            // relève XML — configurations génériques, aucune connexion réelle.
+            $this->call(DemoCustomerPortalIntegrationsSeeder::class);
+            // Catalogues QOQA / GETAZ : l'isolation du catalogue se voit et se teste.
+            $this->call(DemoCustomerPortalCatalogSeeder::class);
+        }
     }
 }

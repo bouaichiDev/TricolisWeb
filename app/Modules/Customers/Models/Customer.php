@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Customers\Models;
 
+use App\Modules\Agencies\Models\Agency;
 use App\Modules\Catalogs\Models\CustomerCatalog;
 use App\Modules\Customers\Enums\CustomerStatus;
 use App\Modules\Orders\Models\Order;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'organization_id',
+    'default_agency_id',
     'code',
     'name',
     'legal_name',
@@ -66,6 +68,16 @@ class Customer extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'organization_id');
+    }
+
+    /**
+     * Agence qui reçoit par défaut les commandes passées depuis le portail.
+     *
+     * @return BelongsTo<Agency, $this>
+     */
+    public function defaultAgency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class, 'default_agency_id');
     }
 
     /**

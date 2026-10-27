@@ -37,6 +37,8 @@ class UpdateOrganizationRequest extends FormRequest
             'currencyCode' => ['sometimes', 'string', 'size:3'],
             'status' => ['sometimes', 'string', Rule::enum(OrganizationStatus::class)],
             'settings' => ['sometimes', 'array'],
+            // Devient `stock_movements.movement_type`, une colonne de 64 caractères.
+            'settings.stock.adjustmentMovementType' => ['sometimes', 'nullable', 'string', 'max:64'],
         ];
     }
 }

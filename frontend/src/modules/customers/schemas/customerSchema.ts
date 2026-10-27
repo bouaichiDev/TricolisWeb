@@ -18,6 +18,8 @@ export const customerSchema = z.object({
     .regex(/^[A-Za-z0-9._-]+$/, 'validation.code'),
   name: z.string().min(1, 'validation.required').max(255, 'validation.max'),
   legalName: z.string().max(255).optional().or(z.literal('')),
+  /** Agence des commandes passées depuis le portail ; vide = première agence active. */
+  defaultAgencyId: z.string(),
   email: z.string().email('validation.email').max(255).optional().or(z.literal('')),
   phone: z.string().max(255).optional().or(z.literal('')),
   paymentMode: z.string().max(64).optional().or(z.literal('')),
@@ -36,6 +38,7 @@ export const CUSTOMER_FORM_DEFAULTS: CustomerFormValues = {
   code: '',
   name: '',
   legalName: '',
+  defaultAgencyId: '',
   email: '',
   phone: '',
   paymentMode: '',
@@ -56,6 +59,7 @@ export function toCustomerPayload(values: CustomerFormValues) {
   return {
     ...values,
     legalName: blankToNull(values.legalName),
+    defaultAgencyId: blankToNull(values.defaultAgencyId),
     email: blankToNull(values.email),
     phone: blankToNull(values.phone),
     paymentMode: blankToNull(values.paymentMode),

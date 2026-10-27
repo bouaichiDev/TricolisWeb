@@ -18,6 +18,7 @@ import {
 
 import { useCreateStatus, useStatusSources, useUpdateStatus } from '../hooks/useStatuses'
 import type { Status, StatusPayload } from '../types/status'
+import { StatusColorField } from './StatusColorField'
 import { STATUS_FIELDS, statusFormValues } from './statusForm'
 
 /**
@@ -109,6 +110,7 @@ export function StatusDialog({ status, open, onOpenChange }: StatusDialogProps) 
       code: current.code.trim(),
       label: current.label.trim(),
       icon: current.icon.trim() === '' ? null : current.icon.trim(),
+      color: current.color === '' ? null : current.color,
       position: current.position.trim() === '' ? null : Number(current.position),
       active: flag('active'),
       isToSend: flag('isToSend'),
@@ -165,6 +167,8 @@ export function StatusDialog({ status, open, onOpenChange }: StatusDialogProps) 
               error={errors[spec.name]}
             />
           ))}
+
+          <StatusColorField value={current.color} onChange={(value) => patch('color', value)} error={errors.color} />
         </div>
 
         <div className="grid gap-1 sm:grid-cols-2">

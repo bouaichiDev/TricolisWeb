@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Integrations\Services;
 
+use App\Modules\Integrations\Services\Mapping\MappingDirectives;
+use App\Modules\Integrations\Services\Mapping\SourcePath;
+use App\Modules\Integrations\Services\Mapping\ValueCaster;
+
 /**
  * Applique une correspondance à des lignes de fichier.
  *
- * La convention n'est pas inventée ici : c'est celle que l'écran de
- * configuration produit déjà. **La correspondance a la forme de la charge utile
- * attendue, et chaque feuille porte le nom du champ source.**
+ * **La correspondance a la forme de la charge utile attendue, et chaque
+ * feuille porte le nom du champ source.**
  *
  * ```json
  * {
@@ -19,25 +22,21 @@ namespace App\Modules\Integrations\Services;
  * }
  * ```
  *
- * Trois règles, et rien d'autre :
+ * Trois règles d'origine :
  *
  * 1. **Une chaîne est un nom de colonne.** Absente du fichier, la clé est
- *    omise — pas mise à `null`. La validation dira alors ce qui manque, au lieu
- *    de laisser passer un vide qui ressemble à une valeur.
- * 2. **Un tableau est un modèle**, appliqué à chaque ligne. Son premier élément
- *    décrit ce qu'une ligne produit ; les suivants sont ignorés, un modèle n'en
- *    a qu'un.
- * 3. **Un objet est un objet.** Il se construit à partir de la même ligne.
+ *    omise — pas mise à `null`. La validation dira alors ce qui manque.
+ * 2. **Un tableau est un modèle**, appliqué à chaque ligne — ou, avec `@each`,
+ *    à chaque élément d'une sous-collection de la ligne (les articles d'une
+ *    commande XML ou JSON).
+ * 3. **Un objet est un objet**, sauf s'il porte `@source` ou `@value` : c'est
+ *    alors une feuille enrichie (défaut, conversion). Voir `MappingDirectives`.
  *
- * Les éléments **identiques sont fusionnés**. C'est ce qui fait qu'un fichier
- * de trois lignes partageant `ColisRef` produit un colis et non trois : le
- * mapping d'un colis ne retient que ce qui l'identifie, donc trois lignes du
- * même colis donnent trois fois le même objet. Aucune clé de regroupement n'est
- * à déclarer — c'est le contenu qui décide.
+ * Les éléments **identiques sont fusionnés** : trois lignes du même colis
+ * donnent trois fois le même objet, donc un seul colis.
  *
- * **Rien n'est exécuté.** Les valeurs sont recopiées, jamais interprétées : pas
- * d'expression, pas de fonction, pas de calcul. Le §10 l'exige, et une
- * correspondance n'a pas à être du code.
+ * **Rien n'est exécuté.** Les valeurs sont recopiées ou converties par une
+ * liste fermée de types — jamais interprétées comme du code.
  */
 final readonly class MappingInterpreter
 {
@@ -55,37 +54,14 @@ final readonly class MappingInterpreter
         $result = [];
 
         foreach ($mapping as $target => $source) {
-            if (is_string($source)) {
-                // Un champ scalaire vaut pour la commande entière : il est lu
-                // sur la première ligne. Un fichier dont les lignes le
-                // contrediraient décrirait deux commandes, pas une.
-                $value = $this->valueOf($rows[0], $source);
-
-                if ($value !== null) {
-                    $result[$target] = $value;
-                }
-
+            if (MappingDirectives::isDirective($target)) {
                 continue;
             }
 
-            if (! is_array($source) || $source === []) {
-                continue;
-            }
+            $value = $this->resolve($source, $rows);
 
-            if (array_is_list($source)) {
-                $collection = $this->collect($source[0], $rows);
-
-                if ($collection !== []) {
-                    $result[$target] = $collection;
-                }
-
-                continue;
-            }
-
-            $nested = $this->apply($source, $rows);
-
-            if ($nested !== []) {
-                $result[$target] = $nested;
+            if ($value !== null && $value !== []) {
+                $result[$target] = $value;
             }
         }
 
@@ -93,7 +69,56 @@ final readonly class MappingInterpreter
     }
 
     /**
-     * Un modèle appliqué à chaque ligne, les doublons fondus.
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function resolve(mixed $source, array $rows): mixed
+    {
+        // Un champ scalaire vaut pour la commande entière : il est lu sur la
+        // première ligne. Des lignes qui le contrediraient décriraient deux
+        // commandes, pas une.
+        if (is_string($source)) {
+            return SourcePath::value($rows[0], $source);
+        }
+
+        if (! is_array($source) || $source === []) {
+            return null;
+        }
+
+        if (MappingDirectives::isLeaf($source)) {
+            return $this->leaf($source, $rows[0]);
+        }
+
+        if (array_is_list($source)) {
+            return $this->collect($source[0], $rows);
+        }
+
+        return $this->apply($source, $rows);
+    }
+
+    /**
+     * Une feuille enrichie : constante ou colonne, défaut, conversion.
+     *
+     * @param  array<string, mixed>  $node
+     * @param  array<string, mixed>  $row
+     */
+    private function leaf(array $node, array $row): mixed
+    {
+        $value = array_key_exists(MappingDirectives::VALUE, $node)
+            ? $node[MappingDirectives::VALUE]
+            : SourcePath::value($row, (string) $node[MappingDirectives::SOURCE]);
+
+        if (($value === null || $value === '') && array_key_exists(MappingDirectives::DEFAULT, $node)) {
+            $value = $node[MappingDirectives::DEFAULT];
+        }
+
+        $type = $node[MappingDirectives::TYPE] ?? null;
+
+        return is_string($type) ? ValueCaster::cast($value, $type) : $value;
+    }
+
+    /**
+     * Un modèle appliqué à chaque ligne — ou à chaque élément d'une
+     * sous-collection — les doublons fondus.
      *
      * @param  list<array<string, mixed>>  $rows
      * @return list<mixed>
@@ -104,21 +129,20 @@ final readonly class MappingInterpreter
             return [];
         }
 
+        $each = $template[MappingDirectives::EACH] ?? null;
         $built = [];
 
         foreach ($rows as $row) {
-            $element = $this->apply($template, [$row]);
+            foreach ($this->itemsOf($row, $each) as $item) {
+                $element = $this->apply($template, [$item]);
 
-            if ($element === []) {
-                continue;
-            }
+                if ($element === []) {
+                    continue;
+                }
 
-            // La comparaison porte sur le contenu : deux lignes qui décrivent
-            // le meme colis produisent le meme objet, et n'en font qu'un.
-            $signature = json_encode($element);
-
-            if (! array_key_exists($signature, $built)) {
-                $built[$signature] = $element;
+                // La comparaison porte sur le contenu : deux lignes qui
+                // décrivent le même colis n'en font qu'un.
+                $built[json_encode($element)] ??= $element;
             }
         }
 
@@ -126,49 +150,23 @@ final readonly class MappingInterpreter
     }
 
     /**
-     * Valeur d'une colonne dans une ligne.
+     * Les éléments qu'un modèle parcourt dans une ligne.
      *
-     * Le point permet d'atteindre une valeur imbriquée d'un fichier JSON —
-     * `client.reference` — sans quoi un fichier structuré serait illisible. Une
-     * colonne CSV portant un point est cherchée telle quelle en premier : son
-     * nom prime sur l'interprétation du séparateur.
+     * Sans `@each`, la ligne elle-même. Avec, chaque élément de la
+     * sous-collection, qui garde l'accès à son parent sous `^`.
      *
      * @param  array<string, mixed>  $row
+     * @return list<array<string, mixed>>
      */
-    private function valueOf(array $row, string $path): mixed
+    private function itemsOf(array $row, mixed $each): array
     {
-        if (array_key_exists($path, $row)) {
-            return $this->clean($row[$path]);
+        if (! is_string($each) || $each === '') {
+            return [$row];
         }
 
-        $current = $row;
-
-        foreach (explode('.', $path) as $segment) {
-            if (! is_array($current) || ! array_key_exists($segment, $current)) {
-                return null;
-            }
-
-            $current = $current[$segment];
-        }
-
-        return $this->clean($current);
-    }
-
-    /**
-     * Une cellule vide n'est pas une valeur.
-     *
-     * Un CSV rend `''` pour une colonne non renseignée. La conserver
-     * transformerait un champ absent en chaîne vide, que la validation
-     * accepterait là où elle aurait dû réclamer une valeur.
-     */
-    private function clean(mixed $value): mixed
-    {
-        if (is_string($value)) {
-            $trimmed = trim($value);
-
-            return $trimmed === '' ? null : $trimmed;
-        }
-
-        return $value;
+        return array_map(
+            static fn (array $item): array => $item + [MappingDirectives::PARENT => $row],
+            SourcePath::collection($row, $each),
+        );
     }
 }

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { CustomerPortalRolesSection } from '../components/CustomerPortalRolesSection'
 import { useRoleList } from '../hooks/useRoles'
 import { isEditableRole, type Role } from '../types/role'
 import { PermissionGuard } from '@/app/guards/PermissionGuard'
@@ -120,6 +121,8 @@ export function RoleListPage() {
           />
         )}
       />
+
+      <CustomerPortalRolesSection />
     </div>
   )
 }

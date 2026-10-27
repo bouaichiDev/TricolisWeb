@@ -15,4 +15,9 @@ final class ExportJobNotRetryable extends RuntimeException
     {
         return new self('Cet export a déjà été transmis : le relancer produirait un doublon chez le client.');
     }
+
+    public static function inactiveConfiguration(): self
+    {
+        return new self('La configuration de cet export est désactivée : réactivez-la avant de relancer.');
+    }
 }

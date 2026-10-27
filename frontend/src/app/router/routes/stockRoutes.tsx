@@ -1,6 +1,8 @@
 import { Navigate, Route } from 'react-router-dom'
 
 import { guarded } from './guarded'
+import { StockAdjustmentRequestDetailPage } from '@/modules/stock/pages/StockAdjustmentRequestDetailPage'
+import { StockAdjustmentRequestListPage } from '@/modules/stock/pages/StockAdjustmentRequestListPage'
 import { StockBalanceListPage } from '@/modules/stock/pages/StockBalanceListPage'
 import { StockDashboardPage } from '@/modules/stock/pages/StockDashboardPage'
 import { StockItemCreatePage } from '@/modules/stock/pages/StockItemCreatePage'
@@ -139,6 +141,23 @@ export const stockRoutes = [
     key="stock-reservations-detail"
     path="/stock/reservations/:id"
     element={guarded('stock_reservations.view', <StockReservationDetailPage />, {
+      organizationOnly: true,
+    })}
+  />,
+
+  // Demandes de correction du portail client : lues et tranchees, jamais
+  // creees ici — une demande nait chez le client.
+  <Route
+    key="stock-adjustment-requests"
+    path="/stock/adjustment-requests"
+    element={guarded('stock_adjustment_requests.view', <StockAdjustmentRequestListPage />, {
+      organizationOnly: true,
+    })}
+  />,
+  <Route
+    key="stock-adjustment-requests-detail"
+    path="/stock/adjustment-requests/:id"
+    element={guarded('stock_adjustment_requests.view', <StockAdjustmentRequestDetailPage />, {
       organizationOnly: true,
     })}
   />,

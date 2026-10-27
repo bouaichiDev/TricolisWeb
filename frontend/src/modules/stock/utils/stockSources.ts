@@ -12,6 +12,8 @@
 export const STOCK_ITEM_SOURCE = 'stock_item'
 export const STOCK_LOCATION_SOURCE = 'stock_location'
 export const STOCK_RESERVATION_SOURCE = 'stock_reservation'
+/** Demandes de correction du portail client (Phase 5b). */
+export const STOCK_ADJUSTMENT_REQUEST_SOURCE = 'stock_adjustment_request'
 
 /**
  * Quantité lisible, à partir de ce que l'API renvoie.

@@ -174,6 +174,7 @@
     "stockItems": "Articles",
     "stockMovements": "Mouvements",
     "stockReservations": "Réservations",
+    "stockAdjustmentRequests": "Demandes de correction",
     "integrations": "Intégrations",
     "importConfigurations": "Configurations import",
     "customerApiAccess": "Accès API clients",
@@ -396,7 +397,12 @@
     "organizationField": "Organisation",
     "scopeFixed": "Un rôle créé ici s’applique à cette organisation uniquement.",
     "permissionsDelegable": "Seules les permissions que vous pouvez vous-même accorder sont proposées.",
-    "scopeOrganization": "Organisation"
+    "scopeOrganization": "Organisation",
+    "scopeCustomer": "Portail client",
+    "customerPortal": {
+      "title": "Rôles du portail client",
+      "description": "Rôles attribués aux utilisateurs de vos clients. Leurs permissions sont fixées par l’application ; vous composez ici leur tableau de bord."
+    }
   },
   "agencies": {
     "title": "Agences",
@@ -472,7 +478,8 @@
       "phone": "Téléphone",
       "paymentMode": "Mode de paiement",
       "communicationMode": "Mode de communication",
-      "status": "Statut"
+      "status": "Statut",
+      "defaultAgency": "Agence par défaut"
     },
     "capability": {
       "catalogEnabled": "Catalogue",
@@ -499,7 +506,9 @@
       "hint": "La mise en page employée par les factures de ce client.",
       "create": "Créer un modèle spécifique",
       "usesGlobal": "Aucun modèle spécifique : le modèle du transporteur sera employé."
-    }
+    },
+    "defaultAgencyAuto": "Première agence active",
+    "defaultAgencyHint": "Reçoit les commandes passées depuis le portail client."
   },
   "customerSites": {
     "title": "Sites",
@@ -1088,7 +1097,68 @@
     "lineStockHint": "Ce qui est réservé pour cette ligne, et où.",
     "needsOneLocation": "Indiquez au moins un emplacement d’origine ou de destination.",
     "sameLocation": "L’origine et la destination doivent être différentes.",
-    "deleteItemConfirm": "Supprimer l’article {{code}} ? Un article qui porte encore des soldes, des mouvements ou des réservations sera refusé."
+    "deleteItemConfirm": "Supprimer l’article {{code}} ? Un article qui porte encore des soldes, des mouvements ou des réservations sera refusé.",
+    "adjustments": {
+      "title": "Demandes de correction",
+      "subtitle": "Écarts de stock signalés par les clients depuis leur portail. Les demandes en attente apparaissent en premier.",
+      "detailTitle": "Demande de correction — {{article}}",
+      "customerHint": "Écarts signalés par ce client depuis son portail.",
+      "empty": "Aucune demande de correction.",
+      "emptyForCustomer": "Ce client n’a déposé aucune demande de correction.",
+      "searchPlaceholder": "Code article ou motif",
+      "createdFrom": "Déposée à partir du",
+      "createdTo": "Déposée jusqu’au",
+      "wholeItem": "Tout l’article",
+      "approve": "Accepter",
+      "reject": "Refuser",
+      "approved": "Demande acceptée : le stock est corrigé.",
+      "rejected": "Demande refusée.",
+      "approveHint": "Le stock sera ramené à la quantité constatée par le client, par un mouvement de correction.",
+      "rejectHint": "Le stock ne bouge pas. Le client lira votre réponse dans son portail.",
+      "pickLocation": "Emplacement à corriger",
+      "pickLocationPlaceholder": "Choisir un emplacement",
+      "pickLocationHint": "La demande porte sur tout l’article : choisissez l’emplacement qui portera la correction. Seuls les emplacements où l’article a du stock sont proposés.",
+      "answerOptional": "Réponse au client (facultative)",
+      "answerRequired": "Réponse au client (obligatoire)",
+      "answerTooShort": "Expliquez au client pourquoi : au moins 3 caractères.",
+      "conflict": "Décision impossible.",
+      "driftAlert": "Le stock a changé depuis la demande : {{displayed}} affichés au client, {{current}} aujourd’hui. L’acceptation corrigera l’état actuel vers la quantité constatée.",
+      "movementLink": "{{type}} · {{quantity}}",
+      "sections": {
+        "request": "Demande du client",
+        "decision": "Décision"
+      },
+      "fields": {
+        "createdAt": "Déposée le",
+        "displayed": "Quantité affichée au client",
+        "displayedShort": "Affichée",
+        "requested": "Quantité constatée par le client",
+        "requestedShort": "Constatée",
+        "difference": "Écart déclaré",
+        "current": "Quantité actuelle en stock",
+        "reason": "Motif",
+        "comment": "Commentaire du client",
+        "requester": "Demandeur",
+        "reviewer": "Valideur",
+        "reviewedAt": "Traitée le",
+        "reviewComment": "Réponse au client",
+        "movement": "Mouvement créé"
+      },
+      "recap": {
+        "direction": "Sens",
+        "inbound": "Entrée en stock",
+        "outbound": "Sortie de stock",
+        "none": "Le stock correspond déjà à la quantité constatée : la demande sera acceptée sans mouvement.",
+        "currentHere": "Stock à cet emplacement",
+        "currentValue": "{{quantity}} (dont {{reserved}} réservés)"
+      },
+      "settings": {
+        "title": "Corrections de stock",
+        "hint": "Type donné au mouvement créé quand une demande de correction est acceptée. Laissé vide, « adjustment » est utilisé.",
+        "movementType": "Type de mouvement de correction",
+        "defaultValue": "adjustment"
+      }
+    }
   },
   "communicationChannels": {
     "email": "E-mail",
@@ -1664,6 +1734,9 @@
     "statusHint": "Identifiant numérique du statut, unique pour cette entité.",
     "codeHint": "Valeur stockée dans la colonne « status » de l’entité — c’est elle qui fait le lien.",
     "iconHint": "Nom d’icône Lucide, par exemple « CircleCheck ».",
+    "colorHint": "Teinte du statut dans le portail client : calendrier, badges, suivi. Sans couleur, la teinte par défaut.",
+    "colorNone": "Aucune couleur",
+    "colorClear": "Retirer la couleur",
     "activeHint": "Un statut inactif reste lisible mais n’est plus proposé.",
     "isToSendHint": "Passer à ce statut déclenchera un envoi au client.",
     "fields": {
@@ -1672,6 +1745,7 @@
       "code": "Code",
       "label": "Libellé",
       "icon": "Icône",
+      "color": "Couleur",
       "position": "Rang",
       "active": "Actif",
       "isToSend": "Envoi au client",
@@ -2318,7 +2392,10 @@
         "body": "Corps du message",
         "delimiter": "Séparateur CSV",
         "enclosure": "Caractère d’encadrement",
-        "documentTitle": "Titre du document"
+        "documentTitle": "Titre du document",
+        "content": "Contenu envoyé",
+        "retryAttempts": "Tentatives en cas de panne passagère (1 à 5)",
+        "retryBackoff": "Délai avant nouvel essai, en secondes (10 à 3600)"
       },
       "oauthHint": "Le serveur de jetons est appelé avant chaque envoi ; le jeton obtenu est gardé jusqu’à son expiration.",
       "recipientsHint": "Une adresse, ou plusieurs séparées par des virgules.",
@@ -2373,6 +2450,10 @@
       "basic": "Identifiant et mot de passe (Basic)",
       "api_key": "Clé d’API dans un en-tête",
       "oauth2": "OAuth2 (identifiants client)"
+    },
+    "contents": {
+      "invoice": "Facture, à sa clôture",
+      "order_status": "Statut de commande, à chaque changement (JSON)"
     }
   },
   "pricing": {
@@ -2616,10 +2697,9 @@
           "required": "obligatoire",
           "conditional": "conditionnel"
         },
-        "notExecuted": "Cette correspondance est enregistrée, pas exécutée : aucun moteur d’import n’existe encore. Elle sert à préparer et documenter l’intégration.",
+        "executed": "Cette correspondance est exécutée par le moteur d’import (dépôt, relève FTP/SFTP, pull REST). Au-delà d’un nom de colonne, une feuille peut être un objet : @source (colonne), @value (constante), @default (valeur si vide), @type ({{types}}). @each parcourt une sous-collection (^.champ remonte au parent), @records désigne les enregistrements du document.",
         "targets": {
-          "order": "Import de commandes",
-          "claim": "Import de réclamations"
+          "order": "Import de commandes"
         },
         "addField": "Ajouter {{field}} à la correspondance",
         "refused": "La correspondance n’est pas un JSON valide : corrigez-la, puis réessayez."
@@ -2661,6 +2741,116 @@
         "unlocated_other": "{{count}} adresses sans position : le service GPS ne les a pas trouvées. Elles restent livrables, mais absentes de la carte.",
         "pending": "{{count}} adresse en attente : elle sera géolocalisée en arrière-plan.",
         "pending_other": "{{count}} adresses en attente : elles seront géolocalisées en arrière-plan."
+      },
+      "connection": {
+        "title": "Connexion et exécution",
+        "subtitle": "Comment le contenu arrive, et si la configuration est prête à tourner. Aucun secret n’est affiché.",
+        "channel": "Canal",
+        "frequency": "Fréquence",
+        "orderSource": "Origine des commandes",
+        "channels": {
+          "upload": "Dépôt de fichier",
+          "rest_pull": "Pull REST",
+          "sftp": "Relève SFTP",
+          "ftp": "Relève FTP"
+        },
+        "frequencies": {
+          "manual": "À la demande",
+          "hourly": "Toutes les heures"
+        },
+        "flags": {
+          "ready": "Prête à tourner",
+          "inactive": "Configuration désactivée",
+          "mappingMissing": "Aucune correspondance",
+          "mappingIncomplete": "Correspondance incomplète : {{fields}}",
+          "connectionMissing": "Connexion non configurée",
+          "credentialMissing": "Secret manquant",
+          "notTestable": "Connexion non testable"
+        },
+        "unknownTargets": "Champs inconnus du moteur : {{fields}}",
+        "problems": "Correspondance invalide : {{problems}}",
+        "file": {
+          "missing": "Aucune connexion enregistrée pour cette relève : renseignez le serveur ci-dessous.",
+          "host": "Serveur",
+          "directory": "Répertoire",
+          "pattern": "Fichiers relevés",
+          "afterImport": "Après import",
+          "after": {
+            "archive": "Archivé dans {{directory}}",
+            "delete": "Supprimé",
+            "keep": "Laissé en place"
+          },
+          "port": "Port",
+          "username": "Utilisateur",
+          "password": "Mot de passe",
+          "passwordStored": "Un mot de passe est enregistré (chiffré).",
+          "passwordHint": "Laissez vide pour garder le mot de passe actuel ; il n'est jamais réaffiché.",
+          "archiveDirectory": "Répertoire d'archive",
+          "actorEmail": "Auteur des commandes importées (email d'un utilisateur interne)",
+          "afterOptions": {
+            "archive": "Archiver dans un répertoire",
+            "delete": "Supprimer du serveur",
+            "keep": "Laisser en place"
+          },
+          "save": "Enregistrer la connexion",
+          "saved": "Connexion enregistrée.",
+          "clearPassword": "Effacer le mot de passe"
+        },
+        "rest": {
+          "baseUrl": "Adresse de base (HTTPS)",
+          "authType": "Authentification",
+          "auth": {
+            "none": "Aucune",
+            "bearer": "Jeton (Bearer)",
+            "api_key": "Clé d’API",
+            "basic": "Basic (utilisateur:mot de passe)"
+          },
+          "credentials": "Secret",
+          "credentialsHint": "Écriture seule : laissez vide pour garder le secret actuel.",
+          "credentialsStored": "Un secret est enregistré.",
+          "path": "Chemin des commandes",
+          "healthPath": "Chemin de santé (test)",
+          "recordsPath": "Chemin des enregistrements dans la réponse",
+          "pagination": "Pagination",
+          "paginationTypes": {
+            "none": "Aucune",
+            "page": "Par page",
+            "offset": "Par décalage",
+            "cursor": "Par curseur"
+          },
+          "pageParam": "Paramètre de page",
+          "pageSize": "Taille de page",
+          "sinceParam": "Paramètre « depuis le dernier pull »",
+          "actorUserId": "Identifiant de l’utilisateur d’exécution",
+          "lastUsedAt": "Dernier pull réussi",
+          "save": "Enregistrer la connexion",
+          "saved": "Connexion enregistrée."
+        },
+        "test": "Tester la connexion",
+        "testOk": "Test réussi : {{message}}",
+        "testFailed": "Échec du test : {{message}}",
+        "run": "Exécuter maintenant",
+        "runQueued": "Passe mise en file : elle s’exécute en arrière-plan."
+      },
+      "runs": {
+        "title": "Historique des exécutions",
+        "subtitle": "Chaque dépôt ou relève, son bilan et les commandes refusées.",
+        "empty": "Aucune exécution pour l'instant.",
+        "status": {
+          "completed": "Terminé",
+          "completed_with_errors": "Terminé avec erreurs",
+          "rejected": "Fichier refusé",
+          "failed": "Échec"
+        },
+        "channel": {
+          "internal": "Back-office",
+          "portal": "Portail client",
+          "pull": "Relève automatique"
+        },
+        "summary": "{{created}} créée(s), {{updated}} mise(s) à jour, {{skipped}} déjà importée(s), {{refused}} refusée(s)",
+        "failedSummary": "Rien n'a été importé",
+        "by": "Lancé par {{name}}",
+        "order": "Commande n° {{index}} ({{reference}}) :"
       }
     },
     "api": {
@@ -3151,7 +3341,8 @@
     "communications": "Communications",
     "integrations": "Intégrations",
     "administration": "Administration",
-    "quick_actions": "Actions rapides"
+    "quick_actions": "Actions rapides",
+    "customer_portal": "Portail client"
   },
   "dashboardWidgets": {
     "orders_today": {
@@ -3439,6 +3630,27 @@
     "communications_per_day": {
       "label": "Communications par jour",
       "description": "Volume quotidien sur quatorze jours, réparti par canal"
+    },
+    "customer_orders_count": {
+      "label": "Commandes passées",
+      "periodLabel": "Commandes passées sur la période",
+      "description": "Commandes du client, par date de commande"
+    },
+    "customer_deliveries_upcoming": {
+      "label": "Livraisons des 7 prochains jours",
+      "description": "Commandes du client dont un service est demandé dans la semaine"
+    },
+    "customer_orders_by_status": {
+      "label": "Commandes par statut",
+      "description": "Répartition des commandes du client par statut"
+    },
+    "customer_recent_orders": {
+      "label": "Dernières commandes",
+      "description": "Les dernières commandes du client"
+    },
+    "customer_new_order": {
+      "label": "Nouvelle commande",
+      "description": "Raccourci vers la création d’une commande dans le portail"
     }
   },
   "orderTrend": {

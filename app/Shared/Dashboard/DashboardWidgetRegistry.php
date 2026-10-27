@@ -8,11 +8,13 @@ use App\Shared\Dashboard\Catalogue\AdministrationWidgets;
 use App\Shared\Dashboard\Catalogue\BillingWidgets;
 use App\Shared\Dashboard\Catalogue\ClaimsWidgets;
 use App\Shared\Dashboard\Catalogue\CommunicationsWidgets;
+use App\Shared\Dashboard\Catalogue\CustomerPortalWidgets;
 use App\Shared\Dashboard\Catalogue\IntegrationsWidgets;
 use App\Shared\Dashboard\Catalogue\OperationsWidgets;
 use App\Shared\Dashboard\Catalogue\PlanningWidgets;
 use App\Shared\Dashboard\Catalogue\QuickActionWidgets;
 use App\Shared\Dashboard\Catalogue\StockWidgets;
+use App\Shared\Enums\RoleScope;
 
 /**
  * Catalogue des widgets livrés avec l'application. Source unique.
@@ -114,5 +116,40 @@ final class DashboardWidgetRegistry
             self::all(),
             static fn (DashboardWidget $widget): bool => $widget->defaultEnabled,
         ));
+    }
+
+    /**
+     * Le catalogue proposé à un rôle, selon sa portée.
+     *
+     * Les rôles du portail client ont le leur (`CustomerPortalWidgets`) : les
+     * widgets internes lisent les données de toute l'organisation, et ne
+     * doivent jamais être servis à un client. Le catalogue interne, lui, reste
+     * exactement ce qu'il était — `all()`, `defaults()` et `keys()` n'en
+     * connaissent pas d'autre.
+     *
+     * @return array<int, DashboardWidget>
+     */
+    public static function forScope(?RoleScope $scope): array
+    {
+        return $scope === RoleScope::CUSTOMER ? CustomerPortalWidgets::all() : self::all();
+    }
+
+    public static function findIn(?RoleScope $scope, string $key): ?DashboardWidget
+    {
+        foreach (self::forScope($scope) as $widget) {
+            if ($widget->key === $key) {
+                return $widget;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, DashboardWidget>
+     */
+    public static function defaultsFor(?RoleScope $scope): array
+    {
+        return array_values(array_filter(self::forScope($scope), static fn (DashboardWidget $widget): bool => $widget->defaultEnabled));
     }
 }

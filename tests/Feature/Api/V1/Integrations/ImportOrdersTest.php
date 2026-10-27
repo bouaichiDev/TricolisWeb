@@ -16,8 +16,8 @@ use Illuminate\Http\UploadedFile;
  *
  * La prévisualisation dit ce qu'une correspondance produirait ; ceci l'écrit.
  * Le comportement qui compte est le **tout ou rien** : un fichier à moitié
- * importé laisserait un état que personne ne saurait reprendre, et le §4
- * interdit la table d'historique qui permettrait de le rattraper.
+ * importé laisserait un état que personne ne saurait reprendre. L'essai,
+ * même refusé, reste dans l'historique (`ImportOrdersHistoryTest`).
  */
 beforeEach(function (): void {
     $this->seed();
@@ -179,7 +179,7 @@ describe('création des commandes', function (): void {
 describe('tout ou rien', function (): void {
     /**
      * Le comportement central : une commande fautive fait refuser le fichier
-     * entier. Sans table d'historique, un import partiel serait irrattrapable.
+     * entier : un import partiel serait difficile à rattraper.
      */
     it('ne crée rien quand une seule commande est invalide', function (): void {
         $configuration = ($this->configure)();

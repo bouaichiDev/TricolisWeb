@@ -33,6 +33,13 @@ enum MenuSection: string
     case PLATFORM = 'platform';
 
     /**
+     * Permissions du portail client. Elles ne se composent jamais dans un rôle
+     * interne ; la section existe pour que l'invariant « toute permission a
+     * une section » tienne aussi pour elles.
+     */
+    case CUSTOMER_PORTAL = 'customer_portal';
+
+    /**
      * Groupe créé par une organisation.
      *
      * Il n'appartient à aucune découpe métier — c'est l'organisation qui le
@@ -55,6 +62,7 @@ enum MenuSection: string
             self::TRANSPORT => 'Transport',
             self::ADMINISTRATION => 'Administration',
             self::PLATFORM => 'Plateforme',
+            self::CUSTOMER_PORTAL => 'Portail client',
             self::CUSTOM => 'Personnalisé',
         };
     }
@@ -85,6 +93,7 @@ enum MenuSection: string
             self::ADMINISTRATION => 8,
             self::PLATFORM => 9,
             self::CUSTOM => 10,
+            self::CUSTOMER_PORTAL => 11,
         };
     }
 

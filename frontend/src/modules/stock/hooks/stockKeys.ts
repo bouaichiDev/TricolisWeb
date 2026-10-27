@@ -5,6 +5,7 @@ import type {
   StockMovementFilters,
   StockReservationFilters,
 } from '../types/stockFilters'
+import type { StockAdjustmentRequestFilters } from '../types/stockAdjustment'
 
 /**
  * Clés de cache du stock.
@@ -49,4 +50,11 @@ export const stockKeys = {
   reservationList: (filters: StockReservationFilters) =>
     [...stockKeys.reservations(), 'list', filters] as const,
   reservation: (id: string) => [...stockKeys.reservations(), 'detail', id] as const,
+
+  adjustments: () => [...stockKeys.all, 'adjustments'] as const,
+  adjustmentList: (filters: StockAdjustmentRequestFilters) =>
+    [...stockKeys.adjustments(), 'list', filters] as const,
+  adjustmentsOfCustomer: (customerId: string, filters: StockAdjustmentRequestFilters) =>
+    [...stockKeys.adjustments(), 'customer', customerId, filters] as const,
+  adjustment: (id: string) => [...stockKeys.adjustments(), 'detail', id] as const,
 }

@@ -9,7 +9,7 @@ import type { Status } from '../types/status'
  */
 export function statusFormValues(status: Status | null): Record<string, string> {
   if (status === null) {
-    return { source: '', status: '', code: '', label: '', icon: '', position: '' }
+    return { source: '', status: '', code: '', label: '', icon: '', color: '', position: '' }
   }
 
   return {
@@ -18,6 +18,7 @@ export function statusFormValues(status: Status | null): Record<string, string> 
     code: status.code,
     label: status.label,
     icon: status.icon ?? '',
+    color: status.color ?? '',
     position: status.position === null ? '' : String(status.position),
   }
 }

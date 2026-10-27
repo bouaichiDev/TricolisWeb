@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 
-import { IMPORT_TARGETS } from '../utils/importTargetFields'
+import { useImportTargetFields } from '../hooks/useImportConnection'
+import { IMPORT_TARGETS, type ImportTargetGroup } from '../utils/importTargetFields'
 
 interface ImportTargetFieldsReferenceProps {
   /**
@@ -46,6 +47,13 @@ export function ImportTargetFieldsReference({ onInsert }: ImportTargetFieldsRefe
   // Replié, il laisserait une colonne vide et obligerait à un clic de plus.
   const [open, setOpen] = useState(true)
   const [refused, setRefused] = useState(false)
+  // La liste fait foi côté backend ; le relevé local ne sert qu'en attendant.
+  const catalog = useImportTargetFields()
+  const groups: ImportTargetGroup[] =
+    catalog.data?.groups.map((group) => ({
+      key: group.key,
+      fields: group.fields.map((field) => ({ path: field.path, ruleKey: field.requirement, constraint: field.constraint ?? undefined })),
+    })) ?? IMPORT_TARGETS[0].groups
 
   const add = (fieldPath: string) => {
     setRefused(!onInsert(fieldPath))
@@ -86,7 +94,7 @@ export function ImportTargetFieldsReference({ onInsert }: ImportTargetFieldsRefe
 
           {/* Seule la liste défile : l'avertissement du bas doit rester lu. */}
           <div className="flex max-h-[26rem] flex-col gap-5 overflow-y-auto pr-1">
-            {IMPORT_TARGETS.map((target) => (
+            {[{ key: 'order', groups }].map((target) => (
               <section key={target.key} className="flex flex-col gap-4">
                 <p className="border-b pb-1.5 text-sm font-medium">
                   {t(`integrations.imports.reference.targets.${target.key}`)}
@@ -138,9 +146,9 @@ export function ImportTargetFieldsReference({ onInsert }: ImportTargetFieldsRefe
             ))}
           </div>
 
-          {/* Le point le plus important, et le plus facile à manquer. */}
+          {/* Ce que le moteur sait faire de plus qu'un nom de colonne. */}
           <p className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs">
-            {t('integrations.imports.reference.notExecuted')}
+            {t('integrations.imports.reference.executed', { types: (catalog.data?.types ?? []).join(', ') })}
           </p>
         </div>
       ) : null}

@@ -1,17 +1,17 @@
 import { IMPORT_RECIPIENT_GROUP } from './importRecipientFields'
 
 /**
- * Champs que Tricolis accepte à l'arrivée d'un document client.
+ * Champs que Tricolis accepte à l'arrivée d'une commande client.
  *
- * Ces listes sont relevées **une par une** sur les Form Requests réelles —
- * `StoreOrderRequest` et `StoreClaimRequest` — avec leur obligation et leur
- * contrainte. Rien n'y est inventé, et rien n'y est ajouté « pour faire
- * complet ».
+ * **La liste qui fait foi est celle du backend** (`GET
+ * /customer-import-configurations/target-fields`, Phase 6 portail) ; ce relevé
+ * local, fait sur `StoreOrderRequest`, ne sert qu'à l'affichage en attendant
+ * sa réponse. Le moteur n'importe que des commandes : la cible « réclamation »
+ * a été retirée.
  *
  * Elles documentent le **côté gauche** d'un mapping d'import : la destination.
- * Le côté droit décrit le fichier du client et n'appartient qu'à lui — `mapping`
- * est validé comme un tableau sans schéma, et le §11 interdit d'inventer un
- * langage de correspondance que le backend ne possède pas.
+ * Le côté droit décrit le fichier du client et n'appartient qu'à lui ; ses
+ * directives (`@source`, `@value`, `@type`…) sont celles du backend.
  *
  * Les identifiants — `customerId`, `agencyId`, `serviceId`, `addressId` — sont
  * volontairement absents : un fichier client porte des références métier, pas
@@ -58,18 +58,15 @@ export interface ImportTargetGroup {
 }
 
 /**
- * Une cible d'import : un document entier, avec ses sections.
- *
- * Commande et réclamation sont **deux documents distincts**, servis par deux
- * endpoints différents. Les mélanger dans une seule liste laisserait croire
- * qu'un même fichier porte des colis et un type de réclamation.
+ * Une cible d'import : un document entier, avec ses sections. Seule la
+ * commande en est une : c'est ce que le moteur d'import crée.
  */
 export interface ImportTarget {
-  key: 'order' | 'claim'
+  key: 'order'
   groups: ImportTargetGroup[]
 }
 
-/** Relevé sur `StoreOrderRequest::rules()` et `StoreClaimRequest::rules()`. */
+/** Relevé sur `StoreOrderRequest::rules()` — repli d'affichage, voir plus haut. */
 export const IMPORT_TARGETS: ImportTarget[] = [
   {
     key: 'order',
@@ -230,37 +227,6 @@ export const IMPORT_TARGETS: ImportTarget[] = [
             constraint: 'load, delivery, billing, operations, emergency, other',
           },
           { path: 'services[].contacts[].isPrimary', ruleKey: 'optional', constraint: 'booléen' },
-        ],
-      },
-    ],
-  },
-  {
-    key: 'claim',
-    groups: [
-      {
-        key: 'claim',
-        fields: [
-          { path: 'title', ruleKey: 'required', constraint: 'max 255' },
-          { path: 'claimType', ruleKey: 'required', constraint: 'max 64, chaîne libre' },
-          { path: 'status', ruleKey: 'required', constraint: 'code du référentiel, max 32' },
-          { path: 'description', ruleKey: 'optional' },
-          { path: 'cause', ruleKey: 'optional', constraint: 'max 255' },
-        ],
-      },
-      {
-        // Une réclamation se rattache à ce qu'elle conteste. Les trois champs
-        // attendent des **identifiants de notre base**, que le fichier d'un
-        // client ne porte pas : c'est au futur moteur de les résoudre depuis
-        // une référence métier.
-        key: 'claimLinks',
-        fields: [
-          { path: 'orderId', ruleKey: 'optional', constraint: 'identifiant Tricolis, à résoudre' },
-          {
-            path: 'orderServiceId',
-            ruleKey: 'optional',
-            constraint: 'identifiant Tricolis, à résoudre',
-          },
-          { path: 'tourId', ruleKey: 'optional', constraint: 'identifiant Tricolis, à résoudre' },
         ],
       },
     ],

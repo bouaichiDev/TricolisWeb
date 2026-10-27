@@ -56,6 +56,12 @@ final class PortalRateLimits
             Config::integer('provider_portal.rate_limits.api_per_minute', 300),
         )->by('provider-portal|'.self::caller($request)));
 
+        // Les créations (chauffeurs, véhicules) : un plafond serré, qui borne
+        // aussi les essais d'e-mails ou d'immatriculations déjà pris.
+        RateLimiter::for('provider-portal-write', static fn (Request $request): Limit => Limit::perMinute(
+            Config::integer('provider_portal.rate_limits.writes_per_minute', 30),
+        )->by('provider-portal-write|'.self::caller($request)));
+
         // Les dépôts de fichiers coûtent cher (lecture, validation) : à part.
         RateLimiter::for('customer-portal-import', static fn (Request $request): Limit => Limit::perMinute(
             Config::integer('customer_portal.rate_limits.imports_per_minute', 10),

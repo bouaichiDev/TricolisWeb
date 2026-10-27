@@ -106,3 +106,13 @@ export function errorMessage(error: unknown): string {
 
   return 'Une erreur inattendue est survenue.'
 }
+
+/**
+ * La raison d'un refus d'action : la première erreur de champ quand le
+ * serveur en donne une (« affecté à une tournée… »), sinon le message.
+ */
+export function refusalMessage(error: unknown): string {
+  if (error instanceof ApiError) return Object.values(error.errors)[0]?.[0] ?? error.message
+
+  return errorMessage(error)
+}

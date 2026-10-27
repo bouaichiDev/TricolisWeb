@@ -1,9 +1,16 @@
-# Portail fournisseur — Phase 1 : fondations
+# Portail fournisseur
 
 Spécification : `docs/superpowers/specs/2026-10-27-portail-fournisseur-design.md`.
 Plan : `docs/superpowers/plans/2026-10-27-portail-fournisseur-phase-1.md`.
 
-## Ce que la phase 1 livre
+## Ce qui est livré
+
+**Phase 2 — chauffeurs et véhicules** : listes filtrées, ajout, modification,
+désactivation et réactivation, via les Actions métier existantes. Le compte créé
+pour un chauffeur ne donne pas accès au portail. Disponibilités :
+`BLOCKED_DESIGN_DECISION` (aucun modèle).
+
+**Phase 1 — fondations :**
 
 - **Rattachement** `provider_users` (+ `provider_user_roles`, `provider_user_invitations`) :
   un `User` ouvre le portail d'un fournisseur s'il y est rattaché, actif.

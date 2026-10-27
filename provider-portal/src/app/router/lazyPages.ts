@@ -12,3 +12,5 @@ function lazyPage<K extends string>(load: () => Promise<Record<K, ComponentType>
 }
 
 export const ProfilePage = lazyPage(() => import('@/modules/profile/pages/ProfilePage'), 'ProfilePage')
+export const DriversPage = lazyPage(() => import('@/modules/drivers/pages/DriversPage'), 'DriversPage')
+export const VehiclesPage = lazyPage(() => import('@/modules/vehicles/pages/VehiclesPage'), 'VehiclesPage')

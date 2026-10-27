@@ -11,6 +11,7 @@ use Database\Seeders\DemoCustomerPortalSeeder;
 use Database\Seeders\DemoCustomerPortalStockSeeder;
 use Database\Seeders\DemoCustomerSeeder;
 use Database\Seeders\DemoFleetSeeder;
+use Database\Seeders\DemoProviderPortalFleetSeeder;
 use Database\Seeders\DemoProviderPortalSeeder;
 use Database\Seeders\DevelopmentOrganizationSeeder;
 use Database\Seeders\GpsApiConfigurationSeeder;
@@ -28,7 +29,7 @@ const DEMO_TABLES = [
     'organizations', 'users', 'customers', 'customer_users', 'orders', 'agencies', 'depots', 'vehicles',
     'customer_catalogs', 'customer_catalog_items', 'stock_items', 'stock_movements', 'claims',
     'customer_import_configurations', 'customer_export_configurations', 'organization_api_configurations',
-    'providers', 'provider_users', 'provider_user_roles',
+    'providers', 'provider_users', 'provider_user_roles', 'drivers',
 ];
 
 beforeEach(function (): void {
@@ -36,6 +37,7 @@ beforeEach(function (): void {
     // seule la garde d'environnement peut alors empêcher l'écriture.
     $this->seed();
     $this->seed(CustomerPortalDemoSeeder::class);
+    $this->seed(DemoProviderPortalSeeder::class);
     $this->counts = static fn (): array => collect(DEMO_TABLES)->mapWithKeys(static fn (string $table): array => [$table => DB::table($table)->count()])->all();
 });
 
@@ -56,4 +58,5 @@ it('n’écrit rien en production', function (string $seeder): void {
     DemoCustomerPortalCatalogSeeder::class, DemoAgencySeeder::class, DemoCustomerSeeder::class, DemoFleetSeeder::class,
     DevelopmentOrganizationSeeder::class, DeliveredOrderSeeder::class, SwissDepotSeeder::class, SwissOrderSeeder::class,
     GpsApiConfigurationSeeder::class, PlatformAdminSeeder::class, DemoProviderPortalSeeder::class,
+    DemoProviderPortalFleetSeeder::class,
 ]);

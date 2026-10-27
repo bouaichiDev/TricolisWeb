@@ -22,6 +22,9 @@ use App\Http\Controllers\Api\V1\Provider\ProviderAuthController;
 use App\Http\Controllers\Api\V1\Provider\ProviderContextController;
 use App\Http\Controllers\Api\V1\Provider\ProviderDashboardController;
 use App\Http\Controllers\Api\V1\Provider\ProviderPasswordController;
+use App\Http\Controllers\Api\V1\Provider\Resources\ProviderDriverController;
+use App\Http\Controllers\Api\V1\Provider\Resources\ProviderResourceStatusController;
+use App\Http\Controllers\Api\V1\Provider\Resources\ProviderVehicleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->name('auth.')->group(static function (): void {
@@ -59,4 +62,35 @@ Route::middleware(['auth:sanctum', 'provider.portal', 'throttle:provider-portal'
         ->name('profile.show');
     Route::put('profile', [ProviderContextController::class, 'updateProfile'])->name('profile.update');
     Route::put('profile/password', [ProviderContextController::class, 'changePassword'])->name('profile.password');
+
+    // Phase 2 — chauffeurs et véhicules du fournisseur courant.
+    Route::prefix('drivers')->name('drivers.')->group(static function (): void {
+        Route::middleware('provider.permission:provider.drivers.view')->group(static function (): void {
+            Route::get('/', [ProviderDriverController::class, 'index'])->name('index');
+            Route::get('{driver}', [ProviderDriverController::class, 'show'])->name('show');
+        });
+        Route::post('/', [ProviderDriverController::class, 'store'])
+            ->middleware(['provider.permission:provider.drivers.create', 'throttle:provider-portal-write'])->name('store');
+        Route::middleware('provider.permission:provider.drivers.update')->group(static function (): void {
+            Route::patch('{driver}', [ProviderDriverController::class, 'update'])->name('update');
+            Route::post('{driver}/deactivate', [ProviderResourceStatusController::class, 'deactivateDriver'])->name('deactivate');
+            Route::post('{driver}/activate', [ProviderResourceStatusController::class, 'activateDriver'])->name('activate');
+        });
+    });
+
+    Route::get('vehicle-types', [ProviderVehicleController::class, 'types'])
+        ->middleware('provider.permission:provider.vehicles.view')->name('vehicle-types');
+    Route::prefix('vehicles')->name('vehicles.')->group(static function (): void {
+        Route::middleware('provider.permission:provider.vehicles.view')->group(static function (): void {
+            Route::get('/', [ProviderVehicleController::class, 'index'])->name('index');
+            Route::get('{vehicle}', [ProviderVehicleController::class, 'show'])->name('show');
+        });
+        Route::post('/', [ProviderVehicleController::class, 'store'])
+            ->middleware(['provider.permission:provider.vehicles.create', 'throttle:provider-portal-write'])->name('store');
+        Route::middleware('provider.permission:provider.vehicles.update')->group(static function (): void {
+            Route::patch('{vehicle}', [ProviderVehicleController::class, 'update'])->name('update');
+            Route::post('{vehicle}/deactivate', [ProviderResourceStatusController::class, 'deactivateVehicle'])->name('deactivate');
+            Route::post('{vehicle}/activate', [ProviderResourceStatusController::class, 'activateVehicle'])->name('activate');
+        });
+    });
 });

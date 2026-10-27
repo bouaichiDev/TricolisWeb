@@ -63,6 +63,7 @@ class DatabaseSeeder extends Seeder
             $this->call(DemoCustomerPortalCatalogSeeder::class);
             // Portail fournisseur : Transports Alpha et Beta, et leurs comptes.
             $this->call(DemoProviderPortalSeeder::class);
+            $this->call(DemoProviderPortalFleetSeeder::class);
         }
     }
 }

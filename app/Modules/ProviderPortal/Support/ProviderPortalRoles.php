@@ -11,8 +11,9 @@ namespace App\Modules\ProviderPortal\Support;
  * Aucune règle du code ne lit ces codes pour décider d'un droit — seules les
  * permissions portées par le rôle comptent.
  *
- * Phase 1 : les quatre rôles portent les permissions de base (accès, tableau
- * de bord, profil). Les phases suivantes les différencient.
+ * Chacun porte la base (accès, tableau de bord, profil) puis son métier :
+ * le gestionnaire flotte gère chauffeurs et véhicules, l'exploitant et le
+ * lecteur les consultent.
  */
 final class ProviderPortalRoles
 {
@@ -30,6 +31,13 @@ final class ProviderPortalRoles
         'provider.profile.view',
     ];
 
+    private const array FLEET_READ = ['provider.drivers.view', 'provider.vehicles.view'];
+
+    private const array FLEET_WRITE = [
+        'provider.drivers.create', 'provider.drivers.update',
+        'provider.vehicles.create', 'provider.vehicles.update',
+    ];
+
     /**
      * @return array<string, array{name: string, permissions: array<int, string>}>
      */
@@ -42,15 +50,15 @@ final class ProviderPortalRoles
             ],
             self::DISPATCHER => [
                 'name' => 'Exploitant',
-                'permissions' => self::BASE,
+                'permissions' => [...self::BASE, ...self::FLEET_READ],
             ],
             self::FLEET_MANAGER => [
                 'name' => 'Gestionnaire flotte',
-                'permissions' => self::BASE,
+                'permissions' => [...self::BASE, ...self::FLEET_READ, ...self::FLEET_WRITE],
             ],
             self::VIEWER => [
                 'name' => 'Lecture',
-                'permissions' => self::BASE,
+                'permissions' => [...self::BASE, ...self::FLEET_READ],
             ],
         ];
     }

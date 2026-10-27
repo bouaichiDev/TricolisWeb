@@ -24,6 +24,14 @@ final class ProviderPortalPermissions
         'provider.portal.access' => 'Accéder au portail fournisseur',
         'provider.dashboard.view' => 'Voir le tableau de bord',
         'provider.profile.view' => 'Voir le profil du fournisseur',
+
+        'provider.drivers.view' => 'Voir les chauffeurs',
+        'provider.drivers.create' => 'Ajouter un chauffeur',
+        'provider.drivers.update' => 'Modifier, désactiver ou réactiver un chauffeur',
+
+        'provider.vehicles.view' => 'Voir les véhicules',
+        'provider.vehicles.create' => 'Ajouter un véhicule',
+        'provider.vehicles.update' => 'Modifier, désactiver ou réactiver un véhicule',
     ];
 
     public static function isProviderPermission(string $code): bool

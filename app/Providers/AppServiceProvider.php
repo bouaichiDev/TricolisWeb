@@ -12,6 +12,7 @@ use App\Modules\Integrations\Services\CustomerApiContext;
 use App\Modules\Orders\Events\OrderCreated;
 use App\Modules\Orders\Events\OrderStatusChanged;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\ProviderStatusLabels;
 use App\Modules\Statuses\Services\DefaultStatuses;
 use App\Modules\Statuses\Services\StatusPropagator;
 use App\OpenApi\AddOrganizationHeader;
@@ -46,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
         // Le fournisseur courant du portail fournisseur : resolu par
         // `provider.portal`, relu par tout ce qui suit.
         $this->app->scoped(CurrentProviderContext::class);
+        $this->app->scoped(ProviderStatusLabels::class);
         // Libellés de statuts du portail : le référentiel est lu une fois par
         // requête, pas une fois par commande de la liste.
         $this->app->scoped(CustomerStatusLabels::class);

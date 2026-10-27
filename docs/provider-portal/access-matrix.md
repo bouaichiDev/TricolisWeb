@@ -1,4 +1,4 @@
-# Portail fournisseur — matrice d'accès (Phase 1)
+# Portail fournisseur — matrice d'accès (phases 1 et 2)
 
 ## Routes du portail — `api/v1/provider`
 
@@ -16,6 +16,23 @@
 | GET | `profile` | idem | `provider.profile.view` | `provider-portal` |
 | PUT | `profile` | idem | `provider.portal.access` (son propre compte) | `provider-portal` |
 | PUT | `profile/password` | idem | `provider.portal.access` (son propre compte) | `provider-portal` |
+| GET | `drivers` | idem | `provider.drivers.view` | `provider-portal` |
+| GET | `drivers/{id}` | idem | `provider.drivers.view` | `provider-portal` |
+| POST | `drivers` | idem | `provider.drivers.create` | `provider-portal-write` (30/min) |
+| PATCH | `drivers/{id}` | idem | `provider.drivers.update` | `provider-portal` |
+| POST | `drivers/{id}/deactivate`, `drivers/{id}/activate` | idem | `provider.drivers.update` | `provider-portal` |
+| GET | `vehicle-types` | idem | `provider.vehicles.view` | `provider-portal` |
+| GET | `vehicles`, `vehicles/{id}` | idem | `provider.vehicles.view` | `provider-portal` |
+| POST | `vehicles` | idem | `provider.vehicles.create` | `provider-portal-write` (30/min) |
+| PATCH | `vehicles/{id}` | idem | `provider.vehicles.update` | `provider-portal` |
+| POST | `vehicles/{id}/deactivate`, `vehicles/{id}/activate` | idem | `provider.vehicles.update` | `provider-portal` |
+
+Chauffeurs et véhicules sont toujours lus dans le fournisseur **et** l'organisation
+du jeton (`ProviderResourceScope`) : ceux d'un autre fournisseur, du transporteur
+ou inexistants répondent le même 404. `providerId`, `organizationId`, `status`,
+`userId`, `addressId`, `contactId` sont refusés (422). Un code, un e-mail ou une
+immatriculation déjà pris est refusé sans dire par qui. Une ressource affectée à
+une tournée planifiée, confirmée ou en cours ne se désactive pas (422).
 
 Aucune route de gestion d'utilisateurs ni de rôles (vérifié en E2E : 404).
 
@@ -34,14 +51,16 @@ Aucune route de gestion d'utilisateurs ni de rôles (vérifié en E2E : 404).
 `{providerUser}` est toujours cherché dans le fournisseur de l'URL : un membre
 d'un autre fournisseur répond 404. Ces routes refusent les jetons de portail.
 
-## Rôles par défaut (Phase 1)
+## Rôles par défaut
 
-| Rôle | `portal.access` | `dashboard.view` | `profile.view` |
+| Rôle | Base¹ | Chauffeurs / véhicules : voir | créer, modifier, (dés)activer |
 |---|---|---|---|
 | Administrateur fournisseur (`PROVIDER_ADMIN`) | ✓ | ✓ | ✓ |
-| Exploitant (`PROVIDER_DISPATCHER`) | ✓ | ✓ | ✓ |
 | Gestionnaire flotte (`PROVIDER_FLEET_MANAGER`) | ✓ | ✓ | ✓ |
-| Lecture (`PROVIDER_VIEWER`) | ✓ | ✓ | ✓ |
+| Exploitant (`PROVIDER_DISPATCHER`) | ✓ | ✓ | — |
+| Lecture (`PROVIDER_VIEWER`) | ✓ | ✓ | — |
 
-Les phases suivantes ajoutent leurs permissions et différencient les rôles ;
-`ProviderPortalSeeder` les accorde aux rôles existants au rejeu.
+¹ `provider.portal.access`, `provider.dashboard.view`, `provider.profile.view`.
+
+`ProviderPortalSeeder` accorde les permissions nouvelles aux rôles existants au
+rejeu : `php artisan db:seed --class=ProviderPortalSeeder --force` après chaque phase.

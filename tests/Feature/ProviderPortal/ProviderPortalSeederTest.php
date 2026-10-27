@@ -82,7 +82,7 @@ it('ne compte que les rôles fournisseur actifs de l’organisation du fournisse
     $own = Role::where('organization_id', $provider->organization_id)->where('code', ProviderPortalRoles::VIEWER)->firstOrFail();
     ProviderUserRole::create(['provider_user_id' => $membership->id, 'role_id' => $own->id]);
 
-    expect(ProviderPermissions::codesFor($membership->fresh()))->toBe(collect(ProviderPortalPermissions::codes())->sort()->values()->all());
+    expect(ProviderPermissions::codesFor($membership->fresh()))->toBe(collect(ProviderPortalRoles::defaults()[ProviderPortalRoles::VIEWER]['permissions'])->sort()->values()->all());
 
     $own->update(['status' => 'inactive']);
 
@@ -97,4 +97,20 @@ it('tient les rôles fournisseur hors de la liste des rôles internes, sauf dema
 
     expect($codes->filter(fn (string $code): bool => str_starts_with($code, 'PROVIDER_'))->all())->toBe([])
         ->and($providerCodes->sort()->values()->all())->toBe(['PROVIDER_ADMIN', 'PROVIDER_DISPATCHER', 'PROVIDER_FLEET_MANAGER', 'PROVIDER_VIEWER']);
+});
+
+it('accorde au rejeu les permissions de la phase 2 aux rôles déjà semés, selon leur métier', function (): void {
+    $codes = ['provider.drivers.view', 'provider.drivers.create', 'provider.drivers.update', 'provider.vehicles.view', 'provider.vehicles.create', 'provider.vehicles.update'];
+    // Base semée avant la phase 2 : ces permissions n'existaient pas encore.
+    Permission::whereIn('code', $codes)->delete();
+
+    $this->seed(ProviderPortalSeeder::class);
+
+    $held = fn (string $role): array => Role::where('organization_id', $this->organization->id)->where('code', $role)->firstOrFail()
+        ->permissions()->whereIn('code', $codes)->pluck('code')->sort()->values()->all();
+
+    expect($held('PROVIDER_ADMIN'))->toBe(collect($codes)->sort()->values()->all())
+        ->and($held('PROVIDER_FLEET_MANAGER'))->toBe(collect($codes)->sort()->values()->all())
+        ->and($held('PROVIDER_DISPATCHER'))->toBe(['provider.drivers.view', 'provider.vehicles.view'])
+        ->and($held('PROVIDER_VIEWER'))->toBe(['provider.drivers.view', 'provider.vehicles.view']);
 });

@@ -56,4 +56,5 @@ Les parcours Playwright tournent contre la base de test (API 8003, web 5191,
 ```bash
 php artisan migrate:fresh --seed --env=testing
 php artisan db:seed --class=DemoProviderPortalSeeder --env=testing
+php artisan db:seed --class=DemoProviderPortalFleetSeeder --env=testing
 ```

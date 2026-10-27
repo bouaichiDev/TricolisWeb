@@ -114,3 +114,18 @@ it('accorde au rejeu les permissions de la phase 2 aux rôles déjà semés, sel
         ->and($held('PROVIDER_DISPATCHER'))->toBe(['provider.drivers.view', 'provider.vehicles.view'])
         ->and($held('PROVIDER_VIEWER'))->toBe(['provider.drivers.view', 'provider.vehicles.view']);
 });
+
+it('accorde au rejeu les permissions de la phase 3 selon le métier de chaque rôle', function (): void {
+    $codes = ['provider.tours.view', 'provider.tours.assign-resources', 'provider.calendar.view'];
+    Permission::whereIn('code', $codes)->delete();
+
+    $this->seed(ProviderPortalSeeder::class);
+
+    $held = fn (string $role): array => Role::where('organization_id', $this->organization->id)->where('code', $role)->firstOrFail()
+        ->permissions()->whereIn('code', $codes)->pluck('code')->sort()->values()->all();
+
+    expect($held('PROVIDER_ADMIN'))->toBe(['provider.calendar.view', 'provider.tours.assign-resources', 'provider.tours.view'])
+        ->and($held('PROVIDER_DISPATCHER'))->toBe(['provider.calendar.view', 'provider.tours.assign-resources', 'provider.tours.view'])
+        ->and($held('PROVIDER_FLEET_MANAGER'))->toBe(['provider.calendar.view', 'provider.tours.view'])
+        ->and($held('PROVIDER_VIEWER'))->toBe(['provider.calendar.view', 'provider.tours.view']);
+});

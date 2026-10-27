@@ -25,6 +25,10 @@ final class ProviderPortalPermissions
         'provider.dashboard.view' => 'Voir le tableau de bord',
         'provider.profile.view' => 'Voir le profil du fournisseur',
 
+        'provider.tours.view' => 'Voir les tournées attribuées',
+        'provider.tours.assign-resources' => 'Affecter chauffeur et véhicule à une tournée',
+        'provider.calendar.view' => 'Voir le calendrier des tournées',
+
         'provider.drivers.view' => 'Voir les chauffeurs',
         'provider.drivers.create' => 'Ajouter un chauffeur',
         'provider.drivers.update' => 'Modifier, désactiver ou réactiver un chauffeur',

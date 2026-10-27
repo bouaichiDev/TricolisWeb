@@ -5,6 +5,10 @@ Plan : `docs/superpowers/plans/2026-10-27-portail-fournisseur-phase-1.md`.
 
 ## Ce qui est livré
 
+**Phase 3 — tournées, affectation, calendrier** : tournées attribuées (hors brouillon), détail
+opérationnel sans donnée commerciale, affectation contrôlée du chauffeur et du véhicule, calendrier
+jour/semaine/mois.
+
 **Phase 2 — chauffeurs et véhicules** : listes filtrées, ajout, modification,
 désactivation et réactivation, via les Actions métier existantes. Le compte créé
 pour un chauffeur ne donne pas accès au portail. Disponibilités :

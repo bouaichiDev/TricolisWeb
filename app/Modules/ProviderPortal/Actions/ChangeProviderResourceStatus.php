@@ -36,6 +36,16 @@ final readonly class ChangeProviderResourceStatus
 
     public function execute(Driver|Vehicle $resource, string $status, AuditContext $context): Driver|Vehicle
     {
+        // Le portail ne passe que d'actif à inactif et retour : un statut posé
+        // par le transporteur (maintenance, bloqué…) n'est pas le sien.
+        $from = $status === self::INACTIVE ? self::ACTIVE : self::INACTIVE;
+
+        if ($resource->status !== $from) {
+            throw ValidationException::withMessages(['status' => [
+                'Ce statut a été fixé par votre transporteur : il ne se change pas depuis le portail.',
+            ]]);
+        }
+
         if ($status === self::INACTIVE && $this->scope->isEngaged($resource)) {
             throw ValidationException::withMessages(['status' => [
                 'Affecté à une tournée planifiée, confirmée ou en cours : il ne peut pas être désactivé.',

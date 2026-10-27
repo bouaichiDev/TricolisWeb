@@ -32,7 +32,7 @@ use Throwable;
 final class ExternalApiErrors
 {
     /** @var list<string> */
-    private const array PATHS = ['api/v1/customer', 'api/v1/customer/*', 'api/v1/public/*', 'api/v1/client/*'];
+    private const array PATHS = ['api/v1/customer', 'api/v1/customer/*', 'api/v1/provider', 'api/v1/provider/*', 'api/v1/public/*', 'api/v1/client/*'];
 
     public static function register(Exceptions $exceptions): void
     {

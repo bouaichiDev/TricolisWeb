@@ -11,9 +11,10 @@ namespace App\Modules\ProviderPortal\Support;
  * Aucune règle du code ne lit ces codes pour décider d'un droit — seules les
  * permissions portées par le rôle comptent.
  *
- * Chacun porte la base (accès, tableau de bord, profil) puis son métier :
- * le gestionnaire flotte gère chauffeurs et véhicules, l'exploitant et le
- * lecteur les consultent.
+ * Chacun porte la base (accès, tableau de bord, profil, tournées, calendrier)
+ * puis son métier : le gestionnaire flotte gère chauffeurs et véhicules,
+ * l'exploitant affecte chauffeurs et véhicules aux tournées, le lecteur
+ * consulte.
  */
 final class ProviderPortalRoles
 {
@@ -29,6 +30,8 @@ final class ProviderPortalRoles
         'provider.portal.access',
         'provider.dashboard.view',
         'provider.profile.view',
+        'provider.tours.view',
+        'provider.calendar.view',
     ];
 
     private const array FLEET_READ = ['provider.drivers.view', 'provider.vehicles.view'];
@@ -50,7 +53,7 @@ final class ProviderPortalRoles
             ],
             self::DISPATCHER => [
                 'name' => 'Exploitant',
-                'permissions' => [...self::BASE, ...self::FLEET_READ],
+                'permissions' => [...self::BASE, ...self::FLEET_READ, 'provider.tours.assign-resources'],
             ],
             self::FLEET_MANAGER => [
                 'name' => 'Gestionnaire flotte',

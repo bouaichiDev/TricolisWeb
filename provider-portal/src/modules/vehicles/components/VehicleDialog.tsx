@@ -63,6 +63,7 @@ export function VehicleDialog({ open, onOpenChange, vehicle }: { open: boolean; 
       else await vehiclesApi.create(payload)
       await queryClient.invalidateQueries({ queryKey: ['vehicles'] })
       toast.success(vehicle ? 'Véhicule modifié.' : 'Véhicule ajouté.')
+      if (!vehicle) form.reset()
       onOpenChange(false)
     } catch (caught) {
       const orphans = applyServerErrors(form, caught, FIELDS)

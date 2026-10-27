@@ -14,6 +14,7 @@ use App\Modules\Drivers\DTOs\CreateDriverData;
 use App\Modules\ProviderPortal\Actions\UpdateProviderDriver;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
 use App\Modules\ProviderPortal\Services\ProviderResourceScope;
+use App\Modules\ProviderPortal\Support\NeutralDuplicate;
 use App\Shared\Http\Responses\ApiResponse;
 use App\Shared\Support\AuditContext;
 use Illuminate\Http\JsonResponse;
@@ -61,7 +62,11 @@ class ProviderDriverController extends Controller
             'providerId' => $this->context->providerId(),
             'status' => 'active',
         ]);
-        $driver = $create->execute($data, $this->portalAudit($request));
+        $driver = NeutralDuplicate::guard(
+            fn () => $create->execute($data, $this->portalAudit($request)),
+            'code',
+            'Ce code ou cette adresse e-mail ne peut pas être utilisé.',
+        );
 
         return ApiResponse::created(new ProviderDriverResource($driver->load('user')));
     }

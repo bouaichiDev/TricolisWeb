@@ -30,7 +30,7 @@ class InviteProviderUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            ...array_fill_keys(self::SERVER_CONTROLLED, ['prohibited']),
+            ...array_fill_keys(self::SERVER_CONTROLLED, ['missing']),
             'email' => ['required', 'string', 'email', 'max:255'],
             'firstName' => ['nullable', 'string', 'max:255'],
             'lastName' => ['nullable', 'string', 'max:255'],

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1\Provider\Resources;
 
 use App\Http\Requests\Api\V1\Provider\ProviderServerControlledFields;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\ProviderResourceScope;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,6 +19,16 @@ class UpdateProviderDriverRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Le chauffeur est résolu dans le périmètre **avant** la validation : sans
+     * cela, un identifiant étranger confronté aux codes pris dirait à qui
+     * appartient quel code. Étranger ou inexistant : 404.
+     */
+    protected function prepareForValidation(): void
+    {
+        app(ProviderResourceScope::class)->driver((string) $this->route('driver'));
     }
 
     /**

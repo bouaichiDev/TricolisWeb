@@ -15,11 +15,13 @@ use App\Modules\Fleet\DTOs\CreateVehicleData;
 use App\Modules\Fleet\DTOs\UpdateVehicleData;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
 use App\Modules\ProviderPortal\Services\ProviderResourceScope;
+use App\Modules\ProviderPortal\Support\NeutralDuplicate;
 use App\Modules\Types\Models\TypeItem;
 use App\Shared\Http\Responses\ApiResponse;
 use App\Shared\Support\AuditContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -29,6 +31,8 @@ use Illuminate\Support\Facades\DB;
  */
 class ProviderVehicleController extends Controller
 {
+    private const array EDITABLE = ['code', 'registrationNumber', 'vehicleTypeId', 'payloadCapacity', 'volumeCapacity', 'palletCapacity'];
+
     public function __construct(
         private readonly CurrentProviderContext $context,
         private readonly ProviderResourceScope $scope,
@@ -64,14 +68,21 @@ class ProviderVehicleController extends Controller
             'status' => 'active',
         ]);
 
-        return ApiResponse::created(new ProviderVehicleResource($create->execute($data, $this->portalAudit($request))->load('vehicleType')));
+        $vehicle = NeutralDuplicate::guard(
+            fn () => $create->execute($data, $this->portalAudit($request)),
+            'code',
+            'Ce code ou cette immatriculation ne peut pas être utilisé.',
+        );
+
+        return ApiResponse::created(new ProviderVehicleResource($vehicle->load('vehicleType')));
     }
 
     public function update(UpdateProviderVehicleRequest $request, string $vehicle, UpdateVehicleAction $update): JsonResponse
     {
         $updated = DB::transaction(fn () => $update->execute(
             $this->scope->vehicle($vehicle, lock: true),
-            UpdateVehicleData::fromValidated($request->validated()),
+            // Liste blanche : rien d'autre que ces champs n'atteint l'Action.
+            UpdateVehicleData::fromValidated(Arr::only($request->validated(), self::EDITABLE)),
             $this->portalAudit($request),
         ));
 

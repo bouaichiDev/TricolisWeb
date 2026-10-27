@@ -10,6 +10,9 @@ namespace App\Http\Requests\Api\V1\Provider;
  * Fournisseur et organisation viennent de la session, statut et identifiant
  * du serveur. Les refuser à la validation rend la tentative **visible** (422)
  * au lieu de l'ignorer en silence.
+ *
+ * Règle `missing`, pas `prohibited` : cette dernière laisse passer une valeur
+ * vide ou nulle, qui arriverait alors jusqu'aux Actions (`providerId: null`).
  */
 final class ProviderServerControlledFields
 {
@@ -21,6 +24,6 @@ final class ProviderServerControlledFields
      */
     public static function prohibit(array $fields = self::TENANT): array
     {
-        return array_fill_keys($fields, ['prohibited']);
+        return array_fill_keys($fields, ['missing']);
     }
 }

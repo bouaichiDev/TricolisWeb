@@ -22,7 +22,7 @@ class UpdateProviderUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            ...array_fill_keys(InviteProviderUserRequest::SERVER_CONTROLLED, ['prohibited']),
+            ...array_fill_keys(InviteProviderUserRequest::SERVER_CONTROLLED, ['missing']),
             'roleId' => ['required', 'string', 'ulid'],
         ];
     }

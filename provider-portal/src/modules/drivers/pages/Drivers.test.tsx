@@ -51,6 +51,11 @@ describe('chauffeurs', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
 
     await waitFor(() => expect(body).toEqual({ code: 'ALPHA-02', firstName: 'Nadia', lastName: 'Neuve', email: 'nadia@alpha.test', phone: null }))
+
+    // Rouvert après un ajout réussi, le formulaire repart vide.
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await user.click(screen.getByRole('button', { name: 'Ajouter un chauffeur' }))
+    expect(within(await screen.findByRole('dialog')).getByLabelText('Code')).toHaveValue('')
   })
 
   it('affiche le refus neutre du serveur sous le champ', async () => {

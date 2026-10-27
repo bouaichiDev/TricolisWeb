@@ -27,8 +27,8 @@ class ListProviderResourcesRequest extends FormRequest
             'status' => ['nullable', 'string', 'in:active,inactive,maintenance'],
             'page' => ['nullable', 'integer', 'min:1'],
             'perPage' => ['nullable', 'integer', 'min:10', 'max:100'],
-            'providerId' => ['prohibited'],
-            'organizationId' => ['prohibited'],
+            'providerId' => ['missing'],
+            'organizationId' => ['missing'],
         ];
     }
 

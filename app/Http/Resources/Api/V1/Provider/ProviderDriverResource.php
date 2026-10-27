@@ -40,7 +40,7 @@ class ProviderDriverResource extends JsonResource
             'actions' => [
                 'canUpdate' => $canUpdate,
                 'canDeactivate' => $canUpdate && $this->status === 'active',
-                'canActivate' => $canUpdate && $this->status !== 'active',
+                'canActivate' => $canUpdate && $this->status === 'inactive',
             ],
         ];
     }

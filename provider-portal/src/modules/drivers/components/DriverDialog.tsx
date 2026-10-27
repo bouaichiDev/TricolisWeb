@@ -59,6 +59,7 @@ export function DriverDialog({ open, onOpenChange, driver }: Props) {
       else await driversApi.create({ ...payload, email })
       await queryClient.invalidateQueries({ queryKey: ['drivers'] })
       toast.success(editing ? 'Chauffeur modifié.' : 'Chauffeur ajouté.')
+      if (!editing) form.reset()
       onOpenChange(false)
     } catch (caught) {
       const orphans = applyServerErrors(form, caught, FIELDS)

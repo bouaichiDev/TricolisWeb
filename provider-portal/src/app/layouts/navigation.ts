@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Circle, IdCard, LayoutDashboard, Truck, UserCircle, type LucideIcon } from 'lucide-react'
+import { CalendarDays, Circle, IdCard, LayoutDashboard, Route, Truck, UserCircle, type LucideIcon } from 'lucide-react'
 
 import { useAuth } from '@/app/auth/useAuth'
 import { api } from '@/shared/api/client'
@@ -11,6 +11,8 @@ export interface NavItem extends NavigationEntry {
 
 const ICONS: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
+  tours: Route,
+  calendar: CalendarDays,
   drivers: IdCard,
   vehicles: Truck,
   profile: UserCircle,

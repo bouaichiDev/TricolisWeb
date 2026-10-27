@@ -21,7 +21,7 @@ const NEXT_PASSWORD = 'Motdepasse-Solide-2026!';
 it('rend la navigation que les permissions ouvrent, jamais de gestion de comptes', function (): void {
     $keys = collect($this->withHeaders($this->admin)->getJson('/api/v1/provider/navigation')->assertOk()->json('data'))->pluck('key');
 
-    expect($keys->all())->toBe(['dashboard', 'drivers', 'vehicles', 'profile'])
+    expect($keys->all())->toBe(['dashboard', 'tours', 'calendar', 'drivers', 'vehicles', 'profile'])
         ->and($keys)->not->toContain('users')->not->toContain('roles');
 });
 
@@ -30,7 +30,7 @@ it('retire le profil de la navigation et le ferme sans `provider.profile.view`',
         ->permissions()->detach(Permission::where('code', 'provider.profile.view')->value('id'));
     $viewer = ProviderPortal::headers('viewer@transports-alpha.test');
 
-    expect(collect($this->withHeaders($viewer)->getJson('/api/v1/provider/navigation')->json('data'))->pluck('key')->all())->toBe(['dashboard', 'drivers', 'vehicles']);
+    expect(collect($this->withHeaders($viewer)->getJson('/api/v1/provider/navigation')->json('data'))->pluck('key')->all())->toBe(['dashboard', 'tours', 'calendar', 'drivers', 'vehicles']);
     $this->withHeaders($viewer)->getJson('/api/v1/provider/profile')->assertForbidden();
 });
 

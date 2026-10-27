@@ -65,6 +65,8 @@ final readonly class ProviderResourceScope
         return Tour::where('organization_id', $resource->organization_id)
             ->where($column, $resource->id)
             ->whereIn('status', array_map(static fn (TourStatus $status): string => $status->value, self::ENGAGING))
+            // Verrou : une affectation concurrente attend la fin de la désactivation.
+            ->lockForUpdate()
             ->exists();
     }
 

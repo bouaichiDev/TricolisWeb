@@ -14,6 +14,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 
+import { ProviderPortalAccessTab } from '../components/ProviderPortalAccessTab'
 import { ProviderResourcesTab } from '../components/ProviderResourcesTab'
 import { useProvider } from '../hooks/useProviders'
 
@@ -63,6 +64,7 @@ export function ProviderDetailPage() {
           <TabsTrigger value="vehicles">{t('providers.tabs.vehicles')}</TabsTrigger>
           <TabsTrigger value="settlements">{t('providers.tabs.settlements')}</TabsTrigger>
           <TabsTrigger value="documents">{t('providers.tabs.documents')}</TabsTrigger>
+          <TabsTrigger value="portal">{t('providers.tabs.portal')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="information" className="mt-6">
@@ -148,6 +150,10 @@ export function ProviderDetailPage() {
 
         <TabsContent value="documents" className="mt-6">
           <EntityDocumentsTab entityType="provider" entityId={provider.id} />
+        </TabsContent>
+
+        <TabsContent value="portal" className="mt-6">
+          <ProviderPortalAccessTab providerId={provider.id} active={tab === 'portal'} />
         </TabsContent>
       </Tabs>
     </div>

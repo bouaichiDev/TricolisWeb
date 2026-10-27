@@ -47,7 +47,7 @@ export interface Role {
   organizationId: string | null
   code: string
   name: string
-  scope: 'platform' | 'organization' | 'customer' | null
+  scope: 'platform' | 'organization' | 'customer' | 'provider' | null
   isSystem: boolean
   status: string
   /** Chargé par `index` et `show` ; absent des réponses qui n'ont pas fait le `with`. */

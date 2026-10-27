@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Modules\CustomerPortal\Support\CustomerPortalPermissions;
+use App\Modules\ProviderPortal\Support\ProviderPortalPermissions;
 use App\Shared\Enums\MenuSection;
 
 /**
@@ -122,6 +123,10 @@ final class PermissionMenuMap
             return MenuSection::CUSTOMER_PORTAL;
         }
 
+        if (ProviderPortalPermissions::isProviderPermission($code)) {
+            return MenuSection::PROVIDER_PORTAL;
+        }
+
         return self::BY_CODE[$code] ?? self::BY_MODULE[$module] ?? MenuSection::ADMINISTRATION;
     }
 
@@ -133,6 +138,6 @@ final class PermissionMenuMap
      */
     public static function knownModules(): array
     {
-        return [...array_keys(self::BY_MODULE), ...CustomerPortalPermissions::modules()];
+        return [...array_keys(self::BY_MODULE), ...CustomerPortalPermissions::modules(), ...ProviderPortalPermissions::modules()];
     }
 }

@@ -13,6 +13,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\ProviderPortal\Actions\ProvisionProviderPortalRoles;
 use App\Modules\Types\Actions\SeedSystemTypes;
 use App\Shared\Enums\OrganizationStatus;
 use App\Shared\Enums\UserStatus;
@@ -127,6 +128,7 @@ class OrganizationController extends Controller
             // creer un vehicule ni classer un colis.
             app(SeedSystemTypes::class)->execute($organization->id);
             app(ProvisionCustomerPortalRoles::class)->execute($organization->id);
+            app(ProvisionProviderPortalRoles::class)->execute($organization->id);
 
             return $organization;
         });

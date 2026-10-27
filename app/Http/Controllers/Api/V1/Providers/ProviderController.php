@@ -106,7 +106,8 @@ class ProviderController extends Controller
      * Supprimer un fournisseur.
      *
      * Permission requise : `providers.delete`. Refusé en 409 s'il possède
-     * encore des chauffeurs ou des véhicules — aucune cascade.
+     * encore des chauffeurs, des véhicules ou des accès au portail — aucune
+     * cascade.
      *
      * @response 204
      */

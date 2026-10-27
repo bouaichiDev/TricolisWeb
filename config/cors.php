@@ -24,6 +24,9 @@ $localOrigins = [
     'http://localhost:5180',
     'http://localhost:5181',
     'http://localhost:5182',
+    // Le portail fournisseur en développement (5190) et sous Playwright (5191).
+    'http://localhost:5190',
+    'http://localhost:5191',
 ];
 
 return [

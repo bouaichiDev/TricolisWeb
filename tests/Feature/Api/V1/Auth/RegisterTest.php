@@ -51,16 +51,19 @@ describe('transporter registration', function (): void {
         // Le rôle `admin` de l'organisation créée reçoit tout **sauf** les
         // permissions réservées à la plateforme : s'inscrire ne donne pas le
         // droit de créer d'autres organisations.
-        // Les rôles du portail client (`CUSTOMER_*`) ont leurs propres
-        // permissions, comptées à part : elles n'entrent dans aucun rôle interne.
+        // Les rôles des portails client (`CUSTOMER_*`) et fournisseur
+        // (`PROVIDER_*`) ont leurs propres permissions, comptées à part :
+        // elles n'entrent dans aucun rôle interne.
         $organizational = Permission::internal()->whereNotIn('code', PlatformAccess::PLATFORM_PERMISSIONS)->count();
         $customerRoles = RolePermission::whereIn('role_id', Role::where('scope', RoleScope::CUSTOMER->value)->pluck('id'))->count();
+        $providerRoles = RolePermission::whereIn('role_id', Role::where('scope', RoleScope::PROVIDER->value)->pluck('id'))->count();
 
         $this->assertDatabaseCount(
             'role_permissions',
             Permission::internal()->count() // rôle plateforme semé
             + $organizational * 2           // rôle admin de l'organisation semée et de la nouvelle
             + $customerRoles                // rôles du portail client des deux organisations
+            + $providerRoles                // rôles du portail fournisseur des deux organisations
         );
 
         $registeredRole = Role::where('organization_id', $organizationId)->firstOrFail();

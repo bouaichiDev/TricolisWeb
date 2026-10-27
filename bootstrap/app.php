@@ -8,8 +8,10 @@ use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\AuthenticateCustomerApiKey;
 use App\Http\Middleware\EnsureCustomerPortalContext;
 use App\Http\Middleware\EnsureOrganizationContext;
+use App\Http\Middleware\EnsureProviderPortalContext;
 use App\Http\Middleware\RejectCustomerPortalToken;
 use App\Http\Middleware\RequireCustomerPermission;
+use App\Http\Middleware\RequireProviderPermission;
 use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use App\Modules\CustomerPortal\Console\PortalRouteMatrix;
 use App\Modules\Integrations\Console\PruneCustomerImportUploads;
@@ -31,6 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('api/v1/customer')
                 ->name('customer.')
                 ->group(base_path('routes/customer.php'));
+
+            // Le portail fournisseur : même backend, troisième porte.
+            Route::middleware('api')
+                ->prefix('api/v1/provider')
+                ->name('provider.')
+                ->group(base_path('routes/provider.php'));
 
             // L'API publique (lien de suivi) : sans authentification, debit dedie.
             Route::middleware('api')
@@ -64,7 +72,11 @@ return Application::configure(basePath: dirname(__DIR__))
             // portail, Customer courant, puis permission `customer.*`.
             'customer.portal' => EnsureCustomerPortalContext::class,
             'customer.permission' => RequireCustomerPermission::class,
-            // Et la reciproque : l'interne refuse les jetons du portail.
+            // Le portail fournisseur : jeton Sanctum de portail fournisseur,
+            // fournisseur courant, puis permission `provider.*`.
+            'provider.portal' => EnsureProviderPortalContext::class,
+            'provider.permission' => RequireProviderPermission::class,
+            // Et la reciproque : l'interne refuse les jetons des portails.
             'internal.token' => RejectCustomerPortalToken::class,
         ]);
         // Phase 7 : toute réponse de l'API porte ses en-têtes de sécurité.

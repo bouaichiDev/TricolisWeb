@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Models;
 
 use App\Modules\CustomerPortal\Support\CustomerPortalPermissions;
+use App\Modules\ProviderPortal\Support\ProviderPortalPermissions;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,9 +34,10 @@ class Permission extends Model
     public $incrementing = false;
 
     /**
-     * Permissions de l'administration interne : tout sauf `customer.*`.
+     * Permissions de l'administration interne : tout sauf `customer.*` et
+     * `provider.*`.
      *
-     * Celles du portail client partagent la table mais jamais un rôle interne ;
+     * Celles des portails partagent la table mais jamais un rôle interne ;
      * les écarter ici évite qu'un rôle `admin` ou le plafond de délégation ne
      * les ramasse avec un simple `Permission::pluck()`.
      *
@@ -43,7 +45,16 @@ class Permission extends Model
      */
     public function scopeInternal(Builder $query): void
     {
-        $query->where('code', 'not like', CustomerPortalPermissions::PREFIX.'%');
+        $query->where('code', 'not like', CustomerPortalPermissions::PREFIX.'%')
+            ->where('code', 'not like', ProviderPortalPermissions::PREFIX.'%');
+    }
+
+    /**
+     * @param  Builder<Permission>  $query
+     */
+    public function scopeProviderPortal(Builder $query): void
+    {
+        $query->where('code', 'like', ProviderPortalPermissions::PREFIX.'%');
     }
 
     /**

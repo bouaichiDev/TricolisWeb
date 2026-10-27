@@ -47,6 +47,8 @@ use App\Modules\Organizations\Models\Subscription;
 use App\Modules\Packages\Models\Package;
 use App\Modules\Packages\Models\PackageOrderLine;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
+use App\Modules\ProviderPortal\Models\ProviderUser;
+use App\Modules\ProviderPortal\Models\ProviderUserInvitation;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
@@ -197,6 +199,10 @@ final class MorphMap
 
     public const string CUSTOMER_USER_INVITATION = 'customer_user_invitation';
 
+    public const string PROVIDER_USER = 'provider_user';
+
+    public const string PROVIDER_USER_INVITATION = 'provider_user_invitation';
+
     public const string PUBLIC_TRACKING_LINK = 'public_tracking_link';
 
     public const string STOCK_ADJUSTMENT_REQUEST = 'stock_adjustment_request';
@@ -271,6 +277,8 @@ final class MorphMap
             self::COMMUNICATION_ATTACHMENT => CommunicationAttachment::class,
             self::CUSTOMER_USER => CustomerUser::class,
             self::CUSTOMER_USER_INVITATION => CustomerUserInvitation::class,
+            self::PROVIDER_USER => ProviderUser::class,
+            self::PROVIDER_USER_INVITATION => ProviderUserInvitation::class,
             self::PUBLIC_TRACKING_LINK => PublicTrackingLink::class,
             self::STOCK_ADJUSTMENT_REQUEST => StockAdjustmentRequest::class,
         ]);

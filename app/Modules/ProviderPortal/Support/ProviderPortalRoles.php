@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\ProviderPortal\Support;
+
+/**
+ * Rôles livrés au portail fournisseur, et leurs permissions initiales.
+ *
+ * Ce ne sont que des **graines** : chaque transporteur reçoit son propre jeu.
+ * Aucune règle du code ne lit ces codes pour décider d'un droit — seules les
+ * permissions portées par le rôle comptent.
+ *
+ * Phase 1 : les quatre rôles portent les permissions de base (accès, tableau
+ * de bord, profil). Les phases suivantes les différencient.
+ */
+final class ProviderPortalRoles
+{
+    public const string ADMIN = 'PROVIDER_ADMIN';
+
+    public const string DISPATCHER = 'PROVIDER_DISPATCHER';
+
+    public const string FLEET_MANAGER = 'PROVIDER_FLEET_MANAGER';
+
+    public const string VIEWER = 'PROVIDER_VIEWER';
+
+    private const array BASE = [
+        'provider.portal.access',
+        'provider.dashboard.view',
+        'provider.profile.view',
+    ];
+
+    /**
+     * @return array<string, array{name: string, permissions: array<int, string>}>
+     */
+    public static function defaults(): array
+    {
+        return [
+            self::ADMIN => [
+                'name' => 'Administrateur fournisseur',
+                'permissions' => ProviderPortalPermissions::codes(),
+            ],
+            self::DISPATCHER => [
+                'name' => 'Exploitant',
+                'permissions' => self::BASE,
+            ],
+            self::FLEET_MANAGER => [
+                'name' => 'Gestionnaire flotte',
+                'permissions' => self::BASE,
+            ],
+            self::VIEWER => [
+                'name' => 'Lecture',
+                'permissions' => self::BASE,
+            ],
+        ];
+    }
+}

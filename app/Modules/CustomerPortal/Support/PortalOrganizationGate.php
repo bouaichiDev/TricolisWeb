@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CustomerPortal\Support;
 
 use App\Modules\Customers\Models\Customer;
+use App\Modules\Providers\Models\Provider;
 use App\Shared\Enums\OrganizationStatus;
 
 /**
@@ -29,6 +30,18 @@ final class PortalOrganizationGate
         // requête, qui lit aussi les réglages de l'organisation.
         $customer->loadMissing('organization');
         $status = $customer->organization?->status;
+
+        return $status !== null && ! in_array($status, self::CLOSED, true);
+    }
+
+    /**
+     * Même règle pour le portail fournisseur : un transporteur suspendu ou
+     * fermé ne sert plus ses fournisseurs.
+     */
+    public static function allowsProvider(Provider $provider): bool
+    {
+        $provider->loadMissing('organization');
+        $status = $provider->organization?->status;
 
         return $status !== null && ! in_array($status, self::CLOSED, true);
     }

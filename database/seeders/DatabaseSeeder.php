@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
             // Apres RoleSeeder : les roles du portail client s'accrochent aux
             // organisations, et restent hors du role `admin` interne.
             CustomerPortalSeeder::class,
+            // Même raison pour les rôles du portail fournisseur.
+            ProviderPortalSeeder::class,
             // Après RoleSeeder : le compte s'accroche au rôle plateforme que
             // celui-ci vient de créer.
             PlatformAdminSeeder::class,
@@ -59,6 +61,8 @@ class DatabaseSeeder extends Seeder
             $this->call(DemoCustomerPortalIntegrationsSeeder::class);
             // Catalogues QOQA / GETAZ : l'isolation du catalogue se voit et se teste.
             $this->call(DemoCustomerPortalCatalogSeeder::class);
+            // Portail fournisseur : Transports Alpha et Beta, et leurs comptes.
+            $this->call(DemoProviderPortalSeeder::class);
         }
     }
 }

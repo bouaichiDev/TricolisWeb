@@ -9,6 +9,7 @@ use App\Modules\Contacts\Models\Contact;
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Organizations\Models\Organization;
+use App\Modules\ProviderPortal\Models\ProviderUser;
 use App\Shared\Database\Concerns\HasUlid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -87,11 +88,15 @@ class Provider extends Model
     /**
      * Le fournisseur est-il encore rattaché à des ressources ?
      *
-     * Sert le refus de suppression : un fournisseur qui a des chauffeurs ou des
-     * véhicules ne se supprime pas sans les traiter d'abord.
+     * Sert le refus de suppression : un fournisseur qui a des chauffeurs, des
+     * véhicules ou des accès au portail ne se supprime pas sans les traiter
+     * d'abord. Les accès portail ne partent pas en cascade : leur clé
+     * étrangère est restrictive.
      */
     public function hasResources(): bool
     {
-        return $this->drivers()->exists() || $this->vehicles()->exists();
+        return $this->drivers()->exists()
+            || $this->vehicles()->exists()
+            || ProviderUser::forProvider($this->id)->exists();
     }
 }

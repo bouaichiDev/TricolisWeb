@@ -13,6 +13,7 @@ use App\Modules\Identity\Models\UserRole;
 use App\Modules\Identity\Services\PlatformAccess;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\Organizations\Models\OrganizationUser;
+use App\Modules\ProviderPortal\Actions\ProvisionProviderPortalRoles;
 use App\Modules\Types\Actions\SeedSystemTypes;
 use App\Shared\Enums\OrganizationStatus;
 use App\Shared\Enums\RoleScope;
@@ -91,6 +92,8 @@ final readonly class ProvisionOrganization
             // Les rôles du portail client : sans eux, le premier client
             // invité n'aurait aucun rôle à recevoir.
             app(ProvisionCustomerPortalRoles::class)->execute($organization->id);
+            // Et ceux du portail fournisseur, pour la même raison.
+            app(ProvisionProviderPortalRoles::class)->execute($organization->id);
 
             return ['user' => $user, 'organization' => $organization];
         });

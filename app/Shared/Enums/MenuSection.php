@@ -40,6 +40,12 @@ enum MenuSection: string
     case CUSTOMER_PORTAL = 'customer_portal';
 
     /**
+     * Permissions du portail fournisseur, même statut que celles du portail
+     * client : jamais composées dans un rôle interne.
+     */
+    case PROVIDER_PORTAL = 'provider_portal';
+
+    /**
      * Groupe créé par une organisation.
      *
      * Il n'appartient à aucune découpe métier — c'est l'organisation qui le
@@ -63,6 +69,7 @@ enum MenuSection: string
             self::ADMINISTRATION => 'Administration',
             self::PLATFORM => 'Plateforme',
             self::CUSTOMER_PORTAL => 'Portail client',
+            self::PROVIDER_PORTAL => 'Portail fournisseur',
             self::CUSTOM => 'Personnalisé',
         };
     }
@@ -94,6 +101,7 @@ enum MenuSection: string
             self::PLATFORM => 9,
             self::CUSTOM => 10,
             self::CUSTOMER_PORTAL => 11,
+            self::PROVIDER_PORTAL => 12,
         };
     }
 

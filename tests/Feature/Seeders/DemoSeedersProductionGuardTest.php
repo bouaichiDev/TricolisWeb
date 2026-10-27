@@ -11,6 +11,7 @@ use Database\Seeders\DemoCustomerPortalSeeder;
 use Database\Seeders\DemoCustomerPortalStockSeeder;
 use Database\Seeders\DemoCustomerSeeder;
 use Database\Seeders\DemoFleetSeeder;
+use Database\Seeders\DemoProviderPortalSeeder;
 use Database\Seeders\DevelopmentOrganizationSeeder;
 use Database\Seeders\GpsApiConfigurationSeeder;
 use Database\Seeders\PlatformAdminSeeder;
@@ -27,6 +28,7 @@ const DEMO_TABLES = [
     'organizations', 'users', 'customers', 'customer_users', 'orders', 'agencies', 'depots', 'vehicles',
     'customer_catalogs', 'customer_catalog_items', 'stock_items', 'stock_movements', 'claims',
     'customer_import_configurations', 'customer_export_configurations', 'organization_api_configurations',
+    'providers', 'provider_users', 'provider_user_roles',
 ];
 
 beforeEach(function (): void {
@@ -53,5 +55,5 @@ it('n’écrit rien en production', function (string $seeder): void {
     DemoCustomerPortalAfterDeliverySeeder::class, DemoCustomerPortalStockSeeder::class, DemoCustomerPortalIntegrationsSeeder::class,
     DemoCustomerPortalCatalogSeeder::class, DemoAgencySeeder::class, DemoCustomerSeeder::class, DemoFleetSeeder::class,
     DevelopmentOrganizationSeeder::class, DeliveredOrderSeeder::class, SwissDepotSeeder::class, SwissOrderSeeder::class,
-    GpsApiConfigurationSeeder::class, PlatformAdminSeeder::class,
+    GpsApiConfigurationSeeder::class, PlatformAdminSeeder::class, DemoProviderPortalSeeder::class,
 ]);

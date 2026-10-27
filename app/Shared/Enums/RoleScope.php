@@ -30,12 +30,19 @@ enum RoleScope: string
      */
     case CUSTOMER = 'customer';
 
+    /**
+     * Rôle du portail fournisseur : même principe que `CUSTOMER`, attribué
+     * par `provider_user_roles` et limité aux permissions `provider.*`.
+     */
+    case PROVIDER = 'provider';
+
     public function label(): string
     {
         return match ($this) {
             self::PLATFORM => 'Plateforme',
             self::ORGANIZATION => 'Organisation',
             self::CUSTOMER => 'Portail client',
+            self::PROVIDER => 'Portail fournisseur',
         };
     }
 

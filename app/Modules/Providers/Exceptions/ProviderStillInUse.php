@@ -16,6 +16,6 @@ final class ProviderStillInUse extends RuntimeException
 {
     public static function hasDriversOrVehicles(): self
     {
-        return new self('Impossible de supprimer un fournisseur qui possède encore des chauffeurs ou des véhicules.');
+        return new self('Impossible de supprimer un fournisseur qui possède encore des chauffeurs, des véhicules ou des accès au portail.');
     }
 }

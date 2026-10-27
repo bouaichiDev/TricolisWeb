@@ -47,6 +47,15 @@ final class PortalRateLimits
             Config::integer('customer_portal.rate_limits.api_per_minute', 300),
         )->by('customer-portal|'.self::caller($request)));
 
+        // Portail fournisseur : mêmes principes, compteurs distincts.
+        RateLimiter::for('provider-portal-login', static fn (Request $request): Limit => Limit::perMinute(
+            Config::integer('provider_portal.rate_limits.logins_per_minute', 30),
+        )->by('provider-portal-login|'.$request->ip()));
+
+        RateLimiter::for('provider-portal', static fn (Request $request): Limit => Limit::perMinute(
+            Config::integer('provider_portal.rate_limits.api_per_minute', 300),
+        )->by('provider-portal|'.self::caller($request)));
+
         // Les dépôts de fichiers coûtent cher (lecture, validation) : à part.
         RateLimiter::for('customer-portal-import', static fn (Request $request): Limit => Limit::perMinute(
             Config::integer('customer_portal.rate_limits.imports_per_minute', 10),

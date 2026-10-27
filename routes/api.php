@@ -82,6 +82,7 @@ use App\Http\Controllers\Api\V1\Pricing\PriceRuleController;
 use App\Http\Controllers\Api\V1\Pricing\PricingVariableController;
 use App\Http\Controllers\Api\V1\ProofOfDelivery\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\Providers\ProviderController;
+use App\Http\Controllers\Api\V1\Providers\ProviderPortalUserController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\ProviderSettlementLineController;
 use App\Http\Controllers\Api\V1\ProviderSettlements\SettleableServiceController;
@@ -313,6 +314,17 @@ Route::middleware(['auth:sanctum', 'internal.token'])->group(static function ():
         Route::post('organization-users/{organizationUser}/password-reset-link', [MemberPasswordController::class, 'sendLink'])->name('organization-users.password-link');
         Route::put('organization-users/{organizationUser}/password', [MemberPasswordController::class, 'set'])->name('organization-users.password');
         Route::apiResource('organization-users', OrganizationUserController::class)->except(['create', 'edit']);
+        // Le portail du fournisseur : le transporteur, et lui seul, en gère
+        // les accès. Le membre est cherché dans le fournisseur de l'URL.
+        Route::get('providers/{provider}/portal-roles', [ProviderPortalUserController::class, 'roles'])->name('providers.portal-roles');
+        Route::prefix('providers/{provider}/portal-users')->name('providers.portal-users.')->group(static function (): void {
+            Route::get('/', [ProviderPortalUserController::class, 'index'])->name('index');
+            Route::post('invite', [ProviderPortalUserController::class, 'invite'])->name('invite');
+            Route::patch('{providerUser}', [ProviderPortalUserController::class, 'update'])->name('update');
+            Route::post('{providerUser}/disable', [ProviderPortalUserController::class, 'disable'])->name('disable');
+            Route::post('{providerUser}/enable', [ProviderPortalUserController::class, 'enable'])->name('enable');
+            Route::post('{providerUser}/resend-invitation', [ProviderPortalUserController::class, 'resendInvitation'])->name('resend');
+        });
         Route::apiResource('providers', ProviderController::class)->except(['create', 'edit']);
         Route::apiResource('drivers', DriverController::class)->except(['create', 'edit']);
         Route::apiResource('vehicles', VehicleController::class)->except(['create', 'edit']);

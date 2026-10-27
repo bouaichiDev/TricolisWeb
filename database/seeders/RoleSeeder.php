@@ -126,7 +126,8 @@ class RoleSeeder extends Seeder
     }
 
     /**
-     * Les permissions `customer.*` n'appartiennent qu'aux rôles du portail.
+     * Les permissions `customer.*` et `provider.*` n'appartiennent qu'aux
+     * rôles des portails.
      *
      * Une base semée avant leur mise à l'écart peut les porter sur un rôle
      * interne : ce retrait la remet d'aplomb.
@@ -135,6 +136,9 @@ class RoleSeeder extends Seeder
     {
         RolePermission::where('role_id', $role->id)
             ->whereIn('permission_id', Permission::customerPortal()->pluck('id'))
+            ->delete();
+        RolePermission::where('role_id', $role->id)
+            ->whereIn('permission_id', Permission::providerPortal()->pluck('id'))
             ->delete();
     }
 

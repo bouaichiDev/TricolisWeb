@@ -1914,7 +1914,30 @@
       "drivers": "Chauffeurs",
       "vehicles": "Véhicules",
       "documents": "Documents",
-      "settlements": "Décomptes"
+      "settlements": "Décomptes",
+      "portal": "Accès portail"
+    },
+    "portal": {
+      "invite": "Inviter un compte",
+      "inviteTitle": "Inviter un compte au portail fournisseur",
+      "inviteDescription": "Le compte reçoit un lien d’activation par courriel. Il ne verra que les données de ce fournisseur.",
+      "sendInvitation": "Envoyer l’invitation",
+      "invited": "Invitation envoyée.",
+      "empty": "Aucun compte n’a accès au portail de ce fournisseur.",
+      "changeRole": "Changer le rôle",
+      "disable": "Désactiver l’accès",
+      "enable": "Réactiver l’accès",
+      "resend": "Renvoyer l’invitation",
+      "disableTitle": "Désactiver l’accès au portail ?",
+      "disableDescription": "{{email}} ne pourra plus se connecter au portail de ce fournisseur. Ses sessions ouvertes sont fermées immédiatement.",
+      "fields": {
+        "name": "Nom",
+        "email": "E-mail",
+        "firstName": "Prénom",
+        "lastName": "Nom de famille",
+        "role": "Rôle",
+        "status": "Statut"
+      }
     },
     "fields": {
       "code": "Code",

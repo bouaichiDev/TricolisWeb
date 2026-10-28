@@ -24,12 +24,21 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * pending | arrived ─Passé (motif)─► skipped
  * ```
  *
+ * Un arrêt mis « en cours » par l'interne se termine ou se passe comme un
+ * arrêt atteint. Rien ne bouge pendant qu'un planificateur réserve la tournée.
+ *
  * L'arrêt n'est cherché **que dans** une tournée du fournisseur, relue sous
  * verrou avant lui. L'ordre de passage n'est pas imposé : sur le terrain, deux
  * arrêts voisins s'inversent. Rejouer une transition faite ne réécrit rien.
  */
 final readonly class ExecuteProviderStop
 {
+    public const array ARRIVE_FROM = [TourStopStatus::PENDING];
+
+    public const array COMPLETE_FROM = [TourStopStatus::ARRIVED, TourStopStatus::IN_PROGRESS];
+
+    public const array SKIP_FROM = [TourStopStatus::PENDING, TourStopStatus::ARRIVED, TourStopStatus::IN_PROGRESS];
+
     public function __construct(
         private ProviderTourScope $tours,
         private UpdateTourStopAction $update,
@@ -38,18 +47,18 @@ final readonly class ExecuteProviderStop
 
     public function arrive(string $tourId, string $stopId, AuditContext $context): TourStop
     {
-        return $this->move($tourId, $stopId, [TourStopStatus::PENDING], TourStopStatus::ARRIVED, ['actualArrivalAt' => now()], $context);
+        return $this->move($tourId, $stopId, self::ARRIVE_FROM, TourStopStatus::ARRIVED, ['actualArrivalAt' => now()], $context);
     }
 
     public function complete(string $tourId, string $stopId, AuditContext $context): TourStop
     {
-        return $this->move($tourId, $stopId, [TourStopStatus::ARRIVED], TourStopStatus::COMPLETED, ['actualDepartureAt' => now()], $context);
+        return $this->move($tourId, $stopId, self::COMPLETE_FROM, TourStopStatus::COMPLETED, ['actualDepartureAt' => now()], $context);
     }
 
     public function skip(string $tourId, string $stopId, string $reason, AuditContext $context): TourStop
     {
         return DB::transaction(function () use ($tourId, $stopId, $reason, $context): TourStop {
-            $stop = $this->move($tourId, $stopId, [TourStopStatus::PENDING, TourStopStatus::ARRIVED], TourStopStatus::SKIPPED, [], $context, $skipped);
+            $stop = $this->move($tourId, $stopId, self::SKIP_FROM, TourStopStatus::SKIPPED, [], $context, $skipped);
 
             if ($skipped) {
                 $this->audit->execute($context->organizationId, $context->user, 'tour_stop.skipped', $stop, null, ['reason' => $reason], null, $context->ipAddress);
@@ -77,6 +86,10 @@ final readonly class ExecuteProviderStop
 
             if ($tour->status !== TourStatus::IN_PROGRESS) {
                 $this->fail('Démarrez la tournée avant de faire avancer ses arrêts.');
+            }
+
+            if ($tour->locked_by !== null) {
+                $this->fail(ExecuteProviderTour::RESERVED);
             }
 
             if (! in_array($stop->status, $from, true)) {

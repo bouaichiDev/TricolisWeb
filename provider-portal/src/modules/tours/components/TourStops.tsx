@@ -6,6 +6,7 @@ import { formatDateTime } from '@/shared/utils/format'
 
 import type { TourStop } from '../types'
 import { StopActions } from './StopActions'
+import { StopProofs } from './StopProofs'
 
 const place = (address: TourStop['address']) =>
   address === null ? '—' : [address.line1, [address.postalCode, address.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
@@ -61,6 +62,7 @@ export function TourStops({ tourId, stops }: { tourId: string; stops: TourStop[]
               {stop.services.length === 0 && <li className="text-muted-foreground text-sm">Aucun service à cet arrêt.</li>}
             </ul>
             <StopActions tourId={tourId} stop={stop} />
+            <StopProofs tourId={tourId} stop={stop} />
           </li>
         ))}
       </ol>

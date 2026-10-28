@@ -7,6 +7,7 @@ use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Models\Tour;
 use App\Shared\Enums\UserStatus;
 use Database\Seeders\DemoProviderPortalSeeder;
+use Illuminate\Support\Facades\DB;
 use Tests\Support\ProviderPortal;
 
 /**
@@ -96,4 +97,24 @@ it('réserve la lecture à `provider.drivers.view` et l’écriture à `create` 
     $this->withHeaders($viewer)->getJson('/api/v1/provider/drivers')->assertOk();
     $this->withHeaders($viewer)->postJson('/api/v1/provider/drivers', NEW_DRIVER)->assertForbidden();
     $this->withHeaders($viewer)->patchJson("/api/v1/provider/drivers/{$this->mine->id}", ['firstName' => 'X'])->assertForbidden();
+});
+
+it('liste les chauffeurs en un nombre de requêtes qui ne dépend pas de leur nombre', function (): void {
+    $count = function (): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->withHeaders($this->admin)->getJson('/api/v1/provider/drivers?perPage=100')->assertOk();
+
+        return count(DB::getQueryLog());
+    };
+    $create = fn (int $i) => $this->withHeaders($this->admin)
+        ->postJson('/api/v1/provider/drivers', [...NEW_DRIVER, 'code' => "ALPHA-1{$i}", 'email' => "n{$i}@alpha.test"])->assertCreated();
+    // Un chauffeur invité d'abord : le contrôle groupé du compte s'exécute.
+    $create(1);
+    $before = $count();
+    foreach (range(2, 5) as $i) {
+        $create($i);
+    }
+
+    expect($count())->toBe($before);
 });

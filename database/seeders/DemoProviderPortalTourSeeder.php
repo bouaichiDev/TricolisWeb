@@ -61,11 +61,13 @@ class DemoProviderPortalTourSeeder extends Seeder
         }
 
         $this->executionTour($date);
+        $this->call(DemoProviderPortalProofSeeder::class);
     }
 
     /**
      * Une seconde tournée d'Alpha, l'après-midi, déjà affectée à sa flotte de
      * démonstration : de quoi exécuter une tournée sans dépendre de l'affectation.
+     * Remise à « confirmée » à chaque passage : le parcours se rejoue.
      */
     private function executionTour(string $date): void
     {
@@ -78,16 +80,17 @@ class DemoProviderPortalTourSeeder extends Seeder
             return;
         }
 
-        $tour = Tour::firstOrCreate(
+        $tour = Tour::updateOrCreate(
             ['organization_id' => $alpha->organization_id, 'tour_number' => 'DEMO-ALPHA-2'],
             [
                 'agency_id' => $agency->id, 'provider_id' => $alpha->id, 'driver_id' => $driver->id, 'vehicle_id' => $vehicle->id,
                 'tour_date' => $date, 'planned_start_at' => "{$date} 13:00:00", 'planned_end_at' => "{$date} 17:00:00",
-                'status' => TourStatus::CONFIRMED,
+                'status' => TourStatus::CONFIRMED, 'actual_start_at' => null, 'actual_end_at' => null,
             ],
         );
 
         $this->stopFor($tour, "{$date} 14:00:00");
+        $tour->stops()->update(['status' => TourStopStatus::PENDING->value, 'actual_arrival_at' => null, 'actual_departure_at' => null]);
     }
 
     private function stopFor(Tour $tour, string $arrival): void

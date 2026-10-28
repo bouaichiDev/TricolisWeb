@@ -30,6 +30,10 @@ final class ProviderPortalPermissions
         'provider.calendar.view' => 'Voir le calendrier des tournées',
         'provider.tours.execute' => 'Démarrer et terminer une tournée',
         'provider.tour-stops.update-status' => 'Faire avancer les arrêts d’une tournée',
+        'provider.tracking.view' => 'Voir la chronologie et la carte d’une tournée',
+        'provider.documents.view' => 'Voir et télécharger les documents d’exécution',
+        'provider.pod.view' => 'Voir les preuves de livraison',
+        'provider.pod.create' => 'Enregistrer une preuve de livraison',
 
         'provider.drivers.view' => 'Voir les chauffeurs',
         'provider.drivers.create' => 'Ajouter un chauffeur',

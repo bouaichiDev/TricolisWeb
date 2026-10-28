@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Provider;
 
+use App\Modules\ProviderPortal\Actions\ExecuteProviderTour;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
 use App\Modules\ProviderPortal\Services\ProviderTourScope;
 use App\Modules\Tours\Enums\TourStatus;
@@ -58,8 +59,11 @@ class ProviderTourResource extends JsonResource
             'stops' => ProviderTourStopResource::collection($this->whenLoaded('stops')),
             'actions' => [
                 'canAssign' => $canAssign,
-                'canStart' => $canExecute && $status === TourStatus::CONFIRMED && $this->driver_id !== null && $this->vehicle_id !== null,
-                'canComplete' => $canExecute && $status === TourStatus::IN_PROGRESS,
+                'canStart' => $canExecute && $status === TourStatus::CONFIRMED && $this->locked_by === null
+                    && $this->driver_id !== null && $this->vehicle_id !== null,
+                // Arrêts chargés (détail) : plus aucun ouvert. Liste : le serveur tranchera.
+                'canComplete' => $canExecute && $status === TourStatus::IN_PROGRESS && (! $this->relationLoaded('stops')
+                    || $this->stops->every(static fn ($stop): bool => in_array($stop->status, ExecuteProviderTour::CLOSED_STOPS, true))),
             ],
         ];
     }

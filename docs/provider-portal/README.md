@@ -5,6 +5,11 @@ Plan : `docs/superpowers/plans/2026-10-27-portail-fournisseur-phase-1.md`.
 
 ## Ce qui est livré
 
+**Phase 5 — suivi, documents, preuves** : chronologie réelle d'une tournée et carte (arrêts géolocalisés,
+dernière position enregistrée), documents d'exécution téléchargeables par le jeton, preuves de livraison
+(signature et photo) saisies aux arrêts atteints. Incidents : `BLOCKED_DESIGN_DECISION` (aucun modèle
+d'incident n'existe ; un événement de suivi n'en tient pas lieu sans décision).
+
 **Phase 4 — exécution** : démarrer et terminer une tournée, faire avancer ses arrêts (arrivé, terminé,
 passé avec motif), onglets « À effectuer / En cours / Terminées ».
 
@@ -63,7 +68,8 @@ php artisan db:seed --class=ProviderPortalSeeder --force      # rejouable
 
 Variables : `PROVIDER_PORTAL_URL`, `PROVIDER_PORTAL_INVITATION_HOURS` (72),
 `PROVIDER_PORTAL_TOKEN_TTL_MINUTES` (720), `PROVIDER_PORTAL_RATE_LIMIT` (300),
-`PROVIDER_PORTAL_LOGIN_RATE_LIMIT` (30). En production, ajouter l'origine du
+`PROVIDER_PORTAL_LOGIN_RATE_LIMIT` (30), `PROVIDER_PORTAL_WRITE_RATE_LIMIT` (30),
+`PROVIDER_PORTAL_EXECUTE_RATE_LIMIT` (120 : exécution et preuves). En production, ajouter l'origine du
 portail à `CORS_ALLOWED_ORIGINS`.
 
 ## Décisions ouvertes (`BLOCKED_DESIGN_DECISION`)
@@ -71,3 +77,13 @@ portail à `CORS_ALLOWED_ORIGINS`.
 Disponibilités chauffeurs/véhicules, contrats fournisseur, communications
 adressées au fournisseur, domaine et déploiement du portail, durées de
 conservation : voir la spécification, §9.
+
+- **Ordre de démarrage** — le portail démarre une tournée `confirmed` (spécification §5.4), alors que le
+  référentiel `StatusTransitionSeeder` prévoit `draft → confirmed → planned → in_progress`. Une tournée passée
+  à `planned` par l'interne ne peut donc pas démarrer depuis le portail. À trancher avec le propriétaire.
+- **Incidents d'exécution** : aucun modèle ; non livrés.
+
+## Décisions de conformité (`BLOCKED_COMPLIANCE_DECISION`)
+
+Durée de conservation des preuves de livraison, signatures et photos : non fixée. Aucune purge n'est
+programmée ; ne pas en inventer une.

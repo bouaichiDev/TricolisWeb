@@ -18,6 +18,10 @@ export function StopActions({ tourId, stop }: { tourId: string; stop: TourStop }
   const [skipping, setSkipping] = useState(false)
   const [reason, setReason] = useState('')
   const actions = stop.actions
+  const closeSkip = (open: boolean) => {
+    setSkipping(open)
+    if (!open) setReason('')
+  }
 
   if (!actions || (!actions.canArrive && !actions.canComplete && !actions.canSkip)) return null
 
@@ -41,7 +45,7 @@ export function StopActions({ tourId, stop }: { tourId: string; stop: TourStop }
         )}
       </div>
       {refusal && <p className="text-destructive text-sm">{refusal}</p>}
-      <Dialog open={skipping} onOpenChange={setSkipping}>
+      <Dialog open={skipping} onOpenChange={closeSkip}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Passer l’arrêt {stop.sequence}</DialogTitle>
@@ -52,14 +56,15 @@ export function StopActions({ tourId, stop }: { tourId: string; stop: TourStop }
             <Textarea id={`skip-${stop.id}`} value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSkipping(false)}>
+            <Button variant="outline" onClick={() => closeSkip(false)}>
               Annuler
             </Button>
             <Button
               disabled={isPending || reason.trim().length < 3}
               onClick={() => {
-                setSkipping(false)
-                run(() => toursApi.stop(tourId, stop.id, 'skip', reason.trim()))
+                const motive = reason.trim()
+                closeSkip(false)
+                run(() => toursApi.stop(tourId, stop.id, 'skip', motive))
               }}
             >
               Passer l’arrêt

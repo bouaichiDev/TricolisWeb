@@ -3,6 +3,7 @@ import { UserCheck } from 'lucide-react'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 
+import { usePermissions } from '@/app/auth/useAuth'
 import { errorMessage } from '@/shared/api/errors'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { ErrorState, InlineLoader } from '@/shared/components/feedback/States'
@@ -10,21 +11,26 @@ import { DetailField } from '@/shared/components/layout/DetailField'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { Button } from '@/shared/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { formatDate, formatDateTime } from '@/shared/utils/format'
 
 import { toursApi } from '../api/toursApi'
 import { AssignResourcesDialog } from '../components/AssignResourcesDialog'
+import { TourDocuments } from '../components/TourDocuments'
 import { TourExecutionBar } from '../components/TourExecutionBar'
 import { TourStops } from '../components/TourStops'
+import { TourTimeline } from '../components/TourTimeline'
 
 /**
  * Le détail d'une tournée attribuée : ce qu'il faut pour l'organiser, puis
- * ses arrêts. L'affectation n'est offerte que si le serveur l'ouvre.
+ * ses arrêts, sa chronologie et ses documents — chaque onglet seulement si la
+ * permission le permet. L'affectation n'est offerte que si le serveur l'ouvre.
  */
 export function TourDetailPage() {
   const { id = '' } = useParams()
   const tour = useQuery({ queryKey: ['tour', id], queryFn: () => toursApi.get(id) })
   const [assigning, setAssigning] = useState(false)
+  const { can } = usePermissions()
 
   if (tour.isPending) return <InlineLoader />
   if (tour.isError) return <ErrorState message={errorMessage(tour.error)} onRetry={() => void tour.refetch()} />
@@ -59,7 +65,26 @@ export function TourDetailPage() {
           <DetailField label="Consignes">{data.instructions}</DetailField>
         </dl>
       </SectionCard>
-      <TourStops tourId={data.id} stops={data.stops ?? []} />
+      <Tabs defaultValue="stops">
+        <TabsList>
+          <TabsTrigger value="stops">Arrêts</TabsTrigger>
+          {can('provider.tracking.view') && <TabsTrigger value="tracking">Chronologie</TabsTrigger>}
+          {can('provider.documents.view') && <TabsTrigger value="documents">Documents</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="stops">
+          <TourStops tourId={data.id} stops={data.stops ?? []} />
+        </TabsContent>
+        {can('provider.tracking.view') && (
+          <TabsContent value="tracking">
+            <TourTimeline tourId={data.id} stops={data.stops ?? []} />
+          </TabsContent>
+        )}
+        {can('provider.documents.view') && (
+          <TabsContent value="documents">
+            <TourDocuments tourId={data.id} />
+          </TabsContent>
+        )}
+      </Tabs>
       {data.actions.canAssign && <AssignResourcesDialog tour={data} open={assigning} onOpenChange={setAssigning} />}
     </div>
   )

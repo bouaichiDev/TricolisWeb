@@ -25,8 +25,10 @@ use App\Http\Controllers\Api\V1\Provider\ProviderPasswordController;
 use App\Http\Controllers\Api\V1\Provider\Resources\ProviderDriverController;
 use App\Http\Controllers\Api\V1\Provider\Resources\ProviderResourceStatusController;
 use App\Http\Controllers\Api\V1\Provider\Resources\ProviderVehicleController;
+use App\Http\Controllers\Api\V1\Provider\Tours\ProviderDocumentController;
 use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourController;
 use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourExecutionController;
+use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourRecordsController;
 use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourResourcesController;
 use Illuminate\Support\Facades\Route;
 
@@ -76,21 +78,33 @@ Route::middleware(['auth:sanctum', 'provider.portal', 'throttle:provider-portal'
             Route::get('{tour}', [ProviderTourController::class, 'show'])->name('show');
         });
         // Phase 4 — exécution : démarrer, terminer, faire avancer les arrêts.
-        Route::middleware(['throttle:provider-portal-write', 'provider.permission:provider.tours.view,provider.tours.execute'])->group(static function (): void {
+        Route::middleware(['throttle:provider-portal-execute', 'provider.permission:provider.tours.view,provider.tours.execute'])->group(static function (): void {
             Route::post('{tour}/start', [ProviderTourExecutionController::class, 'start'])->name('start');
             Route::post('{tour}/complete', [ProviderTourExecutionController::class, 'complete'])->name('complete');
         });
         Route::prefix('{tour}/stops/{stop}')->name('stops.')
-            ->middleware(['throttle:provider-portal-write', 'provider.permission:provider.tours.view,provider.tour-stops.update-status'])
+            ->middleware(['throttle:provider-portal-execute', 'provider.permission:provider.tours.view,provider.tour-stops.update-status'])
             ->group(static function (): void {
                 Route::post('arrive', [ProviderTourExecutionController::class, 'arrive'])->name('arrive');
                 Route::post('complete', [ProviderTourExecutionController::class, 'completeStop'])->name('complete');
                 Route::post('skip', [ProviderTourExecutionController::class, 'skip'])->name('skip');
             });
+        // Phase 5 — chronologie, documents d'exécution, preuves de livraison.
+        Route::get('{tour}/tracking', [ProviderTourRecordsController::class, 'tracking'])
+            ->middleware('provider.permission:provider.tours.view,provider.tracking.view')->name('tracking');
+        Route::get('{tour}/documents', [ProviderTourRecordsController::class, 'documents'])
+            ->middleware('provider.permission:provider.tours.view,provider.documents.view')->name('documents');
+        Route::get('{tour}/stops/{stop}/proofs', [ProviderTourRecordsController::class, 'proofs'])
+            ->middleware('provider.permission:provider.tours.view,provider.pod.view')->name('stops.proofs.index');
+        Route::post('{tour}/stops/{stop}/proofs', [ProviderTourRecordsController::class, 'storeProof'])
+            ->middleware(['throttle:provider-portal-execute', 'provider.permission:provider.tours.view,provider.pod.create'])->name('stops.proofs.store');
         Route::patch('{tour}/resources', ProviderTourResourcesController::class)
             ->middleware(['provider.permission:provider.tours.view,provider.tours.assign-resources', 'throttle:provider-portal-write'])
             ->name('resources');
     });
+
+    Route::get('documents/{document}', ProviderDocumentController::class)
+        ->middleware('provider.permission:provider.documents.view')->name('documents.download');
 
     // Phase 2 — chauffeurs et véhicules du fournisseur courant.
     Route::prefix('drivers')->name('drivers.')->group(static function (): void {

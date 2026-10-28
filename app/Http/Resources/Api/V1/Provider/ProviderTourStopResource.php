@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Provider;
 
+use App\Modules\ProviderPortal\Actions\ExecuteProviderStop;
+use App\Modules\ProviderPortal\Actions\RecordProviderProofOfDelivery;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Enums\TourStopStatus;
@@ -28,7 +30,7 @@ class ProviderTourStopResource extends JsonResource
         $status = TourStopStatus::tryFrom((string) ($this->status instanceof TourStopStatus ? $this->status->value : $this->status));
         $address = $this->address;
         $moving = app(CurrentProviderContext::class)->can('provider.tour-stops.update-status')
-            && $this->relationLoaded('tour') && $this->tour?->status === TourStatus::IN_PROGRESS;
+            && $this->relationLoaded('tour') && $this->tour?->status === TourStatus::IN_PROGRESS && $this->tour->locked_by === null;
 
         return [
             'id' => $this->id,
@@ -53,9 +55,11 @@ class ProviderTourStopResource extends JsonResource
                 'timeWindowTo' => $address->time_window_to,
             ],
             'actions' => [
-                'canArrive' => $moving && $status === TourStopStatus::PENDING,
-                'canComplete' => $moving && $status === TourStopStatus::ARRIVED,
-                'canSkip' => $moving && in_array($status, [TourStopStatus::PENDING, TourStopStatus::ARRIVED], true),
+                'canArrive' => $moving && in_array($status, ExecuteProviderStop::ARRIVE_FROM, true),
+                'canComplete' => $moving && in_array($status, ExecuteProviderStop::COMPLETE_FROM, true),
+                'canSkip' => $moving && in_array($status, ExecuteProviderStop::SKIP_FROM, true),
+                'canRecordProof' => app(CurrentProviderContext::class)->can('provider.pod.create')
+                    && in_array($status, RecordProviderProofOfDelivery::REACHED, true),
             ],
             // Seuls les services acquis : une composition en cours chez le
             // planificateur (`confirmed_at` nul) ne se voit pas ailleurs.

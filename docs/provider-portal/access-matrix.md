@@ -1,4 +1,4 @@
-# Portail fournisseur — matrice d'accès (phases 1 à 4)
+# Portail fournisseur — matrice d'accès (phases 1 à 5)
 
 ## Routes du portail — `api/v1/provider`
 
@@ -19,8 +19,13 @@
 | GET | `tours`, `tours/{id}` | idem | `provider.tours.view` | `provider-portal` |
 | GET | `tours/calendar?from&to` (≤ 62 j) | idem | `provider.calendar.view` | `provider-portal` |
 | PATCH | `tours/{id}/resources` | idem | `provider.tours.view` + `provider.tours.assign-resources` | `provider-portal-write` |
-| POST | `tours/{id}/start`, `tours/{id}/complete` | idem | `provider.tours.view` + `provider.tours.execute` | `provider-portal-write` |
-| POST | `tours/{tour}/stops/{stop}/arrive`, `…/complete`, `…/skip` (motif 3..500) | idem | `provider.tours.view` + `provider.tour-stops.update-status` | `provider-portal-write` |
+| POST | `tours/{id}/start`, `tours/{id}/complete` | idem | `provider.tours.view` + `provider.tours.execute` | `provider-portal-execute` (120/min) |
+| POST | `tours/{tour}/stops/{stop}/arrive`, `…/complete`, `…/skip` (motif 3..500) | idem | `provider.tours.view` + `provider.tour-stops.update-status` | `provider-portal-execute` |
+| GET | `tours/{id}/tracking` | idem | `provider.tours.view` + `provider.tracking.view` | `provider-portal` |
+| GET | `tours/{id}/documents` | idem | `provider.tours.view` + `provider.documents.view` | `provider-portal` |
+| GET | `documents/{id}` (flux, `nosniff`) | idem | `provider.documents.view` | `provider-portal` |
+| GET | `tours/{tour}/stops/{stop}/proofs` | idem | `provider.tours.view` + `provider.pod.view` | `provider-portal` |
+| POST | `tours/{tour}/stops/{stop}/proofs` (multipart) | idem | `provider.tours.view` + `provider.pod.create` | `provider-portal-execute` |
 | GET | `drivers` | idem | `provider.drivers.view` | `provider-portal` |
 | GET | `drivers/{id}` | idem | `provider.drivers.view` | `provider-portal` |
 | POST | `drivers` | idem | `provider.drivers.create` | `provider-portal-write` (30/min) |
@@ -47,6 +52,17 @@ actives, sans chevauchement de créneau, capacité suffisante ; vérifiée sous 
 Exécution (cycle encadré) : `confirmed → in_progress` (chauffeur et véhicule requis) → `completed` (tous les arrêts
 terminés, passés ou annulés) ; arrêts `pending → arrived → completed`, ou `skipped` avec motif audité
 (`tour_stop.skipped`). Heure du serveur, verrou tournée puis arrêt, rejeu sans effet ; l'ordre des arrêts n'est pas imposé.
+Un arrêt `in_progress` (posé par l'interne) se termine ou se passe. Rien ne démarre ni n'avance tant qu'un planificateur
+réserve la tournée (`locked_by`) ; au démarrage, chauffeur et véhicule sont relus (actifs, dans la flotte).
+
+Chronologie : horodatages réels de la tournée et des arrêts, arrêts passés (sans le motif), événements de suivi de
+**cette** tournée avec le libellé du référentiel — jamais leur `description`. Documents : seulement par un chemin
+jusqu'à une tournée visible — `Tour`, `TourStop`, `OrderService` **confirmé** sur un arrêt, `ProofOfDelivery` d'un arrêt
+(et ses signature et photo) ; jamais un document de la seule commande (facture). Hors chemin : 404.
+Preuves : arrêt atteint (`arrived`, `in_progress`, `completed`), service confirmé sur cet arrêt, une preuve par service
+et par arrêt ; signature obligatoire et photo facultative, images réelles (`image` + `mimes` : ni SVG ni faux PNG,
+5 Mo, 4000 px) rattachées à l'arrêt ; heure, commande et documents fixés par le serveur (`deliveredAt` → 422).
+Les fichiers déjà écrits sont effacés si l'enregistrement échoue.
 
 Aucune route de gestion d'utilisateurs ni de rôles (vérifié en E2E : 404).
 
@@ -67,14 +83,15 @@ d'un autre fournisseur répond 404. Ces routes refusent les jetons de portail.
 
 ## Rôles par défaut
 
-| Rôle | Base¹ | Flotte : voir | Flotte : écrire | Affecter aux tournées |
-|---|---|---|---|---|
-| Administrateur fournisseur (`PROVIDER_ADMIN`) | ✓ | ✓ | ✓ | ✓ |
-| Exploitant (`PROVIDER_DISPATCHER`) | ✓ | ✓ | — | ✓ |
-| Gestionnaire flotte (`PROVIDER_FLEET_MANAGER`) | ✓ | ✓ | ✓ | — |
-| Lecture (`PROVIDER_VIEWER`) | ✓ | ✓ | — | — |
+| Rôle | Base¹ | Flotte : voir | Flotte : écrire | Affecter aux tournées | Exécuter, saisir une preuve |
+|---|---|---|---|---|---|
+| Administrateur fournisseur (`PROVIDER_ADMIN`) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Exploitant (`PROVIDER_DISPATCHER`) | ✓ | ✓ | — | ✓ | ✓ |
+| Gestionnaire flotte (`PROVIDER_FLEET_MANAGER`) | ✓ | ✓ | ✓ | — | — |
+| Lecture (`PROVIDER_VIEWER`) | ✓ | ✓ | — | — | — |
 
-¹ `provider.portal.access`, `provider.dashboard.view`, `provider.profile.view`, `provider.tours.view`, `provider.calendar.view`.
+¹ `provider.portal.access`, `provider.dashboard.view`, `provider.profile.view`, `provider.tours.view`, `provider.calendar.view`,
+`provider.tracking.view`, `provider.documents.view`, `provider.pod.view`.
 
 `ProviderPortalSeeder` accorde les permissions nouvelles aux rôles existants au
 rejeu : `php artisan db:seed --class=ProviderPortalSeeder --force` après chaque phase.

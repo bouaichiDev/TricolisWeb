@@ -1,5 +1,6 @@
 export interface StopService {
   id: string
+  orderServiceId: string
   status: string
   serviceNumber: string | null
   serviceName: string | null
@@ -28,9 +29,11 @@ export interface TourStop {
     postalCode: string | null
     city: string | null
     country: string | null
+    latitude?: number | null
+    longitude?: number | null
     instructions: string | null
   } | null
-  actions?: { canArrive: boolean; canComplete: boolean; canSkip: boolean }
+  actions?: { canArrive: boolean; canComplete: boolean; canSkip: boolean; canRecordProof?: boolean }
   services: StopService[]
 }
 
@@ -70,4 +73,35 @@ export interface TourFilters {
   state?: string
   page: number
   perPage?: number
+}
+
+/** Une entrée de chronologie : jamais la note libre d'un événement. */
+export interface TimelineEntry {
+  type: 'tour_started' | 'tour_completed' | 'stop_arrived' | 'stop_departed' | 'stop_skipped' | 'event'
+  label: string
+  occurredAt: string
+  stopSequence: number | null
+  serviceNumber: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+export interface TourDocument {
+  id: string
+  fileName: string
+  documentType: string
+  mimeType: string | null
+  size: number | null
+  createdAt: string | null
+}
+
+export interface Proof {
+  id: string
+  orderServiceId: string | null
+  serviceNumber: string | null
+  recipientName: string
+  remark: string | null
+  deliveredAt: string | null
+  signatureDocumentId: string | null
+  photoDocumentId: string | null
 }

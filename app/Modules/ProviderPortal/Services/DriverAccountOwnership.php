@@ -25,20 +25,39 @@ final class DriverAccountOwnership
 {
     public static function owns(Driver $driver): bool
     {
-        $user = $driver->user;
+        return in_array($driver->id, self::ownedAmong([$driver]), true);
+    }
 
-        if ($user === null || $user->status !== UserStatus::INVITED) {
-            return false;
+    /**
+     * La même règle pour une page entière, en quatre requêtes quel que soit le
+     * nombre de chauffeurs (les relations `user` doivent être chargées).
+     *
+     * @param  iterable<Driver>  $drivers
+     * @return list<string> identifiants des chauffeurs dont le compte est propre
+     */
+    public static function ownedAmong(iterable $drivers): array
+    {
+        $candidates = collect($drivers)->filter(static fn (Driver $driver): bool => $driver->user?->status === UserStatus::INVITED);
+        $users = $candidates->pluck('user_id')->unique()->values();
+
+        if ($users->isEmpty()) {
+            return [];
         }
 
-        $memberships = OrganizationUser::with('roles:id,code')->where('user_id', $user->id)->get();
-        $membership = $memberships->first();
+        $memberships = OrganizationUser::with('roles:id,code')->whereIn('user_id', $users)->get()->groupBy('user_id');
+        $portal = ProviderUser::whereIn('user_id', $users)->pluck('user_id')
+            ->merge(CustomerUser::whereIn('user_id', $users)->pluck('user_id'))->flip();
+        $driverCounts = Driver::whereIn('user_id', $users)->selectRaw('user_id, count(*) as total')->groupBy('user_id')->pluck('total', 'user_id');
 
-        return $memberships->count() === 1
-            && $membership->organization_id === $driver->organization_id
-            && $membership->roles->pluck('code')->all() === [RoleSeeder::DRIVER_CODE]
-            && ! ProviderUser::where('user_id', $user->id)->exists()
-            && ! CustomerUser::where('user_id', $user->id)->exists()
-            && Driver::where('user_id', $user->id)->whereKeyNot($driver->id)->doesntExist();
+        return $candidates->filter(static function (Driver $driver) use ($memberships, $portal, $driverCounts): bool {
+            $own = $memberships->get($driver->user_id, collect());
+            $membership = $own->first();
+
+            return $own->count() === 1
+                && $membership->organization_id === $driver->organization_id
+                && $membership->roles->pluck('code')->all() === [RoleSeeder::DRIVER_CODE]
+                && ! $portal->has($driver->user_id)
+                && (int) $driverCounts->get($driver->user_id, 0) === 1;
+        })->pluck('id')->values()->all();
     }
 }

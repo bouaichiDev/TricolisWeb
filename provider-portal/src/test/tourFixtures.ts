@@ -22,7 +22,7 @@ export function makeTour(overrides: Record<string, unknown> = {}) {
         plannedArrivalAt: '2026-11-03T08:00:00+01:00', plannedDepartureAt: null, actualArrivalAt: null, actualDepartureAt: null,
         address: { name: 'Entrepôt Nord', line1: 'Rue du Port 4', line2: null, postalCode: '1201', city: 'Genève', country: 'CH', latitude: null, longitude: null, instructions: 'Sonner', timeWindowFrom: null, timeWindowTo: null },
         services: [
-          { id: '01SVC1', status: 'planned', serviceNumber: 'SRV-00042', serviceName: 'Livraison', requestedFrom: null, requestedTo: null, weight: '12.500', volume: '0.2000', packageCount: 3, instructions: null, contacts: [{ firstName: 'Lea', lastName: 'Site', phone: '+41220000000', mobile: null }] },
+          { id: '01SVC1', orderServiceId: '01OSVC1', status: 'planned', serviceNumber: 'SRV-00042', serviceName: 'Livraison', requestedFrom: null, requestedTo: null, weight: '12.500', volume: '0.2000', packageCount: 3, instructions: null, contacts: [{ firstName: 'Lea', lastName: 'Site', phone: '+41220000000', mobile: null }] },
         ],
       },
     ],

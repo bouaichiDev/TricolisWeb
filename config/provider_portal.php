@@ -25,5 +25,6 @@ return [
         'api_per_minute' => (int) env('PROVIDER_PORTAL_RATE_LIMIT', 300),
         'logins_per_minute' => (int) env('PROVIDER_PORTAL_LOGIN_RATE_LIMIT', 30),
         'writes_per_minute' => (int) env('PROVIDER_PORTAL_WRITE_RATE_LIMIT', 30),
+        'executions_per_minute' => (int) env('PROVIDER_PORTAL_EXECUTE_RATE_LIMIT', 120),
     ],
 ];

@@ -34,6 +34,7 @@ class ProviderStopServiceResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'orderServiceId' => $this->order_service_id,
             'status' => (string) ($this->status instanceof \BackedEnum ? $this->status->value : $this->status),
             'serviceNumber' => $service?->service_number,
             'serviceName' => $service?->service?->name,

@@ -1,7 +1,7 @@
 import { api } from '@/shared/api/client'
 import type { ApiEnvelope, Paginated } from '@/shared/api/types'
 
-import type { Tour, TourEvent, TourFilters, TourStop } from '../types'
+import type { Proof, TimelineEntry, Tour, TourDocument, TourEvent, TourFilters, TourStop } from '../types'
 
 export const toursApi = {
   list: (filters: TourFilters) =>
@@ -22,6 +22,16 @@ export const toursApi = {
 
   stop: (id: string, stopId: string, action: 'arrive' | 'complete' | 'skip', reason?: string) =>
     api.post<ApiEnvelope<TourStop>>(`/tours/${id}/stops/${stopId}/${action}`, reason === undefined ? undefined : { reason }),
+
+  tracking: async (id: string) => (await api.get<ApiEnvelope<TimelineEntry[]>>(`/tours/${id}/tracking`)).data,
+
+  documents: async (id: string) => (await api.get<ApiEnvelope<TourDocument[]>>(`/tours/${id}/documents`)).data,
+
+  proofs: async (id: string, stopId: string) => (await api.get<ApiEnvelope<Proof[]>>(`/tours/${id}/stops/${stopId}/proofs`)).data,
+
+  /** Multipart : service, réceptionnaire, signature, photo et remarque. Jamais d'heure. */
+  recordProof: async (id: string, stopId: string, form: FormData) =>
+    (await api.upload<ApiEnvelope<Proof>>(`/tours/${id}/stops/${stopId}/proofs`, form)).data,
 
   calendar: async (from: string, to: string) =>
     (await api.get<ApiEnvelope<TourEvent[]>>('/tours/calendar', { query: { from, to } })).data,

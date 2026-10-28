@@ -62,6 +62,12 @@ final class PortalRateLimits
             Config::integer('provider_portal.rate_limits.writes_per_minute', 30),
         )->by('provider-portal-write|'.self::caller($request)));
 
+        // L'exécution d'une tournée (arrêts, preuves) : un rattrapage de
+        // quarante arrêts dépasse vite le plafond des créations. Compteur à part.
+        RateLimiter::for('provider-portal-execute', static fn (Request $request): Limit => Limit::perMinute(
+            Config::integer('provider_portal.rate_limits.executions_per_minute', 120),
+        )->by('provider-portal-execute|'.self::caller($request)));
+
         // Les dépôts de fichiers coûtent cher (lecture, validation) : à part.
         RateLimiter::for('customer-portal-import', static fn (Request $request): Limit => Limit::perMinute(
             Config::integer('customer_portal.rate_limits.imports_per_minute', 10),

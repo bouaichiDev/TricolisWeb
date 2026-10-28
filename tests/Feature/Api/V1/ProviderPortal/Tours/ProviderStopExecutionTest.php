@@ -65,3 +65,23 @@ it('répond 404 pour un arrêt d’une autre tournée ou d’un autre fournisseu
     ($this->post)('arrive', [], $theirs, $theirStop)->assertNotFound();
     expect($theirStop->fresh()->status)->toBe(TourStopStatus::PENDING);
 });
+
+it('termine ou passe un arrêt mis « en cours » par l’interne', function (string $action): void {
+    $this->stop->update(['status' => TourStopStatus::IN_PROGRESS]);
+
+    ($this->post)($action, $action === 'skip' ? ['reason' => 'Quai fermé'] : [])->assertOk();
+})->with(['complete', 'skip']);
+
+it('ne fait rien avancer pendant qu’un planificateur réserve la tournée', function (): void {
+    $this->tour->update(['locked_by' => authUser()->id, 'locked_at' => now()]);
+
+    ($this->post)('arrive')->assertUnprocessable()->assertJsonValidationErrors('status');
+    expect($this->stop->fresh()->status)->toBe(TourStopStatus::PENDING);
+});
+
+it('ne réécrit pas le motif d’un arrêt déjà passé', function (): void {
+    ($this->post)('skip', ['reason' => 'Quai fermé'])->assertOk();
+    ($this->post)('skip', ['reason' => 'Autre motif'])->assertOk();
+
+    expect(AuditLog::where('action', 'tour_stop.skipped')->where('entity_id', $this->stop->id)->count())->toBe(1);
+});

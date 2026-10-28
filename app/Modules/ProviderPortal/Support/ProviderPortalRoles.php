@@ -32,10 +32,13 @@ final class ProviderPortalRoles
         'provider.profile.view',
         'provider.tours.view',
         'provider.calendar.view',
+        'provider.tracking.view',
+        'provider.documents.view',
+        'provider.pod.view',
     ];
 
     /** Organiser et exécuter les tournées : le métier de l'exploitant. */
-    private const array EXECUTION = ['provider.tours.assign-resources', 'provider.tours.execute', 'provider.tour-stops.update-status'];
+    private const array EXECUTION = ['provider.tours.assign-resources', 'provider.tours.execute', 'provider.tour-stops.update-status', 'provider.pod.create'];
 
     private const array FLEET_READ = ['provider.drivers.view', 'provider.vehicles.view'];
 

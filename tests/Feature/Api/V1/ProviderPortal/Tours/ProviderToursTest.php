@@ -88,7 +88,10 @@ it('rend le détail opérationnel, arrêts dans l’ordre, sans aucune donnée c
         ->assertJsonCount(1, 'data.stops.0.services.0.contacts')
         ->assertJsonPath('data.stops.0.services.0.contacts.0.firstName', 'Lea');
 
-    $forbidden = array_filter(jsonKeys($response->json()), static fn (string $key): bool => (bool) preg_match('/price|cost|invoice|order|customer|reference|external/i', $key));
+    // `orderServiceId` : identifiant opaque du service, celui que la saisie d'une
+    // preuve désigne (phase 5) ; il ne porte ni numéro de commande ni client.
+    $forbidden = array_filter(jsonKeys($response->json()), static fn (string $key): bool => $key !== 'orderServiceId'
+        && (bool) preg_match('/price|cost|invoice|order|customer|reference|external/i', $key));
 
     expect($forbidden)->toBe([]);
 });

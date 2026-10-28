@@ -16,12 +16,16 @@ export function useTourExecution(tourId: string) {
   const mutation = useMutation({
     mutationFn: (run: () => Promise<unknown>) => run(),
     onMutate: () => setRefusal(null),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['tour', tourId] })
-      void queryClient.invalidateQueries({ queryKey: ['tours'] })
-      toast.success('Enregistré.')
-    },
+    onSuccess: () => toast.success('Enregistré.'),
     onError: (error) => setRefusal(refusalMessage(error)),
+    // Succès ou refus (un autre a pu changer la tournée) : on recharge, et
+    // `isPending` reste vrai jusqu'au retour — pas de double clic sur des
+    // boutons périmés.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] }),
+        queryClient.invalidateQueries({ queryKey: ['tours'] }),
+      ]),
   })
 
   return { run: mutation.mutate, isPending: mutation.isPending, refusal }

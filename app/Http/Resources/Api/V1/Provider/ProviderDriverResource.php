@@ -20,6 +20,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProviderDriverResource extends JsonResource
 {
     /**
+     * @param  bool|null  $ownsAccount  précalculé pour une page (DriverAccountOwnership::ownedAmong) ; calculé ici sinon
+     */
+    public function __construct(Driver $resource, private readonly ?bool $ownsAccount = null)
+    {
+        parent::__construct($resource);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
@@ -41,7 +49,7 @@ class ProviderDriverResource extends JsonResource
             'actions' => [
                 'canUpdate' => $canUpdate,
                 // Prénom, nom, téléphone : seulement si le compte est propre au chauffeur.
-                'canEditAccount' => $canUpdate && ($user === null || DriverAccountOwnership::owns($this->resource)),
+                'canEditAccount' => $canUpdate && ($user === null || ($this->ownsAccount ?? DriverAccountOwnership::owns($this->resource))),
                 'canDeactivate' => $canUpdate && $this->status === 'active',
                 'canActivate' => $canUpdate && $this->status === 'inactive',
             ],

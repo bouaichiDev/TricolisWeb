@@ -143,3 +143,18 @@ it('accorde au rejeu les permissions d’exécution à l’administrateur et à 
     expect($holders)->toBe(['PROVIDER_ADMIN', 'PROVIDER_DISPATCHER'])
         ->and(Permission::where('code', 'provider.tour-stops.update-status')->exists())->toBeTrue();
 });
+
+it('accorde au rejeu les permissions de suivi, documents et preuves selon le métier', function (): void {
+    $codes = ['provider.tracking.view', 'provider.documents.view', 'provider.pod.view', 'provider.pod.create'];
+    Permission::whereIn('code', $codes)->delete();
+
+    $this->seed(ProviderPortalSeeder::class);
+
+    $held = fn (string $role): array => Role::where('organization_id', $this->organization->id)->where('code', $role)->firstOrFail()
+        ->permissions()->whereIn('code', $codes)->pluck('code')->sort()->values()->all();
+    $all = collect($codes)->sort()->values()->all();
+    $read = ['provider.documents.view', 'provider.pod.view', 'provider.tracking.view'];
+
+    expect($held('PROVIDER_ADMIN'))->toBe($all)->and($held('PROVIDER_DISPATCHER'))->toBe($all)
+        ->and($held('PROVIDER_FLEET_MANAGER'))->toBe($read)->and($held('PROVIDER_VIEWER'))->toBe($read);
+});

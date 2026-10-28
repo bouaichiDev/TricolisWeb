@@ -77,11 +77,37 @@ it('annonce les actions d’exécution que le serveur accepterait', function ():
 
     ($this->post)('start')->assertOk();
 
-    $detail()->assertJsonPath('data.actions.canStart', false)->assertJsonPath('data.actions.canComplete', true)
+    $detail()->assertJsonPath('data.actions.canStart', false)->assertJsonPath('data.actions.canComplete', false)
         ->assertJsonPath('data.stops.0.actions.canArrive', true)->assertJsonPath('data.stops.0.actions.canSkip', true)
         ->assertJsonPath('data.stops.0.actions.canComplete', false);
 
     $this->withHeaders(ProviderPortal::headers('viewer@transports-alpha.test'))->getJson("/api/v1/provider/tours/{$this->tour->id}")
         ->assertJsonPath('data.actions.canComplete', false)->assertJsonPath('data.stops.0.actions.canArrive', false);
     expect($stop->exists)->toBeTrue();
+});
+
+it('ne démarre pas une tournée réservée par un planificateur, ni sans ressource encore active', function (string $case): void {
+    match ($case) {
+        'réservée' => $this->tour->update(['locked_by' => authUser()->id, 'locked_at' => now()]),
+        'chauffeur désactivé' => Driver::whereKey($this->tour->driver_id)->update(['status' => 'inactive']),
+        'véhicule passé ailleurs' => Vehicle::whereKey($this->tour->vehicle_id)->update(['provider_id' => ProviderPortal::provider('transports-beta')->id]),
+    };
+
+    ($this->post)('start')->assertUnprocessable()->assertJsonValidationErrors('status');
+    expect($this->tour->fresh()->status)->toBe(TourStatus::CONFIRMED);
+
+    $show = $this->withHeaders($this->admin)->getJson("/api/v1/provider/tours/{$this->tour->id}")->assertOk();
+    if ($case === 'réservée') {
+        $show->assertJsonPath('data.actions.canStart', false);
+    }
+})->with(['réservée', 'chauffeur désactivé', 'véhicule passé ailleurs']);
+
+it('n’offre « Terminer » qu’une fois tous les arrêts fermés', function (): void {
+    $this->tour->update(['status' => TourStatus::IN_PROGRESS]);
+    $stop = TourStop::factory()->forTour($this->tour)->create(['status' => TourStopStatus::ARRIVED]);
+    $canComplete = fn () => $this->withHeaders($this->admin)->getJson("/api/v1/provider/tours/{$this->tour->id}")->assertOk()->json('data.actions.canComplete');
+
+    expect($canComplete())->toBeFalse();
+    $stop->update(['status' => TourStopStatus::COMPLETED]);
+    expect($canComplete())->toBeTrue();
 });

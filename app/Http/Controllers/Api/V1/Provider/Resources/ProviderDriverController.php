@@ -13,6 +13,7 @@ use App\Modules\Drivers\Actions\CreateDriverAction;
 use App\Modules\Drivers\DTOs\CreateDriverData;
 use App\Modules\ProviderPortal\Actions\UpdateProviderDriver;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\DriverAccountOwnership;
 use App\Modules\ProviderPortal\Services\ProviderResourceScope;
 use App\Modules\ProviderPortal\Support\NeutralDuplicate;
 use App\Shared\Http\Responses\ApiResponse;
@@ -47,7 +48,10 @@ class ProviderDriverController extends Controller
             ->orderBy('code')
             ->paginate($request->perPage());
 
-        return ApiResponse::paginated($drivers->through(static fn ($driver) => (new ProviderDriverResource($driver))->resolve()));
+        // Une seule passe pour toute la page : pas cinq requêtes par chauffeur.
+        $owned = array_flip(DriverAccountOwnership::ownedAmong($drivers->items()));
+
+        return ApiResponse::paginated($drivers->through(static fn ($driver) => (new ProviderDriverResource($driver, isset($owned[$driver->id])))->resolve()));
     }
 
     public function show(string $driver): JsonResponse

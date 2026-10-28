@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Modules\Addresses\Models\Address;
 use App\Modules\Agencies\Models\Agency;
+use App\Modules\Documents\Models\Document;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Providers\Models\Provider;
 use App\Modules\Tours\Enums\TourStatus;
@@ -13,14 +14,16 @@ use App\Modules\Tours\Enums\TourStopStatus;
 use App\Modules\Tours\Models\Tour;
 use App\Modules\Tours\Models\TourStop;
 use App\Modules\Tours\Models\TourStopService;
+use App\Shared\Database\MorphMap;
 use Database\Seeders\Support\ProviderDemoOrder;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Une tournée d'Alpha déjà en cours, son arrêt atteint, un service confirmé
  * dessus : de quoi saisir une preuve de livraison dans les parcours Playwright.
  *
- * Remise à zéro à chaque passage (statuts, preuves de l'arrêt de démo) pour
+ * Remise à zéro à chaque passage (statuts, preuves et fichiers de l'arrêt de démo) pour
  * que le parcours se rejoue sans base neuve. Local et test seulement ; le
  * service vient de `ProviderDemoOrder`, une commande passée par le service
  * métier, jamais une commande suivie par les démonstrations du portail client.
@@ -58,7 +61,7 @@ class DemoProviderPortalProofSeeder extends Seeder
             ['address_id' => $address->id, 'planned_arrival_at' => "{$date} 18:30:00", 'status' => TourStopStatus::ARRIVED, 'actual_arrival_at' => "{$date} 18:32:00", 'actual_departure_at' => null],
         );
 
-        ProofOfDelivery::where('tour_stop_id', $stop->id)->delete();
+        $this->resetProofs($stop);
 
         if (TourStopService::where('tour_stop_id', $stop->id)->exists()) {
             return;
@@ -72,5 +75,21 @@ class DemoProviderPortalProofSeeder extends Seeder
                 'is_active_assignment' => true, 'confirmed_at' => now(), 'status' => 'planned',
             ]);
         }
+    }
+
+    /**
+     * Les preuves de l'arrêt de démo, et les signatures et photos qu'elles ont
+     * laissées (documents rattachés à cet arrêt, fichiers compris). Rien d'autre.
+     */
+    private function resetProofs(TourStop $stop): void
+    {
+        ProofOfDelivery::where('tour_stop_id', $stop->id)->delete();
+
+        $documents = Document::withTrashed()
+            ->whereHas('links', static fn ($link) => $link->where('entity_type', MorphMap::TOUR_STOP)->where('entity_id', $stop->id))
+            ->get();
+
+        Storage::disk('local')->delete($documents->pluck('storage_path')->filter()->all());
+        $documents->each->forceDelete();
     }
 }

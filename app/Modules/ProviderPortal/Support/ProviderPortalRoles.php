@@ -14,7 +14,7 @@ namespace App\Modules\ProviderPortal\Support;
  * Chacun porte la base (accès, tableau de bord, profil, tournées, calendrier)
  * puis son métier : le gestionnaire flotte gère chauffeurs et véhicules,
  * l'exploitant affecte chauffeurs et véhicules aux tournées, le lecteur
- * consulte.
+ * consulte. Les décomptes (montants, documents) restent à l'administrateur.
  */
 final class ProviderPortalRoles
 {
@@ -35,6 +35,7 @@ final class ProviderPortalRoles
         'provider.tracking.view',
         'provider.documents.view',
         'provider.pod.view',
+        'provider.communications.view',
     ];
 
     /** Organiser et exécuter les tournées : le métier de l'exploitant. */

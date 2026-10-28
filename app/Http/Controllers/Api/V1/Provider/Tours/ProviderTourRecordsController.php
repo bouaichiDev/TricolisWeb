@@ -8,9 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Provider\Tours\RecordProofRequest;
 use App\Http\Resources\Api\V1\Provider\ProviderProofResource;
 use App\Modules\Documents\Models\Document;
-use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\ProviderPortal\Actions\RecordProviderProofOfDelivery;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\ProviderAcquiredServices;
 use App\Modules\ProviderPortal\Services\ProviderDocumentAccess;
 use App\Modules\ProviderPortal\Services\ProviderTourScope;
 use App\Modules\ProviderPortal\Services\ProviderTourTimeline;
@@ -55,7 +55,7 @@ class ProviderTourRecordsController extends Controller
         $model = $this->stop($tour, $stop);
 
         return ApiResponse::ok(ProviderProofResource::collection(
-            ProofOfDelivery::with('orderService:id,service_number')->where('tour_stop_id', $model->id)->orderBy('delivered_at')->get(),
+            ProviderAcquiredServices::proofs()->with('orderService:id,service_number')->where('tour_stop_id', $model->id)->orderBy('delivered_at')->get(),
         ));
     }
 

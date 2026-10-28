@@ -8,10 +8,11 @@ use App\Modules\Documents\Actions\AttachEntityDocument;
 use App\Modules\ProofOfDelivery\Actions\CreateProofOfDeliveryAction;
 use App\Modules\ProofOfDelivery\DTOs\CreateProofOfDeliveryData;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
+use App\Modules\ProviderPortal\Services\ProviderAcquiredServices;
 use App\Modules\ProviderPortal\Services\ProviderTourScope;
+use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Enums\TourStopStatus;
 use App\Modules\Tours\Models\TourStop;
-use App\Modules\Tours\Models\TourStopService;
 use App\Shared\Support\AuditContext;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,9 @@ use Throwable;
  */
 final readonly class RecordProviderProofOfDelivery
 {
+    /** Une preuve se saisit pendant la tournée ou après elle, jamais sur une tournée annulée. */
+    public const array TOURS = [TourStatus::IN_PROGRESS, TourStatus::COMPLETED];
+
     public const array REACHED = [TourStopStatus::ARRIVED, TourStopStatus::IN_PROGRESS, TourStopStatus::COMPLETED];
 
     public function __construct(
@@ -54,15 +58,23 @@ final readonly class RecordProviderProofOfDelivery
                 $stop = TourStop::where('tour_id', $tour->id)->whereKey($stopId)->lockForUpdate()->first()
                     ?? throw new NotFoundHttpException('Arrêt introuvable.');
 
+                if (! in_array($tour->status, self::TOURS, true) || $tour->locked_by !== null) {
+                    throw ValidationException::withMessages(['status' => $tour->locked_by !== null
+                        ? ExecuteProviderTour::RESERVED
+                        : 'Une preuve ne s’enregistre que sur une tournée en cours ou terminée.']);
+                }
+
                 if (! in_array($stop->status, self::REACHED, true)) {
                     throw ValidationException::withMessages(['status' => 'Une preuve ne s’enregistre qu’à un arrêt atteint.']);
                 }
 
-                $line = TourStopService::with('orderService:id,order_id')
-                    ->where('tour_stop_id', $stop->id)->where('order_service_id', $data['orderServiceId'])->whereNotNull('confirmed_at')->first()
+                $line = ProviderAcquiredServices::lines()->with('orderService:id,order_id')
+                    ->where('tour_stop_id', $stop->id)->where('order_service_id', $data['orderServiceId'])->first()
                     ?? throw ValidationException::withMessages(['orderServiceId' => 'Ce service n’est pas confirmé sur cet arrêt.']);
 
-                if (ProofOfDelivery::where('tour_stop_id', $stop->id)->where('order_service_id', $line->order_service_id)->exists()) {
+                // Verrouillante : lit le dernier état validé, y compris une preuve
+                // saisie au back-office pendant cette transaction.
+                if (ProofOfDelivery::where('tour_stop_id', $stop->id)->where('order_service_id', $line->order_service_id)->lockForUpdate()->exists()) {
                     throw ValidationException::withMessages(['orderServiceId' => 'Une preuve existe déjà pour ce service à cet arrêt.']);
                 }
 

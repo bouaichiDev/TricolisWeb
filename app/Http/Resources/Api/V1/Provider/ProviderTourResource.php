@@ -62,7 +62,7 @@ class ProviderTourResource extends JsonResource
                 'canStart' => $canExecute && $status === TourStatus::CONFIRMED && $this->locked_by === null
                     && $this->driver_id !== null && $this->vehicle_id !== null,
                 // Arrêts chargés (détail) : plus aucun ouvert. Liste : le serveur tranchera.
-                'canComplete' => $canExecute && $status === TourStatus::IN_PROGRESS && (! $this->relationLoaded('stops')
+                'canComplete' => $canExecute && $status === TourStatus::IN_PROGRESS && $this->locked_by === null && (! $this->relationLoaded('stops')
                     || $this->stops->every(static fn ($stop): bool => in_array($stop->status, ExecuteProviderTour::CLOSED_STOPS, true))),
             ],
         ];

@@ -158,3 +158,18 @@ it('accorde au rejeu les permissions de suivi, documents et preuves selon le mé
     expect($held('PROVIDER_ADMIN'))->toBe($all)->and($held('PROVIDER_DISPATCHER'))->toBe($all)
         ->and($held('PROVIDER_FLEET_MANAGER'))->toBe($read)->and($held('PROVIDER_VIEWER'))->toBe($read);
 });
+
+it('accorde au rejeu les communications à tous, les décomptes à l’administrateur seul', function (): void {
+    $codes = ['provider.communications.view', 'provider.settlements.view', 'provider.settlements.documents.view'];
+    Permission::whereIn('code', $codes)->delete();
+
+    $this->seed(ProviderPortalSeeder::class);
+
+    $held = fn (string $role): array => Role::where('organization_id', $this->organization->id)->where('code', $role)->firstOrFail()
+        ->permissions()->whereIn('code', $codes)->pluck('code')->sort()->values()->all();
+
+    expect($held('PROVIDER_ADMIN'))->toBe(collect($codes)->sort()->values()->all())
+        ->and($held('PROVIDER_DISPATCHER'))->toBe(['provider.communications.view'])
+        ->and($held('PROVIDER_FLEET_MANAGER'))->toBe(['provider.communications.view'])
+        ->and($held('PROVIDER_VIEWER'))->toBe(['provider.communications.view']);
+});

@@ -17,3 +17,7 @@ export const TourDetailPage = lazyPage(() => import('@/modules/tours/pages/TourD
 export const CalendarPage = lazyPage(() => import('@/modules/calendar/pages/CalendarPage'), 'CalendarPage')
 export const DriversPage = lazyPage(() => import('@/modules/drivers/pages/DriversPage'), 'DriversPage')
 export const VehiclesPage = lazyPage(() => import('@/modules/vehicles/pages/VehiclesPage'), 'VehiclesPage')
+export const CommunicationsPage = lazyPage(() => import('@/modules/communications/pages/CommunicationsPage'), 'CommunicationsPage')
+export const CommunicationDetailPage = lazyPage(() => import('@/modules/communications/pages/CommunicationDetailPage'), 'CommunicationDetailPage')
+export const SettlementsPage = lazyPage(() => import('@/modules/settlements/pages/SettlementsPage'), 'SettlementsPage')
+export const SettlementDetailPage = lazyPage(() => import('@/modules/settlements/pages/SettlementDetailPage'), 'SettlementDetailPage')

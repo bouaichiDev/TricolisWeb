@@ -20,6 +20,8 @@ final class ProviderNavigation
         ['key' => 'calendar', 'label' => 'Calendrier', 'path' => '/calendar', 'permission' => 'provider.calendar.view'],
         ['key' => 'drivers', 'label' => 'Chauffeurs', 'path' => '/drivers', 'permission' => 'provider.drivers.view'],
         ['key' => 'vehicles', 'label' => 'Véhicules', 'path' => '/vehicles', 'permission' => 'provider.vehicles.view'],
+        ['key' => 'communications', 'label' => 'Communications', 'path' => '/communications', 'permission' => 'provider.communications.view'],
+        ['key' => 'settlements', 'label' => 'Décomptes', 'path' => '/settlements', 'permission' => 'provider.settlements.view'],
         ['key' => 'profile', 'label' => 'Profil', 'path' => '/profile', 'permission' => 'provider.profile.view'],
     ];
 

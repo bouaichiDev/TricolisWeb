@@ -9,5 +9,7 @@ export const paths = {
   calendar: '/calendar',
   drivers: '/drivers',
   vehicles: '/vehicles',
+  communications: '/communications',
+  settlements: '/settlements',
   accessDenied: '/access-denied',
 } as const

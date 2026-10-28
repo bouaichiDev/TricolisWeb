@@ -90,6 +90,10 @@ final readonly class ExecuteProviderTour
                 $this->fail('Seule une tournée en cours peut être terminée.');
             }
 
+            if ($tour->locked_by !== null) {
+                $this->fail(self::RESERVED);
+            }
+
             $open = $tour->stops()
                 ->whereNotIn('status', array_map(static fn (TourStopStatus $status): string => $status->value, self::CLOSED_STOPS))
                 ->lockForUpdate()

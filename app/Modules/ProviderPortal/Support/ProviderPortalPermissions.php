@@ -34,6 +34,9 @@ final class ProviderPortalPermissions
         'provider.documents.view' => 'Voir et télécharger les documents d’exécution',
         'provider.pod.view' => 'Voir les preuves de livraison',
         'provider.pod.create' => 'Enregistrer une preuve de livraison',
+        'provider.communications.view' => 'Voir les communications reçues',
+        'provider.settlements.view' => 'Voir les décomptes clôturés',
+        'provider.settlements.documents.view' => 'Télécharger les documents des décomptes',
 
         'provider.drivers.view' => 'Voir les chauffeurs',
         'provider.drivers.create' => 'Ajouter un chauffeur',

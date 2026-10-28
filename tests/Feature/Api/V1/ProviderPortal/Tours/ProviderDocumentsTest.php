@@ -41,6 +41,11 @@ beforeEach(function (): void {
     $pending = OrderService::factory()->create(['order_id' => $order->id]);
     TourStopService::factory()->forStop($stop)->create(['order_service_id' => $service->id, 'confirmed_at' => now()]);
     TourStopService::factory()->forStop($stop)->create(['order_service_id' => $pending->id, 'confirmed_at' => null]);
+    // Retiré de la tournée après son départ : la ligne reste, inactive, confirmée.
+    $moved = OrderService::factory()->create(['order_id' => $order->id]);
+    TourStopService::factory()->forStop($stop)->create(['order_service_id' => $moved->id, 'confirmed_at' => now(), 'is_active_assignment' => false]);
+    // Preuve saisie au back-office sur cet arrêt pour un service qui n'y est pas.
+    $stray = ProofOfDelivery::create(['order_id' => $order->id, 'order_service_id' => $moved->id, 'tour_stop_id' => $stop->id, 'recipient_name' => 'X', 'delivered_at' => now()]);
     $proof = ProofOfDelivery::create(['order_id' => $order->id, 'order_service_id' => $service->id, 'tour_stop_id' => $stop->id, 'recipient_name' => 'R', 'delivered_at' => now()]);
     // Une tournée sœur d'Alpha : ses documents ne figurent pas dans la liste de
     // celle-ci. Une tournée de Beta : ses documents ne s'ouvrent jamais.
@@ -55,6 +60,8 @@ beforeEach(function (): void {
     $this->denied = [
         'facture' => ($this->doc)('facture', 'invoice', 'order', $order->id),
         'en composition' => ($this->doc)('pending', 'delivery_note', 'order_service', $pending->id),
+        'service replanifié' => ($this->doc)('moved', 'delivery_note', 'order_service', $moved->id),
+        'preuve hors service acquis' => ($this->doc)('stray', 'proof_photo', 'proof_of_delivery', $stray->id),
         'autre fournisseur' => ($this->doc)('autre', 'instructions', 'tour', $theirs->id),
         'autre organisation' => ($this->doc)('ailleurs', 'instructions', 'tour', $this->tour->id, Organization::factory()->create()->id),
     ];
@@ -80,4 +87,4 @@ it('télécharge un document autorisé en flux protégé', function (): void {
 
 it('répond 404 pour tout autre document', function (string $case): void {
     $this->withHeaders($this->admin)->get("/api/v1/provider/documents/{$this->denied[$case]->id}")->assertNotFound();
-})->with(['facture', 'en composition', 'autre fournisseur', 'autre organisation']);
+})->with(['facture', 'en composition', 'service replanifié', 'preuve hors service acquis', 'autre fournisseur', 'autre organisation']);

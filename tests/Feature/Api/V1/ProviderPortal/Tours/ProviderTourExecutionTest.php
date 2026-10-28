@@ -111,3 +111,10 @@ it('n’offre « Terminer » qu’une fois tous les arrêts fermés', function (
     $stop->update(['status' => TourStopStatus::COMPLETED]);
     expect($canComplete())->toBeTrue();
 });
+
+it('ne termine pas une tournée réservée par un planificateur', function (): void {
+    $this->tour->update(['status' => TourStatus::IN_PROGRESS, 'locked_by' => authUser()->id, 'locked_at' => now()]);
+
+    ($this->post)('complete')->assertUnprocessable()->assertJsonValidationErrors('status');
+    $this->withHeaders($this->admin)->getJson("/api/v1/provider/tours/{$this->tour->id}")->assertJsonPath('data.actions.canComplete', false);
+});

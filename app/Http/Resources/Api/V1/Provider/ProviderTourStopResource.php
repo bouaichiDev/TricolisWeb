@@ -7,6 +7,7 @@ namespace App\Http\Resources\Api\V1\Provider;
 use App\Modules\ProviderPortal\Actions\ExecuteProviderStop;
 use App\Modules\ProviderPortal\Actions\RecordProviderProofOfDelivery;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\ProviderAcquiredServices;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Enums\TourStopStatus;
 use App\Modules\Tours\Models\TourStop;
@@ -59,13 +60,15 @@ class ProviderTourStopResource extends JsonResource
                 'canComplete' => $moving && in_array($status, ExecuteProviderStop::COMPLETE_FROM, true),
                 'canSkip' => $moving && in_array($status, ExecuteProviderStop::SKIP_FROM, true),
                 'canRecordProof' => app(CurrentProviderContext::class)->can('provider.pod.create')
-                    && in_array($status, RecordProviderProofOfDelivery::REACHED, true),
+                    && in_array($status, RecordProviderProofOfDelivery::REACHED, true)
+                    && $this->relationLoaded('tour') && in_array($this->tour?->status, RecordProviderProofOfDelivery::TOURS, true)
+                    && $this->tour->locked_by === null,
             ],
             // Seuls les services acquis : une composition en cours chez le
             // planificateur (`confirmed_at` nul) ne se voit pas ailleurs.
             'services' => ProviderStopServiceResource::collection(
                 $this->services
-                    ->filter(static fn ($service): bool => $service->is_active_assignment && $service->confirmed_at !== null)
+                    ->filter(static fn ($service): bool => ProviderAcquiredServices::isAcquired($service))
                     ->sortBy('sequence_within_stop')->values(),
             ),
         ];

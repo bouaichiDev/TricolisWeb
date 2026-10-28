@@ -17,8 +17,10 @@
 |
 */
 
+use App\Http\Controllers\Api\V1\Provider\Finance\ProviderSettlementController;
 use App\Http\Controllers\Api\V1\Provider\ProviderActivationController;
 use App\Http\Controllers\Api\V1\Provider\ProviderAuthController;
+use App\Http\Controllers\Api\V1\Provider\ProviderCommunicationController;
 use App\Http\Controllers\Api\V1\Provider\ProviderContextController;
 use App\Http\Controllers\Api\V1\Provider\ProviderDashboardController;
 use App\Http\Controllers\Api\V1\Provider\ProviderPasswordController;
@@ -105,6 +107,23 @@ Route::middleware(['auth:sanctum', 'provider.portal', 'throttle:provider-portal'
 
     Route::get('documents/{document}', ProviderDocumentController::class)
         ->middleware('provider.permission:provider.documents.view')->name('documents.download');
+
+    // Phase 6 — en lecture seule : communications reçues par le membre,
+    // décomptes clôturés du fournisseur. Aucune route d'écriture.
+    Route::prefix('communications')->name('communications.')->middleware('provider.permission:provider.communications.view')
+        ->group(static function (): void {
+            Route::get('/', [ProviderCommunicationController::class, 'index'])->name('index');
+            Route::get('{communication}', [ProviderCommunicationController::class, 'show'])->name('show');
+        });
+    Route::prefix('settlements')->name('settlements.')->middleware('provider.permission:provider.settlements.view')
+        ->group(static function (): void {
+            Route::get('/', [ProviderSettlementController::class, 'index'])->name('index');
+            Route::get('{settlement}', [ProviderSettlementController::class, 'show'])->name('show');
+            Route::middleware('provider.permission:provider.settlements.view,provider.settlements.documents.view')->group(static function (): void {
+                Route::get('{settlement}/documents', [ProviderSettlementController::class, 'documents'])->name('documents');
+                Route::get('{settlement}/documents/{document}', [ProviderSettlementController::class, 'download'])->name('documents.download');
+            });
+        });
 
     // Phase 2 — chauffeurs et véhicules du fournisseur courant.
     Route::prefix('drivers')->name('drivers.')->group(static function (): void {

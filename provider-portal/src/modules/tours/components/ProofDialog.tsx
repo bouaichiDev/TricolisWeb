@@ -24,7 +24,9 @@ type Field = 'orderServiceId' | 'recipientName' | 'signature' | 'photo' | 'remar
  */
 export function ProofDialog({ tourId, stop, open, onOpenChange }: { tourId: string; stop: TourStop; open: boolean; onOpenChange: (open: boolean) => void }) {
   const queryClient = useQueryClient()
-  const [serviceId, setServiceId] = useState(stop.services[0]?.orderServiceId ?? '')
+  const [chosen, setChosen] = useState('')
+  // Le choix suit la liste : si elle change, on retombe sur le premier service.
+  const serviceId = stop.services.some((service) => service.orderServiceId === chosen) ? chosen : (stop.services[0]?.orderServiceId ?? '')
   const [recipient, setRecipient] = useState('')
   const [remark, setRemark] = useState('')
   const [signature, setSignature] = useState<File | null>(null)
@@ -88,7 +90,7 @@ export function ProofDialog({ tourId, stop, open, onOpenChange }: { tourId: stri
           )}
           <div className="grid gap-1.5">
             <Label htmlFor={`proof-service-${stop.id}`}>Service livré</Label>
-            <select id={`proof-service-${stop.id}`} className={selectClass} value={serviceId} onChange={(event) => setServiceId(event.target.value)}>
+            <select id={`proof-service-${stop.id}`} className={selectClass} value={serviceId} onChange={(event) => setChosen(event.target.value)}>
               {stop.services.map((service) => (
                 <option key={service.id} value={service.orderServiceId}>{`${service.serviceNumber ?? ''} — ${service.serviceName ?? 'Service'}`}</option>
               ))}

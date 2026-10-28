@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\ProviderPortal\Services;
 
 use App\Modules\Documents\Models\Document;
-use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\Tours\Models\TourStop;
-use App\Modules\Tours\Models\TourStopService;
 use App\Shared\Database\MorphMap;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -19,9 +17,13 @@ use Illuminate\Database\Eloquent\Builder;
  * (ProviderTourScope), dans l'organisation de ce fournisseur :
  *
  * - `DocumentLink → Tour` ou `→ TourStop` de la tournée ;
- * - `DocumentLink → OrderService` **confirmé** sur un arrêt de la tournée ;
- * - `DocumentLink → ProofOfDelivery` d'un arrêt de la tournée, ou signature et
- *   photo référencées par cette preuve.
+ * - `DocumentLink → OrderService` **acquis** (actif et confirmé) sur un arrêt
+ *   de la tournée — un service replanifié ailleurs n'en fait plus partie ;
+ * - `DocumentLink → ProofOfDelivery` d'un service acquis sur un arrêt de la
+ *   tournée, ou signature et photo référencées par cette preuve.
+ *
+ * Un document lié à un service se partage entre les fournisseurs qui le portent
+ * en même temps (plusieurs étapes) : c'est le bon de ce service, voulu.
  *
  * Jamais un document de la seule commande (facture, bon d'autres services) :
  * la commande appartient au client, pas au transporteur. Sans chemin, le
@@ -39,8 +41,8 @@ final readonly class ProviderDocumentAccess
     {
         $tours = $tourId !== null ? [$tourId] : $this->scope->tours()->select('tours.id');
         $stops = TourStop::query()->select('id')->whereIn('tour_id', $tours);
-        $services = TourStopService::query()->select('order_service_id')->whereIn('tour_stop_id', $stops)->whereNotNull('confirmed_at');
-        $proofs = ProofOfDelivery::query()->whereIn('tour_stop_id', $stops);
+        $services = ProviderAcquiredServices::lines()->select('order_service_id')->whereIn('tour_stop_id', $stops);
+        $proofs = ProviderAcquiredServices::proofs()->whereIn('tour_stop_id', $stops);
         $linked = static fn (string $alias, $ids) => static fn (Builder $link) => $link->where('entity_type', $alias)->whereIn('entity_id', $ids);
 
         return Document::query()

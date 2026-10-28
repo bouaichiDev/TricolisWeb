@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1\Provider\Tours;
 
 use App\Http\Requests\Api\V1\Provider\ProviderServerControlledFields;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 
 /**
  * Une preuve de livraison saisie au portail fournisseur.
@@ -24,6 +26,14 @@ class RecordProofRequest extends FormRequest
 
     private const array IMAGE = ['file', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120', 'dimensions:max_width=4000,max_height=4000'];
 
+    /** Le nom d'origine est conservé (`documents.file_name`, 255) : trop long, 422 plutôt que 500. */
+    private function shortName(string $attribute, mixed $value, Closure $fail): void
+    {
+        if ($value instanceof UploadedFile && mb_strlen($value->getClientOriginalName()) > 180) {
+            $fail('Le nom du fichier est trop long (180 caractères au plus).');
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -39,8 +49,8 @@ class RecordProofRequest extends FormRequest
             'orderServiceId' => ['required', 'string', 'ulid'],
             'recipientName' => ['required', 'string', 'min:2', 'max:120'],
             'remark' => ['nullable', 'string', 'max:500'],
-            'signature' => ['required', ...self::IMAGE],
-            'photo' => ['nullable', ...self::IMAGE],
+            'signature' => ['required', ...self::IMAGE, $this->shortName(...)],
+            'photo' => ['nullable', ...self::IMAGE, $this->shortName(...)],
         ];
     }
 }

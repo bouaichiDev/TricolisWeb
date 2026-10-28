@@ -2,6 +2,8 @@
 
 use App\Modules\CustomerPortal\Models\CustomerUser;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
+use App\Modules\ProviderSettlements\Models\ProviderSettlement;
+use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Enums\TourStopStatus;
 use App\Modules\Tours\Models\Tour;
@@ -51,4 +53,16 @@ it('remet les tournées d’exécution à leur état de départ au rejeu', funct
         ->and($executed->stops()->pluck('status')->map->value->unique()->all())->toBe(['pending'])
         ->and(ProofOfDelivery::where('tour_stop_id', $stop->id)->count())->toBe(0)
         ->and(TourStopService::count())->toBe($lines);
+});
+
+it('sème des décomptes dont les totaux viennent du module financier, sans doublon au rejeu', function (): void {
+    $closed = ProviderSettlement::where('settlement_number', 'DEMO-STL-ALPHA-1')->firstOrFail();
+    $count = ProviderSettlementLine::count();
+
+    $this->seed(DemoProviderPortalTourSeeder::class);
+
+    expect($closed->status)->toBe('closed')
+        ->and((string) $closed->total)->toBe('240.00')
+        ->and(ProviderSettlement::where('settlement_number', 'DEMO-STL-ALPHA-2')->value('status'))->toBe('draft')
+        ->and(ProviderSettlementLine::count())->toBe($count);
 });

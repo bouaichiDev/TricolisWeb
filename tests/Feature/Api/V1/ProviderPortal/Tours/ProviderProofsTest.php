@@ -87,3 +87,26 @@ it('n’offre la saisie d’une preuve qu’aux arrêts atteints, et à qui peut
         ->and($stops('admin@transports-alpha.test')->firstWhere('id', $pending->id)['actions']['canRecordProof'])->toBeFalse()
         ->and($stops('viewer@transports-alpha.test')->firstWhere('id', $this->stop->id)['actions']['canRecordProof'])->toBeFalse();
 });
+
+it('refuse une preuve pour un service retiré de l’arrêt, sur une tournée annulée ou réservée', function (string $case): void {
+    $field = 'status';
+    match ($case) {
+        'service retiré' => [TourStopService::where('order_service_id', $this->service->id)->update(['is_active_assignment' => false]), $field = 'orderServiceId'],
+        'tournée annulée' => $this->tour->update(['status' => TourStatus::CANCELLED]),
+        'tournée réservée' => $this->tour->update(['locked_by' => authUser()->id, 'locked_at' => now()]),
+    };
+
+    ($this->record)()->assertUnprocessable()->assertJsonValidationErrors($field);
+    expect(ProofOfDelivery::count())->toBe(0);
+})->with(['service retiré', 'tournée annulée', 'tournée réservée']);
+
+it('ne montre ni la preuve du back-office hors service acquis, ni sa remarque interne', function (): void {
+    $order = $this->service->order;
+    ProofOfDelivery::create(['order_id' => $order->id, 'order_service_id' => $this->otherService->id, 'tour_stop_id' => $this->stop->id, 'recipient_name' => 'Hors arrêt', 'delivered_at' => now()]);
+    ProofOfDelivery::create(['order_id' => $order->id, 'order_service_id' => $this->service->id, 'tour_stop_id' => $this->stop->id, 'recipient_name' => 'Interne', 'remark' => 'Note interne', 'delivered_at' => now(), 'created_by' => authUser()->id]);
+
+    $rows = $this->withHeaders($this->admin)->getJson("/api/v1/provider/tours/{$this->tour->id}/stops/{$this->stop->id}/proofs")->assertOk()->json('data');
+
+    expect(collect($rows)->pluck('recipientName')->all())->toBe(['Interne'])
+        ->and($rows[0]['remark'])->toBeNull();
+});

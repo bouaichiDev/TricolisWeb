@@ -25,6 +25,8 @@ use Illuminate\Support\Str;
  */
 final class ProviderTourTimeline
 {
+    private const array RANK = ['tour_started' => 0, 'stop_arrived' => 1, 'event' => 2, 'stop_skipped' => 3, 'stop_departed' => 3, 'tour_completed' => 4];
+
     /**
      * @return list<Entry>
      */
@@ -72,7 +74,8 @@ final class ProviderTourTimeline
             );
         }
 
-        usort($entries, static fn (array $a, array $b): int => strcmp($a['occurredAt'], $b['occurredAt']));
+        // À la même seconde : démarrage, arrêts, événements, puis fin de tournée.
+        usort($entries, static fn (array $a, array $b): int => [$a['occurredAt'], self::RANK[$a['type']]] <=> [$b['occurredAt'], self::RANK[$b['type']]]);
 
         return $entries;
     }

@@ -62,6 +62,7 @@ class DemoProviderPortalTourSeeder extends Seeder
 
         $this->executionTour($date);
         $this->call(DemoProviderPortalProofSeeder::class);
+        $this->call(DemoProviderPortalSettlementSeeder::class);
     }
 
     /**

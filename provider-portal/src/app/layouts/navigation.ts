@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, Circle, IdCard, LayoutDashboard, Route, Truck, UserCircle, type LucideIcon } from 'lucide-react'
+import { CalendarDays, Circle, IdCard, LayoutDashboard, Mail, ReceiptText, Route, Truck, UserCircle, type LucideIcon } from 'lucide-react'
 
 import { useAuth } from '@/app/auth/useAuth'
 import { api } from '@/shared/api/client'
@@ -15,6 +15,8 @@ const ICONS: Record<string, LucideIcon> = {
   calendar: CalendarDays,
   drivers: IdCard,
   vehicles: Truck,
+  communications: Mail,
+  settlements: ReceiptText,
   profile: UserCircle,
 }
 

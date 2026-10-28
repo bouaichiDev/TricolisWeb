@@ -19,9 +19,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ProviderProofResource extends JsonResource
 {
-    /** @var array<string, list<string>> comptes du portail, par fournisseur */
-    private static array $members = [];
-
     /**
      * @return list<string>
      */
@@ -29,7 +26,17 @@ class ProviderProofResource extends JsonResource
     {
         $providerId = app(CurrentProviderContext::class)->providerId();
 
-        return self::$members[$providerId] ??= ProviderUser::where('provider_id', $providerId)->pluck('user_id')->all();
+        // Une lecture par requête et par fournisseur, gardée sur la requête
+        // elle-même : rien ne survit d'une requête à l'autre, même dans un
+        // worker persistant.
+        $attributes = request()->attributes;
+        $key = 'provider-portal.proof-members.'.$providerId;
+
+        if (! $attributes->has($key)) {
+            $attributes->set($key, ProviderUser::where('provider_id', $providerId)->pluck('user_id')->all());
+        }
+
+        return $attributes->get($key);
     }
 
     /**

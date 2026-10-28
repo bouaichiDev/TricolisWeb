@@ -24,7 +24,10 @@ export function saveBlob(blob: Blob, fileName: string): void {
   const name = /\.[a-z0-9]{2,5}$/i.test(fileName) || extension === undefined ? fileName : `${fileName}.${extension}`
   const url = URL.createObjectURL(blob)
 
-  Object.assign(window.document.createElement('a'), { href: url, download: name }).click()
+  const anchor = Object.assign(window.document.createElement('a'), { href: url, download: name })
+  window.document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 

@@ -75,7 +75,7 @@ final class ProviderTourTimeline
         }
 
         // À la même seconde : démarrage, arrêts, événements, puis fin de tournée.
-        usort($entries, static fn (array $a, array $b): int => [$a['occurredAt'], self::RANK[$a['type']]] <=> [$b['occurredAt'], self::RANK[$b['type']]]);
+        usort($entries, static fn (array $a, array $b): int => [$a['occurredAt'], self::RANK[$a['type']], $a['stopSequence'] ?? 0] <=> [$b['occurredAt'], self::RANK[$b['type']], $b['stopSequence'] ?? 0]);
 
         return $entries;
     }

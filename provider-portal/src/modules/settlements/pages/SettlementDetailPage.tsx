@@ -62,7 +62,11 @@ export function SettlementDetailPage() {
       </SectionCard>
       {can('provider.settlements.documents.view') && (
         <SectionCard title="Documents">
-          {(documents.data ?? []).length === 0 ? (
+          {documents.isPending ? (
+            <InlineLoader />
+          ) : documents.isError ? (
+            <p className="text-destructive text-sm">{errorMessage(documents.error)}</p>
+          ) : documents.data.length === 0 ? (
             <p className="text-muted-foreground text-sm">Aucun document joint.</p>
           ) : (
             <ul className="divide-y text-sm">

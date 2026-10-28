@@ -16,6 +16,7 @@ use App\Modules\Communications\Console\ProcessScheduledCommunications;
 use App\Modules\CustomerPortal\Console\PortalRouteMatrix;
 use App\Modules\Integrations\Console\PruneCustomerImportUploads;
 use App\Modules\Integrations\Console\PullCustomerIntegrations;
+use App\Modules\ProviderPortal\Console\ProviderRouteMatrix;
 use App\Shared\Http\Errors\ExternalApiErrors;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -56,6 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ProcessScheduledCommunications::class,
         PullCustomerIntegrations::class,
         PortalRouteMatrix::class,
+        ProviderRouteMatrix::class,
         PruneCustomerImportUploads::class,
         GrantPlatformAdmin::class,
         RepairSiteAddressLinks::class,

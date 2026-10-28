@@ -2,6 +2,7 @@
 
 use App\Modules\Communications\Enums\CommunicationChannel;
 use App\Modules\Communications\Enums\CommunicationStatus;
+use App\Modules\Communications\Enums\RecipientRole;
 use App\Modules\Communications\Models\CommunicationAttachment;
 use App\Modules\Communications\Models\OrderCommunication;
 use App\Modules\Orders\Models\Order;
@@ -30,6 +31,10 @@ beforeEach(function (): void {
         'brouillon' => $sent(['status' => CommunicationStatus::DRAFT, 'sent_at' => null]),
         'échouée' => $sent(['status' => CommunicationStatus::FAILED]),
         'autre organisation' => $sent(['order_id' => Order::factory()->create(['organization_id' => Organization::factory()->create()->id])->id]),
+        'SMS' => $sent(['channel' => CommunicationChannel::SMS]),
+        'en tant qu’interne' => $sent(['recipient_role' => RecipientRole::INTERNAL_USER]),
+        'avant le rattachement' => $sent(['sent_at' => now()->subYears(2)]),
+        'adresse accentuée' => $sent(['recipient_email' => 'admin@transports-alphá.test']),
     ];
     $this->admin = ProviderPortal::headers('admin@transports-alpha.test');
 });
@@ -52,4 +57,11 @@ it('rend le détail en texte, pièces jointes par leur nom, sans commande ni des
 
 it('répond 404 pour toute autre communication', function (string $case): void {
     $this->withHeaders($this->admin)->getJson("/api/v1/provider/communications/{$this->hidden[$case]->id}")->assertNotFound();
-})->with(['autre adresse', 'interne', 'brouillon', 'échouée', 'autre organisation']);
+})->with(['autre adresse', 'interne', 'brouillon', 'échouée', 'autre organisation', 'SMS', 'en tant qu’interne', 'avant le rattachement', 'adresse accentuée']);
+
+it('garde le texte et les paragraphes d’un e-mail HTML, sans style ni script', function (): void {
+    $this->mine->update(['body' => '<style>p{color:red}</style><p>Bonjour</p><p>Quai 3<br>avant 10h</p><script>x()</script>']);
+
+    expect($this->withHeaders($this->admin)->getJson("/api/v1/provider/communications/{$this->mine->id}")->json('data.body'))
+        ->toBe("Bonjour\nQuai 3\navant 10h");
+});

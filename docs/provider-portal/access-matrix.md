@@ -73,12 +73,15 @@ Les fichiers déjà écrits sont effacés si l'enregistrement échoue. Liste des
 acquis sur l'arrêt ; la remarque n'est rendue que pour une preuve saisie par un membre de ce fournisseur (celle du
 back-office peut être interne).
 
-Communications : seulement celles envoyées à l'adresse du membre connecté (sans casse), dans l'organisation du
-fournisseur, canal externe, statut `sent`/`delivered`/`read` ; texte sans balises, pièces jointes par leur nom ;
+Communications : seulement les **e-mails** envoyés à l'adresse du membre connecté (minuscules, comparaison à l'octet),
+dans l'organisation du fournisseur, **depuis son rattachement**, jamais adressés en tant que collaborateur interne,
+statut `sent`/`delivered`/`read` ; texte sans balises ni styles, paragraphes gardés, pièces jointes par leur nom ;
 ni commande, ni destinataire, ni variables, ni réponse du prestataire. Toute autre : 404.
 Décomptes : ceux du fournisseur, dans son organisation, **clôturés** (`closed`) ; brouillon, autre fournisseur,
 inexistant : 404. Lignes : numéro de service, description, quantité, coût unitaire, total — jamais commande ni
-client. Documents : seulement ceux liés au décompte (`DocumentLink → provider_settlement`). Aucune écriture.
+client. Documents : seulement ceux liés au décompte (`DocumentLink → provider_settlement`), quel que soit leur type :
+tout document joint à un décompte au back-office devient visible du fournisseur. Aucune écriture.
+Preuves : une preuve sans service (au niveau de la commande) n'est pas montrée.
 
 Aucune route de gestion d'utilisateurs ni de rôles (vérifié en E2E : 404).
 

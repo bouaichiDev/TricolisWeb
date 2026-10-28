@@ -33,11 +33,24 @@ class ProviderCommunicationResource extends JsonResource
             'statusLabel' => $this->status->label(),
             'sentAt' => $this->sent_at?->toIso8601String(),
             'deliveredAt' => $this->delivered_at?->toIso8601String(),
-            'body' => $this->when($this->relationLoaded('attachments'), fn (): string => trim(html_entity_decode(strip_tags((string) $this->body), ENT_QUOTES | ENT_HTML5))),
+            'body' => $this->when($this->relationLoaded('attachments'), fn (): string => self::text((string) $this->body)),
             'attachments' => $this->whenLoaded('attachments', fn () => $this->attachments->map(static fn (CommunicationAttachment $attachment): array => [
                 'fileName' => $attachment->file_name_snapshot,
                 'mimeType' => $attachment->mime_type_snapshot,
             ])->values()),
         ];
+    }
+
+    /**
+     * Le texte d'un e-mail HTML : styles et scripts retirés avec leur contenu,
+     * fins de paragraphe et de ligne gardées, balises ôtées, entités décodées.
+     */
+    private static function text(string $html): string
+    {
+        $html = (string) preg_replace('#<(style|script|head)\b[^>]*>.*?</\1>#is', '', $html);
+        $html = (string) preg_replace('#<br\s*/?>|</(p|div|li|tr|h[1-6])>#i', "\n", $html);
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace("/[ \t]*\n\s*\n\s*/", "\n\n", $text));
     }
 }

@@ -6,7 +6,7 @@ import { ADMIN_PERMISSIONS, makeContext } from '@/test/fixtures'
 import { renderApp } from '@/test/renderApp'
 import { API, server } from '@/test/server'
 
-const actions = { canUpdate: true, canDeactivate: true, canActivate: false }
+const actions = { canUpdate: true, canEditAccount: true, canDeactivate: true, canActivate: false }
 const driver = {
   id: '01DRV1', code: 'ALPHA-01', name: 'Ali Alpha', firstName: 'Ali', lastName: 'Alpha', email: 'ali@alpha.test',
   phone: null, status: 'active', statusLabel: 'Actif', actions,
@@ -96,6 +96,30 @@ describe('chauffeurs', () => {
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Désactiver' }))
 
     await waitFor(() => expect(called).toBe(true))
+  })
+
+  it('ne renvoie que les champs modifiés, et verrouille l’identité d’un compte partagé', async () => {
+    let body: unknown = null
+    server.use(
+      http.get(`${API}/drivers`, () => HttpResponse.json(page([{ ...driver, actions: { ...actions, canEditAccount: false } }]))),
+      http.patch(`${API}/drivers/01DRV1`, async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json({ data: driver, meta: {} })
+      }),
+    )
+    renderApp('/drivers', makeContext(FLEET))
+    const user = userEvent.setup()
+
+    const row = (await screen.findByText('ALPHA-01')).closest('tr') as HTMLElement
+    await user.click(within(row).getByRole('button', { name: 'Modifier' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByLabelText('Prénom')).toBeDisabled()
+    expect(within(dialog).getByLabelText('Téléphone')).toBeDisabled()
+    await user.clear(within(dialog).getByLabelText('Code'))
+    await user.type(within(dialog).getByLabelText('Code'), 'ALPHA-09')
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).toEqual({ code: 'ALPHA-09' }))
   })
 
   it('n’offre ni ajout ni action d’écriture à un compte en lecture', async () => {

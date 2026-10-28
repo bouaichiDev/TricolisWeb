@@ -28,6 +28,8 @@ final class ProviderPortalPermissions
         'provider.tours.view' => 'Voir les tournées attribuées',
         'provider.tours.assign-resources' => 'Affecter chauffeur et véhicule à une tournée',
         'provider.calendar.view' => 'Voir le calendrier des tournées',
+        'provider.tours.execute' => 'Démarrer et terminer une tournée',
+        'provider.tour-stops.update-status' => 'Faire avancer les arrêts d’une tournée',
 
         'provider.drivers.view' => 'Voir les chauffeurs',
         'provider.drivers.create' => 'Ajouter un chauffeur',

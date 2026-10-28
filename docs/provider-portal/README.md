@@ -5,6 +5,9 @@ Plan : `docs/superpowers/plans/2026-10-27-portail-fournisseur-phase-1.md`.
 
 ## Ce qui est livré
 
+**Phase 4 — exécution** : démarrer et terminer une tournée, faire avancer ses arrêts (arrivé, terminé,
+passé avec motif), onglets « À effectuer / En cours / Terminées ».
+
 **Phase 3 — tournées, affectation, calendrier** : tournées attribuées (hors brouillon), détail
 opérationnel sans donnée commerciale, affectation contrôlée du chauffeur et du véhicule, calendrier
 jour/semaine/mois.

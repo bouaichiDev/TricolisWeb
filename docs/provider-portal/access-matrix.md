@@ -1,4 +1,4 @@
-# Portail fournisseur — matrice d'accès (phases 1 à 3)
+# Portail fournisseur — matrice d'accès (phases 1 à 4)
 
 ## Routes du portail — `api/v1/provider`
 
@@ -19,6 +19,8 @@
 | GET | `tours`, `tours/{id}` | idem | `provider.tours.view` | `provider-portal` |
 | GET | `tours/calendar?from&to` (≤ 62 j) | idem | `provider.calendar.view` | `provider-portal` |
 | PATCH | `tours/{id}/resources` | idem | `provider.tours.view` + `provider.tours.assign-resources` | `provider-portal-write` |
+| POST | `tours/{id}/start`, `tours/{id}/complete` | idem | `provider.tours.view` + `provider.tours.execute` | `provider-portal-write` |
+| POST | `tours/{tour}/stops/{stop}/arrive`, `…/complete`, `…/skip` (motif 3..500) | idem | `provider.tours.view` + `provider.tour-stops.update-status` | `provider-portal-write` |
 | GET | `drivers` | idem | `provider.drivers.view` | `provider-portal` |
 | GET | `drivers/{id}` | idem | `provider.drivers.view` | `provider-portal` |
 | POST | `drivers` | idem | `provider.drivers.create` | `provider-portal-write` (30/min) |
@@ -41,6 +43,10 @@ Tournées : visibles si attribuées au fournisseur dans son organisation, hors b
 contient aucun prix, coût, facture, numéro de commande, référence externe ni client (liste blanche testée).
 Affectation : tournée planifiée ou confirmée, non réservée par un planificateur, ressources du fournisseur et
 actives, sans chevauchement de créneau, capacité suffisante ; vérifiée sous verrou puis confiée à `UpdateTourAction`.
+
+Exécution (cycle encadré) : `confirmed → in_progress` (chauffeur et véhicule requis) → `completed` (tous les arrêts
+terminés, passés ou annulés) ; arrêts `pending → arrived → completed`, ou `skipped` avec motif audité
+(`tour_stop.skipped`). Heure du serveur, verrou tournée puis arrêt, rejeu sans effet ; l'ordre des arrêts n'est pas imposé.
 
 Aucune route de gestion d'utilisateurs ni de rôles (vérifié en E2E : 404).
 

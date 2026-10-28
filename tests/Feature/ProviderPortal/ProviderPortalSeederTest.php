@@ -129,3 +129,17 @@ it('accorde au rejeu les permissions de la phase 3 selon le métier de chaque r�
         ->and($held('PROVIDER_FLEET_MANAGER'))->toBe(['provider.calendar.view', 'provider.tours.view'])
         ->and($held('PROVIDER_VIEWER'))->toBe(['provider.calendar.view', 'provider.tours.view']);
 });
+
+it('accorde au rejeu les permissions d’exécution à l’administrateur et à l’exploitant seulement', function (): void {
+    $codes = ['provider.tours.execute', 'provider.tour-stops.update-status'];
+    Permission::whereIn('code', $codes)->delete();
+
+    $this->seed(ProviderPortalSeeder::class);
+
+    $holders = Role::where('organization_id', $this->organization->id)
+        ->whereHas('permissions', fn ($query) => $query->where('code', 'provider.tours.execute'))
+        ->pluck('code')->sort()->values()->all();
+
+    expect($holders)->toBe(['PROVIDER_ADMIN', 'PROVIDER_DISPATCHER'])
+        ->and(Permission::where('code', 'provider.tour-stops.update-status')->exists())->toBeTrue();
+});

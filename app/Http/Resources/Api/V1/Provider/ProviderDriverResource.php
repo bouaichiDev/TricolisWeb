@@ -6,6 +6,7 @@ namespace App\Http\Resources\Api\V1\Provider;
 
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\DriverAccountOwnership;
 use App\Modules\ProviderPortal\Services\ProviderStatusLabels;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,6 +40,8 @@ class ProviderDriverResource extends JsonResource
             'statusLabel' => app(ProviderStatusLabels::class)->label('driver', $this->status),
             'actions' => [
                 'canUpdate' => $canUpdate,
+                // Prénom, nom, téléphone : seulement si le compte est propre au chauffeur.
+                'canEditAccount' => $canUpdate && ($user === null || DriverAccountOwnership::owns($this->resource)),
                 'canDeactivate' => $canUpdate && $this->status === 'active',
                 'canActivate' => $canUpdate && $this->status === 'inactive',
             ],

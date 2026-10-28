@@ -4,6 +4,7 @@ use App\Modules\Identity\Models\Permission;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderService;
+use App\Modules\Orders\Models\OrderServiceContact;
 use App\Modules\Organizations\Models\Organization;
 use App\Modules\ProviderPortal\Support\ProviderPortalRoles;
 use App\Modules\Tours\Enums\TourStatus;
@@ -35,7 +36,11 @@ beforeEach(function (): void {
     $second = TourStop::factory()->forTour($this->mine)->atSequence(2)->create();
     $first = TourStop::factory()->forTour($this->mine)->atSequence(1)->create();
     $service = OrderService::factory()->state(['order_id' => Order::factory()->state(['organization_id' => $this->org->id]), 'weight' => 12.5, 'package_count' => 3, 'customer_total_price' => 999, 'provider_total_cost' => 444])->create();
-    TourStopService::factory()->forStop($first)->create(['order_service_id' => $service->id]);
+    TourStopService::factory()->forStop($first)->create(['order_service_id' => $service->id, 'confirmed_at' => now()]);
+    // En cours de composition chez le planificateur : invisible ailleurs.
+    TourStopService::factory()->forStop($first)->forOrganization($this->org->id)->create(['confirmed_at' => null]);
+    OrderServiceContact::create(['order_service_id' => $service->id, 'contact_role' => 'delivery', 'first_name_snapshot' => 'Lea', 'last_name_snapshot' => 'Site', 'phone_snapshot' => '+41220000000']);
+    OrderServiceContact::create(['order_service_id' => $service->id, 'contact_role' => 'billing', 'first_name_snapshot' => 'Compta', 'last_name_snapshot' => 'Client', 'email_snapshot' => 'factures@client.test']);
     TourStopService::factory()->forStop($second)->forOrganization($this->org->id)->inactive()->create();
     $this->admin = ProviderPortal::headers('admin@transports-alpha.test');
 });
@@ -78,7 +83,10 @@ it('rend le détail opérationnel, arrêts dans l’ordre, sans aucune donnée c
         ->assertJsonPath('data.stops.0.sequence', 1)
         ->assertJsonPath('data.stops.1.sequence', 2)
         ->assertJsonPath('data.stops.0.services.0.packageCount', 3)
-        ->assertJsonCount(0, 'data.stops.1.services');
+        ->assertJsonCount(0, 'data.stops.1.services')
+        ->assertJsonCount(1, 'data.stops.0.services')
+        ->assertJsonCount(1, 'data.stops.0.services.0.contacts')
+        ->assertJsonPath('data.stops.0.services.0.contacts.0.firstName', 'Lea');
 
     $forbidden = array_filter(jsonKeys($response->json()), static fn (string $key): bool => (bool) preg_match('/price|cost|invoice|order|customer|reference|external/i', $key));
 
@@ -105,4 +113,14 @@ it('fait disparaître aussitôt une tournée réattribuée à un autre fournisse
     $this->mine->update(['provider_id' => $this->beta->id]);
 
     $this->withHeaders(ProviderPortal::headers('admin@transports-alpha.test'))->getJson("/api/v1/provider/tours/{$this->mine->id}")->assertNotFound();
+});
+
+it('regroupe les tournées en à effectuer, en cours et terminées', function (): void {
+    $this->other->update(['status' => TourStatus::IN_PROGRESS]);
+    $numbers = fn (string $state) => collect($this->withHeaders($this->admin)->getJson("/api/v1/provider/tours?state={$state}")->assertOk()->json('data'))->pluck('tourNumber')->all();
+
+    expect($numbers('todo'))->toBe(['T-ALPHA-1'])
+        ->and($numbers('running'))->toBe(['T-ALPHA-2'])
+        ->and($numbers('done'))->toBe([]);
+    $this->withHeaders($this->admin)->getJson('/api/v1/provider/tours?state=draft')->assertUnprocessable();
 });

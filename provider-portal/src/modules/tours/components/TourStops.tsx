@@ -5,6 +5,7 @@ import { SectionCard } from '@/shared/components/layout/SectionCard'
 import { formatDateTime } from '@/shared/utils/format'
 
 import type { TourStop } from '../types'
+import { StopActions } from './StopActions'
 
 const place = (address: TourStop['address']) =>
   address === null ? '—' : [address.line1, [address.postalCode, address.city].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
@@ -14,7 +15,7 @@ const place = (address: TourStop['address']) =>
  * réaliser — numéro de service (celui des étiquettes), colis, poids, contacts
  * sur place. Aucune donnée commerciale n'arrive jusqu'ici.
  */
-export function TourStops({ stops }: { stops: TourStop[] }) {
+export function TourStops({ tourId, stops }: { tourId: string; stops: TourStop[] }) {
   return (
     <SectionCard title="Arrêts" description={`${stops.length} arrêt${stops.length > 1 ? 's' : ''}, dans l’ordre de passage.`}>
       <ol className="space-y-4">
@@ -59,6 +60,7 @@ export function TourStops({ stops }: { stops: TourStop[] }) {
               ))}
               {stop.services.length === 0 && <li className="text-muted-foreground text-sm">Aucun service à cet arrêt.</li>}
             </ul>
+            <StopActions tourId={tourId} stop={stop} />
           </li>
         ))}
       </ol>

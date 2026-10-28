@@ -27,6 +27,7 @@ class ListProviderToursRequest extends FormRequest
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
             'status' => ['nullable', Rule::in(ProviderTourScope::visibleStatuses())],
+            'state' => ['nullable', Rule::in(array_keys(ProviderTourScope::STATES))],
             'search' => ['nullable', 'string', 'max:64'],
             'page' => ['nullable', 'integer', 'min:1'],
             'perPage' => ['nullable', 'integer', 'min:10', 'max:100'],

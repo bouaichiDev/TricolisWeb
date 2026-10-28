@@ -1,6 +1,8 @@
 /** Les actions qu'offre le serveur sur une ressource : l'interface les suit. */
 export interface ResourceActions {
   canUpdate: boolean
+  /** Chauffeurs : le compte est propre au chauffeur, son identité se modifie ici. */
+  canEditAccount?: boolean
   canDeactivate: boolean
   canActivate: boolean
 }

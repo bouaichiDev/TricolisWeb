@@ -30,6 +30,7 @@ export interface TourStop {
     country: string | null
     instructions: string | null
   } | null
+  actions?: { canArrive: boolean; canComplete: boolean; canSkip: boolean }
   services: StopService[]
 }
 
@@ -50,7 +51,7 @@ export interface Tour {
   instructions: string | null
   totals: { weight: string; volume: string; packages: number; distanceMeters: number; drivingMinutes: number; workingMinutes: number }
   stops?: TourStop[]
-  actions: { canAssign: boolean }
+  actions: { canAssign: boolean; canStart?: boolean; canComplete?: boolean }
 }
 
 export interface TourEvent {
@@ -65,6 +66,8 @@ export interface TourEvent {
 export interface TourFilters {
   search: string
   status: string
+  /** Onglet : `todo`, `running`, `done`, ou vide pour toutes. */
+  state?: string
   page: number
   perPage?: number
 }

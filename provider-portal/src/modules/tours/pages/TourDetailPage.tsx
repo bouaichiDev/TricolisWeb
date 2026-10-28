@@ -14,6 +14,7 @@ import { formatDate, formatDateTime } from '@/shared/utils/format'
 
 import { toursApi } from '../api/toursApi'
 import { AssignResourcesDialog } from '../components/AssignResourcesDialog'
+import { TourExecutionBar } from '../components/TourExecutionBar'
 import { TourStops } from '../components/TourStops'
 
 /**
@@ -44,6 +45,7 @@ export function TourDetailPage() {
           )
         }
       />
+      <TourExecutionBar tour={data} />
       <SectionCard title="Organisation">
         <dl className="grid gap-x-6 sm:grid-cols-3">
           <DetailField label="Statut"><StatusBadge code={data.status} label={data.statusLabel} /></DetailField>
@@ -57,7 +59,7 @@ export function TourDetailPage() {
           <DetailField label="Consignes">{data.instructions}</DetailField>
         </dl>
       </SectionCard>
-      <TourStops stops={data.stops ?? []} />
+      <TourStops tourId={data.id} stops={data.stops ?? []} />
       {data.actions.canAssign && <AssignResourcesDialog tour={data} open={assigning} onOpenChange={setAssigning} />}
     </div>
   )

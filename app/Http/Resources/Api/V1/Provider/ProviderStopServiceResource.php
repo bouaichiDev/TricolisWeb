@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Api\V1\Provider;
 
 use App\Modules\Tours\Models\TourStopService;
+use App\Shared\Enums\ContactRole;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,6 +22,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ProviderStopServiceResource extends JsonResource
 {
+    /** Les contacts utiles sur place ; jamais la facturation ni « autre ». */
+    private const array ON_SITE = [ContactRole::LOAD, ContactRole::DELIVERY, ContactRole::OPERATIONS, ContactRole::EMERGENCY];
+
     /**
      * @return array<string, mixed>
      */
@@ -39,12 +43,14 @@ class ProviderStopServiceResource extends JsonResource
             'volume' => $service === null ? null : (string) $service->volume,
             'packageCount' => $service?->package_count,
             'instructions' => $service?->instructions,
-            'contacts' => $service === null ? [] : $service->contacts->map(static fn ($contact): array => [
-                'firstName' => $contact->first_name_snapshot,
-                'lastName' => $contact->last_name_snapshot,
-                'phone' => $contact->phone_snapshot,
-                'mobile' => $contact->mobile_snapshot,
-            ])->values()->all(),
+            'contacts' => $service === null ? [] : $service->contacts
+                ->filter(static fn ($contact): bool => in_array($contact->contact_role, self::ON_SITE, true))
+                ->map(static fn ($contact): array => [
+                    'firstName' => $contact->first_name_snapshot,
+                    'lastName' => $contact->last_name_snapshot,
+                    'phone' => $contact->phone_snapshot,
+                    'mobile' => $contact->mobile_snapshot,
+                ])->values()->all(),
         ];
     }
 }

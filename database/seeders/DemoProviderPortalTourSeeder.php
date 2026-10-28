@@ -57,17 +57,51 @@ class DemoProviderPortalTourSeeder extends Seeder
                 ],
             );
 
-            $address = Address::query()->first();
+            $this->stopFor($tour, "{$date} 08:00:00");
+        }
 
-            if ($address !== null && $tour->wasRecentlyCreated) {
-                TourStop::create([
-                    'tour_id' => $tour->id,
-                    'address_id' => $address->id,
-                    'sequence' => 1,
-                    'planned_arrival_at' => "{$date} 08:00:00",
-                    'status' => TourStopStatus::PENDING,
-                ]);
-            }
+        $this->executionTour($date);
+    }
+
+    /**
+     * Une seconde tournée d'Alpha, l'après-midi, déjà affectée à sa flotte de
+     * démonstration : de quoi exécuter une tournée sans dépendre de l'affectation.
+     */
+    private function executionTour(string $date): void
+    {
+        $alpha = Provider::where('code', 'transports-alpha')->first();
+        $agency = $alpha === null ? null : Agency::where('organization_id', $alpha->organization_id)->first();
+        $driver = $alpha?->drivers()->where('code', 'ALPHA-D1')->first();
+        $vehicle = $alpha?->vehicles()->where('code', 'ALPHA-V1')->first();
+
+        if ($agency === null || $driver === null || $vehicle === null) {
+            return;
+        }
+
+        $tour = Tour::firstOrCreate(
+            ['organization_id' => $alpha->organization_id, 'tour_number' => 'DEMO-ALPHA-2'],
+            [
+                'agency_id' => $agency->id, 'provider_id' => $alpha->id, 'driver_id' => $driver->id, 'vehicle_id' => $vehicle->id,
+                'tour_date' => $date, 'planned_start_at' => "{$date} 13:00:00", 'planned_end_at' => "{$date} 17:00:00",
+                'status' => TourStatus::CONFIRMED,
+            ],
+        );
+
+        $this->stopFor($tour, "{$date} 14:00:00");
+    }
+
+    private function stopFor(Tour $tour, string $arrival): void
+    {
+        $address = Address::query()->first();
+
+        if ($address !== null && $tour->wasRecentlyCreated) {
+            TourStop::create([
+                'tour_id' => $tour->id,
+                'address_id' => $address->id,
+                'sequence' => 1,
+                'planned_arrival_at' => $arrival,
+                'status' => TourStopStatus::PENDING,
+            ]);
         }
     }
 }

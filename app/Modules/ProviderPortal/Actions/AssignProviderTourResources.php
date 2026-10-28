@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\ProviderPortal\Actions;
 
-use App\Http\Resources\Api\V1\Provider\ProviderTourResource;
 use App\Modules\Drivers\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\ProviderPortal\Services\ProviderResourceScope;
@@ -48,7 +47,7 @@ final readonly class AssignProviderTourResources
             $vehicle = $this->resource('vehicleId', $input, fn (string $id) => $this->resources->vehicle($id, lock: true));
             $tour = $this->tours->tour($tourId, lock: true);
 
-            if (! in_array($tour->status, ProviderTourResource::ASSIGNABLE, true) || $tour->locked_by !== null) {
+            if (! in_array($tour->status, ProviderTourScope::ASSIGNABLE, true) || $tour->locked_by !== null) {
                 $this->fail('tour', $tour->locked_by !== null
                     ? 'Cette tournée est en cours de planification : réessayez plus tard.'
                     : 'Cette tournée ne peut plus changer de chauffeur ni de véhicule.');
@@ -120,7 +119,8 @@ final readonly class AssignProviderTourResources
                 ->whereNull('planned_start_at')
                 ->orWhereNull('planned_end_at')
                 ->orWhere(static fn ($both) => $both->where('planned_start_at', '<', $tour->planned_end_at)->where('planned_end_at', '>', $tour->planned_start_at))))
-            ->lockForUpdate()
+            // Pas de verrou ici : celui de la ressource sérialise déjà les
+            // affectations, et verrouiller d'autres tournées créerait des cycles.
             ->exists();
     }
 

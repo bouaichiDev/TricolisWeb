@@ -40,6 +40,11 @@ final readonly class ChangeProviderResourceStatus
         // par le transporteur (maintenance, bloqué…) n'est pas le sien.
         $from = $status === self::INACTIVE ? self::ACTIVE : self::INACTIVE;
 
+        // Rejeu (double clic, requête renvoyée) : rien à faire, rien à refuser.
+        if ($resource->status === $status) {
+            return $resource;
+        }
+
         if ($resource->status !== $from) {
             throw ValidationException::withMessages(['status' => [
                 'Ce statut a été fixé par votre transporteur : il ne se change pas depuis le portail.',

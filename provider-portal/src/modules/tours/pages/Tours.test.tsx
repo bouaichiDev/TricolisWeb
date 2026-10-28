@@ -65,6 +65,35 @@ describe('tournées', () => {
     await waitFor(() => expect(body).toEqual({ driverId: '01DRV1', vehicleId: '01VEH1' }))
   })
 
+  it('n’envoie que ce qui change, et garde les arrêts affichés après l’affectation', async () => {
+    let body: unknown = null
+    let detailCalls = 0
+    serveFleet()
+    const assigned = { id: '01DRV1', code: 'ALPHA-D1', name: 'Adam Alpha' }
+    server.use(
+      http.get(`${API}/tours/01TOUR1`, () => {
+        detailCalls += 1
+        return HttpResponse.json({ data: makeTour({ driver: assigned }), meta: {} })
+      }),
+      http.patch(`${API}/tours/01TOUR1/resources`, async ({ request }) => {
+        body = await request.json()
+        const { stops: _stops, ...summary } = makeTour({ driver: assigned })
+        return HttpResponse.json({ data: summary, meta: {} })
+      }),
+    )
+    renderApp('/tours/01TOUR1', makeContext(DISPATCH))
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Affecter' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.selectOptions(within(dialog).getByLabelText('Véhicule'), await within(dialog).findByRole('option', { name: /ALPHA-V1/ }))
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(body).toEqual({ vehicleId: '01VEH1' }))
+    await waitFor(() => expect(detailCalls).toBeGreaterThan(1))
+    expect(await screen.findByText('SRV-00042')).toBeInTheDocument()
+  })
+
   it('montre la raison d’un refus d’affectation', async () => {
     serveFleet()
     server.use(

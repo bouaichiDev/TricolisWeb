@@ -8,6 +8,7 @@ import { SearchInput } from '@/shared/components/data/SearchInput'
 import { StatusBadge } from '@/shared/components/data/StatusBadge'
 import { StatusFilter } from '@/shared/components/data/StatusFilter'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { formatDate, formatDateTime } from '@/shared/utils/format'
 
 import { toursApi } from '../api/toursApi'
@@ -42,14 +43,23 @@ const columns: Column<Tour>[] = [
 export function ToursPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  const [state, setState] = useState('todo')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState<number | undefined>(undefined)
-  const filters = { search, status, page, perPage }
+  const filters = { search, status, state, page, perPage }
   const tours = useQuery({ queryKey: ['tours', filters], queryFn: () => toursApi.list(filters), placeholderData: keepPreviousData })
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Tournées" description="Les tournées que votre transporteur vous a confiées." />
+      <Tabs value={state || 'all'} onValueChange={(value) => { setState(value === 'all' ? '' : value); setPage(1) }}>
+        <TabsList>
+          <TabsTrigger value="todo">À effectuer</TabsTrigger>
+          <TabsTrigger value="running">En cours</TabsTrigger>
+          <TabsTrigger value="done">Terminées</TabsTrigger>
+          <TabsTrigger value="all">Toutes</TabsTrigger>
+        </TabsList>
+      </Tabs>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1) }} label="Rechercher une tournée" placeholder="Numéro de tournée" />
         <StatusFilter value={status} onChange={(value) => { setStatus(value); setPage(1) }} options={STATUSES} />

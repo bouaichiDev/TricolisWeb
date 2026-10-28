@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
 import { driversApi } from '@/modules/drivers/api/driversApi'
@@ -18,36 +18,67 @@ const selectClass = 'border-input h-9 w-full rounded-md border bg-transparent px
 
 /**
  * Choisir le chauffeur et le véhicule d'une tournée parmi **sa** flotte active.
- * Le serveur revérifie tout (appartenance, créneau, capacité, statut) et dit
- * pourquoi il refuse.
+ * Seul ce qui change part au serveur, qui revérifie tout (appartenance,
+ * créneau, capacité, statut) et dit pourquoi il refuse. L'affectation actuelle
+ * reste proposée même si elle n'est plus active.
  */
 export function AssignResourcesDialog({ tour, open, onOpenChange }: { tour: Tour; open: boolean; onOpenChange: (open: boolean) => void }) {
   const queryClient = useQueryClient()
   const drivers = useQuery({ queryKey: ['drivers', ACTIVE], queryFn: () => driversApi.list(ACTIVE), enabled: open })
   const vehicles = useQuery({ queryKey: ['vehicles', ACTIVE], queryFn: () => vehiclesApi.list(ACTIVE), enabled: open })
-  const [driverId, setDriverId] = useState(tour.driver?.id ?? '')
-  const [vehicleId, setVehicleId] = useState(tour.vehicle?.id ?? '')
+  const current = { driverId: tour.driver?.id ?? '', vehicleId: tour.vehicle?.id ?? '' }
+  const [choice, setChoice] = useState(current)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [pending, setPending] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setChoice({ driverId: tour.driver?.id ?? '', vehicleId: tour.vehicle?.id ?? '' })
+      setErrors({})
+    }
+  }, [open, tour.driver?.id, tour.vehicle?.id])
+
+  const driverOptions = [...(drivers.data?.data ?? []).map((d) => ({ id: d.id, label: `${d.name} (${d.code})` }))]
+  if (tour.driver && !driverOptions.some((option) => option.id === tour.driver?.id)) driverOptions.unshift({ id: tour.driver.id, label: `${tour.driver.name} (${tour.driver.code})` })
+  const vehicleOptions = [...(vehicles.data?.data ?? []).map((v) => ({ id: v.id, label: `${v.code} · ${v.registrationNumber}` }))]
+  if (tour.vehicle && !vehicleOptions.some((option) => option.id === tour.vehicle?.id)) vehicleOptions.unshift({ id: tour.vehicle.id, label: `${tour.vehicle.code} · ${tour.vehicle.registrationNumber}` })
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     setErrors({})
-    setPending(true)
+    const payload = Object.fromEntries(
+      (['driverId', 'vehicleId'] as const).filter((key) => choice[key] !== current[key]).map((key) => [key, choice[key] || null]),
+    )
 
+    if (Object.keys(payload).length === 0) return onOpenChange(false)
+
+    setPending(true)
     try {
-      const updated = await toursApi.assign(tour.id, { driverId: driverId || null, vehicleId: vehicleId || null })
-      queryClient.setQueryData(['tour', tour.id], updated)
+      await toursApi.assign(tour.id, payload)
+      // La réponse ne porte pas les arrêts : on recharge le détail plutôt que de l'écraser.
+      await queryClient.invalidateQueries({ queryKey: ['tour', tour.id] })
       void queryClient.invalidateQueries({ queryKey: ['tours'] })
       toast.success('Affectation enregistrée.')
       onOpenChange(false)
     } catch (caught) {
       const fields = caught instanceof ApiError ? caught.errors : {}
-      setErrors(Object.keys(fields).length > 0 ? Object.fromEntries(Object.entries(fields).map(([key, messages]) => [key, messages[0]])) : { form: refusalMessage(caught) })
+      const known = Object.fromEntries(Object.entries(fields).map(([key, messages]) => [key, messages[0]]))
+      setErrors(known.driverId || known.vehicleId ? known : { form: Object.values(known)[0] ?? refusalMessage(caught) })
     } finally {
       setPending(false)
     }
   }
+
+  const select = (field: 'driverId' | 'vehicleId', label: string, options: { id: string; label: string }[]) => (
+    <div className="grid gap-1.5">
+      <Label htmlFor={`assign-${field}`}>{label}</Label>
+      <select id={`assign-${field}`} className={selectClass} value={choice[field]} onChange={(event) => setChoice({ ...choice, [field]: event.target.value })}>
+        <option value="">Aucun</option>
+        {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+      </select>
+      {errors[field] && <p className="text-destructive text-sm">{errors[field]}</p>}
+    </div>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,31 +88,13 @@ export function AssignResourcesDialog({ tour, open, onOpenChange }: { tour: Tour
           <DialogDescription>Seuls vos chauffeurs et véhicules actifs sont proposés.</DialogDescription>
         </DialogHeader>
         <form className="space-y-4" noValidate onSubmit={(event) => void submit(event)}>
-          {(errors.form ?? errors.tour) && (
+          {errors.form && (
             <Alert variant="destructive" role="alert">
-              <AlertDescription>{errors.form ?? errors.tour}</AlertDescription>
+              <AlertDescription>{errors.form}</AlertDescription>
             </Alert>
           )}
-          <div className="grid gap-1.5">
-            <Label htmlFor="assign-driver">Chauffeur</Label>
-            <select id="assign-driver" className={selectClass} value={driverId} onChange={(event) => setDriverId(event.target.value)}>
-              <option value="">Aucun</option>
-              {(drivers.data?.data ?? []).map((driver) => (
-                <option key={driver.id} value={driver.id}>{`${driver.name} (${driver.code})`}</option>
-              ))}
-            </select>
-            {errors.driverId && <p className="text-destructive text-sm">{errors.driverId}</p>}
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="assign-vehicle">Véhicule</Label>
-            <select id="assign-vehicle" className={selectClass} value={vehicleId} onChange={(event) => setVehicleId(event.target.value)}>
-              <option value="">Aucun</option>
-              {(vehicles.data?.data ?? []).map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>{`${vehicle.code} · ${vehicle.registrationNumber}`}</option>
-              ))}
-            </select>
-            {errors.vehicleId && <p className="text-destructive text-sm">{errors.vehicleId}</p>}
-          </div>
+          {select('driverId', 'Chauffeur', driverOptions)}
+          {select('vehicleId', 'Véhicule', vehicleOptions)}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Api\V1\Provider;
 
 use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\ProviderPortal\Services\ProviderTourScope;
 use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Models\Tour;
 use Illuminate\Http\Request;
@@ -19,17 +20,16 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ProviderTourResource extends JsonResource
 {
-    /** Statuts où le fournisseur peut encore changer chauffeur et véhicule. */
-    public const array ASSIGNABLE = [TourStatus::PLANNED, TourStatus::CONFIRMED];
-
     /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
         $status = $this->status instanceof TourStatus ? $this->status : TourStatus::from((string) $this->status);
-        $canAssign = app(CurrentProviderContext::class)->can('provider.tours.assign-resources')
-            && in_array($status, self::ASSIGNABLE, true)
+        $context = app(CurrentProviderContext::class);
+        $canExecute = $context->can('provider.tours.execute');
+        $canAssign = $context->can('provider.tours.assign-resources')
+            && in_array($status, ProviderTourScope::ASSIGNABLE, true)
             && $this->locked_by === null;
 
         return [
@@ -56,7 +56,11 @@ class ProviderTourResource extends JsonResource
                 'workingMinutes' => $this->working_time_minutes,
             ],
             'stops' => ProviderTourStopResource::collection($this->whenLoaded('stops')),
-            'actions' => ['canAssign' => $canAssign],
+            'actions' => [
+                'canAssign' => $canAssign,
+                'canStart' => $canExecute && $status === TourStatus::CONFIRMED && $this->driver_id !== null && $this->vehicle_id !== null,
+                'canComplete' => $canExecute && $status === TourStatus::IN_PROGRESS,
+            ],
         ];
     }
 }

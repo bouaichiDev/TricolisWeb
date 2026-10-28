@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Api\V1\Provider;
 
+use App\Modules\ProviderPortal\Services\CurrentProviderContext;
+use App\Modules\Tours\Enums\TourStatus;
 use App\Modules\Tours\Enums\TourStopStatus;
 use App\Modules\Tours\Models\TourStop;
 use Illuminate\Http\Request;
@@ -25,6 +27,8 @@ class ProviderTourStopResource extends JsonResource
     {
         $status = TourStopStatus::tryFrom((string) ($this->status instanceof TourStopStatus ? $this->status->value : $this->status));
         $address = $this->address;
+        $moving = app(CurrentProviderContext::class)->can('provider.tour-stops.update-status')
+            && $this->relationLoaded('tour') && $this->tour?->status === TourStatus::IN_PROGRESS;
 
         return [
             'id' => $this->id,
@@ -48,8 +52,17 @@ class ProviderTourStopResource extends JsonResource
                 'timeWindowFrom' => $address->time_window_from,
                 'timeWindowTo' => $address->time_window_to,
             ],
+            'actions' => [
+                'canArrive' => $moving && $status === TourStopStatus::PENDING,
+                'canComplete' => $moving && $status === TourStopStatus::ARRIVED,
+                'canSkip' => $moving && in_array($status, [TourStopStatus::PENDING, TourStopStatus::ARRIVED], true),
+            ],
+            // Seuls les services acquis : une composition en cours chez le
+            // planificateur (`confirmed_at` nul) ne se voit pas ailleurs.
             'services' => ProviderStopServiceResource::collection(
-                $this->services->where('is_active_assignment', true)->sortBy('sequence_within_stop')->values(),
+                $this->services
+                    ->filter(static fn ($service): bool => $service->is_active_assignment && $service->confirmed_at !== null)
+                    ->sortBy('sequence_within_stop')->values(),
             ),
         ];
     }

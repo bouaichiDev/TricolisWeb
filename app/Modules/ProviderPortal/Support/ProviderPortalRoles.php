@@ -34,6 +34,9 @@ final class ProviderPortalRoles
         'provider.calendar.view',
     ];
 
+    /** Organiser et exécuter les tournées : le métier de l'exploitant. */
+    private const array EXECUTION = ['provider.tours.assign-resources', 'provider.tours.execute', 'provider.tour-stops.update-status'];
+
     private const array FLEET_READ = ['provider.drivers.view', 'provider.vehicles.view'];
 
     private const array FLEET_WRITE = [
@@ -53,7 +56,7 @@ final class ProviderPortalRoles
             ],
             self::DISPATCHER => [
                 'name' => 'Exploitant',
-                'permissions' => [...self::BASE, ...self::FLEET_READ, 'provider.tours.assign-resources'],
+                'permissions' => [...self::BASE, ...self::FLEET_READ, ...self::EXECUTION],
             ],
             self::FLEET_MANAGER => [
                 'name' => 'Gestionnaire flotte',

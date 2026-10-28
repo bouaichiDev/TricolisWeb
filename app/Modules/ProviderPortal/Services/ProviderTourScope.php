@@ -20,6 +20,16 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final readonly class ProviderTourScope
 {
+    /** Statuts où le fournisseur peut encore changer chauffeur et véhicule. */
+    public const array ASSIGNABLE = [TourStatus::PLANNED, TourStatus::CONFIRMED];
+
+    /** Les onglets « À effectuer / En cours / Terminées » de l'exécution. */
+    public const array STATES = [
+        'todo' => [TourStatus::PLANNED, TourStatus::CONFIRMED],
+        'running' => [TourStatus::IN_PROGRESS],
+        'done' => [TourStatus::COMPLETED, TourStatus::CANCELLED],
+    ];
+
     public function __construct(private CurrentProviderContext $context) {}
 
     /**

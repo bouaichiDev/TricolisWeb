@@ -33,6 +33,10 @@ class ProviderTourController extends Controller
             ->when($request->validated('from'), static fn ($query, string $from) => $query->whereDate('tour_date', '>=', $from))
             ->when($request->validated('to'), static fn ($query, string $to) => $query->whereDate('tour_date', '<=', $to))
             ->when($request->validated('status'), static fn ($query, string $status) => $query->where('status', $status))
+            ->when($request->validated('state'), static fn ($query, string $state) => $query->whereIn('status', array_map(
+                static fn (TourStatus $status): string => $status->value,
+                ProviderTourScope::STATES[$state],
+            )))
             ->when($search, static fn ($query) => $query->where('tour_number', 'like', '%'.addcslashes((string) $search, '%_\\').'%'))
             ->orderBy('tour_date')->orderBy('planned_start_at')
             ->paginate((int) ($request->validated('perPage') ?? 25));
@@ -49,6 +53,8 @@ class ProviderTourController extends Controller
             'stops.services.orderService.service:id,name',
             'stops.services.orderService.contacts',
         ]);
+        // Chaque arrêt sait dans quelle tournée il est : ses actions en dépendent.
+        $model->stops->each->setRelation('tour', $model);
 
         return ApiResponse::ok(new ProviderTourResource($model));
     }

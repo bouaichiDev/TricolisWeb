@@ -12,7 +12,7 @@ export const driversApi = {
 
   create: async (payload: DriverPayload) => (await api.post<ApiEnvelope<Driver>>('/drivers', payload)).data,
 
-  update: async (id: string, payload: Omit<DriverPayload, 'email'>) =>
+  update: async (id: string, payload: Partial<Omit<DriverPayload, 'email'>>) =>
     (await api.patch<ApiEnvelope<Driver>>(`/drivers/${id}`, payload)).data,
 
   setActive: async (id: string, active: boolean) =>

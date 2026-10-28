@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Provider\Resources\ProviderDriverController;
 use App\Http\Controllers\Api\V1\Provider\Resources\ProviderResourceStatusController;
 use App\Http\Controllers\Api\V1\Provider\Resources\ProviderVehicleController;
 use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourController;
+use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourExecutionController;
 use App\Http\Controllers\Api\V1\Provider\Tours\ProviderTourResourcesController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +75,18 @@ Route::middleware(['auth:sanctum', 'provider.portal', 'throttle:provider-portal'
             Route::get('/', [ProviderTourController::class, 'index'])->name('index');
             Route::get('{tour}', [ProviderTourController::class, 'show'])->name('show');
         });
+        // Phase 4 — exécution : démarrer, terminer, faire avancer les arrêts.
+        Route::middleware(['throttle:provider-portal-write', 'provider.permission:provider.tours.view,provider.tours.execute'])->group(static function (): void {
+            Route::post('{tour}/start', [ProviderTourExecutionController::class, 'start'])->name('start');
+            Route::post('{tour}/complete', [ProviderTourExecutionController::class, 'complete'])->name('complete');
+        });
+        Route::prefix('{tour}/stops/{stop}')->name('stops.')
+            ->middleware(['throttle:provider-portal-write', 'provider.permission:provider.tours.view,provider.tour-stops.update-status'])
+            ->group(static function (): void {
+                Route::post('arrive', [ProviderTourExecutionController::class, 'arrive'])->name('arrive');
+                Route::post('complete', [ProviderTourExecutionController::class, 'completeStop'])->name('complete');
+                Route::post('skip', [ProviderTourExecutionController::class, 'skip'])->name('skip');
+            });
         Route::patch('{tour}/resources', ProviderTourResourcesController::class)
             ->middleware(['provider.permission:provider.tours.view,provider.tours.assign-resources', 'throttle:provider-portal-write'])
             ->name('resources');

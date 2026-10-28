@@ -33,15 +33,20 @@ it('refuse un champ imposé même vide ou nul, sans erreur 500', function (strin
     expect($this->vehicle->fresh()->provider_id)->toBe($this->alpha->id);
 })->with([['providerId', null], ['status', ''], ['organizationId', null]]);
 
-it('ne modifie pas le compte d’un chauffeur partagé ailleurs, et refuse d’en changer le téléphone', function (): void {
+it('ne modifie pas le compte d’un chauffeur partagé ailleurs, mais accepte un envoi inchangé', function (): void {
     $shared = ProviderPortal::member('admin@transports-beta.test')->user;
     $driver = Driver::factory()->forProvider($this->alpha)->create(['user_id' => $shared->id, 'name' => 'Bruno Admin']);
 
     $this->withHeaders($this->admin)->patchJson("/api/v1/provider/drivers/{$driver->id}", ['phone' => '+41000'])
         ->assertUnprocessable()->assertJsonValidationErrors('phone');
-    $this->withHeaders($this->admin)->patchJson("/api/v1/provider/drivers/{$driver->id}", ['firstName' => 'Pirate'])->assertOk();
+    $this->withHeaders($this->admin)->patchJson("/api/v1/provider/drivers/{$driver->id}", ['firstName' => 'Pirate'])
+        ->assertUnprocessable()->assertJsonValidationErrors('firstName');
+    // Ce que l'interface envoie réellement : tout le formulaire, compte inchangé.
+    $this->withHeaders($this->admin)->patchJson("/api/v1/provider/drivers/{$driver->id}", [
+        'code' => 'SHARED-1', 'firstName' => $shared->first_name, 'lastName' => $shared->last_name, 'phone' => $shared->phone,
+    ])->assertOk()->assertJsonPath('data.code', 'SHARED-1')->assertJsonPath('data.actions.canEditAccount', false);
 
-    expect($shared->fresh()->first_name)->not->toBe('Pirate')->and($driver->fresh()->name)->toContain('Pirate');
+    expect($shared->fresh()->first_name)->not->toBe('Pirate');
 });
 
 it('modifie et audite le compte propre au chauffeur', function (): void {
@@ -51,6 +56,12 @@ it('modifie et audite le compte propre au chauffeur', function (): void {
     $this->withHeaders($this->admin)->patchJson("/api/v1/provider/drivers/{$driver->id}", ['phone' => '+41791112233'])->assertOk()->assertJsonPath('data.phone', '+41791112233');
 
     expect(AuditLog::where('action', 'driver.account_updated')->where('entity_id', $driver->id)->exists())->toBeTrue();
+});
+
+it('accepte sans effet de désactiver un véhicule déjà inactif', function (): void {
+    $this->vehicle->update(['status' => 'inactive']);
+
+    $this->withHeaders($this->admin)->postJson("/api/v1/provider/vehicles/{$this->vehicle->id}/deactivate")->assertOk()->assertJsonPath('data.status', 'inactive');
 });
 
 it('ne touche pas un statut posé par le transporteur', function (string $route): void {

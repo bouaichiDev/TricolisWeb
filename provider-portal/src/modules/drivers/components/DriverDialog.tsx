@@ -13,7 +13,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
 
 import { driversApi } from '../api/driversApi'
-import type { Driver } from '../types'
+import type { Driver, DriverPayload } from '../types'
 
 const schema = z.object({
   code: z.string().trim().min(1, 'Code requis.').max(64),
@@ -25,6 +25,13 @@ const schema = z.object({
 
 type Values = z.infer<typeof schema>
 const FIELDS = ['code', 'firstName', 'lastName', 'email', 'phone'] as const
+
+/** En modification, seuls les champs réellement changés partent au serveur. */
+function changedFields(payload: Omit<DriverPayload, 'email'>, driver: Driver): Partial<DriverPayload> {
+  const original: Omit<DriverPayload, 'email'> = { code: driver.code, firstName: driver.firstName ?? '', lastName: driver.lastName ?? '', phone: driver.phone }
+
+  return Object.fromEntries(Object.entries(payload).filter(([key, value]) => value !== original[key as keyof typeof original]))
+}
 
 interface Props {
   open: boolean
@@ -50,12 +57,14 @@ export function DriverDialog({ open, onOpenChange, driver }: Props) {
     },
   })
 
+  const accountLocked = editing && driver.actions.canEditAccount === false
+
   const submit = async ({ email, ...values }: Values) => {
     setError(null)
     const payload = { ...values, phone: values.phone || null }
 
     try {
-      if (editing) await driversApi.update(driver.id, payload)
+      if (editing) await driversApi.update(driver.id, changedFields(payload, driver))
       else await driversApi.create({ ...payload, email })
       await queryClient.invalidateQueries({ queryKey: ['drivers'] })
       toast.success(editing ? 'Chauffeur modifié.' : 'Chauffeur ajouté.')
@@ -84,11 +93,12 @@ export function DriverDialog({ open, onOpenChange, driver }: Props) {
           )}
           <Field form={form} name="code" label="Code" />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field form={form} name="firstName" label="Prénom" />
-            <Field form={form} name="lastName" label="Nom" />
+            <Field form={form} name="firstName" label="Prénom" disabled={accountLocked} />
+            <Field form={form} name="lastName" label="Nom" disabled={accountLocked} />
           </div>
           {!editing && <Field form={form} name="email" label="E-mail" type="email" />}
-          <Field form={form} name="phone" label="Téléphone" type="tel" />
+          <Field form={form} name="phone" label="Téléphone" type="tel" disabled={accountLocked} />
+          {accountLocked && <p className="text-muted-foreground text-sm">Ce compte sert aussi ailleurs : son identité et son téléphone ne se modifient pas ici.</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler

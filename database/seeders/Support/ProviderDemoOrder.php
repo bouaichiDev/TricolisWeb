@@ -25,7 +25,8 @@ use App\Shared\Database\MorphMap;
  * Passée par le service métier commun (`CreateFullOrder`), pour un client
  * **sans accès au portail client** : les parcours du portail client suivent
  * leurs propres commandes, qui ne doivent pas se retrouver dans une tournée.
- * Rejouable : la commande `PROVIDER-DEMO-1` n'est créée qu'une fois.
+ * Deux services : un par tournée de démonstration. Rejouable : la commande
+ * `PROVIDER-DEMO-1` n'est créée qu'une fois.
  */
 final readonly class ProviderDemoOrder
 {
@@ -33,12 +34,16 @@ final readonly class ProviderDemoOrder
 
     public function __construct(private SwissCatalogue $catalogue, private CreateFullOrder $create) {}
 
-    public function service(Organization $organization): ?OrderService
+    /**
+     * Le service de rang `$sequence` (1 ou 2) de la commande de démonstration,
+     * créée au premier appel.
+     */
+    public function service(Organization $organization, int $sequence = 1): ?OrderService
     {
         $existing = Order::where('organization_id', $organization->id)->where('customer_reference', self::REFERENCE)->first();
 
         if ($existing !== null) {
-            return $existing->orderServices()->orderBy('sequence')->first();
+            return $existing->orderServices()->where('sequence', $sequence)->first();
         }
 
         $customer = Customer::where('organization_id', $organization->id)
@@ -57,11 +62,11 @@ final readonly class ProviderDemoOrder
             'source' => OrderSource::INTERNAL->value,
             'customerReference' => self::REFERENCE,
             'lines' => [['name' => 'Colis divers', 'quantity' => 2]],
-            'services' => [[
+            'services' => array_map(fn (int $rank): array => [
                 'serviceId' => $this->catalogue->deliveryServiceId($organization),
                 'addressId' => $this->address($customer),
-                'serviceNumber' => 'S1',
-                'sequence' => 1,
+                'serviceNumber' => 'S'.$rank,
+                'sequence' => $rank,
                 'requestedDate' => now()->addDay()->toDateString(),
                 'quantity' => 1,
                 'unit' => 'commande',
@@ -71,10 +76,10 @@ final readonly class ProviderDemoOrder
                 'volume' => 0,
                 'packageCount' => 2,
                 'contacts' => [['firstName' => 'Réception', 'lastName' => $customer->name, 'contactRole' => 'delivery', 'isPrimary' => true]],
-            ]],
+            ], [1, 2]),
         ]), $organization->id, $creator);
 
-        return $order->orderServices()->orderBy('sequence')->first();
+        return $order->orderServices()->where('sequence', $sequence)->first();
     }
 
     private function address(Customer $customer): string

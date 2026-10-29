@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\CustomerPortal\Models\CustomerUser;
+use App\Modules\Drivers\Models\Driver;
 use App\Modules\ProofOfDelivery\Models\ProofOfDelivery;
 use App\Modules\ProviderSettlements\Models\ProviderSettlement;
 use App\Modules\ProviderSettlements\Models\ProviderSettlementLine;
@@ -12,6 +13,7 @@ use Database\Seeders\CustomerPortalDemoSeeder;
 use Database\Seeders\DemoProviderPortalFleetSeeder;
 use Database\Seeders\DemoProviderPortalSeeder;
 use Database\Seeders\DemoProviderPortalTourSeeder;
+use Tests\Support\ProviderPortal;
 
 /**
  * Les tournées de démonstration des parcours Playwright : rejouables, et
@@ -65,4 +67,24 @@ it('sème des décomptes dont les totaux viennent du module financier, sans doub
         ->and((string) $closed->total)->toBe('240.00')
         ->and(ProviderSettlement::where('settlement_number', 'DEMO-STL-ALPHA-2')->value('status'))->toBe('draft')
         ->and(ProviderSettlementLine::count())->toBe($count);
+});
+
+it('sème DEMO-ALPHA-4 pour le parcours complet, et la remet à zéro après exécution', function (): void {
+    $journey = Tour::where('tour_number', 'DEMO-ALPHA-4')->firstOrFail();
+    $line = TourStopService::where('tour_stop_id', $journey->stops()->value('id'))->firstOrFail();
+
+    expect($journey->status)->toBe(TourStatus::CONFIRMED)
+        ->and($journey->driver_id)->toBeNull()
+        ->and($line->confirmed_at)->not->toBeNull()
+        ->and($line->order_service_id)->not->toBe(TourStopService::where('tour_stop_id', Tour::where('tour_number', 'DEMO-ALPHA-3')->firstOrFail()->stops()->value('id'))->value('order_service_id'));
+
+    $journey->update(['status' => TourStatus::COMPLETED, 'driver_id' => Driver::factory()->forProvider(ProviderPortal::provider('transports-alpha'))->create()->id, 'actual_start_at' => now()]);
+    $journey->stops()->update(['status' => TourStopStatus::COMPLETED->value]);
+
+    $this->seed(DemoProviderPortalTourSeeder::class);
+
+    expect($journey->fresh()->status)->toBe(TourStatus::CONFIRMED)
+        ->and($journey->fresh()->driver_id)->toBeNull()
+        ->and($journey->fresh()->actual_start_at)->toBeNull()
+        ->and($journey->stops()->first()->status)->toBe(TourStopStatus::PENDING);
 });

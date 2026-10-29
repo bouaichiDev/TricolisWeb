@@ -1,9 +1,25 @@
 # Portail fournisseur
 
 Spécification : `docs/superpowers/specs/2026-10-27-portail-fournisseur-design.md`.
-Plan : `docs/superpowers/plans/2026-10-27-portail-fournisseur-phase-1.md`.
+Plans : `docs/superpowers/plans/2026-10-27-portail-fournisseur-phase-1.md` à `phase-8.md`.
+
+**Statut : `PROVIDER_PORTAL_NOT_READY_FOR_PRODUCTION`** — voir `go-no-go.md`. Aucun déploiement effectué.
+
+| Document | Pour qui |
+|---|---|
+| `user-guide.md` | les fournisseurs |
+| `internal-guide.md` | l'équipe interne (accès, attribution des tournées) |
+| `api.md` | les intégrateurs |
+| `access-matrix.md`, `security-route-matrix.md` (généré), `security.md` | sécurité, audit |
+| `deployment.md`, `go-no-go.md` | exploitation, mise en production |
 
 ## Ce qui est livré
+
+**Phase 8 — finalisation** : parcours E2E complet et scénarios d'erreur, CI étendue au portail (lint, typecheck,
+tests, build, matrice des routes), documentation utilisateur, interne, API, exploitation, grille GO/NO-GO.
+
+**Phase 7 — sécurité** : inventaire des routes tiré du routeur (`provider-portal:route-matrix`), balayages
+automatiques de toutes les routes, IDOR croisé sans oracle, `security.md`.
 
 **Phase 6 — communications et décomptes, en lecture seule** : les communications parties vers l'adresse du
 membre connecté (canal externe, envoyées), et les décomptes **clôturés** du fournisseur avec leurs lignes

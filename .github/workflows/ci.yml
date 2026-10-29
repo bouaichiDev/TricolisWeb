@@ -63,6 +63,9 @@ jobs:
       - name: Customer portal route security
         run: php artisan customer-portal:route-matrix --check --env=testing
 
+      - name: Provider portal route security
+        run: php artisan provider-portal:route-matrix --check --env=testing
+
       - name: Test suite
         run: php artisan test --env=testing
 
@@ -72,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [frontend, customer-portal]
+        app: [frontend, customer-portal, provider-portal]
 
     steps:
       - name: Checkout
